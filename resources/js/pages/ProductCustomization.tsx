@@ -2,6 +2,14 @@ import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { ArrowLeft, Star, Minus, Plus, Check, Loader2 } from 'lucide-react';
+import {
+    getAuthToken,
+    saveReturnTo,
+    savePendingOrder,
+    getPendingOrder,
+    clearPendingOrder,
+    type PendingMarketplaceOrder,
+} from '../hooks/useAuth';
 
 interface ApiProduct {
     id: number;
@@ -31,7 +39,10 @@ export default function ProductCustomization() {
     const [selectedSize, setSelectedSize] = useState('M');
     const [measurements, setMeasurements] = useState({ chest: '', waist: '', hips: '', length: '' });
     const [quantity, setQuantity] = useState(1);
-    const [ordered, setOrdered] = useState(false);
+    const [ordered, setOrdered]       = useState(false);
+    const [placing, setPlacing]       = useState(false);
+    const [orderError, setOrderError] = useState('');
+    const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
     useEffect(() => {
         fetch(`/api/products/${id}`)
@@ -39,7 +50,25 @@ export default function ProductCustomization() {
             .then(data => {
                 const p: ApiProduct = data.product;
                 setProduct(p);
-                if (p.colors?.length) setSelectedColor(p.colors[0]);
+
+                // ── Thaw: restore selections saved before login redirect ──
+                const pending = getPendingOrder();
+                if (pending?.type === 'marketplace' && pending.productId === p.id) {
+                    setSelectedColor(pending.color  || (p.colors?.[0] ?? ''));
+                    setSelectedSize(pending.size    || 'M');
+                    setQuantity(pending.quantity    || 1);
+                    setMeasurements({
+                        chest:  pending.measurements?.chest  ?? '',
+                        waist:  pending.measurements?.waist  ?? '',
+                        hips:   pending.measurements?.hips   ?? '',
+                        length: pending.measurements?.length ?? '',
+                    });
+                    // State restored — don't clear yet; clear only after order succeeds
+                } else if (!pending || pending.type !== 'marketplace') {
+                    // No saved state for this product — use defaults
+                    if (p.colors?.length) setSelectedColor(p.colors[0]);
+                }
+
                 setLoading(false);
             })
             .catch(() => setLoading(false));
@@ -67,9 +96,58 @@ export default function ProductCustomization() {
     const total = subtotal + shipping;
     const tailor = getTailor(product.id);
 
-    const handleOrder = () => {
-        setOrdered(true);
-        setTimeout(() => navigate('/'), 2500);
+    const handleOrder = async () => {
+        const token = getAuthToken();
+        if (!token) {
+            // Freeze current selections so they survive the login redirect
+            if (product) {
+                savePendingOrder({
+                    type: 'marketplace',
+                    productId: product.id,
+                    color: selectedColor,
+                    size: selectedSize,
+                    quantity,
+                    measurements,
+                } satisfies PendingMarketplaceOrder);
+            }
+            saveReturnTo(window.location.pathname);
+            setShowLoginPrompt(true);
+            return;
+        }
+        setPlacing(true);
+        setOrderError('');
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    order_type: 'marketplace',
+                    product_id: product!.id,
+                    color: selectedColor,
+                    size: selectedSize,
+                    quantity,
+                    cm_measurements: Object.fromEntries(
+                        Object.entries(measurements).filter(([, v]) => v !== '')
+                    ),
+                }),
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                setOrderError(err.message ?? 'Something went wrong.');
+                return;
+            }
+            clearPendingOrder();
+            setOrdered(true);
+            setTimeout(() => navigate('/'), 2500);
+        } catch {
+            setOrderError('Network error. Please try again.');
+        } finally {
+            setPlacing(false);
+        }
     };
 
     // Determine text color for color swatch check icon
@@ -275,11 +353,16 @@ export default function ProductCustomization() {
                                         <span>₾{total}</span>
                                     </div>
                                 </div>
+                                {orderError && (
+                                    <p className="text-xs text-red-400 text-center mb-2">{orderError}</p>
+                                )}
                                 <button
                                     onClick={handleOrder}
-                                    className="w-full bg-white text-slate-900 font-semibold py-3.5 rounded-xl hover:bg-slate-100 transition-colors active:scale-[0.98]"
+                                    disabled={placing}
+                                    className="w-full bg-white text-slate-900 font-semibold py-3.5 rounded-xl hover:bg-slate-100 transition-colors active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
-                                    Place Order
+                                    {placing && <Loader2 className="w-4 h-4 animate-spin" />}
+                                    {placing ? 'Placing Order…' : 'Place Order'}
                                 </button>
                                 <p className="text-xs text-slate-500 text-center mt-3">
                                     Tailor will confirm within 24 hours
@@ -287,6 +370,50 @@ export default function ProductCustomization() {
                             </div>
                         </motion.div>
                     </div>
+                </div>
+            )}
+
+            {/* ── Login required prompt ── */}
+            {showLoginPrompt && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div
+                        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+                        onClick={() => setShowLoginPrompt(false)}
+                    />
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="relative z-10 bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-sm p-8 text-center"
+                    >
+                        <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-5 text-2xl">
+                            🔒
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 mb-2">Sign in to place an order</h3>
+                        <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                            You need to be signed in to complete your purchase. It only takes a minute.
+                        </p>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => navigate('/signin')}
+                                className="w-full bg-slate-900 text-white font-semibold py-3 rounded-xl hover:bg-slate-700 transition-colors"
+                            >
+                                Sign In
+                            </button>
+                            <button
+                                onClick={() => navigate('/register')}
+                                className="w-full border border-slate-200 text-slate-700 font-medium py-3 rounded-xl hover:bg-slate-50 transition-colors"
+                            >
+                                Create an Account
+                            </button>
+                            <button
+                                onClick={() => setShowLoginPrompt(false)}
+                                className="text-sm text-slate-400 hover:text-slate-600 transition-colors pt-1"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </motion.div>
                 </div>
             )}
         </div>

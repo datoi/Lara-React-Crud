@@ -1,7 +1,8 @@
 import { motion } from 'motion/react';
-import { ArrowLeft, Download, Send, Check } from 'lucide-react';
+import { ArrowLeft, Download, Send, Check, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { getAuthToken, saveReturnTo, savePendingOrder, clearPendingOrder } from '../hooks/useAuth';
 
 interface DesignState {
     clothingType: string | null;
@@ -38,6 +39,8 @@ function SpecRow({ label, value }: { label: string; value: string }) {
 export function FinalPreview({ design, onBack }: FinalPreviewProps) {
     const navigate = useNavigate();
     const [submitted, setSubmitted] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState('');
 
     const handleDownload = () => {
         const content = [
@@ -87,9 +90,43 @@ export function FinalPreview({ design, onBack }: FinalPreviewProps) {
         URL.revokeObjectURL(url);
     };
 
-    const handleSubmit = () => {
-        setSubmitted(true);
-        setTimeout(() => navigate('/'), 2500);
+    const handleSubmit = async () => {
+        const token = getAuthToken();
+        if (!token) {
+            // Freeze the full design state before going to login
+            savePendingOrder({ type: 'custom', design: design as unknown as Record<string, unknown> });
+            saveReturnTo('/design');
+            navigate('/signin');
+            return;
+        }
+        setSubmitting(true);
+        setSubmitError('');
+        try {
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    order_type: 'custom',
+                    custom_design_data: design,
+                }),
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                setSubmitError(err.message ?? 'Something went wrong.');
+                return;
+            }
+            clearPendingOrder();
+            setSubmitted(true);
+            setTimeout(() => navigate('/'), 2500);
+        } catch {
+            setSubmitError('Network error. Please try again.');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -193,12 +230,19 @@ export function FinalPreview({ design, onBack }: FinalPreviewProps) {
 
                         {/* Actions */}
                         <div className="flex flex-col gap-3">
+                            {submitError && (
+                                <p className="text-xs text-red-500 text-center">{submitError}</p>
+                            )}
                             <button
                                 onClick={handleSubmit}
-                                className="flex items-center justify-center gap-2 bg-slate-900 text-white font-semibold py-4 rounded-xl hover:bg-slate-700 transition-colors active:scale-[0.98]"
+                                disabled={submitting}
+                                className="flex items-center justify-center gap-2 bg-slate-900 text-white font-semibold py-4 rounded-xl hover:bg-slate-700 transition-colors active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                <Send className="w-4 h-4" />
-                                Submit to Tailor
+                                {submitting
+                                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                                    : <Send className="w-4 h-4" />
+                                }
+                                {submitting ? 'Submitting…' : 'Submit to Tailor'}
                             </button>
                             <button
                                 onClick={handleDownload}

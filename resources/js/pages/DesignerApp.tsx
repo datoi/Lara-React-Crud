@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
+import { getPendingOrder, clearPendingOrder } from '../hooks/useAuth';
 import { motion, AnimatePresence } from 'motion/react';
 import { ClothingTypeSelector } from '../components/ClothingTypeSelector';
 import { SubcategorySelector } from '../components/SubcategorySelector';
@@ -55,7 +56,24 @@ const STEP_LABELS: Record<Step, string> = {
 
 export default function DesignerApp() {
     const [step, setStep] = useState<Step>('type');
-    const [design, setDesign] = useState<DesignState>(INITIAL_DESIGN);
+    const [design, setDesign] = useState<DesignState>(() => {
+        // ── Thaw: restore design state saved before login redirect ──
+        const pending = getPendingOrder();
+        if (pending?.type === 'custom' && pending.design) {
+            return { ...INITIAL_DESIGN, ...(pending.design as Partial<DesignState>) };
+        }
+        return INITIAL_DESIGN;
+    });
+
+    // If we restored a design, jump to preview step so user can submit directly
+    useEffect(() => {
+        const pending = getPendingOrder();
+        if (pending?.type === 'custom' && pending.design) {
+            setStep('preview');
+            // Don't clear yet — FinalPreview will clear after successful submit
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const stepIndex = STEP_ORDER.indexOf(step);
 

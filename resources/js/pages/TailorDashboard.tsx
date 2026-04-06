@@ -1,39 +1,81 @@
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { DashboardHeader } from '../components/tailor/DashboardHeader';
 import { StatsCards } from '../components/tailor/StatsCards';
-import { OrdersList } from '../components/tailor/OrdersList';
-import { ProductManager } from '../components/tailor/ProductManager';
-import { getAuthUser } from '../hooks/useAuth';
-
-const MOCK_ORDERS = [
-    { id: '#KR-0041', customer: 'Mariam Tsereteli', product: 'Floral Maxi Dress', status: 'in-progress' as const, amount: 180, date: '2024-04-01', dueDate: 'Apr 10' },
-    { id: '#KR-0039', customer: 'Davit Kiknadze', product: 'Linen Blazer', status: 'pending' as const, amount: 240, date: '2024-04-02', dueDate: 'Apr 14' },
-    { id: '#KR-0037', customer: 'Nana Gelashvili', product: 'Silk Blouse', status: 'completed' as const, amount: 120, date: '2024-03-28', dueDate: 'Apr 5' },
-    { id: '#KR-0035', customer: 'Giorgi Beraia', product: 'Wool Trench', status: 'in-progress' as const, amount: 380, date: '2024-03-30', dueDate: 'Apr 12' },
-    { id: '#KR-0033', customer: 'Tamara Sulakvelidze', product: 'Wide Leg Pants', status: 'pending' as const, amount: 130, date: '2024-04-03', dueDate: 'Apr 15' },
-];
-
-const MOCK_PRODUCTS = [
-    { id: 1, name: 'Floral Wrap Dress', category: 'Dresses', price: 180, orders: 34, status: 'active' as const },
-    { id: 2, name: 'Summer Linen Blazer', category: 'Jackets', price: 240, orders: 22, status: 'active' as const },
-    { id: 3, name: 'Silk Evening Blouse', category: 'Shirts', price: 120, orders: 18, status: 'active' as const },
-    { id: 4, name: 'A-Line Midi Dress', category: 'Dresses', price: 160, orders: 12, status: 'paused' as const },
-    { id: 5, name: 'Embroidered Shirt', category: 'Shirts', price: 100, orders: 9, status: 'active' as const },
-];
-
-const STATS = {
-    revenue: 12480,
-    activeOrders: 5,
-    productsListed: 5,
-    avgRating: 4.9,
-};
+import { OrdersList, type TailorOrder } from '../components/tailor/OrdersList';
+import { ProductManager, type TailorProductFull } from '../components/tailor/ProductManager';
+import { getAuthUser, getAuthToken } from '../hooks/useAuth';
 
 export default function TailorDashboard() {
-    const user = getAuthUser();
-    const greeting = user ? user.first_name : 'Nino';
+    const user  = getAuthUser();
+    const token = getAuthToken();
+
+    const [orders,   setOrders]   = useState<TailorOrder[]>([]);
+    const [products, setProducts] = useState<TailorProductFull[]>([]);
+    const [loadingOrders,   setLoadingOrders]   = useState(true);
+    const [loadingProducts, setLoadingProducts] = useState(true);
+
+    // ─── Fetch orders ─────────────────────────────────────────────────────────
+    const fetchOrders = useCallback(async () => {
+        if (!token) { setLoadingOrders(false); return; }
+        try {
+            const res = await fetch('/api/tailor/orders', {
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+            });
+            if (res.ok) setOrders((await res.json()).orders ?? []);
+        } finally {
+            setLoadingOrders(false);
+        }
+    }, [token]);
+
+    // ─── Fetch products ───────────────────────────────────────────────────────
+    const fetchProducts = useCallback(async () => {
+        if (!token) { setLoadingProducts(false); return; }
+        try {
+            const res = await fetch('/api/tailor/products', {
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+            });
+            if (res.ok) setProducts((await res.json()).products ?? []);
+        } finally {
+            setLoadingProducts(false);
+        }
+    }, [token]);
+
+    useEffect(() => { fetchOrders(); fetchProducts(); }, [fetchOrders, fetchProducts]);
+
+    // ─── Status update ────────────────────────────────────────────────────────
+    const handleStatusChange = async (orderId: number, status: string) => {
+        if (!token) return;
+        const res = await fetch(`/api/tailor/orders/${orderId}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ status }),
+        });
+        if (res.ok) {
+            const data = await res.json();
+            setOrders(prev => prev.map(o => o.id === orderId ? data.order : o));
+        }
+    };
+
+    // ─── Stats ────────────────────────────────────────────────────────────────
+    const revenue      = orders.reduce((sum, o) => sum + o.total, 0);
+    const activeOrders = orders.filter(o => !['delivered', 'cancelled'].includes(o.status)).length;
+    const stats = {
+        revenue,
+        activeOrders,
+        productsListed: products.length,
+        avgRating: 4.9,
+    };
+
+    const greeting = user ? user.first_name : 'Tailor';
+
     return (
         <div className="min-h-screen bg-slate-50">
-            <DashboardHeader earnings={STATS.revenue} />
+            <DashboardHeader earnings={stats.revenue} />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
                 {/* Greeting */}
@@ -47,7 +89,7 @@ export default function TailorDashboard() {
                 </motion.div>
 
                 {/* Stats */}
-                <StatsCards stats={STATS} />
+                <StatsCards stats={stats} />
 
                 {/* Orders */}
                 <motion.div
@@ -55,7 +97,13 @@ export default function TailorDashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.15 }}
                 >
-                    <OrdersList orders={MOCK_ORDERS} />
+                    {loadingOrders ? (
+                        <div className="bg-white rounded-2xl border border-slate-200 px-6 py-12 text-center text-slate-400 text-sm">
+                            Loading orders…
+                        </div>
+                    ) : (
+                        <OrdersList orders={orders} onStatusChange={handleStatusChange} />
+                    )}
                 </motion.div>
 
                 {/* Products */}
@@ -64,7 +112,16 @@ export default function TailorDashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.25 }}
                 >
-                    <ProductManager products={MOCK_PRODUCTS} />
+                    {loadingProducts ? (
+                        <div className="bg-white rounded-2xl border border-slate-200 px-6 py-12 text-center text-slate-400 text-sm">
+                            Loading products…
+                        </div>
+                    ) : (
+                        <ProductManager
+                            products={products}
+                            onProductAdded={p => setProducts(prev => [p, ...prev])}
+                        />
+                    )}
                 </motion.div>
             </div>
         </div>

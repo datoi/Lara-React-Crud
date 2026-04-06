@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { saveAuth, type AuthUser } from '../hooks/useAuth';
+import { saveAuth, getReturnTo, clearReturnTo, type AuthUser } from '../hooks/useAuth';
 
 type Role = 'customer' | 'tailor';
 
@@ -51,7 +51,10 @@ export default function Login() {
             }
 
             saveAuth(data.user as AuthUser, data.token as string);
-            navigate(redirect);
+            // If customer was redirected here mid-flow, send them back
+            const returnTo = isCustomer ? getReturnTo() : null;
+            clearReturnTo();
+            navigate(returnTo ?? redirect);
         } catch {
             setErrors({ general: 'Network error. Please try again.' });
         } finally {

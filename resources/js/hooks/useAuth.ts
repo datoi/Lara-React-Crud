@@ -8,7 +8,9 @@ export interface AuthUser {
     role: 'customer' | 'tailor';
 }
 
-const USER_KEY = 'kere_user';
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+const USER_KEY  = 'kere_user';
 const TOKEN_KEY = 'kere_token';
 
 export function getAuthUser(): AuthUser | null {
@@ -32,4 +34,57 @@ export function saveAuth(user: AuthUser, token: string): void {
 export function clearAuth(): void {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(TOKEN_KEY);
+}
+
+// ─── Return-to (post-login redirect) ─────────────────────────────────────────
+
+const RETURN_TO_KEY = 'kere_return_to';
+
+export function saveReturnTo(path: string): void {
+    localStorage.setItem(RETURN_TO_KEY, path);
+}
+
+export function getReturnTo(): string | null {
+    return localStorage.getItem(RETURN_TO_KEY);
+}
+
+export function clearReturnTo(): void {
+    localStorage.removeItem(RETURN_TO_KEY);
+}
+
+// ─── Pending order (state persistence across login) ───────────────────────────
+
+const PENDING_ORDER_KEY = 'kere_pending_order';
+
+export interface PendingMarketplaceOrder {
+    type: 'marketplace';
+    productId: number;
+    color: string;
+    size: string;
+    quantity: number;
+    measurements: Record<string, string>;
+}
+
+export interface PendingCustomOrder {
+    type: 'custom';
+    design: Record<string, unknown>;
+}
+
+export type PendingOrder = PendingMarketplaceOrder | PendingCustomOrder;
+
+export function savePendingOrder(data: PendingOrder): void {
+    localStorage.setItem(PENDING_ORDER_KEY, JSON.stringify(data));
+}
+
+export function getPendingOrder(): PendingOrder | null {
+    try {
+        const raw = localStorage.getItem(PENDING_ORDER_KEY);
+        return raw ? (JSON.parse(raw) as PendingOrder) : null;
+    } catch {
+        return null;
+    }
+}
+
+export function clearPendingOrder(): void {
+    localStorage.removeItem(PENDING_ORDER_KEY);
 }

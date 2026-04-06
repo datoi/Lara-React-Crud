@@ -4,20 +4,39 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
+    // ─── Token helper (shared pattern) ───────────────────────────────────────
+
+    private function authedUser(Request $request): ?User
+    {
+        $raw = $request->bearerToken();
+        if (!$raw) return null;
+        return User::where('api_token', hash('sha256', $raw))->first();
+    }
+
+    // ─── GET /api/products ────────────────────────────────────────────────────
+
     public function index(Request $request)
     {
-        $query = Product::with('category');
+        $query = Product::with(['category', 'tailor']);
 
         if ($request->filled('category')) {
             $query->whereHas('category', fn($q) => $q->where('slug', $request->category));
         }
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $term = '%' . $request->search . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', $term)
+                  ->orWhereHas('tailor', fn($tq) => $tq->where('name', 'like', $term)
+                      ->orWhere('first_name', 'like', $term)
+                      ->orWhere('last_name', 'like', $term));
+            });
         }
 
         if ($request->filled('min_price')) {
@@ -36,20 +55,136 @@ class ProductController extends Controller
             default      => $query->latest(),
         };
 
-        return response()->json($query->paginate(12)->withQueryString());
+        $paginator = $query->paginate(24)->withQueryString();
+
+        // Append tailor_name to each product item
+        $paginator->getCollection()->transform(function ($p) {
+            $p->tailor_name = $p->tailor
+                ? trim(($p->tailor->first_name ?? '') . ' ' . ($p->tailor->last_name ?? '')) ?: $p->tailor->name
+                : null;
+            return $p;
+        });
+
+        return response()->json($paginator);
     }
+
+    // ─── GET /api/products/{product} ─────────────────────────────────────────
 
     public function show(Product $product)
     {
-        $product->load('category');
-        $related = Product::where('category_id', $product->category_id)
+        $product->load(['category', 'tailor']);
+        $product->tailor_name = $product->tailor
+            ? trim(($product->tailor->first_name ?? '') . ' ' . ($product->tailor->last_name ?? '')) ?: $product->tailor->name
+            : null;
+
+        $related = Product::with('tailor')
+            ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->take(4)
-            ->get();
+            ->get()
+            ->each(function ($p) {
+                $p->tailor_name = $p->tailor
+                    ? trim(($p->tailor->first_name ?? '') . ' ' . ($p->tailor->last_name ?? '')) ?: $p->tailor->name
+                    : null;
+            });
 
         return response()->json([
             'product' => $product,
             'related' => $related,
         ]);
+    }
+
+    // ─── GET /api/tailor/products ─────────────────────────────────────────────
+
+    public function tailorProducts(Request $request)
+    {
+        $user = $this->authedUser($request);
+        if (!$user || $user->role !== 'tailor') {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $products = Product::with('category')
+            ->where('tailor_id', $user->id)
+            ->latest()
+            ->get()
+            ->map(fn($p) => $this->formatProduct($p));
+
+        return response()->json(['products' => $products]);
+    }
+
+    // ─── POST /api/tailor/products ────────────────────────────────────────────
+
+    public function store(Request $request)
+    {
+        $user = $this->authedUser($request);
+        if (!$user || $user->role !== 'tailor') {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $data = $request->validate([
+            'name'                  => 'required|string|max:200',
+            'description'           => 'nullable|string',
+            'price'                 => 'required|numeric|min:1',
+            'category_id'           => 'required|exists:categories,id',
+            'images'                => 'nullable|array',
+            'images.*'              => 'nullable|string|url',
+            'colors'                => 'nullable|array',
+            'colors.*'              => 'nullable|string',
+            'sizes'                 => 'nullable|array',
+            'sizes.*'               => 'nullable|string',
+            'fabric'                => 'nullable|string|max:100',
+            'texture'               => 'nullable|string|max:100',
+            'required_measurements' => 'nullable|array',
+            'required_measurements.*' => 'string',
+            'is_customizable'       => 'boolean',
+        ]);
+
+        $slug = Str::slug($data['name']) . '-' . Str::random(6);
+
+        $product = Product::create([
+            'tailor_id'             => $user->id,
+            'category_id'           => $data['category_id'],
+            'name'                  => $data['name'],
+            'slug'                  => $slug,
+            'description'           => $data['description'] ?? null,
+            'price'                 => $data['price'],
+            'images'                => array_filter($data['images'] ?? []),
+            'colors'                => $data['colors'] ?? [],
+            'sizes'                 => $data['sizes'] ?? [],
+            'fabric'                => $data['fabric'] ?? null,
+            'texture'               => $data['texture'] ?? null,
+            'required_measurements' => $data['required_measurements'] ?? [],
+            'is_customizable'       => $data['is_customizable'] ?? true,
+            'stock'                 => 100,
+        ]);
+
+        $product->load('category');
+
+        return response()->json([
+            'product' => $this->formatProduct($product),
+        ], 201);
+    }
+
+    // ─── Formatter ────────────────────────────────────────────────────────────
+
+    private function formatProduct(Product $p): array
+    {
+        return [
+            'id'                    => $p->id,
+            'name'                  => $p->name,
+            'category'              => $p->category->name ?? '—',
+            'category_id'           => $p->category_id,
+            'price'                 => $p->price,
+            'description'           => $p->description,
+            'images'                => $p->images ?? [],
+            'colors'                => $p->colors ?? [],
+            'sizes'                 => $p->sizes ?? [],
+            'fabric'                => $p->fabric,
+            'texture'               => $p->texture,
+            'required_measurements' => $p->required_measurements ?? [],
+            'is_customizable'       => $p->is_customizable,
+            'orders'                => 0,
+            'status'                => 'active',
+        ];
     }
 }

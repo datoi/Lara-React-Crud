@@ -1,24 +1,21 @@
 import { motion } from 'motion/react';
-import { Users, Sliders, ShieldCheck } from 'lucide-react';
+import { CreditCard, CheckCircle, ShieldCheck } from 'lucide-react';
 
-const features = [
+const guarantees = [
     {
-        icon: Users,
-        title: 'Local Georgian Tailors',
-        description:
-            'Every tailor on Kere is vetted and based in Georgia. Support local craftspeople while getting world-class quality.',
+        icon: CreditCard,
+        title: 'Secure Payment',
+        description: 'Your payment is held securely until your order is completed to your satisfaction',
     },
     {
-        icon: Sliders,
-        title: 'Full Creative Control',
-        description:
-            'Choose from existing designs or build your own from scratch. Specify exact measurements, fabric, color — everything.',
+        icon: CheckCircle,
+        title: 'Free Fix Guarantee',
+        description: "If your product doesn't match specifications, we'll fix it for free",
     },
     {
         icon: ShieldCheck,
-        title: 'Quality Guarantee',
-        description:
-            "Not satisfied? We'll make it right. Every order is backed by our satisfaction guarantee and revision policy.",
+        title: 'Quality Assurance',
+        description: 'Every piece is inspected before delivery to ensure it meets our standards',
     },
 ];
 
@@ -34,29 +31,28 @@ export function FeaturesSection() {
                     className="text-center mb-14"
                 >
                     <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-                        Why choose Kere?
+                        The Kere Guarantee
                     </h2>
                     <p className="text-slate-500 text-lg max-w-xl mx-auto">
-                        We connect you with the best local tailors so you can get exactly what you want.
+                        Your peace of mind is our priority
                     </p>
                 </motion.div>
 
-                <div className="grid md:grid-cols-3 gap-6">
-                    {features.map((feature, i) => (
+                <div className="grid md:grid-cols-3 gap-10">
+                    {guarantees.map((item, i) => (
                         <motion.div
-                            key={feature.title}
+                            key={item.title}
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.5, delay: i * 0.1 }}
-                            whileHover={{ y: -4 }}
-                            className="bg-slate-50 rounded-2xl p-8 border border-slate-100 transition-shadow hover:shadow-md"
+                            className="flex flex-col items-center text-center"
                         >
-                            <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center mb-6">
-                                <feature.icon className="w-6 h-6 text-white" />
+                            <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mb-5">
+                                <item.icon className="w-7 h-7 text-white" />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h3>
-                            <p className="text-slate-500 leading-relaxed">{feature.description}</p>
+                            <h3 className="text-lg font-bold text-slate-900 mb-3">{item.title}</h3>
+                            <p className="text-slate-500 text-sm leading-relaxed max-w-xs">{item.description}</p>
                         </motion.div>
                     ))}
                 </div>

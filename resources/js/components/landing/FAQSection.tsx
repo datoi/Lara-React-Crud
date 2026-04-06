@@ -90,6 +90,28 @@ export function FAQSection() {
                         </motion.div>
                     ))}
                 </div>
+
+                {/* Still have questions? */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                    className="mt-10 bg-white border border-slate-200 rounded-2xl p-8 text-center"
+                >
+                    <p className="font-semibold text-slate-900 text-lg mb-2">Still have questions?</p>
+                    <p className="text-slate-500 text-sm mb-6">
+                        Our support team is here to help you with any questions or concerns.
+                    </p>
+                    <div className="flex items-center justify-center gap-3">
+                        <button className="bg-slate-900 text-white text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-700 transition-colors">
+                            Email Support
+                        </button>
+                        <button className="border border-slate-300 text-slate-700 text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-50 transition-colors">
+                            Live Chat
+                        </button>
+                    </div>
+                </motion.div>
             </div>
         </section>
     );
