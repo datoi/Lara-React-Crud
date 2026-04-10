@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router';
-import { Bell, User, LogOut } from 'lucide-react';
+import { User } from 'lucide-react';
 import { getAuthUser, clearAuth } from '../../hooks/useAuth';
+import { NotificationBell } from '../NotificationBell';
 
 interface DashboardHeaderProps {
     earnings: number;
@@ -29,10 +30,7 @@ export function DashboardHeader({ earnings }: DashboardHeaderProps) {
                         <span className="font-bold text-slate-900">₾{earnings.toLocaleString()}</span>
                     </div>
 
-                    <button className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors">
-                        <Bell className="w-5 h-5 text-slate-600" />
-                        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-                    </button>
+                    <NotificationBell />
 
                     <div className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium">
                         <User className="w-4 h-4" />
@@ -41,10 +39,9 @@ export function DashboardHeader({ earnings }: DashboardHeaderProps) {
 
                     <button
                         onClick={handleSignOut}
-                        className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-900"
-                        title="Sign out"
+                        className="px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors text-sm font-medium text-slate-500 hover:text-slate-900"
                     >
-                        <LogOut className="w-4 h-4" />
+                        Sign Out
                     </button>
                 </div>
             </div>
