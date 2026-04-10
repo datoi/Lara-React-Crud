@@ -14,6 +14,8 @@ export default function TailorDashboard() {
     const [products, setProducts] = useState<TailorProductFull[]>([]);
     const [loadingOrders,   setLoadingOrders]   = useState(true);
     const [loadingProducts, setLoadingProducts] = useState(true);
+    const [avgRating,    setAvgRating]    = useState<number | null>(null);
+    const [reviewsCount, setReviewsCount] = useState(0);
 
     // ─── Fetch orders ─────────────────────────────────────────────────────────
     const fetchOrders = useCallback(async () => {
@@ -41,7 +43,21 @@ export default function TailorDashboard() {
         }
     }, [token]);
 
-    useEffect(() => { fetchOrders(); fetchProducts(); }, [fetchOrders, fetchProducts]);
+    useEffect(() => {
+        fetchOrders();
+        fetchProducts();
+        if (token) {
+            fetch('/api/tailor/stats', {
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+            })
+                .then(r => r.json())
+                .then(d => {
+                    setAvgRating(d.avg_rating ?? null);
+                    setReviewsCount(d.reviews_count ?? 0);
+                })
+                .catch(() => {});
+        }
+    }, [fetchOrders, fetchProducts, token]);
 
     // ─── Status update ────────────────────────────────────────────────────────
     const handleStatusChange = async (orderId: number, status: string): Promise<void> => {
@@ -68,7 +84,8 @@ export default function TailorDashboard() {
         revenue,
         activeOrders,
         productsListed: products.length,
-        avgRating: 4.9,
+        avgRating,
+        reviewsCount,
     };
 
     const greeting = user ? user.first_name : 'Tailor';

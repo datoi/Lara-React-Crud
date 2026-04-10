@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Review;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -100,6 +101,28 @@ class ProductController extends Controller
         return response()->json([
             'product' => $product,
             'related' => $related,
+        ]);
+    }
+
+    // ─── GET /api/tailor/stats ────────────────────────────────────────────────
+
+    public function tailorStats(Request $request)
+    {
+        $user = $this->authedUser($request);
+        if (!$user || $user->role !== 'tailor') {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $productIds = Product::where('tailor_id', $user->id)->pluck('id');
+
+        $reviewsCount = Review::whereIn('product_id', $productIds)->count();
+        $avgRating    = $reviewsCount > 0
+            ? round(Review::whereIn('product_id', $productIds)->avg('rating'), 1)
+            : null;
+
+        return response()->json([
+            'avg_rating'    => $avgRating,
+            'reviews_count' => $reviewsCount,
         ]);
     }
 

@@ -5,7 +5,8 @@ interface Stats {
     revenue: number;
     activeOrders: number;
     productsListed: number;
-    avgRating: number;
+    avgRating: number | null;
+    reviewsCount: number;
 }
 
 interface StatsCardsProps {
@@ -37,9 +38,11 @@ export function StatsCards({ stats }: StatsCardsProps) {
         },
         {
             label: 'Average Rating',
-            value: `${stats.avgRating}★`,
+            value: stats.avgRating !== null ? `${stats.avgRating}★` : '—',
             icon: Star,
-            change: 'Based on 47 reviews',
+            change: stats.reviewsCount > 0
+                ? `Based on ${stats.reviewsCount} ${stats.reviewsCount === 1 ? 'review' : 'reviews'}`
+                : 'No reviews yet',
             positive: null,
         },
     ];

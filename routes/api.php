@@ -37,6 +37,7 @@ Route::delete('/notifications',                [NotificationController::class, '
 // Tailor
 Route::get('/tailor/orders',                   [OrderController::class, 'tailorOrders']);
 Route::patch('/tailor/orders/{id}/status',     [OrderController::class, 'updateStatus']);
+Route::get('/tailor/stats',                    [ProductController::class, 'tailorStats']);
 Route::get('/tailor/products',                 [ProductController::class, 'tailorProducts']);
 Route::post('/tailor/products',                [ProductController::class, 'store']);
 
