@@ -8,7 +8,7 @@ const topics = [
         icon: ShoppingBag,
         title: 'Placing Orders',
         articles: [
-            { q: 'How do I place a custom order?', a: 'Browse the marketplace, select a product, choose your size and color, enter your measurements, and click Order. You'll need a customer account to complete checkout.' },
+            { q: 'How do I place a custom order?', a: "Browse the marketplace, select a product, choose your size and color, enter your measurements, and click Order. You'll need a customer account to complete checkout." },
             { q: 'Can I order without entering measurements?', a: 'Yes — measurements are optional. If you skip them, the tailor will make the garment to the standard size you select. For the best fit, we recommend entering measurements.' },
             { q: 'How do I track my order?', a: 'Go to your Customer Dashboard. Each order shows its current status: Pending → In Progress → Shipped → Delivered.' },
         ],
@@ -18,8 +18,8 @@ const topics = [
         title: 'Measurements & Sizing',
         articles: [
             { q: 'How do I measure myself?', a: 'Use a soft measuring tape. Measure over light-fitting clothing or directly on skin. Check our Size Guide for step-by-step instructions with diagrams.' },
-            { q: 'What if I'm between sizes?', a: 'Enter your exact measurements rather than choosing a standard size. The tailor will cut to your measurements.' },
-            { q: 'I entered the wrong measurements — what now?', a: 'Contact us immediately via the Email Support button. If your order hasn't entered production yet, we can update them.' },
+            { q: "What if I'm between sizes?", a: 'Enter your exact measurements rather than choosing a standard size. The tailor will cut to your measurements.' },
+            { q: 'I entered the wrong measurements — what now?', a: "Contact us immediately via the Email Support button. If your order hasn't entered production yet, we can update them." },
         ],
     },
     {
@@ -28,15 +28,15 @@ const topics = [
         articles: [
             { q: 'How long does delivery take?', a: 'Most orders are completed in 7–14 business days. Complex items or heavy customisation may take up to 21 days. Shipping within Georgia takes 1–3 business days after completion.' },
             { q: 'Do you ship outside Georgia?', a: 'Currently Kere serves customers within Georgia only. International shipping is on our roadmap for 2025.' },
-            { q: 'My order says "Shipped" but I haven't received it.', a: 'Please allow 3 business days after the "Shipped" status before contacting support. Delays may occur due to courier conditions.' },
+            { q: "My order says \"Shipped\" but I haven't received it.", a: 'Please allow 3 business days after the "Shipped" status before contacting support. Delays may occur due to courier conditions.' },
         ],
     },
     {
         icon: RotateCcw,
         title: 'Returns & Refunds',
         articles: [
-            { q: 'Can I return a custom-made item?', a: 'Because garments are made to order, we don't accept returns for change of mind. However, if the item doesn't match what you ordered or has a quality defect, contact us within 7 days.' },
-            { q: 'How do I request an alteration?', a: 'If the fit is off, contact support within 7 days of delivery. We'll arrange for the tailor to make adjustments at no extra charge.' },
+            { q: 'Can I return a custom-made item?', a: "Because garments are made to order, we don't accept returns for change of mind. However, if the item doesn't match what you ordered or has a quality defect, contact us within 7 days." },
+            { q: 'How do I request an alteration?', a: "If the fit is off, contact support within 7 days of delivery. We'll arrange for the tailor to make adjustments at no extra charge." },
             { q: 'When will my refund arrive?', a: 'Approved refunds are processed within 5–10 business days to your original payment method. See our Refund Policy for full details.' },
         ],
     },
@@ -55,7 +55,7 @@ const topics = [
         articles: [
             { q: 'How do I reset my password?', a: 'Use the "Forgot password" link on the sign-in page. A reset link will be sent to your registered email.' },
             { q: 'How do I contact a tailor?', a: 'After placing an order, use the notes field in your order detail to send a message to your tailor.' },
-            { q: 'How do I contact Kere support?', a: 'Use the Email Support button below (you'll need to be signed in). We respond within one business day.' },
+            { q: 'How do I contact Kere support?', a: "Use the Email Support button below (you'll need to be signed in). We respond within one business day." },
         ],
     },
 ];

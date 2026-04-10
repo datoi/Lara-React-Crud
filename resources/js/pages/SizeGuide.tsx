@@ -8,7 +8,7 @@ const measurements = [
         steps: [
             'Wrap the tape measure around the fullest part of your chest, directly under your armpits.',
             'Keep the tape parallel to the floor.',
-            'Breathe normally and don't pull the tape too tight — it should rest snugly without compressing.',
+            "Breathe normally and don't pull the tape too tight — it should rest snugly without compressing.",
             'Note the measurement in centimetres.',
         ],
         tip: 'For a relaxed fit add 4–6 cm. For a fitted look, use your exact measurement.',
@@ -19,7 +19,7 @@ const measurements = [
         steps: [
             'Find your natural waist — the narrowest part of your torso, typically 2–3 cm above your navel.',
             'Wrap the tape all the way around, keeping it parallel to the floor.',
-            'Don't hold your breath or suck in your stomach.',
+            "Don't hold your breath or suck in your stomach.",
             'Note the measurement in centimetres.',
         ],
         tip: 'If you prefer a looser waistband, add 2–4 cm to the measurement you provide.',
@@ -30,7 +30,7 @@ const measurements = [
         steps: [
             'Stand with your feet together.',
             'Place the tape around the fullest part of your hips and seat — usually 18–22 cm below your natural waist.',
-            'Keep the tape parallel to the floor and don't pull it tight.',
+            "Keep the tape parallel to the floor and don't pull it tight.",
             'Note the measurement in centimetres.',
         ],
         tip: 'For trousers and skirts, hip measurement is critical. When in doubt, go 2 cm larger.',

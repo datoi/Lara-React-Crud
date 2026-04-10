@@ -21,7 +21,7 @@ const tailors = [
         experience: '18 years',
         rating: 5.0,
         reviews: 142,
-        bio: 'Giorgi learned the craft from his father and grandfather. He specializes in structured menswear and precision-cut women's trousers. Every seam is finished by hand.',
+        bio: "Giorgi learned the craft from his father and grandfather. He specializes in structured menswear and precision-cut women's trousers. Every seam is finished by hand.",
         emoji: '🧥',
     },
     {

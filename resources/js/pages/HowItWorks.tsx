@@ -9,7 +9,7 @@ const steps = [
         icon: Palette,
         title: 'Browse & Choose',
         description:
-            'Explore hundreds of clothing items crafted by Tbilisi-based tailors. Filter by category, price, or fabric. Each listing shows the tailor's profile and past work.',
+            "Explore hundreds of clothing items crafted by Tbilisi-based tailors. Filter by category, price, or fabric. Each listing shows the tailor's profile and past work.",
     },
     {
         number: '02',
@@ -23,14 +23,14 @@ const steps = [
         icon: Scissors,
         title: 'Tailor Gets to Work',
         description:
-            'Your order goes directly to a verified local tailor. They cut, stitch, and finish your garment by hand. You'll receive updates as your order progresses.',
+            "Your order goes directly to a verified local tailor. They cut, stitch, and finish your garment by hand. You'll receive updates as your order progresses.",
     },
     {
         number: '04',
         icon: Package,
         title: 'Delivered to Your Door',
         description:
-            'Once complete, your custom garment is carefully packaged and delivered. Not satisfied? Our quality guarantee means we'll make it right.',
+            "Once complete, your custom garment is carefully packaged and delivered. Not satisfied? Our quality guarantee means we'll make it right.",
     },
 ];
 
@@ -41,7 +41,7 @@ const faqs = [
     },
     {
         q: 'What if the measurements I provide are wrong?',
-        a: 'We recommend using our Size Guide before placing an order. If the garment doesn't fit due to incorrect measurements, contact us within 7 days of delivery and your tailor will adjust it.',
+        a: "We recommend using our Size Guide before placing an order. If the garment doesn't fit due to incorrect measurements, contact us within 7 days of delivery and your tailor will adjust it.",
     },
     {
         q: 'Can I communicate with my tailor directly?',
