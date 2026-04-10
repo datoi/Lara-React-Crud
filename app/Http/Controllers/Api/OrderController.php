@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\KereNotification;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -24,6 +25,18 @@ class OrderController extends Controller
     private function randomTailor(): ?User
     {
         return User::where('role', 'tailor')->inRandomOrder()->first();
+    }
+
+    private function notify(int $userId, string $type, string $title, string $body, array $data = []): void
+    {
+        KereNotification::create([
+            'user_id' => $userId,
+            'type'    => $type,
+            'title'   => $title,
+            'body'    => $body,
+            'data'    => $data,
+            'is_read' => false,
+        ]);
     }
 
     // ─── POST /api/orders ────────────────────────────────────────────────────
@@ -57,9 +70,8 @@ class OrderController extends Controller
         $product  = Product::findOrFail($data['product_id']);
         $subtotal = $product->price * $data['quantity'];
         $shipping = 15;
-        // Use the product's assigned tailor; fall back to any available tailor
         $tailor   = $product->tailor_id
-            ? \App\Models\User::find($product->tailor_id)
+            ? User::find($product->tailor_id)
             : $this->randomTailor();
 
         $order = Order::create([
@@ -91,6 +103,18 @@ class OrderController extends Controller
             'cm_measurements' => $data['cm_measurements'] ?? null,
         ]);
 
+        // Notify tailor: new order received
+        if ($tailor) {
+            $customerName = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name;
+            $this->notify(
+                $tailor->id,
+                'new_order',
+                'New Order Received!',
+                "You received a new order for \"{$product->name}\" from {$customerName}.",
+                ['order_id' => $order->id, 'product_name' => $product->name]
+            );
+        }
+
         return response()->json([
             'order_number' => $order->order_number,
             'total'        => $order->total,
@@ -100,12 +124,12 @@ class OrderController extends Controller
     private function storeCustomOrder(Request $request, User $user)
     {
         $data = $request->validate([
-            'custom_design_data'            => 'required|array',
+            'custom_design_data'              => 'required|array',
             'custom_design_data.clothingType' => 'required|string',
         ]);
 
         $shipping = 15;
-        $subtotal = 0; // Custom orders quoted by tailor
+        $subtotal = 0;
         $tailor   = $this->randomTailor();
 
         $order = Order::create([
@@ -127,6 +151,19 @@ class OrderController extends Controller
             'zip'                => '0100',
             'country'            => 'GE',
         ]);
+
+        // Notify tailor: new custom design order
+        if ($tailor) {
+            $customerName = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name;
+            $clothingType = $data['custom_design_data']['clothingType'] ?? 'garment';
+            $this->notify(
+                $tailor->id,
+                'new_order',
+                'New Custom Design Order!',
+                "You received a custom {$clothingType} design from {$customerName}.",
+                ['order_id' => $order->id, 'clothing_type' => $clothingType]
+            );
+        }
 
         return response()->json([
             'order_number' => $order->order_number,
@@ -161,13 +198,36 @@ class OrderController extends Controller
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
-        $order = Order::where('id', $id)->where('tailor_id', $user->id)->firstOrFail();
+        $order = Order::with(['user', 'items.product'])->where('id', $id)->where('tailor_id', $user->id)->firstOrFail();
 
         $data = $request->validate([
-            'status' => 'required|in:pending,processing,shipped,delivered,cancelled',
+            'status' => 'required|in:pending,processing,shipped,delivered,finished,cancelled',
         ]);
 
+        $oldStatus = $order->status;
         $order->update(['status' => $data['status']]);
+
+        // Notify customer on meaningful status changes
+        $notifyStatuses = ['processing', 'shipped', 'delivered', 'finished', 'cancelled'];
+        if (in_array($data['status'], $notifyStatuses) && $data['status'] !== $oldStatus) {
+            $tailorName  = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name;
+            $statusLabel = match ($data['status']) {
+                'processing' => 'In Progress',
+                'shipped'    => 'Shipped',
+                'finished'   => 'Finished',
+                'delivered'  => 'Delivered',
+                'cancelled'  => 'Cancelled',
+                default      => ucfirst($data['status']),
+            };
+
+            $this->notify(
+                $order->user_id,
+                'order_status',
+                'Order #' . $order->id . ' Status Updated',
+                "Your order #{$order->id} status has been updated to: {$statusLabel}.",
+                ['order_id' => $order->id, 'status' => $data['status']]
+            );
+        }
 
         return response()->json(['order' => $this->formatOrder($order->fresh(['user', 'items.product']))]);
     }

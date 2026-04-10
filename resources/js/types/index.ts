@@ -1,5 +1,9 @@
 import { LucideIcon } from 'lucide-react';
 
+declare global {
+    function route(name: string, params?: Record<string, unknown>, absolute?: boolean): string;
+}
+
 export interface Auth {
     user: User;
 }

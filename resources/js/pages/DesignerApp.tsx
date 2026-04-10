@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
-import { getPendingOrder, clearPendingOrder } from '../hooks/useAuth';
+import { getPendingOrder } from '../hooks/useAuth';
 import { motion, AnimatePresence } from 'motion/react';
 import { ClothingTypeSelector } from '../components/ClothingTypeSelector';
 import { SubcategorySelector } from '../components/SubcategorySelector';
@@ -9,10 +9,8 @@ import { DesignCanvas } from '../components/DesignCanvas';
 import { FinalPreview } from '../components/FinalPreview';
 
 type Step = 'type' | 'subcategory' | 'customize' | 'design' | 'preview';
-type ClothingType = 'dress' | 'pants' | 'shirt' | 'hat' | 'scarf' | 'jacket';
-
 interface DesignState {
-    clothingType: ClothingType | null;
+    clothingType: string | null;
     subcategory: string | null;
     length: string;
     sleeves: string;

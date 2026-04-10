@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, SlidersHorizontal, X, Loader2, Palette } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Loader2, Palette, ShoppingBag } from 'lucide-react';
+import { NotificationBell } from '../components/NotificationBell';
+import { useCart } from '../context/CartContext';
+import { getAuthToken } from '../hooks/useAuth';
 
 interface ApiProduct {
     id: number;
@@ -22,15 +25,18 @@ interface ApiCategory {
 
 export default function Marketplace() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const { count: cartCount, openCart } = useCart();
+    const token = getAuthToken();
 
     const [products,  setProducts]  = useState<ApiProduct[]>([]);
     const [categories, setCategories] = useState<ApiCategory[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
 
-    // Filters
+    // Filters — initialise category from URL param (?category=jackets)
     const [search,           setSearch]           = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState(() => searchParams.get('category') ?? '');
     const [priceMax,         setPriceMax]         = useState(500);
     const [showFilters,      setShowFilters]       = useState(false);
 
@@ -42,6 +48,15 @@ export default function Marketplace() {
         setSearch(val);
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => setDebouncedSearch(val), 380);
+    };
+
+    // Keep URL in sync so the link is shareable and the back-button works
+    const handleCategoryChange = (slug: string) => {
+        setSelectedCategory(slug);
+        const next = new URLSearchParams(searchParams);
+        if (slug) next.set('category', slug);
+        else next.delete('category');
+        setSearchParams(next, { replace: true });
     };
 
     // Load categories once
@@ -75,6 +90,7 @@ export default function Marketplace() {
         setSelectedCategory('');
         setPriceMax(500);
         setShowFilters(false);
+        setSearchParams({}, { replace: true });
     };
 
     return (
@@ -85,13 +101,27 @@ export default function Marketplace() {
                     <Link to="/" className="text-xl font-bold text-slate-900 hover:text-slate-700 transition-colors">
                         Kere
                     </Link>
-                    <Link
-                        to="/design"
-                        className="flex items-center gap-2 border border-slate-300 text-slate-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"
-                    >
-                        <Palette className="w-4 h-4" />
-                        Create Custom Design
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        {token && <NotificationBell />}
+                        <button
+                            onClick={openCart}
+                            className="relative p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                        >
+                            <ShoppingBag className="w-5 h-5" />
+                            {cartCount > 0 && (
+                                <span className="absolute top-1 right-1 w-4 h-4 bg-slate-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                                    {cartCount}
+                                </span>
+                            )}
+                        </button>
+                        <Link
+                            to="/design"
+                            className="flex items-center gap-2 border border-slate-300 text-slate-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"
+                        >
+                            <Palette className="w-4 h-4" />
+                            Create Custom Design
+                        </Link>
+                    </div>
                 </div>
             </nav>
 
@@ -155,7 +185,7 @@ export default function Marketplace() {
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Category</p>
                                         <div className="space-y-1">
                                             <button
-                                                onClick={() => setSelectedCategory('')}
+                                                onClick={() => handleCategoryChange('')}
                                                 className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-colors ${
                                                     !selectedCategory ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'
                                                 }`}
@@ -165,7 +195,7 @@ export default function Marketplace() {
                                             {categories.map(c => (
                                                 <button
                                                     key={c.id}
-                                                    onClick={() => setSelectedCategory(c.slug)}
+                                                    onClick={() => handleCategoryChange(c.slug)}
                                                     className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-colors ${
                                                         selectedCategory === c.slug ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'
                                                     }`}

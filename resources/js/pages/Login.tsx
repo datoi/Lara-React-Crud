@@ -13,7 +13,7 @@ export default function Login() {
 
     const isCustomer = role !== 'tailor';
     const roleLabel = isCustomer ? 'Customer' : 'Tailor';
-    const redirect = isCustomer ? '/marketplace' : '/tailor-dashboard';
+    const redirect = isCustomer ? '/customer-dashboard' : '/tailor-dashboard';
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

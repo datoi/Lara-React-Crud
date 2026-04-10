@@ -44,7 +44,7 @@ export default function TailorDashboard() {
     useEffect(() => { fetchOrders(); fetchProducts(); }, [fetchOrders, fetchProducts]);
 
     // ─── Status update ────────────────────────────────────────────────────────
-    const handleStatusChange = async (orderId: number, status: string) => {
+    const handleStatusChange = async (orderId: number, status: string): Promise<void> => {
         if (!token) return;
         const res = await fetch(`/api/tailor/orders/${orderId}/status`, {
             method: 'PATCH',

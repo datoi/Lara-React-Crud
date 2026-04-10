@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 type ClothingType = 'dress' | 'pants' | 'shirt' | 'hat' | 'scarf' | 'jacket';
 
 interface SubcategorySelectorProps {
-    clothingType: ClothingType;
+    clothingType: string;
     onSelect: (subcategory: string) => void;
     onBack: () => void;
 }
@@ -60,7 +60,7 @@ const subcategories: Record<ClothingType, { label: string; description: string }
 };
 
 export function SubcategorySelector({ clothingType, onSelect, onBack }: SubcategorySelectorProps) {
-    const options = subcategories[clothingType];
+    const options = subcategories[clothingType as ClothingType] ?? [];
 
     return (
         <div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { ArrowLeft, Star, Minus, Plus, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Star, Minus, Plus, Check, Loader2, ShoppingBag } from 'lucide-react';
 import {
     getAuthToken,
     saveReturnTo,
@@ -10,6 +10,7 @@ import {
     clearPendingOrder,
     type PendingMarketplaceOrder,
 } from '../hooks/useAuth';
+import { useCart } from '../context/CartContext';
 
 interface ApiProduct {
     id: number;
@@ -43,6 +44,8 @@ export default function ProductCustomization() {
     const [placing, setPlacing]       = useState(false);
     const [orderError, setOrderError] = useState('');
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+    const [addedToCart, setAddedToCart] = useState(false);
+    const { addItem } = useCart();
 
     useEffect(() => {
         fetch(`/api/products/${id}`)
@@ -363,6 +366,30 @@ export default function ProductCustomization() {
                                 >
                                     {placing && <Loader2 className="w-4 h-4 animate-spin" />}
                                     {placing ? 'Placing Order…' : 'Place Order'}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (!product) return;
+                                        addItem({
+                                            type: 'marketplace',
+                                            productId: product.id,
+                                            productName: product.name,
+                                            image: product.images?.[0] ?? null,
+                                            color: selectedColor,
+                                            size: selectedSize,
+                                            quantity,
+                                            price: product.price,
+                                            measurements: Object.fromEntries(
+                                                Object.entries(measurements).filter(([, v]) => v !== '')
+                                            ),
+                                        });
+                                        setAddedToCart(true);
+                                        setTimeout(() => setAddedToCart(false), 2000);
+                                    }}
+                                    className="w-full border border-slate-700 text-white font-medium py-3 rounded-xl hover:bg-slate-800 transition-colors active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
+                                >
+                                    {addedToCart ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
+                                    {addedToCart ? 'Added!' : 'Add to Cart'}
                                 </button>
                                 <p className="text-xs text-slate-500 text-center mt-3">
                                     Tailor will confirm within 24 hours
