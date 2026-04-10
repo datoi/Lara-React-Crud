@@ -80,7 +80,7 @@ export default function RegisterCustomer() {
             }
 
             saveAuth(data.user as AuthUser, data.token as string);
-            navigate('/marketplace');
+            navigate('/customer-dashboard');
         } catch {
             setErrors({ general: 'Network error. Please try again.' });
         } finally {
