@@ -14,7 +14,6 @@ import HowItWorks from './pages/HowItWorks';
 import AboutUs from './pages/AboutUs';
 import OurTailors from './pages/OurTailors';
 import HelpCenter from './pages/HelpCenter';
-import SizeGuide from './pages/SizeGuide';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import RefundPolicy from './pages/RefundPolicy';
@@ -35,7 +34,6 @@ export const router = createBrowserRouter([
     { path: '/about',               element: <AboutUs /> },
     { path: '/our-tailors',         element: <OurTailors /> },
     { path: '/help',                element: <HelpCenter /> },
-    { path: '/size-guide',          element: <SizeGuide /> },
     { path: '/privacy',             element: <PrivacyPolicy /> },
     { path: '/terms',               element: <TermsOfService /> },
     { path: '/refund-policy',       element: <RefundPolicy /> },
