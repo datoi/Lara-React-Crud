@@ -13,5 +13,8 @@ php artisan migrate --force
 echo "==> Seeding categories and products..."
 php artisan db:seed --force --class=ClothingSeeder
 
+echo "==> Creating storage symlink..."
+php artisan storage:link --force
+
 echo "==> Starting Laravel server on port $PORT..."
 exec php artisan serve --host=0.0.0.0 --port=$PORT
