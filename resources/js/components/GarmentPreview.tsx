@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 
 export interface DesignState {
@@ -17,9 +18,26 @@ export interface DesignState {
     designElements: { cuts: string[]; height: string; customNotes: string };
 }
 
-const TYPE_EMOJI: Record<string, string> = {
-    dress: '👗', shirt: '👔', pants: '👖', jacket: '🧥', hat: '🧢', scarf: '🧣',
+// Map clothing type → subcategory → local image path (relative to /public)
+// Add more entries here as new garment photos are added to public/images/garments/
+const GARMENT_PHOTOS: Record<string, Record<string, string>> = {
+    dress: {
+        Maxi:     '/images/garments/dress-maxi.png',
+        Mini:     '/images/garments/dress-maxi.png',
+        'A-Line': '/images/garments/dress-maxi.png',
+        Wrap:     '/images/garments/dress-maxi.png',
+        Bodycon:  '/images/garments/dress-maxi.png',
+        'Shirt Dress': '/images/garments/dress-maxi.png',
+        _default: '/images/garments/dress-maxi.png',
+    },
 };
+
+function getPhoto(type: string | null, sub: string | null): string | null {
+    if (!type) return null;
+    const typeMap = GARMENT_PHOTOS[type];
+    if (!typeMap) return null;
+    return (sub ? typeMap[sub] : undefined) ?? typeMap['_default'] ?? null;
+}
 
 const ELEMENT_ICONS: Record<string, string> = {
     Pocket:      '🗂',
@@ -32,9 +50,8 @@ const ELEMENT_ICONS: Record<string, string> = {
     'Lace trim': '🕸',
 };
 
-// SVG silhouettes for each clothing type.
-// Viewbox is 200x280. Paths use light/mid gray so the multiply color overlay
-// tints highlights and preserves shadow detail.
+// ── SVG silhouettes (fallback for types without a real photo) ──────────────
+
 function GarmentSilhouette({ type, color, accentColor }: {
     type: string | null;
     color: string;
@@ -44,88 +61,45 @@ function GarmentSilhouette({ type, color, accentColor }: {
     const shadow = accentColor && accentColor !== color ? accentColor : darken(base, 0.25);
     const light = lighten(base, 0.3);
 
-    if (type === 'dress') return (
-        <svg viewBox="0 0 200 280" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            {/* Shoulder straps / bodice */}
-            <path d="M72 30 Q80 20 100 18 Q120 20 128 30 L138 60 Q120 55 100 54 Q80 55 62 60 Z"
-                fill={base} />
-            {/* Bodice body */}
-            <path d="M62 60 Q80 55 100 54 Q120 55 138 60 L142 110 Q120 108 100 107 Q80 108 58 110 Z"
-                fill={base} />
-            {/* Skirt */}
-            <path d="M58 110 Q80 108 100 107 Q120 108 142 110 L162 260 Q130 265 100 265 Q70 265 38 260 Z"
-                fill={base} />
-            {/* Shadow fold on skirt */}
-            <path d="M100 107 L108 260 Q104 265 100 265 Q96 265 92 265 L100 107 Z"
-                fill={shadow} opacity="0.4" />
-            {/* Highlight */}
-            <path d="M75 60 L70 110 L55 260 L62 260 L67 110 L78 63 Z"
-                fill={light} opacity="0.35" />
-            {/* Neckline detail */}
-            <ellipse cx="100" cy="28" rx="14" ry="8" fill={shadow} opacity="0.3" />
-        </svg>
-    );
-
     if (type === 'shirt') return (
         <svg viewBox="0 0 200 280" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            {/* Left sleeve */}
-            <path d="M55 50 L18 90 L22 140 L55 120 Z" fill={base} />
-            <path d="M18 90 L22 140 L27 140 L23 92 Z" fill={shadow} opacity="0.35" />
-            {/* Right sleeve */}
-            <path d="M145 50 L182 90 L178 140 L145 120 Z" fill={base} />
-            <path d="M182 90 L178 140 L173 140 L177 92 Z" fill={light} opacity="0.3" />
-            {/* Body */}
-            <path d="M55 50 L62 260 L138 260 L145 50 L120 38 Q100 30 80 38 Z" fill={base} />
-            {/* Collar */}
-            <path d="M80 38 Q100 30 120 38 L112 60 Q100 52 88 60 Z" fill={shadow} opacity="0.5" />
-            {/* Button placket */}
+            <path d="M50 55 L12 95 L16 200 L52 180 Z" fill={base} />
+            <path d="M12 95 L16 200 L22 200 L18 97 Z" fill={shadow} opacity="0.35" />
+            <path d="M150 55 L188 95 L184 200 L148 180 Z" fill={base} />
+            <path d="M188 95 L184 200 L178 200 L182 97 Z" fill={light} opacity="0.3" />
+            <path d="M50 55 L58 265 L142 265 L150 55 L124 38 Q100 28 76 38 Z" fill={base} />
+            <path d="M76 38 L88 80 L100 68 L88 42 Z" fill={shadow} opacity="0.5" />
+            <path d="M124 38 L112 80 L100 68 L112 42 Z" fill={shadow} opacity="0.35" />
             <rect x="97" y="60" width="6" height="200" fill={shadow} opacity="0.2" rx="2" />
-            {/* Shadow side */}
-            <path d="M55 50 L62 260 L70 260 L63 52 Z" fill={shadow} opacity="0.3" />
-            {/* Highlight */}
-            <path d="M120 40 L128 260 L138 260 L131 50 Z" fill={light} opacity="0.25" />
+            <path d="M50 55 L58 265 L66 265 L58 57 Z" fill={shadow} opacity="0.3" />
+            <path d="M120 40 L128 265 L138 265 L131 50 Z" fill={light} opacity="0.25" />
         </svg>
     );
 
     if (type === 'pants') return (
         <svg viewBox="0 0 200 280" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            {/* Waistband */}
             <rect x="42" y="30" width="116" height="22" fill={shadow} rx="4" opacity="0.8" />
-            {/* Left leg */}
             <path d="M42 52 L58 260 L100 260 L100 52 Z" fill={base} />
-            {/* Right leg */}
             <path d="M100 52 L100 260 L142 260 L158 52 Z" fill={base} />
-            {/* Crotch crease */}
             <path d="M100 52 L100 110 Q98 115 96 120" stroke={shadow} strokeWidth="2" fill="none" opacity="0.4" />
-            {/* Left shadow fold */}
             <path d="M55 60 L65 260 L72 260 L62 60 Z" fill={shadow} opacity="0.25" />
-            {/* Right highlight */}
             <path d="M128 60 L122 260 L130 260 L136 60 Z" fill={light} opacity="0.3" />
-            {/* Center divide */}
             <rect x="98" y="52" width="4" height="208" fill={shadow} opacity="0.2" />
         </svg>
     );
 
     if (type === 'jacket') return (
         <svg viewBox="0 0 200 280" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            {/* Left sleeve */}
             <path d="M50 55 L12 95 L16 200 L52 180 Z" fill={base} />
             <path d="M12 95 L16 200 L22 200 L18 97 Z" fill={shadow} opacity="0.35" />
-            {/* Right sleeve */}
             <path d="M150 55 L188 95 L184 200 L148 180 Z" fill={base} />
             <path d="M188 95 L184 200 L178 200 L182 97 Z" fill={light} opacity="0.3" />
-            {/* Body */}
             <path d="M50 55 L58 265 L142 265 L150 55 L124 38 Q100 28 76 38 Z" fill={base} />
-            {/* Lapels */}
             <path d="M76 38 L88 80 L100 68 L88 42 Z" fill={shadow} opacity="0.45" />
             <path d="M124 38 L112 80 L100 68 L112 42 Z" fill={shadow} opacity="0.35" />
-            {/* Button line */}
             <rect x="98" y="70" width="4" height="195" fill={shadow} opacity="0.15" />
-            {/* Pocket */}
             <rect x="62" y="155" width="28" height="18" fill={shadow} opacity="0.25" rx="2" />
-            {/* Side shadow */}
             <path d="M50 55 L58 265 L66 265 L58 57 Z" fill={shadow} opacity="0.3" />
-            {/* Highlight */}
             <path d="M134 40 L142 265 L150 265 L142 57 Z" fill={light} opacity="0.2" />
         </svg>
     );
@@ -141,20 +115,15 @@ function GarmentSilhouette({ type, color, accentColor }: {
 
     if (type === 'hat') return (
         <svg viewBox="0 0 200 280" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            {/* Brim */}
             <ellipse cx="100" cy="185" rx="85" ry="18" fill={shadow} opacity="0.7" />
-            {/* Crown */}
             <path d="M45 185 Q48 95 100 85 Q152 95 155 185 Z" fill={base} />
-            {/* Crown top */}
             <ellipse cx="100" cy="88" rx="28" ry="10" fill={base} />
-            {/* Highlight */}
             <path d="M72 100 Q68 140 65 183 L72 182 Q74 143 78 103 Z" fill={light} opacity="0.4" />
-            {/* Band */}
             <path d="M47 178 Q100 190 153 178 L153 185 Q100 197 47 185 Z" fill={shadow} opacity="0.4" />
         </svg>
     );
 
-    // Fallback: generic garment shape
+    // Generic fallback
     return (
         <svg viewBox="0 0 200 280" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
             <rect x="50" y="40" width="100" height="200" rx="12" fill={base} opacity="0.7" />
@@ -162,7 +131,8 @@ function GarmentSilhouette({ type, color, accentColor }: {
     );
 }
 
-// Simple color helpers to derive shadow/highlight tones from the base color
+// ── Color helpers ──────────────────────────────────────────────────────────
+
 function hexToRgb(hex: string): [number, number, number] | null {
     const m = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : null;
@@ -181,6 +151,8 @@ function lighten(hex: string, amt: number): string {
     return rgbToHex(rgb[0] + (255 - rgb[0]) * amt, rgb[1] + (255 - rgb[1]) * amt, rgb[2] + (255 - rgb[2]) * amt);
 }
 
+// ── Main component ─────────────────────────────────────────────────────────
+
 interface GarmentPreviewProps {
     design: DesignState;
     size?: 'compact' | 'full';
@@ -188,6 +160,14 @@ interface GarmentPreviewProps {
 
 export function GarmentPreview({ design, size = 'compact' }: GarmentPreviewProps) {
     const hasType = Boolean(design.clothingType);
+    const photoUrl = getPhoto(design.clothingType, design.subcategory);
+    const [imgLoaded, setImgLoaded] = useState(false);
+    const [imgError, setImgError] = useState(false);
+
+    useEffect(() => {
+        setImgLoaded(false);
+        setImgError(false);
+    }, [photoUrl]);
 
     const styleBadges: string[] = [
         design.length,
@@ -196,20 +176,20 @@ export function GarmentPreview({ design, size = 'compact' }: GarmentPreviewProps
     ].filter((v): v is string => Boolean(v));
 
     const activeElements = design.designElements.cuts.filter(c => ELEMENT_ICONS[c]);
-
     const sizeClass = size === 'full'
         ? 'aspect-[3/4] w-full max-w-sm mx-auto'
         : 'aspect-[3/4] w-full max-w-[240px] mx-auto';
 
-    const bg = design.baseColor ? lighten(design.baseColor, 0.88) : '#F1F5F9';
+    const bgColor = design.baseColor ? lighten(design.baseColor, 0.88) : '#F1F5F9';
+    const usePhoto = photoUrl !== null && imgLoaded && !imgError;
+    const useSvg = !photoUrl || imgError;
 
     return (
         <div
             className={`relative overflow-hidden rounded-2xl isolate ${sizeClass}`}
-            style={{ backgroundColor: bg }}
+            style={{ backgroundColor: bgColor }}
         >
             {!hasType ? (
-                /* No type selected yet */
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-6xl mb-3 select-none">✂️</span>
                     <p className="text-xs text-slate-400 font-medium">Select a garment type</p>
@@ -218,17 +198,56 @@ export function GarmentPreview({ design, size = 'compact' }: GarmentPreviewProps
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={design.clothingType + design.subcategory + design.baseColor}
-                        className="absolute inset-0 flex items-center justify-center p-6"
-                        initial={{ opacity: 0, scale: 0.97 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.97 }}
-                        transition={{ duration: 0.3 }}
+                        className="absolute inset-0"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.35 }}
                     >
-                        <GarmentSilhouette
-                            type={design.clothingType}
-                            color={design.baseColor || '#94A3B8'}
-                            accentColor={design.additionalColor}
-                        />
+                        {/* Real photo path */}
+                        {photoUrl && (
+                            <>
+                                <img
+                                    src={photoUrl}
+                                    alt={`${design.subcategory ?? ''} ${design.clothingType ?? ''}`}
+                                    className="absolute inset-0 w-full h-full object-contain"
+                                    onLoad={() => setImgLoaded(true)}
+                                    onError={() => setImgError(true)}
+                                />
+                                {/* Color tint overlay — multiply blends with the white dress */}
+                                {usePhoto && design.baseColor && (
+                                    <div
+                                        className="absolute inset-0"
+                                        style={{
+                                            backgroundColor: design.baseColor,
+                                            mixBlendMode: 'multiply' as const,
+                                            opacity: 0.85,
+                                        }}
+                                    />
+                                )}
+                                {/* Accent gradient at top (collar/trim area) */}
+                                {usePhoto && design.additionalColor && design.additionalColor !== design.baseColor && (
+                                    <div
+                                        className="absolute inset-0"
+                                        style={{
+                                            background: `linear-gradient(to bottom, ${design.additionalColor}60 0%, transparent 28%)`,
+                                            mixBlendMode: 'multiply' as const,
+                                        }}
+                                    />
+                                )}
+                            </>
+                        )}
+
+                        {/* SVG silhouette fallback */}
+                        {useSvg && (
+                            <div className="absolute inset-0 flex items-center justify-center p-6">
+                                <GarmentSilhouette
+                                    type={design.clothingType}
+                                    color={design.baseColor || '#94A3B8'}
+                                    accentColor={design.additionalColor}
+                                />
+                            </div>
+                        )}
                     </motion.div>
                 </AnimatePresence>
             )}
@@ -282,15 +301,6 @@ export function GarmentPreview({ design, size = 'compact' }: GarmentPreviewProps
                 <div className="absolute bottom-3 right-3 z-10">
                     <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border bg-slate-900/70 text-white border-slate-700/50 backdrop-blur-sm">
                         {design.fabric}
-                    </span>
-                </div>
-            )}
-
-            {/* Emoji fallback label when type is known but no specific SVG */}
-            {hasType && !['dress','shirt','pants','jacket','hat','scarf'].includes(design.clothingType ?? '') && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-6xl select-none">
-                        {TYPE_EMOJI[design.clothingType ?? ''] ?? '✂️'}
                     </span>
                 </div>
             )}
