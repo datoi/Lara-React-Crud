@@ -1,9 +1,8 @@
 import { motion } from 'motion/react';
-import { ArrowLeft, Download, Send, Check, Loader2, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Download, Send, Check, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { getAuthToken, saveReturnTo, savePendingOrder, clearPendingOrder } from '../hooks/useAuth';
-import { useCart } from '../context/CartContext';
 
 interface DesignState {
     clothingType: string | null;
@@ -42,9 +41,6 @@ export function FinalPreview({ design, onBack }: FinalPreviewProps) {
     const [submitted, setSubmitted]     = useState(false);
     const [submitting, setSubmitting]   = useState(false);
     const [submitError, setSubmitError] = useState('');
-    const [addedToCart, setAddedToCart] = useState(false);
-    const { addItem } = useCart();
-
     const handleDownload = () => {
         const content = [
             `KERE DESIGN SPECIFICATION`,
@@ -246,24 +242,6 @@ export function FinalPreview({ design, onBack }: FinalPreviewProps) {
                                     : <Send className="w-4 h-4" />
                                 }
                                 {submitting ? 'Submitting…' : 'Submit to Tailor'}
-                            </button>
-                            <button
-                                onClick={() => {
-                                    addItem({
-                                        type: 'custom',
-                                        productName: `Custom ${design.clothingType ?? 'Design'}`,
-                                        image: null,
-                                        quantity: 1,
-                                        price: 0,
-                                        customDesign: design as unknown as Record<string, unknown>,
-                                    });
-                                    setAddedToCart(true);
-                                    setTimeout(() => setAddedToCart(false), 2000);
-                                }}
-                                className="flex items-center justify-center gap-2 border border-slate-200 text-slate-700 font-medium py-3.5 rounded-xl hover:bg-slate-50 transition-colors"
-                            >
-                                {addedToCart ? <Check className="w-4 h-4 text-green-600" /> : <ShoppingBag className="w-4 h-4" />}
-                                {addedToCart ? 'Added to Cart!' : 'Add to Cart'}
                             </button>
                             <button
                                 onClick={handleDownload}

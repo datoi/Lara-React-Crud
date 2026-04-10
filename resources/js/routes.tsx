@@ -9,7 +9,6 @@ import RegisterTailor from './pages/RegisterTailor';
 import Login from './pages/Login';
 import TailorDashboard from './pages/TailorDashboard';
 import CustomerDashboard from './pages/CustomerDashboard';
-import CartPage from './pages/CartPage';
 import NotFound from './pages/NotFound';
 
 export const router = createBrowserRouter([
@@ -23,6 +22,5 @@ export const router = createBrowserRouter([
     { path: '/register/tailor',     element: <RegisterTailor /> },
     { path: '/tailor-dashboard',    element: <TailorDashboard /> },
     { path: '/customer-dashboard',  element: <CustomerDashboard /> },
-    { path: '/cart',                element: <CartPage /> },
     { path: '*',                    element: <NotFound /> },
 ]);

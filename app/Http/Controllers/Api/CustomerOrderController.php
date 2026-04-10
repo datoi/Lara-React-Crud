@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Review;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -58,6 +59,7 @@ class CustomerOrderController extends Controller
                     'custom_design_data' => $order->custom_design_data,
                     'items'              => $items,
                     'created_at'         => $order->created_at->toISOString(),
+                    'has_review'         => Review::where('order_id', $order->id)->exists(),
                 ];
             });
 

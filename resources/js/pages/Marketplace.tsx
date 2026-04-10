@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, SlidersHorizontal, X, Loader2, Palette, ShoppingBag } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Loader2, Palette } from 'lucide-react';
 import { NotificationBell } from '../components/NotificationBell';
-import { useCart } from '../context/CartContext';
 import { getAuthToken } from '../hooks/useAuth';
 
 interface ApiProduct {
@@ -26,7 +25,6 @@ interface ApiCategory {
 export default function Marketplace() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const { count: cartCount, openCart } = useCart();
     const token = getAuthToken();
 
     const [products,  setProducts]  = useState<ApiProduct[]>([]);
@@ -103,17 +101,6 @@ export default function Marketplace() {
                     </Link>
                     <div className="flex items-center gap-2">
                         {token && <NotificationBell />}
-                        <button
-                            onClick={openCart}
-                            className="relative p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                        >
-                            <ShoppingBag className="w-5 h-5" />
-                            {cartCount > 0 && (
-                                <span className="absolute top-1 right-1 w-4 h-4 bg-slate-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                                    {cartCount}
-                                </span>
-                            )}
-                        </button>
                         <Link
                             to="/design"
                             className="flex items-center gap-2 border border-slate-300 text-slate-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"

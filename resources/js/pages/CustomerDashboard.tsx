@@ -7,8 +7,7 @@ import {
 } from 'lucide-react';
 import { getAuthToken, getAuthUser, clearAuth } from '../hooks/useAuth';
 import { NotificationBell } from '../components/NotificationBell';
-import { CustomerNotifications } from '../components/CustomerNotifications';
-import { useCart } from '../context/CartContext';
+import { ReviewModal } from '../components/ReviewModal';
 
 interface OrderItem {
     id: number;
@@ -43,6 +42,7 @@ interface CustomerOrder {
     custom_design_data: DesignData | null;
     items: OrderItem[];
     created_at: string;
+    has_review: boolean;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Package }> = {
@@ -201,11 +201,10 @@ export default function CustomerDashboard() {
     const navigate  = useNavigate();
     const user      = getAuthUser();
     const token     = getAuthToken();
-    const { count: cartCount, openCart } = useCart();
-
     const [orders, setOrders]           = useState<CustomerOrder[]>([]);
     const [loading, setLoading]         = useState(true);
     const [selectedOrder, setSelected]  = useState<CustomerOrder | null>(null);
+    const [reviewOrder, setReviewOrder] = useState<CustomerOrder | null>(null);
 
     useEffect(() => {
         if (!token) { navigate('/signin'); return; }
@@ -236,17 +235,6 @@ export default function CustomerDashboard() {
                     </Link>
                     <div className="flex items-center gap-2">
                         <NotificationBell />
-                        <button
-                            onClick={openCart}
-                            className="relative p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                        >
-                            <ShoppingBag className="w-5 h-5" />
-                            {cartCount > 0 && (
-                                <span className="absolute top-1 right-1 w-4 h-4 bg-slate-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                                    {cartCount}
-                                </span>
-                            )}
-                        </button>
                         <button
                             onClick={handleSignOut}
                             className="text-sm text-slate-500 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
@@ -349,12 +337,23 @@ export default function CustomerDashboard() {
                                         </p>
                                     </div>
 
-                                    {/* Status + price */}
+                                    {/* Status + price + review */}
                                     <div className="flex flex-col items-end gap-1.5">
                                         <StatusBadge status={order.status} />
                                         <span className="text-sm font-bold text-slate-900">
                                             {order.total > 0 ? `₾${order.total}` : 'TBD'}
                                         </span>
+                                        {order.status === 'finished' && !order.has_review && (
+                                            <button
+                                                onClick={e => { e.stopPropagation(); setReviewOrder(order); }}
+                                                className="text-[10px] font-medium text-slate-500 border border-slate-200 rounded-full px-2 py-0.5 hover:bg-slate-50 transition-colors"
+                                            >
+                                                ★ Review
+                                            </button>
+                                        )}
+                                        {order.status === 'finished' && order.has_review && (
+                                            <span className="text-[10px] text-green-600 font-medium">✓ Reviewed</span>
+                                        )}
                                     </div>
 
                                     <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
@@ -362,11 +361,6 @@ export default function CustomerDashboard() {
                             ))}
                         </div>
                     )}
-                </div>
-
-                {/* Notifications */}
-                <div className="mt-6">
-                    <CustomerNotifications />
                 </div>
 
                 {/* Quick actions */}
@@ -406,6 +400,23 @@ export default function CustomerDashboard() {
                     <OrderDetailModal order={selectedOrder} onClose={() => setSelected(null)} />
                 )}
             </AnimatePresence>
+
+            {/* Review modal */}
+            {reviewOrder && (
+                <ReviewModal
+                    open={true}
+                    orderId={reviewOrder.id}
+                    orderLabel={
+                        reviewOrder.order_type === 'custom'
+                            ? `Custom ${String((reviewOrder.custom_design_data as Record<string, unknown>)?.clothingType ?? 'Design')}`
+                            : reviewOrder.items[0]?.product_name ?? 'Order'
+                    }
+                    onClose={() => setReviewOrder(null)}
+                    onSubmitted={() => setOrders(prev =>
+                        prev.map(o => o.id === reviewOrder.id ? { ...o, has_review: true } : o)
+                    )}
+                />
+            )}
         </div>
     );
 }

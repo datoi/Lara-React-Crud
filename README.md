@@ -541,6 +541,62 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-04-10] Verified Review & Rating System
+
+**What was done:** Implemented a full review system. Customers can leave one review per finished order from their dashboard. Reviews are linked to the order and optionally to a product. The product page shows reviews with an average star rating. The landing page carousel fetches real 5-star reviews and falls back to static testimonials when the database is empty.
+
+**Verified Purchase logic:** A review can only be submitted when `order.status === 'finished'`. The `reviews` table enforces a unique constraint on `order_id` (one review per order). The `has_review` field is returned with every customer order to drive UI state without a separate request.
+
+**Average rating calculation:** Computed server-side as `AVG(rating)` over all reviews for a given `product_id`, rounded to 1 decimal place. Returned alongside the review list from `GET /api/products/{id}/reviews`.
+
+**Where the logic is:**
+- Migration: `database/migrations/2026_04_10_000005_create_reviews_table.php`
+- Model: `app/Models/Review.php`
+- Controller: `app/Http/Controllers/Api/ReviewController.php`
+  - `POST /api/reviews` — submit review (auth + finished order + not already reviewed)
+  - `GET /api/products/{id}/reviews` — public product reviews + average rating
+  - `GET /api/reviews/landing` — latest 5-star reviews for carousel
+- Frontend modal: `resources/js/components/ReviewModal.tsx`
+- Dashboard: `resources/js/pages/CustomerDashboard.tsx` — "★ Review" button on finished orders
+- Product page: `resources/js/pages/ProductCustomization.tsx` — reviews section below product
+- Landing carousel: `resources/js/components/landing/GuaranteeSection.tsx` — live data with static fallback
+
+---
+
+### [2026-04-10] Interactive Measurement Guide
+
+**What was done:** Implemented a full interactive measurement guide system. "View Measurement Guide" button on the landing page now opens a step-by-step modal. Measurement input fields in DesignerApp and ProductCustomization have a `?` help icon that opens the modal at the relevant step. All inputs validate against sanity-check ranges and show a gentle amber warning for physically impossible values.
+
+**Measurement standard:** All values are **centimetres (cm)**. Standard size chart (XS–XL) included in the modal's "Size Chart" tab.
+
+**Sanity check ranges (cm):**
+| Field  | Min | Max |
+|--------|-----|-----|
+| Chest  | 55  | 175 |
+| Waist  | 45  | 165 |
+| Hips   | 55  | 175 |
+| Length | 25  | 155 |
+| Inseam | 25  | 110 |
+
+**Where the logic is:**
+- Modal: `resources/js/components/MeasurementGuideModal.tsx` — accepts `initialStep` prop (`chest | waist | hips | length | chart`) to deep-link to a specific measurement
+- Sanity check: `resources/js/utils/measurementSanity.ts` — `measurementWarning(key, value)` returns a warning string or `''`
+- Wired in: `SizeFitSection.tsx` (landing), `CustomizationPanel.tsx` (designer), `ProductCustomization.tsx` (marketplace product)
+
+---
+
+### [2026-04-10] Navigation Refactor — Profile Name as Dashboard Link
+
+**What was done:** Removed "My Orders" and "Sign Out" from the main navbar. The user's display name is now a clickable link navigating to `/customer-dashboard` (or `/tailor-dashboard` for tailors). Sign Out lives exclusively inside the Customer Dashboard navbar.
+
+**Why it was done:** Cleaner top nav — fewer actions exposed at the top level. Customer Dashboard is now the central hub for profile management and order tracking.
+
+**Where the logic is:**
+- Nav: `resources/js/components/landing/Navigation.tsx` — user name wrapped in `<Link>` to dashboard route
+- Sign Out: `resources/js/pages/CustomerDashboard.tsx` — top nav of the dashboard page
+
+---
+
 ### [2026-04-10] Notifications System
 
 **What was done:** Implemented full in-app notification system — backend model/migration/controller, and frontend NotificationBell component.

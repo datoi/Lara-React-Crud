@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\CustomerOrderController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\SupportEmailController;
 use App\Http\Controllers\Api\UploadController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,9 +15,11 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
 
-Route::get('/products',           [ProductController::class, 'index']);
-Route::get('/products/{product}', [ProductController::class, 'show']);
-Route::get('/categories',         [CategoryController::class, 'index']);
+Route::get('/products',                          [ProductController::class, 'index']);
+Route::get('/products/{product}',                [ProductController::class, 'show']);
+Route::get('/products/{productId}/reviews',      [ReviewController::class, 'productReviews']);
+Route::get('/categories',                        [CategoryController::class, 'index']);
+Route::get('/reviews/landing',                   [ReviewController::class, 'landing']);
 
 // ─── Authenticated (Bearer token) ─────────────────────────────────────────────
 Route::post('/orders',                         [OrderController::class, 'store']);
@@ -35,6 +39,12 @@ Route::get('/tailor/orders',                   [OrderController::class, 'tailorO
 Route::patch('/tailor/orders/{id}/status',     [OrderController::class, 'updateStatus']);
 Route::get('/tailor/products',                 [ProductController::class, 'tailorProducts']);
 Route::post('/tailor/products',                [ProductController::class, 'store']);
+
+// Reviews
+Route::post('/reviews',                        [ReviewController::class, 'store']);
+
+// Support
+Route::post('/support-email',                  [SupportEmailController::class, 'store']);
 
 // Upload
 Route::post('/upload/image',                   [UploadController::class, 'image']);

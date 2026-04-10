@@ -1,36 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight, Quote } from 'lucide-react';
 
-const testimonials = [
+interface Review {
+    id: number;
+    comment: string;
+    rating: number;
+    reviewer: string;
+    location?: string;
+    avatar?: string;
+}
+
+const STATIC_REVIEWS: Review[] = [
     {
-        text: 'The AI measurement feature is incredible! My dress fit perfectly, and the quality exceeded my expectations. Kere has changed how I shop for clothes.',
-        name: 'Sarah Johnson',
+        id: -1,
+        comment: 'The AI measurement feature is incredible! My dress fit perfectly, and the quality exceeded my expectations. Kere has changed how I shop for clothes.',
+        reviewer: 'Sarah Johnson',
         location: 'Tbilisi, Georgia',
         avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&auto=format&fit=crop&crop=face',
-        stars: 5,
+        rating: 5,
     },
     {
-        text: "Ordering a custom suit has never been this easy. The tailor followed every detail perfectly. I'll never buy off-the-rack again.",
-        name: 'David Merabishvili',
+        id: -2,
+        comment: "Ordering a custom suit has never been this easy. The tailor followed every detail perfectly. I'll never buy off-the-rack again.",
+        reviewer: 'David Merabishvili',
         location: 'Batumi, Georgia',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&auto=format&fit=crop&crop=face',
-        stars: 5,
+        rating: 5,
     },
     {
-        text: 'Fast delivery, perfect fit, and the fabric quality was outstanding. Kere exceeded all my expectations for custom clothing.',
-        name: 'Nino Kvaratskhelia',
+        id: -3,
+        comment: 'Fast delivery, perfect fit, and the fabric quality was outstanding. Kere exceeded all my expectations for custom clothing.',
+        reviewer: 'Nino Kvaratskhelia',
         location: 'Kutaisi, Georgia',
         avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&auto=format&fit=crop&crop=face',
-        stars: 5,
+        rating: 5,
     },
 ];
 
 export function GuaranteeSection() {
-    const [active, setActive] = useState(0);
+    const [reviews, setReviews] = useState<Review[]>(STATIC_REVIEWS);
+    const [active, setActive]   = useState(0);
 
-    const prev = () => setActive((a) => (a - 1 + testimonials.length) % testimonials.length);
-    const next = () => setActive((a) => (a + 1) % testimonials.length);
+    useEffect(() => {
+        fetch('/api/reviews/landing')
+            .then(r => r.json())
+            .then(d => {
+                if (d.reviews?.length) setReviews(d.reviews);
+            })
+            .catch(() => {});
+    }, []);
+
+    const prev = () => setActive(a => (a - 1 + reviews.length) % reviews.length);
+    const next = () => setActive(a => (a + 1) % reviews.length);
+
+    const current = reviews[active] ?? reviews[0];
 
     return (
         <>
@@ -56,7 +80,7 @@ export function GuaranteeSection() {
                     <div className="relative overflow-hidden">
                         <AnimatePresence mode="wait">
                             <motion.div
-                                key={active}
+                                key={current.id}
                                 initial={{ opacity: 0, x: 40 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -40 }}
@@ -67,24 +91,31 @@ export function GuaranteeSection() {
 
                                 {/* Stars */}
                                 <div className="flex gap-1 mb-5">
-                                    {Array.from({ length: testimonials[active].stars }).map((_, i) => (
+                                    {Array.from({ length: current.rating }).map((_, i) => (
                                         <span key={i} className="text-yellow-400 text-xl">★</span>
                                     ))}
                                 </div>
 
                                 <p className="text-slate-700 text-lg leading-relaxed mb-8">
-                                    "{testimonials[active].text}"
+                                    "{current.comment}"
                                 </p>
 
                                 <div className="flex items-center gap-4">
-                                    <img
-                                        src={testimonials[active].avatar}
-                                        alt={testimonials[active].name}
-                                        className="w-12 h-12 rounded-full object-cover"
-                                    />
+                                    {current.avatar ? (
+                                        <img src={current.avatar} alt={current.reviewer} className="w-12 h-12 rounded-full object-cover" />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-lg flex-shrink-0">
+                                            {current.reviewer.charAt(0)}
+                                        </div>
+                                    )}
                                     <div>
-                                        <p className="font-semibold text-slate-900">{testimonials[active].name}</p>
-                                        <p className="text-sm text-slate-500">{testimonials[active].location}</p>
+                                        <p className="font-semibold text-slate-900">{current.reviewer}</p>
+                                        {current.location && (
+                                            <p className="text-sm text-slate-500">{current.location}</p>
+                                        )}
+                                        {!current.location && current.id > 0 && (
+                                            <p className="text-xs text-green-600 font-medium">✓ Verified Purchase</p>
+                                        )}
                                     </div>
                                 </div>
                             </motion.div>
@@ -101,7 +132,7 @@ export function GuaranteeSection() {
                         </button>
 
                         <div className="flex gap-2">
-                            {testimonials.map((_, i) => (
+                            {reviews.map((_, i) => (
                                 <button
                                     key={i}
                                     onClick={() => setActive(i)}

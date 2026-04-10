@@ -1,18 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { Menu, X, User, ShoppingBag } from 'lucide-react';
+import { Link } from 'react-router';
+import { Menu, X, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getAuthUser, clearAuth } from '../../hooks/useAuth';
+import { getAuthUser } from '../../hooks/useAuth';
 import { NotificationBell } from '../NotificationBell';
-import { useCart } from '../../context/CartContext';
 
 export function Navigation() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [scrolled, setScrolled]     = useState(false);
-    const navigate                    = useNavigate();
     const user                        = getAuthUser();
-    const { count: cartCount, openCart } = useCart();
-
     useEffect(() => {
         function onScroll() {
             setScrolled(window.scrollY > 60);
@@ -20,11 +16,6 @@ export function Navigation() {
         window.addEventListener('scroll', onScroll, { passive: true });
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
-
-    function handleSignOut() {
-        clearAuth();
-        navigate('/');
-    }
 
     return (
         <nav className={`fixed top-0 z-50 w-full backdrop-blur transition-colors duration-300 ${scrolled ? 'bg-white/90 border-b border-slate-200' : 'bg-slate-900/30 border-b border-white/10'}`}>
@@ -56,53 +47,21 @@ export function Navigation() {
                     <div className="hidden md:flex items-center gap-2">
                         {user ? (
                             <>
+                                <Link
+                                    to={user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
+                                    className={`flex items-center gap-2 text-sm transition-colors ${scrolled ? 'text-slate-700 hover:text-slate-900' : 'text-white/90 hover:text-white'}`}
+                                >
+                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center ${scrolled ? 'bg-slate-200' : 'bg-white/20'}`}>
+                                        <User className={`w-4 h-4 ${scrolled ? 'text-slate-600' : 'text-white'}`} />
+                                    </div>
+                                    <span className="font-medium">{user.first_name} {user.last_name}</span>
+                                </Link>
+
                                 {/* Notification bell */}
                                 <div className={scrolled ? '' : 'invert'}>
                                     <NotificationBell />
                                 </div>
 
-                                {/* Cart icon */}
-                                <button
-                                    onClick={openCart}
-                                    className={`relative p-2 rounded-lg transition-colors ${scrolled ? 'text-slate-500 hover:text-slate-900 hover:bg-slate-100' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
-                                >
-                                    <ShoppingBag className="w-5 h-5" />
-                                    {cartCount > 0 && (
-                                        <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                                            {cartCount}
-                                        </span>
-                                    )}
-                                </button>
-
-                                <div className={`flex items-center gap-2 text-sm ${scrolled ? 'text-slate-700' : 'text-white/90'}`}>
-                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center ${scrolled ? 'bg-slate-200' : 'bg-white/20'}`}>
-                                        <User className={`w-4 h-4 ${scrolled ? 'text-slate-600' : 'text-white'}`} />
-                                    </div>
-                                    <span className="font-medium">{user.first_name} {user.last_name}</span>
-                                </div>
-
-                                {user.role === 'tailor' ? (
-                                    <Link
-                                        to="/tailor-dashboard"
-                                        className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${scrolled ? 'text-slate-700 border border-slate-300 hover:bg-slate-50' : 'text-white border border-white/40 hover:bg-white/10'}`}
-                                    >
-                                        Dashboard
-                                    </Link>
-                                ) : (
-                                    <Link
-                                        to="/customer-dashboard"
-                                        className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${scrolled ? 'text-slate-700 border border-slate-300 hover:bg-slate-50' : 'text-white border border-white/40 hover:bg-white/10'}`}
-                                    >
-                                        My Orders
-                                    </Link>
-                                )}
-
-                                <button
-                                    onClick={handleSignOut}
-                                    className={`text-sm font-medium transition-colors ${scrolled ? 'text-slate-500 hover:text-slate-900' : 'text-white/70 hover:text-white'}`}
-                                >
-                                    Sign Out
-                                </button>
                             </>
                         ) : (
                             <>
@@ -158,34 +117,15 @@ export function Navigation() {
                             ))}
 
                             {user ? (
-                                <div className="pt-2 space-y-2">
-                                    <div className="flex items-center gap-2 px-3 py-2 text-sm text-white font-medium">
+                                <div className="pt-2">
+                                    <Link
+                                        to={user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
+                                        onClick={() => setMobileOpen(false)}
+                                        className="flex items-center gap-2 px-3 py-2 text-sm text-white font-medium hover:bg-white/10 rounded-lg transition-colors"
+                                    >
                                         <User className="w-4 h-4 text-white/70" />
                                         {user.first_name} {user.last_name}
-                                    </div>
-                                    {user.role === 'tailor' ? (
-                                        <Link
-                                            to="/tailor-dashboard"
-                                            onClick={() => setMobileOpen(false)}
-                                            className="block text-center border border-white/30 text-white px-4 py-2.5 rounded-lg hover:bg-white/10 transition-colors text-sm font-medium"
-                                        >
-                                            Dashboard
-                                        </Link>
-                                    ) : (
-                                        <Link
-                                            to="/customer-dashboard"
-                                            onClick={() => setMobileOpen(false)}
-                                            className="block text-center border border-white/30 text-white px-4 py-2.5 rounded-lg hover:bg-white/10 transition-colors text-sm font-medium"
-                                        >
-                                            My Orders
-                                        </Link>
-                                    )}
-                                    <button
-                                        onClick={() => { handleSignOut(); setMobileOpen(false); }}
-                                        className="w-full text-center border border-white/30 text-white px-4 py-2.5 rounded-lg hover:bg-white/10 transition-colors text-sm font-medium"
-                                    >
-                                        Sign Out
-                                    </button>
+                                    </Link>
                                 </div>
                             ) : (
                                 <div className="flex gap-2 pt-2">

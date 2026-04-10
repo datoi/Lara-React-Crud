@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, X, Trash2, Package, Scissors } from 'lucide-react';
+import { Bell, X, Package, Scissors, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getAuthToken } from '../hooks/useAuth';
 
@@ -36,7 +36,6 @@ export function NotificationBell() {
 
     useEffect(() => {
         fetchNotifications();
-        // Poll every 30 seconds
         const id = setInterval(fetchNotifications, 30_000);
         return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -53,6 +52,19 @@ export function NotificationBell() {
         return () => document.removeEventListener('mousedown', handleClick);
     }, []);
 
+    const dismissOne = async (id: number) => {
+        if (!token) return;
+        await fetch(`/api/notifications/${id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        });
+        setNotifications(prev => {
+            const updated = prev.filter(n => n.id !== id);
+            setUnreadCount(updated.filter(n => !n.is_read).length);
+            return updated;
+        });
+    };
+
     const clearAll = async () => {
         if (!token) return;
         await fetch('/api/notifications', {
@@ -61,10 +73,6 @@ export function NotificationBell() {
         });
         setNotifications([]);
         setUnreadCount(0);
-    };
-
-    const handleOpen = () => {
-        setOpen(v => !v);
     };
 
     const formatTime = (iso: string) => {
@@ -82,7 +90,7 @@ export function NotificationBell() {
     return (
         <div ref={ref} className="relative">
             <button
-                onClick={handleOpen}
+                onClick={() => setOpen(v => !v)}
                 className="relative p-2 rounded-lg transition-colors text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                 aria-label="Notifications"
             >
@@ -103,9 +111,20 @@ export function NotificationBell() {
                     >
                         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                             <span className="font-semibold text-slate-900 text-sm">Notifications</span>
-                            <button onClick={() => setOpen(false)} className="p-1 text-slate-400 hover:text-slate-700">
-                                <X className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                                {notifications.length > 0 && (
+                                    <button
+                                        onClick={clearAll}
+                                        className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        Clear all
+                                    </button>
+                                )}
+                                <button onClick={() => setOpen(false)} className="p-1 text-slate-400 hover:text-slate-700">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="max-h-80 overflow-y-auto">
@@ -134,26 +153,17 @@ export function NotificationBell() {
                                                 <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{n.body}</p>
                                                 <p className="text-xs text-slate-400 mt-1">{formatTime(n.created_at)}</p>
                                             </div>
-                                            {!n.is_read && (
-                                                <div className="w-2 h-2 bg-slate-900 rounded-full mt-1.5 flex-shrink-0" />
-                                            )}
+                                            <button
+                                                onClick={() => dismissOne(n.id)}
+                                                className="p-1 text-slate-300 hover:text-slate-600 transition-colors flex-shrink-0 mt-0.5"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
                                         </div>
                                     </div>
                                 ))
                             )}
                         </div>
-
-                        {notifications.length > 0 && (
-                            <div className="px-4 py-3 border-t border-slate-100">
-                                <button
-                                    onClick={markAllRead}
-                                    className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 transition-colors"
-                                >
-                                    <Check className="w-3.5 h-3.5" />
-                                    Mark all as read
-                                </button>
-                            </div>
-                        )}
                     </motion.div>
                 )}
             </AnimatePresence>

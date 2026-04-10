@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { motion } from 'motion/react';
 import { FileText, Pencil, CheckCircle } from 'lucide-react';
+import { MeasurementGuideModal } from '../MeasurementGuideModal';
 
 const features = [
     {
@@ -20,6 +22,8 @@ const features = [
 ];
 
 export function SizeFitSection() {
+    const [guideOpen, setGuideOpen] = useState(false);
+
     return (
         <section className="py-16 md:py-24 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -62,6 +66,7 @@ export function SizeFitSection() {
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
+                            onClick={() => setGuideOpen(true)}
                             className="border border-slate-900 text-slate-900 text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-50 transition-colors"
                         >
                             View Measurement Guide
@@ -81,7 +86,6 @@ export function SizeFitSection() {
                             alt="Fabric and measuring tape"
                             className="w-full h-full object-cover"
                         />
-                        {/* Overlay label */}
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
                             <p className="text-xs font-semibold uppercase tracking-widest text-slate-300 mb-1">
                                 Professional Guidance
@@ -91,6 +95,12 @@ export function SizeFitSection() {
                     </motion.div>
                 </div>
             </div>
+
+            <MeasurementGuideModal
+                open={guideOpen}
+                onClose={() => setGuideOpen(false)}
+                initialStep="chest"
+            />
         </section>
     );
 }

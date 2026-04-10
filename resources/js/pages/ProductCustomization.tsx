@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { ArrowLeft, Star, Minus, Plus, Check, Loader2, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Star, Minus, Plus, Check, Loader2, HelpCircle } from 'lucide-react';
+import { MeasurementGuideModal, type MeasurementKey } from '../components/MeasurementGuideModal';
+import { measurementWarning } from '../utils/measurementSanity';
 import {
     getAuthToken,
     saveReturnTo,
@@ -10,7 +12,6 @@ import {
     clearPendingOrder,
     type PendingMarketplaceOrder,
 } from '../hooks/useAuth';
-import { useCart } from '../context/CartContext';
 
 interface ApiProduct {
     id: number;
@@ -44,8 +45,24 @@ export default function ProductCustomization() {
     const [placing, setPlacing]       = useState(false);
     const [orderError, setOrderError] = useState('');
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-    const [addedToCart, setAddedToCart] = useState(false);
-    const { addItem } = useCart();
+    const [guideStep, setGuideStep] = useState<MeasurementKey | null>(null);
+    const [reviews, setReviews]     = useState<{ id: number; rating: number; comment: string; reviewer: string; created_at: string }[]>([]);
+    const [avgRating, setAvgRating] = useState<number | null>(null);
+
+    const openGuide = (key: string) => {
+        const valid: MeasurementKey[] = ['chest', 'waist', 'hips', 'length'];
+        setGuideStep(valid.includes(key as MeasurementKey) ? (key as MeasurementKey) : 'chest');
+    };
+    useEffect(() => {
+        if (!id) return;
+        fetch(`/api/products/${id}/reviews`)
+            .then(r => r.json())
+            .then(d => {
+                setReviews(d.reviews ?? []);
+                setAvgRating(d.average_rating ?? null);
+            })
+            .catch(() => {});
+    }, [id]);
 
     useEffect(() => {
         fetch(`/api/products/${id}`)
@@ -308,21 +325,38 @@ export default function ProductCustomization() {
                                         { key: 'waist', label: 'Waist' },
                                         { key: 'hips', label: 'Hips' },
                                         { key: 'length', label: 'Length' },
-                                    ].map(({ key, label }) => (
-                                        <div key={key}>
-                                            <label className="text-xs text-slate-500 mb-1 block">{label}</label>
-                                            <div className="relative">
-                                                <input
-                                                    type="number"
-                                                    placeholder="0"
-                                                    value={measurements[key as keyof typeof measurements]}
-                                                    onChange={e => setMeasurements(m => ({ ...m, [key]: e.target.value }))}
-                                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-slate-900"
-                                                />
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">cm</span>
+                                    ].map(({ key, label }) => {
+                                        const val = measurements[key as keyof typeof measurements];
+                                        const warning = measurementWarning(key, val);
+                                        return (
+                                            <div key={key}>
+                                                <div className="flex items-center gap-1 mb-1">
+                                                    <label className="text-xs text-slate-500">{label}</label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openGuide(key)}
+                                                        className="text-slate-300 hover:text-slate-600 transition-colors"
+                                                        aria-label={`Help for ${label}`}
+                                                    >
+                                                        <HelpCircle className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                                <div className="relative">
+                                                    <input
+                                                        type="number"
+                                                        placeholder="0"
+                                                        value={val}
+                                                        onChange={e => setMeasurements(m => ({ ...m, [key]: e.target.value }))}
+                                                        className={`w-full border rounded-lg px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-slate-900 ${warning ? 'border-amber-400' : 'border-slate-200'}`}
+                                                    />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">cm</span>
+                                                </div>
+                                                {warning && (
+                                                    <p className="text-[10px] text-amber-600 mt-1 leading-tight">{warning}</p>
+                                                )}
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -367,35 +401,56 @@ export default function ProductCustomization() {
                                     {placing && <Loader2 className="w-4 h-4 animate-spin" />}
                                     {placing ? 'Placing Order…' : 'Place Order'}
                                 </button>
-                                <button
-                                    onClick={() => {
-                                        if (!product) return;
-                                        addItem({
-                                            type: 'marketplace',
-                                            productId: product.id,
-                                            productName: product.name,
-                                            image: product.images?.[0] ?? null,
-                                            color: selectedColor,
-                                            size: selectedSize,
-                                            quantity,
-                                            price: product.price,
-                                            measurements: Object.fromEntries(
-                                                Object.entries(measurements).filter(([, v]) => v !== '')
-                                            ),
-                                        });
-                                        setAddedToCart(true);
-                                        setTimeout(() => setAddedToCart(false), 2000);
-                                    }}
-                                    className="w-full border border-slate-700 text-white font-medium py-3 rounded-xl hover:bg-slate-800 transition-colors active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
-                                >
-                                    {addedToCart ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
-                                    {addedToCart ? 'Added!' : 'Add to Cart'}
-                                </button>
                                 <p className="text-xs text-slate-500 text-center mt-3">
                                     Tailor will confirm within 24 hours
                                 </p>
                             </div>
                         </motion.div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Reviews ── */}
+            {(reviews.length > 0 || avgRating !== null) && (
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-12">
+                    <div className="bg-white rounded-2xl border border-slate-100 p-6">
+                        <div className="flex items-center gap-3 mb-5">
+                            <h3 className="font-bold text-slate-900 text-lg">Customer Reviews</h3>
+                            {avgRating !== null && (
+                                <div className="flex items-center gap-1.5">
+                                    <div className="flex">
+                                        {[1,2,3,4,5].map(n => (
+                                            <Star key={n} className="w-4 h-4" fill={avgRating >= n ? '#fbbf24' : 'none'} stroke={avgRating >= n ? '#fbbf24' : '#cbd5e1'} strokeWidth={1.5} />
+                                        ))}
+                                    </div>
+                                    <span className="text-sm font-semibold text-slate-700">{avgRating}</span>
+                                    <span className="text-xs text-slate-400">({reviews.length})</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="space-y-4">
+                            {reviews.map((r, i) => (
+                                <motion.div
+                                    key={r.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.5, delay: i * 0.05 }}
+                                    className="border-b border-slate-50 last:border-0 pb-4 last:pb-0"
+                                >
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                        <div className="flex">
+                                            {[1,2,3,4,5].map(n => (
+                                                <Star key={n} className="w-3.5 h-3.5" fill={r.rating >= n ? '#fbbf24' : 'none'} stroke={r.rating >= n ? '#fbbf24' : '#cbd5e1'} strokeWidth={1.5} />
+                                            ))}
+                                        </div>
+                                        <span className="text-sm font-medium text-slate-900">{r.reviewer}</span>
+                                        <span className="text-xs text-slate-400">· Verified Purchase</span>
+                                    </div>
+                                    <p className="text-sm text-slate-600 leading-relaxed">{r.comment}</p>
+                                </motion.div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}
@@ -443,6 +498,12 @@ export default function ProductCustomization() {
                     </motion.div>
                 </div>
             )}
+
+            <MeasurementGuideModal
+                open={guideStep !== null}
+                onClose={() => setGuideStep(null)}
+                initialStep={guideStep ?? 'chest'}
+            />
         </div>
     );
 }
