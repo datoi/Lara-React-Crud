@@ -3,6 +3,7 @@ import { ArrowLeft, HelpCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { MeasurementGuideModal, type MeasurementKey } from './MeasurementGuideModal';
 import { measurementWarning } from '../utils/measurementSanity';
+import { GarmentPreview } from './GarmentPreview';
 
 interface DesignState {
     clothingType: string | null;
@@ -94,7 +95,27 @@ export function CustomizationPanel({ design, setDesign, onContinue, onBack }: Cu
                 <p className="text-slate-500">Define every detail of your garment.</p>
             </div>
 
-            <div className="space-y-8 max-w-2xl mx-auto">
+            <div className="grid md:grid-cols-[260px_1fr] gap-8 max-w-4xl mx-auto items-start">
+                {/* Live preview — sticky */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="md:sticky md:top-6 bg-white rounded-2xl border border-slate-200 p-4 space-y-3"
+                >
+                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Live Preview</div>
+                    <GarmentPreview design={design} size="compact" />
+                    {/* Active style badges */}
+                    {[design.length, design.sleeves, design.neckline, design.fabric].filter(Boolean).length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                            {[design.length, design.sleeves, design.neckline, design.fabric].filter(Boolean).map(v => (
+                                <span key={v} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{v}</span>
+                            ))}
+                        </div>
+                    )}
+                </motion.div>
+
+                {/* Controls column */}
+                <div className="space-y-8">
                 {/* Style Details */}
                 <motion.section
                     initial={{ opacity: 0, y: 12 }}
@@ -236,6 +257,7 @@ export function CustomizationPanel({ design, setDesign, onContinue, onBack }: Cu
                 >
                     Continue to Design →
                 </button>
+                </div>{/* end controls column */}
             </div>
         </div>
 
