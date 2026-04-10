@@ -797,4 +797,26 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+---
+
+### [2026-04-11] High-Fidelity Ghost-Mannequin Design Preview Engine
+
+**What was done:** The DesignerApp (Steps 2–5) now uses a real ghost-mannequin photo as the base layer for the dress preview instead of SVG schematics or Unsplash placeholders. The color engine uses `mix-blend-mode: multiply` strictly on the white garment photo, preserving every fabric-fold shadow. A `contrast(1.15) brightness(1.02)` CSS filter on the base layer makes texture pop through the tint. An accent-color gradient overlays the collar/trim area as a second multiply pass. Missing style-detail overlays (e.g. Long Sleeves PNG not yet produced) show a "Preview coming soon" chip rather than crashing or reverting to schematic.
+
+**Why it was done:** White-on-white ghost-mannequin assets are the industry standard for garment visualization — they are purpose-built for color-tinting via multiply blend because white areas become pure color and dark shadow pixels stay dark, preserving realistic drape and fold detail.
+
+**Where the logic is:**
+- Asset (canonical path): `public/assets/garments/maxi-base.png` — white ghost-mannequin dress PNG
+- Also kept at: `public/images/garments/dress-maxi.png` for backward compatibility
+- Component: `resources/js/components/GarmentPreview.tsx`
+  - `BASE_LAYERS` map: `clothingType → subcategory → local PNG path`. All dress subcategories currently resolve to `maxi-base.png`. Add new paths here as assets are produced.
+  - `OVERLAY_LAYERS` map: `type/detailKey/detailValue → PNG path | null`. `null` = asset not yet produced. When a slot is `null` and the user has selected that detail, `<ComingSoonChip>` renders over the preview instead of crashing.
+  - Layer stack (z-order): `[0] base photo → [1] baseColor multiply div → [2] accentColor multiply gradient → [3] overlay PNG (when available)`
+  - SVG silhouettes remain as fallback for shirt, pants, jacket, hat, scarf until photo assets are added.
+- Steps wired: Step 3 (CustomizationPanel sticky preview), Step 4 (DesignCanvas live preview), Step 5 (FinalPreview hero card) — all use the same `<GarmentPreview>` component.
+
+**The Hook:** `mix-blend-mode: multiply` only preserves shadows if the base image is genuinely white-on-white — any grey background would tint. The `contrast(1.15)` filter is applied to the `<img>` itself (Layer 0), before the multiply layer sits on top, so it sharpens the fold detail in the source before the color is applied rather than sharpening the composite (which would harden color edges). Adding new assets requires only one line in `BASE_LAYERS` or `OVERLAY_LAYERS` — no component logic changes needed.
+
+---
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*
