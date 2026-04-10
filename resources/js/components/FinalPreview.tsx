@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { ArrowLeft, Download, Send, Check, Loader2 } from 'lucide-react';
+import { GarmentPreview } from './GarmentPreview';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { getAuthToken, saveReturnTo, savePendingOrder, clearPendingOrder } from '../hooks/useAuth';
@@ -155,23 +156,29 @@ export function FinalPreview({ design, onBack }: FinalPreviewProps) {
                 </div>
             ) : (
                 <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-                    {/* Color palette preview */}
+                    {/* Garment preview hero */}
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="space-y-4"
                     >
-                        <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Color Palette</div>
+                        <div className="bg-white rounded-2xl border border-slate-200 p-4">
+                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Your Design</div>
+                            <GarmentPreview design={design} size="full" />
+                        </div>
+
+                        {/* Color palette */}
+                        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Color Palette</div>
                             <div className="flex gap-3">
                                 {[
-                                    { label: 'Base', color: design.baseColor },
-                                    { label: 'Light', color: design.lighterShade },
-                                    { label: 'Dark', color: design.darkerShade },
+                                    { label: 'Base',   color: design.baseColor },
+                                    { label: 'Light',  color: design.lighterShade },
+                                    { label: 'Dark',   color: design.darkerShade },
                                     { label: 'Accent', color: design.additionalColor },
                                 ].filter(c => c.color).map(c => (
                                     <div key={c.label} className="flex flex-col items-center gap-1.5">
-                                        <div className="w-12 h-12 rounded-xl border border-slate-200 shadow-sm" style={{ backgroundColor: c.color }} />
+                                        <div className="w-10 h-10 rounded-xl border border-slate-200 shadow-sm" style={{ backgroundColor: c.color }} />
                                         <span className="text-xs text-slate-400">{c.label}</span>
                                     </div>
                                 ))}
@@ -180,7 +187,7 @@ export function FinalPreview({ design, onBack }: FinalPreviewProps) {
 
                         {/* Design elements */}
                         {design.designElements.cuts.length > 0 && (
-                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                            <div className="bg-white rounded-2xl border border-slate-200 p-5">
                                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Design Elements</div>
                                 <div className="flex flex-wrap gap-2">
                                     {design.designElements.cuts.map(cut => (
@@ -192,7 +199,7 @@ export function FinalPreview({ design, onBack }: FinalPreviewProps) {
 
                         {/* Notes */}
                         {design.designElements.customNotes && (
-                            <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                            <div className="bg-white rounded-2xl border border-slate-200 p-5">
                                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Tailor Notes</div>
                                 <p className="text-sm text-slate-600 leading-relaxed">{design.designElements.customNotes}</p>
                             </div>
