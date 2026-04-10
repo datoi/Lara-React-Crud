@@ -17,6 +17,9 @@ class ClothingSeeder extends Seeder
             ['name' => 'Hats',     'slug' => 'hats',     'description' => 'Handmade hats and headwear'],
         ];
 
+        // Idempotent — skip if already seeded
+        if (\App\Models\Category::count() > 0) return;
+
         foreach ($categories as $cat) {
             \App\Models\Category::create(array_merge($cat, ['image' => null]));
         }
