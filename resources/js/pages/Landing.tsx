@@ -15,7 +15,7 @@ const footerLinks = [
     {
         title: 'Product',
         links: [
-            { label: 'How It Works', to: '/#how-it-works' },
+            { label: 'How It Works', to: '/how-it-works' },
             { label: 'Categories', to: '/marketplace' },
             { label: 'Design Gallery', to: '/marketplace' },
         ],
@@ -23,25 +23,25 @@ const footerLinks = [
     {
         title: 'Company',
         links: [
-            { label: 'About Us', to: '/' },
-            { label: 'Our Tailors', to: '/' },
+            { label: 'About Us', to: '/about' },
+            { label: 'Our Tailors', to: '/our-tailors' },
             { label: 'Tailor Dashboard', to: '/tailor-dashboard' },
         ],
     },
     {
         title: 'Support',
         links: [
-            { label: 'Help Center', to: '/' },
-            { label: 'Size Guide', to: '/' },
-            { label: 'FAQ', to: '/#faq' },
+            { label: 'Help Center', to: '/help' },
+            { label: 'Size Guide', to: '/size-guide' },
+            { label: 'FAQ', to: '/help' },
         ],
     },
     {
         title: 'Legal',
         links: [
-            { label: 'Privacy Policy', to: '/' },
-            { label: 'Terms of Service', to: '/' },
-            { label: 'Refund Policy', to: '/' },
+            { label: 'Privacy Policy', to: '/privacy' },
+            { label: 'Terms of Service', to: '/terms' },
+            { label: 'Refund Policy', to: '/refund-policy' },
         ],
     },
 ];

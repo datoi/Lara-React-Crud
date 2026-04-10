@@ -10,6 +10,14 @@ import Login from './pages/Login';
 import TailorDashboard from './pages/TailorDashboard';
 import CustomerDashboard from './pages/CustomerDashboard';
 import NotFound from './pages/NotFound';
+import HowItWorks from './pages/HowItWorks';
+import AboutUs from './pages/AboutUs';
+import OurTailors from './pages/OurTailors';
+import HelpCenter from './pages/HelpCenter';
+import SizeGuide from './pages/SizeGuide';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import RefundPolicy from './pages/RefundPolicy';
 
 export const router = createBrowserRouter([
     { path: '/',                    element: <Landing /> },
@@ -22,5 +30,14 @@ export const router = createBrowserRouter([
     { path: '/register/tailor',     element: <RegisterTailor /> },
     { path: '/tailor-dashboard',    element: <TailorDashboard /> },
     { path: '/customer-dashboard',  element: <CustomerDashboard /> },
+    // Info pages
+    { path: '/how-it-works',        element: <HowItWorks /> },
+    { path: '/about',               element: <AboutUs /> },
+    { path: '/our-tailors',         element: <OurTailors /> },
+    { path: '/help',                element: <HelpCenter /> },
+    { path: '/size-guide',          element: <SizeGuide /> },
+    { path: '/privacy',             element: <PrivacyPolicy /> },
+    { path: '/terms',               element: <TermsOfService /> },
+    { path: '/refund-policy',       element: <RefundPolicy /> },
     { path: '*',                    element: <NotFound /> },
 ]);
