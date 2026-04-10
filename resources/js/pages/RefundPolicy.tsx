@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { Navigation } from '../components/landing/Navigation';
+import { Footer } from '../components/landing/Footer';
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 const eligible = [
@@ -134,6 +135,7 @@ export default function RefundPolicy() {
                     </motion.div>
                 </div>
             </section>
+        <Footer />
         </div>
     );
 }

@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { Navigation } from '../components/landing/Navigation';
+import { Footer } from '../components/landing/Footer';
 import { Ruler, Palette, Scissors, Package } from 'lucide-react';
 
 const steps = [
@@ -150,6 +151,7 @@ export default function HowItWorks() {
                     </Link>
                 </motion.div>
             </section>
+        <Footer />
         </div>
     );
 }

@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { Navigation } from '../components/landing/Navigation';
+import { Footer } from '../components/landing/Footer';
 import { Heart, Shield, Users, Leaf } from 'lucide-react';
 
 const values = [
@@ -169,6 +170,7 @@ export default function AboutUs() {
                     </div>
                 </motion.div>
             </section>
+        <Footer />
         </div>
     );
 }

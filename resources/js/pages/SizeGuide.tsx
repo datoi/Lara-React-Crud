@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { Navigation } from '../components/landing/Navigation';
+import { Footer } from '../components/landing/Footer';
 
 const measurements = [
     {
@@ -173,6 +174,7 @@ export default function SizeGuide() {
                     </p>
                 </div>
             </section>
+        <Footer />
         </div>
     );
 }

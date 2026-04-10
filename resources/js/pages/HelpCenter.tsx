@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { Navigation } from '../components/landing/Navigation';
+import { Footer } from '../components/landing/Footer';
 import { ShoppingBag, Ruler, RotateCcw, Mail, Package, CreditCard } from 'lucide-react';
 
 const topics = [
@@ -130,6 +131,7 @@ export default function HelpCenter() {
                     <p className="text-xs text-slate-400 mt-4">You need to be signed in to send a support email.</p>
                 </motion.div>
             </section>
+        <Footer />
         </div>
     );
 }

@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { Navigation } from '../components/landing/Navigation';
+import { Footer } from '../components/landing/Footer';
 
 const sections = [
     {
@@ -124,6 +125,7 @@ export default function PrivacyPolicy() {
                     </div>
                 </div>
             </section>
+        <Footer />
         </div>
     );
 }

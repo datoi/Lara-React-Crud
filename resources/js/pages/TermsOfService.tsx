@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { Navigation } from '../components/landing/Navigation';
+import { Footer } from '../components/landing/Footer';
 
 const sections = [
     {
@@ -65,7 +66,7 @@ const sections = [
         title: '8. Limitation of Liability',
         content: [
             'Kere is a marketplace platform. We are not the manufacturer of the garments sold here.',
-            'To the maximum extent permitted by Georgian law, Kere's total liability for any claim arising from use of the platform is limited to the amount paid for the order in question.',
+            'To the maximum extent permitted by Georgian law, Keres total liability for any claim arising from use of the platform is limited to the amount paid for the order in question.',
             'We are not liable for delays caused by force majeure events, courier issues outside our control, or incorrect information provided by customers.',
         ],
     },
@@ -136,6 +137,7 @@ export default function TermsOfService() {
                     </div>
                 </div>
             </section>
+        <Footer />
         </div>
     );
 }
