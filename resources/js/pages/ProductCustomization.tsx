@@ -23,13 +23,8 @@ interface ApiProduct {
     sizes: string[];
     is_customizable: boolean;
     category: { id: number; name: string; slug: string };
+    tailor_name: string | null;
 }
-
-const TAILORS = ['Nino Beridze', 'Giorgi Maisuradze', 'Tamar Kvanchilashvili', 'Levan Gogishvili', 'Ana Jishkariani'];
-const RATINGS = [4.5, 4.6, 4.7, 4.8, 4.9, 5.0];
-function getTailor(id: number) { return TAILORS[id % TAILORS.length]; }
-function getRating(id: number) { return RATINGS[id % RATINGS.length]; }
-function getReviews(id: number) { return 10 + (id * 7) % 50; }
 
 export default function ProductCustomization() {
     const { id } = useParams<{ id: string }>();
@@ -114,7 +109,7 @@ export default function ProductCustomization() {
     const subtotal = product.price * quantity;
     const shipping = 15;
     const total = subtotal + shipping;
-    const tailor = getTailor(product.id);
+    const tailor = product.tailor_name ?? 'Local Tailor';
 
     const handleOrder = async () => {
         const token = getAuthToken();
@@ -240,9 +235,15 @@ export default function ProductCustomization() {
                             <div className="mt-4 p-4 bg-white rounded-xl border border-slate-200">
                                 <p className="text-sm text-slate-500 mb-1">by {tailor}</p>
                                 <div className="flex items-center gap-1">
-                                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                                    <span className="text-sm font-medium text-slate-700">{getRating(product.id)}</span>
-                                    <span className="text-sm text-slate-400">({getReviews(product.id)} reviews)</span>
+                                    {avgRating !== null ? (
+                                        <>
+                                            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                                            <span className="text-sm font-medium text-slate-700">{avgRating.toFixed(1)}</span>
+                                            <span className="text-sm text-slate-400">({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})</span>
+                                        </>
+                                    ) : (
+                                        <span className="text-sm text-slate-400">No reviews yet</span>
+                                    )}
                                 </div>
                             </div>
                         </motion.div>

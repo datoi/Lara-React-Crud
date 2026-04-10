@@ -23,7 +23,9 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'tailor']);
+        $query = Product::with(['category', 'tailor'])
+            ->withCount('reviews')
+            ->withAvg('reviews', 'rating');
 
         if ($request->filled('category')) {
             $query->whereHas('category', fn($q) => $q->where('slug', $request->category));
@@ -57,11 +59,14 @@ class ProductController extends Controller
 
         $paginator = $query->paginate(24)->withQueryString();
 
-        // Append tailor_name to each product item
+        // Append tailor_name and review summary to each product
         $paginator->getCollection()->transform(function ($p) {
-            $p->tailor_name = $p->tailor
+            $p->tailor_name    = $p->tailor
                 ? trim(($p->tailor->first_name ?? '') . ' ' . ($p->tailor->last_name ?? '')) ?: $p->tailor->name
                 : null;
+            $p->reviews_count  = (int) $p->reviews_count;
+            $p->average_rating = $p->reviews_avg_rating ? round((float) $p->reviews_avg_rating, 1) : null;
+            unset($p->reviews_avg_rating);
             return $p;
         });
 
@@ -72,10 +77,14 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
+        $product->loadCount('reviews')->loadAvg('reviews', 'rating');
         $product->load(['category', 'tailor']);
-        $product->tailor_name = $product->tailor
+        $product->tailor_name    = $product->tailor
             ? trim(($product->tailor->first_name ?? '') . ' ' . ($product->tailor->last_name ?? '')) ?: $product->tailor->name
             : null;
+        $product->reviews_count  = (int) $product->reviews_count;
+        $product->average_rating = $product->reviews_avg_rating ? round((float) $product->reviews_avg_rating, 1) : null;
+        unset($product->reviews_avg_rating);
 
         $related = Product::with('tailor')
             ->where('category_id', $product->category_id)
