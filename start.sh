@@ -26,5 +26,26 @@ php artisan db:seed --force --class=ClothingSeeder
 echo "==> Creating storage symlink..."
 php artisan storage:link --force
 
-echo "==> Starting Laravel server on port $PORT..."
-exec php artisan serve --host=0.0.0.0 --port=$PORT
+echo "==> Starting queue worker in background..."
+php artisan queue:work --daemon --sleep=3 --tries=3 --max-time=3600 &
+
+echo "==> Configuring Apache on port ${PORT:-80}..."
+PORT=${PORT:-80}
+
+# Set Laravel public as document root
+cat > /etc/apache2/sites-enabled/000-default.conf << EOF
+<VirtualHost *:${PORT}>
+    DocumentRoot /app/public
+    <Directory /app/public>
+        AllowOverride All
+        Options -Indexes +FollowSymLinks
+        Require all granted
+    </Directory>
+</VirtualHost>
+EOF
+
+# Update Apache listen port
+sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf
+
+echo "==> Starting Apache..."
+exec apache2-foreground

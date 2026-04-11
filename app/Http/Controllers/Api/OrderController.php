@@ -123,7 +123,7 @@ class OrderController extends Controller
         // Send confirmation email to customer
         try {
             $order->load('items');
-            Mail::to($user->email)->send(new OrderConfirmation($order));
+            Mail::to($user->email)->queue(new OrderConfirmation($order));
         } catch (\Throwable $e) {
             Log::error('OrderConfirmation email failed: ' . $e->getMessage());
         }
@@ -131,7 +131,7 @@ class OrderController extends Controller
         // Alert tailor by email
         if ($tailor) {
             try {
-                Mail::to($tailor->email)->send(new NewOrderAlert($order, $user));
+                Mail::to($tailor->email)->queue(new NewOrderAlert($order, $user));
             } catch (\Throwable $e) {
                 Log::error('NewOrderAlert email failed: ' . $e->getMessage());
             }
@@ -189,7 +189,7 @@ class OrderController extends Controller
 
         // Send confirmation email to customer
         try {
-            Mail::to($user->email)->send(new OrderConfirmation($order));
+            Mail::to($user->email)->queue(new OrderConfirmation($order));
         } catch (\Throwable $e) {
             Log::error('OrderConfirmation email failed (custom): ' . $e->getMessage());
         }
@@ -197,7 +197,7 @@ class OrderController extends Controller
         // Alert tailor by email
         if ($tailor) {
             try {
-                Mail::to($tailor->email)->send(new NewOrderAlert($order, $user));
+                Mail::to($tailor->email)->queue(new NewOrderAlert($order, $user));
             } catch (\Throwable $e) {
                 Log::error('NewOrderAlert email failed (custom): ' . $e->getMessage());
             }
@@ -271,7 +271,7 @@ class OrderController extends Controller
         $notifyStatuses = ['processing', 'shipped', 'delivered', 'finished', 'cancelled'];
         if (in_array($data['status'], $notifyStatuses) && $data['status'] !== $oldStatus) {
             try {
-                Mail::to($order->user->email)->send(new OrderStatusUpdated($order, $data['status']));
+                Mail::to($order->user->email)->queue(new OrderStatusUpdated($order, $data['status']));
             } catch (\Throwable $e) {
                 Log::error('OrderStatusUpdated email failed: ' . $e->getMessage());
             }

@@ -45,7 +45,7 @@ class SupportEmailController extends Controller
 
         // Send email
         try {
-            Mail::to('dato.tadiashvili13@gmail.com')->send(new SupportRequest($user, $data['subject'], $data['message']));
+            Mail::to('dato.tadiashvili13@gmail.com')->queue(new SupportRequest($user, $data['subject'], $data['message']));
         } catch (\Throwable $e) {
             Log::error('SupportRequest email failed: ' . $e->getMessage());
             return response()->json(['message' => 'Failed to send email. Please try again.'], 500);
