@@ -102,10 +102,13 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
     const handleSave = async () => {
         if (!onStatusChange || saving) return;
         setSaving(true);
-        await onStatusChange(order.id, localStatus);
-        setSaving(false);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
+        try {
+            await onStatusChange(order.id, localStatus);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (

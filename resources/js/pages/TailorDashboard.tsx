@@ -74,8 +74,10 @@ export default function TailorDashboard() {
             body: JSON.stringify({ status }),
         });
         if (res.ok) {
-            const data = await res.json();
-            setOrders(prev => prev.map(o => o.id === orderId ? data.order : o));
+            // Only update the status field — don't replace the whole order (which lacks relations)
+            setOrders(prev => prev.map(o =>
+                o.id === orderId ? { ...o, status: status as TailorOrder['status'] } : o
+            ));
         }
     };
 
