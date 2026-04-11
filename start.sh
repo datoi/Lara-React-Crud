@@ -6,7 +6,6 @@ export DB_CONNECTION=pgsql
 
 # Parse DATABASE_URL into individual Laravel env vars if set
 if [ -n "$DATABASE_URL" ]; then
-    # e.g. postgresql://user:pass@host:5432/dbname
     export DB_HOST=$(echo "$DATABASE_URL" | sed -e 's|.*@||' -e 's|:.*||' -e 's|/.*||')
     export DB_PORT=$(echo "$DATABASE_URL" | sed -e 's|.*@[^:]*:||' -e 's|/.*||')
     export DB_DATABASE=$(echo "$DATABASE_URL" | sed -e 's|.*/||' -e 's|?.*||')
@@ -29,23 +28,6 @@ php artisan storage:link --force
 echo "==> Starting queue worker in background..."
 php artisan queue:work --daemon --sleep=3 --tries=3 --max-time=3600 &
 
-echo "==> Configuring Apache on port ${PORT:-80}..."
-PORT=${PORT:-80}
-
-# Set Laravel public as document root
-cat > /etc/apache2/sites-enabled/000-default.conf << EOF
-<VirtualHost *:${PORT}>
-    DocumentRoot /app/public
-    <Directory /app/public>
-        AllowOverride All
-        Options -Indexes +FollowSymLinks
-        Require all granted
-    </Directory>
-</VirtualHost>
-EOF
-
-# Update Apache listen port
-sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf
-
-echo "==> Starting Apache..."
-exec apache2-foreground
+echo "==> Starting Laravel server on port ${PORT} with 8 workers..."
+export PHP_CLI_SERVER_WORKERS=8
+exec php artisan serve --host=0.0.0.0 --port=${PORT}

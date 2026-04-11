@@ -1,12 +1,7 @@
-FROM php:8.2-apache
+FROM php:8.2-cli-alpine
 
-# Enable mod_rewrite, disable conflicting MPM modules
-RUN a2dismod mpm_event || true && a2enmod mpm_prefork rewrite headers
-
-# System dependencies (libpq-dev for pdo_pgsql)
-RUN apt-get update && apt-get install -y \
-    git libpq-dev nodejs npm \
-    && rm -rf /var/lib/apt/lists/*
+# System dependencies
+RUN apk add --no-cache bash git nodejs npm postgresql-dev
 
 # PHP extensions
 RUN docker-php-ext-install pdo pdo_pgsql
@@ -28,7 +23,6 @@ COPY . .
 RUN npm run build
 RUN composer dump-autoload --optimize
 
-# Storage permissions
-RUN chown -R www-data:www-data storage bootstrap/cache
+EXPOSE 8080
 
 CMD ["bash", "start.sh"]
