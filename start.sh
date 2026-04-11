@@ -8,7 +8,7 @@ export DB_CONNECTION=pgsql
 if [ -n "$DATABASE_URL" ]; then
     # e.g. postgresql://user:pass@host:5432/dbname
     export DB_HOST=$(echo "$DATABASE_URL" | sed -e 's|.*@||' -e 's|:.*||' -e 's|/.*||')
-    export DB_PORT=$(echo "$DATABASE_URL" | sed -e 's|.*:||' -e 's|/.*||' | grep -oP '^\d+' || echo "5432")
+    export DB_PORT=$(echo "$DATABASE_URL" | sed -e 's|.*@[^:]*:||' -e 's|/.*||')
     export DB_DATABASE=$(echo "$DATABASE_URL" | sed -e 's|.*/||' -e 's|?.*||')
     export DB_USERNAME=$(echo "$DATABASE_URL" | sed -e 's|.*://||' -e 's|:.*||')
     export DB_PASSWORD=$(echo "$DATABASE_URL" | sed -e 's|.*://[^:]*:||' -e 's|@.*||')
