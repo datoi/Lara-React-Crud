@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -8,6 +9,7 @@ import {
 import { getAuthToken, getAuthUser, clearAuth } from '../hooks/useAuth';
 import { NotificationBell } from '../components/NotificationBell';
 import { ReviewModal } from '../components/ReviewModal';
+import { OrderCardSkeleton } from '../components/skeletons/OrderCardSkeleton';
 
 interface OrderItem {
     id: number;
@@ -222,11 +224,15 @@ export default function CustomerDashboard() {
         total:      orders.length,
         pending:    orders.filter(o => o.status === 'pending').length,
         inProgress: orders.filter(o => o.status === 'processing').length,
-        delivered:  orders.filter(o => o.status === 'delivered').length,
+        delivered:  orders.filter(o => ['shipped', 'finished', 'delivered'].includes(o.status)).length,
     };
 
     return (
         <div className="min-h-screen bg-slate-50">
+            <Helmet>
+                <title>My Orders | Kere</title>
+                <meta name="robots" content="noindex" />
+            </Helmet>
             {/* Navbar */}
             <nav className="sticky top-0 z-40 bg-white border-b border-slate-100">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
@@ -234,6 +240,14 @@ export default function CustomerDashboard() {
                         Kere
                     </Link>
                     <div className="flex items-center gap-2">
+                        {user && (
+                            <div className="flex items-center gap-2 text-sm text-slate-700">
+                                <div className="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center">
+                                    <User className="w-4 h-4 text-slate-600" />
+                                </div>
+                                <span className="font-medium hidden sm:inline">{user.first_name} {user.last_name}</span>
+                            </div>
+                        )}
                         <NotificationBell />
                         <button
                             onClick={handleSignOut}
@@ -289,8 +303,8 @@ export default function CustomerDashboard() {
                     </div>
 
                     {loading ? (
-                        <div className="py-16 flex items-center justify-center">
-                            <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin" />
+                        <div className="px-5 py-4 space-y-2">
+                            {[...Array(3)].map((_, i) => <OrderCardSkeleton key={i} />)}
                         </div>
                     ) : orders.length === 0 ? (
                         <div className="py-16 text-center">
@@ -364,7 +378,7 @@ export default function CustomerDashboard() {
                 </div>
 
                 {/* Quick actions */}
-                <div className="mt-6 grid sm:grid-cols-2 gap-3">
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Link
                         to="/marketplace"
                         className="flex items-center gap-3 bg-white border border-slate-100 rounded-2xl p-4 hover:bg-slate-50 hover:border-slate-200 transition-colors group"

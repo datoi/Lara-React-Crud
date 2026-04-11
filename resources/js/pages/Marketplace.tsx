@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, SlidersHorizontal, X, Loader2, Palette } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Palette, Star, ChevronDown, BadgeCheck } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { ProductCardSkeleton } from '../components/skeletons/ProductCardSkeleton';
+import { ErrorFallback } from '../components/ErrorFallback';
 import { NotificationBell } from '../components/NotificationBell';
-import { getAuthToken } from '../hooks/useAuth';
+import { User } from 'lucide-react';
+import { getAuthToken, getAuthUser } from '../hooks/useAuth';
 
 interface ApiProduct {
     id: number;
@@ -12,8 +16,11 @@ interface ApiProduct {
     images: string[];
     description: string;
     is_customizable: boolean;
+    tailor_id: number | null;
     tailor_name: string | null;
     category: { id: number; name: string; slug: string };
+    reviews_count: number;
+    average_rating: number | null;
 }
 
 interface ApiCategory {
@@ -26,17 +33,22 @@ export default function Marketplace() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const token = getAuthToken();
+    const user  = getAuthUser();
 
     const [products,  setProducts]  = useState<ApiProduct[]>([]);
     const [categories, setCategories] = useState<ApiCategory[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState(false);
+    const [retryKey, setRetryKey] = useState(0);
 
     // Filters — initialise category from URL param (?category=jackets)
     const [search,           setSearch]           = useState('');
     const [selectedCategory, setSelectedCategory] = useState(() => searchParams.get('category') ?? '');
     const [priceMax,         setPriceMax]         = useState(500);
+    const [sort,             setSort]             = useState(() => searchParams.get('sort') ?? '');
     const [showFilters,      setShowFilters]       = useState(false);
+    const [showSort,         setShowSort]         = useState(false);
 
     // Debounced search
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -57,6 +69,15 @@ export default function Marketplace() {
         setSearchParams(next, { replace: true });
     };
 
+    const handleSortChange = (value: string) => {
+        setSort(value);
+        setShowSort(false);
+        const next = new URLSearchParams(searchParams);
+        if (value) next.set('sort', value);
+        else next.delete('sort');
+        setSearchParams(next, { replace: true });
+    };
+
     // Load categories once
     useEffect(() => {
         fetch('/api/categories')
@@ -71,7 +92,9 @@ export default function Marketplace() {
         if (selectedCategory) params.set('category', selectedCategory);
         if (debouncedSearch)   params.set('search', debouncedSearch);
         if (priceMax < 500)    params.set('max_price', String(priceMax));
+        if (sort)              params.set('sort', sort);
 
+        setFetchError(false);
         fetch(`/api/products?${params}`)
             .then(r => r.json())
             .then(data => {
@@ -79,20 +102,34 @@ export default function Marketplace() {
                 setTotal(data.total ?? (data.data?.length ?? 0));
                 setLoading(false);
             })
-            .catch(() => setLoading(false));
-    }, [selectedCategory, debouncedSearch, priceMax]);
+            .catch(() => { setLoading(false); setFetchError(true); });
+    }, [selectedCategory, debouncedSearch, priceMax, sort, retryKey]);
 
     const hasActiveFilters = selectedCategory !== '' || priceMax < 500;
 
     const clearFilters = () => {
         setSelectedCategory('');
         setPriceMax(500);
+        setSort('');
         setShowFilters(false);
         setSearchParams({}, { replace: true });
     };
 
+    const sortOptions = [
+        { value: '',           label: 'Most recent' },
+        { value: 'popular',    label: 'Most popular' },
+        { value: 'price_asc',  label: 'Price: Low → High' },
+        { value: 'price_desc', label: 'Price: High → Low' },
+        { value: 'rating',     label: 'Highest rated' },
+    ];
+    const sortLabel = sortOptions.find(o => o.value === sort)?.label ?? 'Sort';
+
     return (
         <div className="min-h-screen bg-white">
+            <Helmet>
+                <title>Browse Custom Clothing | Kere Marketplace</title>
+                <meta name="description" content="Browse handcrafted designs from local Georgian tailors. Find the perfect garment or customize one to your exact measurements." />
+            </Helmet>
             {/* Navbar */}
             <nav className="sticky top-0 z-50 bg-white border-b border-slate-100">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
@@ -100,6 +137,17 @@ export default function Marketplace() {
                         Kere
                     </Link>
                     <div className="flex items-center gap-2">
+                        {user && (
+                            <Link
+                                to={user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
+                                className="flex items-center gap-2 text-sm text-slate-700 hover:text-slate-900 transition-colors"
+                            >
+                                <div className="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center">
+                                    <User className="w-4 h-4 text-slate-600" />
+                                </div>
+                                <span className="font-medium hidden sm:inline">{user.first_name} {user.last_name}</span>
+                            </Link>
+                        )}
                         {token && <NotificationBell />}
                         <Link
                             to="/design"
@@ -120,7 +168,7 @@ export default function Marketplace() {
                 </div>
 
                 {/* Search + Filters row */}
-                <div className="flex gap-3 mb-5">
+                <div className="flex gap-3 mb-3">
                     <div className="relative flex-1">
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
@@ -139,9 +187,47 @@ export default function Marketplace() {
                             </button>
                         )}
                     </div>
+
+                    {/* Sort dropdown */}
                     <div className="relative">
                         <button
-                            onClick={() => setShowFilters(v => !v)}
+                            onClick={() => { setShowSort(v => !v); setShowFilters(false); }}
+                            className={`flex items-center gap-1.5 px-4 py-2.5 border rounded-xl text-sm font-medium transition-colors ${
+                                sort ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            <span className="hidden sm:inline">{sortLabel}</span>
+                            <span className="sm:hidden">Sort</span>
+                            <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <AnimatePresence>
+                            {showSort && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-lg p-2 z-20"
+                                >
+                                    {sortOptions.map(opt => (
+                                        <button
+                                            key={opt.value}
+                                            onClick={() => handleSortChange(opt.value)}
+                                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                                                sort === opt.value ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'
+                                            }`}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    <div className="relative">
+                        <button
+                            onClick={() => { setShowFilters(v => !v); setShowSort(false); }}
                             className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-medium transition-colors ${
                                 hasActiveFilters
                                     ? 'bg-slate-900 text-white border-slate-900'
@@ -165,7 +251,7 @@ export default function Marketplace() {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 6, scale: 0.97 }}
                                     transition={{ duration: 0.15 }}
-                                    className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-lg p-5 z-20 space-y-5"
+                                    className="absolute right-0 top-full mt-2 w-full sm:w-64 max-w-[90vw] bg-white border border-slate-200 rounded-2xl shadow-lg p-5 z-20 space-y-5"
                                 >
                                     {/* Category */}
                                     <div>
@@ -232,6 +318,42 @@ export default function Marketplace() {
                     </div>
                 </div>
 
+                {/* Active filter chips */}
+                {(hasActiveFilters || sort) && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {selectedCategory && (
+                            <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-medium px-3 py-1.5 rounded-full">
+                                {categories.find(c => c.slug === selectedCategory)?.name ?? selectedCategory}
+                                <button onClick={() => handleCategoryChange('')} className="hover:text-slate-900">
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </span>
+                        )}
+                        {priceMax < 500 && (
+                            <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-medium px-3 py-1.5 rounded-full">
+                                Max ₾{priceMax}
+                                <button onClick={() => setPriceMax(500)} className="hover:text-slate-900">
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </span>
+                        )}
+                        {sort && (
+                            <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-medium px-3 py-1.5 rounded-full">
+                                {sortLabel}
+                                <button onClick={() => handleSortChange('')} className="hover:text-slate-900">
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </span>
+                        )}
+                        <button
+                            onClick={clearFilters}
+                            className="text-xs text-slate-400 hover:text-slate-700 underline"
+                        >
+                            Clear all
+                        </button>
+                    </div>
+                )}
+
                 {/* Result count */}
                 {!loading && (
                     <p className="text-sm text-slate-500 mb-5">
@@ -241,9 +363,11 @@ export default function Marketplace() {
                 )}
 
                 {/* Grid */}
-                {loading ? (
-                    <div className="flex items-center justify-center py-32">
-                        <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
+                {fetchError ? (
+                    <ErrorFallback message="Failed to load products." onRetry={() => { setFetchError(false); setLoading(true); setRetryKey(k => k + 1); }} />
+                ) : loading ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {[...Array(8)].map((_, i) => <ProductCardSkeleton key={i} />)}
                     </div>
                 ) : products.length === 0 ? (
                     <div className="text-center py-32">
@@ -282,9 +406,37 @@ export default function Marketplace() {
                                 {/* Info */}
                                 <div className="p-4">
                                     <h3 className="font-semibold text-slate-900 leading-tight mb-0.5">{product.name}</h3>
-                                    <p className="text-xs text-slate-400 mb-3">
-                                        by {product.tailor_name ?? 'Kere Tailor'}
+                                    <p className="text-xs text-slate-400 mb-2 flex items-center gap-1 flex-wrap">
+                                        <span>by{' '}
+                                        {product.tailor_id ? (
+                                            <Link
+                                                to={`/tailor/${product.tailor_id}`}
+                                                onClick={e => e.stopPropagation()}
+                                                className="hover:text-slate-700 hover:underline transition-colors"
+                                            >
+                                                {product.tailor_name ?? 'Kere Tailor'}
+                                            </Link>
+                                        ) : (
+                                            product.tailor_name ?? 'Kere Tailor'
+                                        )}</span>
+                                        {product.reviews_count > 0 && (
+                                            <BadgeCheck className="w-3.5 h-3.5 text-slate-500 inline" aria-label="Verified tailor" />
+                                        )}
                                     </p>
+                                    {/* Reviews */}
+                                    {product.reviews_count > 0 ? (
+                                        <div className="flex items-center gap-1 mb-2">
+                                            {[1,2,3,4,5].map(i => (
+                                                <Star
+                                                    key={i}
+                                                    className={`w-3 h-3 ${i <= Math.round(product.average_rating ?? 0) ? 'fill-slate-700 text-slate-700' : 'text-slate-300'}`}
+                                                />
+                                            ))}
+                                            <span className="text-xs text-slate-500 ml-1">({product.reviews_count})</span>
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-slate-400 mb-2">No reviews yet</p>
+                                    )}
                                     <div className="flex items-center justify-between">
                                         <span className="text-lg font-bold text-slate-900">₾{product.price}</span>
                                         <button
@@ -301,9 +453,9 @@ export default function Marketplace() {
                 )}
             </div>
 
-            {/* Click-away to close filters */}
-            {showFilters && (
-                <div className="fixed inset-0 z-10" onClick={() => setShowFilters(false)} />
+            {/* Click-away to close dropdowns */}
+            {(showFilters || showSort) && (
+                <div className="fixed inset-0 z-10" onClick={() => { setShowFilters(false); setShowSort(false); }} />
             )}
         </div>
     );

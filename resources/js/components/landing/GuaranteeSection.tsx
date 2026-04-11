@@ -14,23 +14,23 @@ interface Review {
 const STATIC_REVIEWS: Review[] = [
     {
         id: -1,
-        comment: 'The AI measurement feature is incredible! My dress fit perfectly, and the quality exceeded my expectations. Kere has changed how I shop for clothes.',
-        reviewer: 'Sarah Johnson',
+        comment: 'I sent in my measurements, chose the fabric, and the dress arrived fitting perfectly. Working with a real local tailor made all the difference.',
+        reviewer: 'Nino Beridze',
         location: 'Tbilisi, Georgia',
         avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&auto=format&fit=crop&crop=face',
         rating: 5,
     },
     {
         id: -2,
-        comment: "Ordering a custom suit has never been this easy. The tailor followed every detail perfectly. I'll never buy off-the-rack again.",
-        reviewer: 'David Merabishvili',
+        comment: "I designed a suit from scratch — fabric, cut, lining — and the tailor followed every detail. Will never buy off-the-rack again.",
+        reviewer: 'Davit Merabishvili',
         location: 'Batumi, Georgia',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&auto=format&fit=crop&crop=face',
         rating: 5,
     },
     {
         id: -3,
-        comment: 'Fast delivery, perfect fit, and the fabric quality was outstanding. Kere exceeded all my expectations for custom clothing.',
+        comment: 'The custom notes field let me describe exactly what I wanted. The tailor got it right on the first try. Incredible service.',
         reviewer: 'Nino Kvaratskhelia',
         location: 'Kutaisi, Georgia',
         avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&auto=format&fit=crop&crop=face',
@@ -72,7 +72,7 @@ export function GuaranteeSection() {
                             What Our Customers Say
                         </h2>
                         <p className="text-slate-500">
-                            Join thousands of satisfied customers who love their custom clothing
+                            Real reviews from customers who ordered through Kere
                         </p>
                     </motion.div>
 

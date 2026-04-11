@@ -1,21 +1,38 @@
 import { motion } from 'motion/react';
 import { Award, Users, Heart, Clock } from 'lucide-react';
 import { Link } from 'react-router';
+import { useState, useEffect } from 'react';
 
-const stats = [
-    { icon: Award, label: 'Local', sublabel: 'Expert Tailors' },
-    { icon: Users, label: 'Custom', sublabel: 'Perfect Fit' },
-    { icon: Heart, label: 'Quality', sublabel: 'Guaranteed' },
-    { icon: Clock, label: 'Fast', sublabel: 'Turnaround' },
-];
+interface PlatformStats {
+    tailors_count: number;
+    orders_count: number;
+    avg_rating: number | null;
+    reviews_count: number;
+}
 
 const bullets = [
-    'Experienced local tailors in your area',
-    'Quality fabrics and materials',
-    'Attention to detail and craftsmanship',
+    'Tbilisi-based tailors, vetted by Kere',
+    'Domestic & imported fabric options',
+    "Free alterations if the fit isn't right",
 ];
 
 export function LocalTailorsSection() {
+    const [stats, setStats] = useState<PlatformStats | null>(null);
+
+    useEffect(() => {
+        fetch('/api/platform/stats')
+            .then(r => r.json())
+            .then(setStats)
+            .catch(() => {});
+    }, []);
+
+    const cards = [
+        { icon: Award, label: stats?.tailors_count ? String(stats.tailors_count) : '—', sublabel: 'Local Tailors' },
+        { icon: Users, label: stats?.orders_count  ? String(stats.orders_count)  : '—', sublabel: 'Orders Fulfilled' },
+        { icon: Heart, label: stats?.avg_rating    ? `${stats.avg_rating}★`      : '—', sublabel: 'Avg. Rating' },
+        { icon: Clock, label: '7–14d',                                                   sublabel: 'Avg. Turnaround' },
+    ];
+
     return (
         <section className="py-16 md:py-24 bg-slate-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -69,9 +86,9 @@ export function LocalTailorsSection() {
 
                         {/* 2x2 stat cards */}
                         <div className="grid grid-cols-2 gap-4 mb-8">
-                            {stats.map((s, i) => (
+                            {cards.map((s, i) => (
                                 <motion.div
-                                    key={s.label}
+                                    key={s.sublabel}
                                     initial={{ opacity: 0, y: 10 }}
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true }}

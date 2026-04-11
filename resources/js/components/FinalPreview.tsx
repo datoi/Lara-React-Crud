@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { ArrowLeft, Download, Send, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, Send, Check, Loader2, Info } from 'lucide-react';
 import { GarmentPreview } from './GarmentPreview';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -27,6 +27,20 @@ interface FinalPreviewProps {
     onBack: () => void;
 }
 
+const BASE_PRICE: Record<string, number> = {
+    dress: 180, shirt: 90, trousers: 120, jacket: 250,
+    coat: 320, skirt: 100, suit: 450, blouse: 85,
+};
+const FABRIC_PREMIUM: Record<string, number> = {
+    silk: 80, cashmere: 120, wool: 60, linen: 20, cotton: 0, denim: 15, velvet: 70, leather: 200,
+};
+function getPriceBreakdown(design: DesignState) {
+    const base = BASE_PRICE[design.clothingType ?? ''] ?? 150;
+    const fabric = FABRIC_PREMIUM[design.fabric?.toLowerCase() ?? ''] ?? 0;
+    const cuts = (design.designElements?.cuts?.length ?? 0) * 15;
+    return { base, fabric, cuts, total: base + fabric + cuts };
+}
+
 function SpecRow({ label, value }: { label: string; value: string }) {
     if (!value) return null;
     return (
@@ -39,6 +53,7 @@ function SpecRow({ label, value }: { label: string; value: string }) {
 
 export function FinalPreview({ design, onBack }: FinalPreviewProps) {
     const navigate = useNavigate();
+    const { base, fabric, cuts, total } = getPriceBreakdown(design);
     const [submitted, setSubmitted]     = useState(false);
     const [submitting, setSubmitting]   = useState(false);
     const [submitError, setSubmitError] = useState('');
@@ -121,7 +136,7 @@ export function FinalPreview({ design, onBack }: FinalPreviewProps) {
             }
             clearPendingOrder();
             setSubmitted(true);
-            setTimeout(() => navigate('/'), 2500);
+            setTimeout(() => navigate('/customer-dashboard'), 3000);
         } catch {
             setSubmitError('Network error. Please try again.');
         } finally {
@@ -152,7 +167,7 @@ export function FinalPreview({ design, onBack }: FinalPreviewProps) {
                     </motion.div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2">Design Submitted!</h3>
                     <p className="text-slate-500">A tailor will review your design and reach out within 24 hours.</p>
-                    <p className="text-sm text-slate-400 mt-4">Returning to home…</p>
+                    <p className="text-sm text-slate-400 mt-4">Taking you to your orders…</p>
                 </div>
             ) : (
                 <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
@@ -232,6 +247,37 @@ export function FinalPreview({ design, onBack }: FinalPreviewProps) {
                             {design.sizeCm.length && <SpecRow label="Length" value={`${design.sizeCm.length} cm`} />}
                             {design.sizeCm.inseam && <SpecRow label="Inseam" value={`${design.sizeCm.inseam} cm`} />}
                             {design.designElements.height && <SpecRow label="Height" value={`${design.designElements.height} cm`} />}
+                        </div>
+
+                        {/* Price estimate */}
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                                <span>Estimated Price</span>
+                                <Info className="w-3.5 h-3.5 text-slate-400" title="Final price confirmed by tailor" />
+                            </div>
+                            <div className="space-y-1.5 text-sm text-slate-600">
+                                <div className="flex justify-between">
+                                    <span>Base ({design.clothingType ?? 'garment'})</span>
+                                    <span>₾{base}</span>
+                                </div>
+                                {fabric > 0 && (
+                                    <div className="flex justify-between">
+                                        <span>Fabric ({design.fabric})</span>
+                                        <span>+₾{fabric}</span>
+                                    </div>
+                                )}
+                                {cuts > 0 && (
+                                    <div className="flex justify-between">
+                                        <span>Design elements ({design.designElements.cuts.length})</span>
+                                        <span>+₾{cuts}</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200">
+                                <span className="font-semibold text-slate-900">Total estimate</span>
+                                <span className="text-xl font-bold text-slate-900">₾{total}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-2">Tailor confirms final price before starting work.</p>
                         </div>
 
                         {/* Actions */}

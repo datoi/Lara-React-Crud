@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\NewOrderAlert;
+use App\Mail\OrderConfirmation;
+use App\Mail\OrderStatusUpdated;
 use App\Models\KereNotification;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class OrderController extends Controller
@@ -115,6 +120,23 @@ class OrderController extends Controller
             );
         }
 
+        // Send confirmation email to customer
+        try {
+            $order->load('items');
+            Mail::to($user->email)->send(new OrderConfirmation($order));
+        } catch (\Throwable $e) {
+            Log::error('OrderConfirmation email failed: ' . $e->getMessage());
+        }
+
+        // Alert tailor by email
+        if ($tailor) {
+            try {
+                Mail::to($tailor->email)->send(new NewOrderAlert($order, $user));
+            } catch (\Throwable $e) {
+                Log::error('NewOrderAlert email failed: ' . $e->getMessage());
+            }
+        }
+
         return response()->json([
             'order_number' => $order->order_number,
             'total'        => $order->total,
@@ -163,6 +185,22 @@ class OrderController extends Controller
                 "You received a custom {$clothingType} design from {$customerName}.",
                 ['order_id' => $order->id, 'clothing_type' => $clothingType]
             );
+        }
+
+        // Send confirmation email to customer
+        try {
+            Mail::to($user->email)->send(new OrderConfirmation($order));
+        } catch (\Throwable $e) {
+            Log::error('OrderConfirmation email failed (custom): ' . $e->getMessage());
+        }
+
+        // Alert tailor by email
+        if ($tailor) {
+            try {
+                Mail::to($tailor->email)->send(new NewOrderAlert($order, $user));
+            } catch (\Throwable $e) {
+                Log::error('NewOrderAlert email failed (custom): ' . $e->getMessage());
+            }
         }
 
         return response()->json([
@@ -227,6 +265,16 @@ class OrderController extends Controller
                 "Your order #{$order->id} status has been updated to: {$statusLabel}.",
                 ['order_id' => $order->id, 'status' => $data['status']]
             );
+        }
+
+        // Send status update email to customer
+        $notifyStatuses = ['processing', 'shipped', 'delivered', 'finished', 'cancelled'];
+        if (in_array($data['status'], $notifyStatuses) && $data['status'] !== $oldStatus) {
+            try {
+                Mail::to($order->user->email)->send(new OrderStatusUpdated($order, $data['status']));
+            } catch (\Throwable $e) {
+                Log::error('OrderStatusUpdated email failed: ' . $e->getMessage());
+            }
         }
 
         return response()->json(['order' => $this->formatOrder($order->fresh(['user', 'items.product']))]);

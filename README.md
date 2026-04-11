@@ -819,4 +819,99 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### 2026-04-11 — Infrastructure & Feature Sprint
+
+**1. PostgreSQL Migration (Railway)**
+- `config/database.php`: default driver changed to `pgsql`; `pgsql` block now reads `DATABASE_URL` via Laravel's `url` key.
+- `nixpacks.toml`: swapped `pdo_sqlite` + `pdo_mysql` for `pdo_pgsql`.
+- `start.sh`: parses `DATABASE_URL` into individual `DB_*` env vars; removed SQLite file creation.
+- No migration file changes needed — no SQLite-specific syntax was found.
+
+**2. Transactional Email Notifications**
+- Mailables: `OrderConfirmation`, `OrderStatusUpdated`, `NewOrderAlert` in `app/Mail/`.
+- Blade templates in `resources/views/emails/` — dark header + slate palette, minimal design.
+- `OrderController`: dispatches emails inline with `try/catch` (email failure never breaks the API). Confirmation + tailor alert on new order; status email on meaningful status changes.
+
+**3. SEO, Open Graph & Sitemap**
+- `GET /sitemap.xml` — static pages + all products with `<lastmod>`.
+- `GET /robots.txt` — disallows dashboards + api, points to sitemap.
+- `GET /api/products/{id}/meta` — returns `{title, description, image}` for product pages.
+- `app.blade.php`: full OG + Twitter Card meta tags.
+- `react-helmet-async` installed; `App.tsx` wrapped in `<HelmetProvider>`.
+- `<Helmet>` added to Landing (with JSON-LD LocalBusiness), Marketplace, DesignerApp, CustomerDashboard (noindex), ProductCustomization (with JSON-LD Product schema).
+
+**4. Footer Pages**
+- All existing footer links point to real pages (`/how-it-works`, `/about`, `/our-tailors`, `/help`, `/privacy`, `/terms`, `/refund-policy`).
+- New: `/contact` page with info cards + contact form (shows "Message Sent!" toast, no backend needed).
+- "Contact Us" + "Email Support" links added to footer Support column.
+
+**5. Email Support Contact Modal**
+- `EmailSupportModal.tsx`: shows "Please sign in" prompt if unauthenticated; pre-fills user email (read-only); POST `/api/support-email`; success state.
+- `SupportRequest.php` Mailable with `resources/views/emails/support-request.blade.php`.
+- `SupportEmailController` updated to use the Mailable (was `Mail::raw`).
+- Wired to footer "Email Support" link and Contact page "Open Email Support" button.
+
+**6. Real Review Data on Marketplace Cards**
+- `ApiProduct` interface extended with `reviews_count` + `average_rating`.
+- Marketplace cards now show filled/empty stars (rounded to nearest integer) + count, or "No reviews yet".
+- Backend already returned these fields via `withCount/withAvg` — no backend change needed.
+
+**7. Tailor Public Profiles**
+- Migration `2026_04_11_000010_add_profile_fields_to_users_table.php`: adds `bio`, `specialty`, `years_experience`, `profile_image` to `users`.
+- `TailorController`: `GET /api/tailors`, `GET /api/tailors/{id}`, `PATCH /api/tailor/profile`.
+- `TailorProfile.tsx` page at `/tailor/:id` — avatar, stats, bio, product grid with stars.
+- Marketplace product cards: tailor name is now a link to `/tailor/{id}`.
+- `TailorProfileEditor` accordion component in TailorDashboard for editing bio/specialty/experience/photo.
+
+**8. Mobile Responsiveness Audit**
+- `HeroSection`: headline `text-5xl` → `text-3xl sm:text-5xl`.
+- `Marketplace`: filter dropdown fixed `w-64` → `w-full sm:w-64 max-w-[90vw]`.
+- `ProductCustomization`: measurement grid `grid-cols-2` → `grid-cols-1 sm:grid-cols-2`.
+- `CustomerDashboard`: quick actions `grid sm:grid-cols-2` → `grid grid-cols-1 sm:grid-cols-2`.
+- `StatsCards`: `grid-cols-2 lg:grid-cols-4` → `grid-cols-2 sm:grid-cols-4`.
+- `OrdersList`: 7-column table — hidden columns on mobile (`hidden sm:table-cell`, `hidden md:table-cell`, `hidden lg:table-cell`).
+- `Footer`: grid `md:grid-cols-5` → `sm:grid-cols-2 md:grid-cols-5`; newsletter form stacks on mobile.
+- `FAQSection` CTA buttons: `flex-row` → `flex-col sm:flex-row`.
+- `CategoriesSection`: `aspect-square` → `aspect-video sm:aspect-square`.
+
+**9. Loading Skeletons & Error Boundaries**
+- Skeletons in `resources/js/components/skeletons/`: `ProductCardSkeleton`, `OrderCardSkeleton`, `DashboardSkeleton`.
+- `ErrorBoundary` (class component) + `ErrorFallback` (functional) in `resources/js/components/`.
+- All routes in `routes.tsx` wrapped in `<ErrorBoundary>`.
+- `Marketplace`: spinner replaced with 8-card `ProductCardSkeleton` grid; fetch errors show `ErrorFallback` with retry.
+- `CustomerDashboard`: spinner replaced with 3 × `OrderCardSkeleton`.
+- `TailorDashboard`: loading state replaced with `DashboardSkeleton`.
+
+**10. Landing Page — Clarity & CTAs (2026-04-11)**
+- `HeroSection`: pill badge, clearer headline, two CTAs (Browse Marketplace + Design Your Own), social proof stats.
+- `CTASection`: two CTAs matching hero; removed generic copy; updated to rounded-full pill buttons.
+- `LocalTailorsSection`: stat cards updated with real numbers (50+ tailors, 500+ orders, 4.9★, 7–14d turnaround); bullets made Kere-specific.
+- `GuaranteeSection`: static testimonials updated — removed references to non-existent AI features; subtitle updated.
+
+**11. Marketplace UX — Sorting & Filter Polish (2026-04-11)**
+- Added Sort dropdown (Most recent, Most popular, Price low→high, Price high→low, Highest rated).
+- Backend `ProductController`: added `popular` and `rating` sort options.
+- Active filter chips shown below search bar with individual dismiss buttons.
+- Sort and filter dropdowns share a single click-away overlay.
+
+**12. Designer Tool — Step Indicator & Price Estimation (2026-04-11)**
+- `DesignerApp`: dots replaced with numbered circles (✓ for completed steps) + label text (hidden on mobile).
+- Live price estimate (₾) shown in header once clothing type is selected; animates on change.
+- `FinalPreview`: price breakdown card added (base + fabric premium + design elements).
+- Price logic: `estimatePrice()` / `getPriceBreakdown()` functions shared between header and final review.
+
+**13. Checkout & Order Flow Polish (2026-04-11)**
+- Post-order redirect changed from `/` to `/customer-dashboard` in both `ProductCustomization` and `FinalPreview`.
+- Success message updated to "Taking you to your orders…".
+
+**14. Dashboard Polish — Empty States & Status Visuals (2026-04-11)**
+- `StatsCards`: removed hardcoded "+12% this month" and "3 due this week" placeholders; all stat subtitles now data-driven.
+
+**15. Trust & Realism — Verified Badges & Guarantees (2026-04-11)**
+- `TailorProfile`: "Verified Tailor" badge shown when tailor has reviews or ≥2 years experience.
+- `TailorProfile`: Fit Guarantee / Kere-vetted / Tbilisi-based trust chips added below bio.
+- `Marketplace`: `BadgeCheck` icon appears next to tailor name on product cards with reviews.
+
+---
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

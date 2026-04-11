@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Link } from 'react-router';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Scissors, ShoppingBag } from 'lucide-react';
 
 export function CTASection() {
     return (
@@ -23,20 +23,30 @@ export function CTASection() {
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
                 >
-                    <p className="text-slate-300 text-sm font-medium mb-3">Ready to get started?</p>
+                    <p className="text-slate-300 text-sm font-medium mb-3">Ready to wear something made for you?</p>
                     <h2 className="text-3xl md:text-5xl font-bold text-white mb-5 leading-tight">
-                        Create Your Custom Clothing Today
+                        Your Perfect Garment,<br className="hidden sm:block" /> Sewn by a Local Tailor
                     </h2>
                     <p className="text-slate-300 text-base md:text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-                        Design clothes that fit your style and body perfectly. Made by local tailors with our quality guarantee.
+                        Pick a ready-made design or build one from scratch — fabric, cut, and measurements chosen by you.
                     </p>
-                    <Link
-                        to="/marketplace"
-                        className="inline-flex items-center gap-2 border border-white text-white text-base font-semibold px-8 py-4 rounded-xl hover:bg-white hover:text-slate-900 transition-all active:scale-[0.98]"
-                    >
-                        Browse Marketplace
-                        <ArrowRight className="w-5 h-5" />
-                    </Link>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <Link
+                            to="/marketplace"
+                            className="inline-flex items-center gap-2 bg-white text-slate-900 text-base font-semibold px-8 py-4 rounded-full hover:bg-white/90 transition-all active:scale-[0.98] w-full sm:w-auto justify-center shadow-lg"
+                        >
+                            <ShoppingBag className="w-5 h-5" />
+                            Browse Marketplace
+                        </Link>
+                        <Link
+                            to="/design"
+                            className="inline-flex items-center gap-2 border border-white/40 bg-white/10 backdrop-blur-sm text-white text-base font-semibold px-8 py-4 rounded-full hover:bg-white/20 transition-all active:scale-[0.98] w-full sm:w-auto justify-center"
+                        >
+                            <Scissors className="w-5 h-5" />
+                            Design Your Own Clothes
+                            <ArrowRight className="w-5 h-5" />
+                        </Link>
+                    </div>
                 </motion.div>
             </div>
         </section>

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\SupportRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SupportEmailController extends Controller
@@ -42,19 +44,12 @@ class SupportEmailController extends Controller
         ]);
 
         // Send email
-        $fromEmail = $user->email;
-        $fromName  = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->email;
-        $subject   = $data['subject'];
-        $body      = $data['message'];
-
-        Mail::raw(
-            "Support message from: {$fromName} <{$fromEmail}>\n\n{$body}",
-            function ($mail) use ($fromEmail, $fromName, $subject) {
-                $mail->to('dato.tadiashvili13@gmail.com')
-                     ->replyTo($fromEmail, $fromName)
-                     ->subject("[Kere Support] {$subject}");
-            }
-        );
+        try {
+            Mail::to('dato.tadiashvili13@gmail.com')->send(new SupportRequest($user, $data['subject'], $data['message']));
+        } catch (\Throwable $e) {
+            Log::error('SupportRequest email failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to send email. Please try again.'], 500);
+        }
 
         return response()->json(['success' => true]);
     }

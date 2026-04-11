@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { MapPin, Phone, Mail, Facebook, Instagram, Twitter, CreditCard } from 'lucide-react';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
+import { EmailSupportModal } from '../EmailSupportModal';
 
 // link type: 'router' = <Link to>, 'hash' = <a href> (scrolls on landing), 'modal' = button
 type FooterLink =
     | { label: string; type: 'router'; to: string }
     | { label: string; type: 'hash'; href: string }
-    | { label: string; type: 'modal'; modal: 'size-guide' };
+    | { label: string; type: 'modal'; modal: 'size-guide' | 'email-support' };
 
 const footerColumns: { title: string; links: FooterLink[] }[] = [
     {
@@ -29,9 +30,11 @@ const footerColumns: { title: string; links: FooterLink[] }[] = [
     {
         title: 'Support',
         links: [
-            { label: 'Help Center', type: 'router', to: '/help'        },
-            { label: 'Size Guide',  type: 'modal',  modal: 'size-guide' },
-            { label: 'FAQ',         type: 'hash',   href: '/#faq'       },
+            { label: 'Help Center',    type: 'router', to: '/help'           },
+            { label: 'Contact Us',     type: 'router', to: '/contact'        },
+            { label: 'Email Support',  type: 'modal',  modal: 'email-support' },
+            { label: 'Size Guide',     type: 'modal',  modal: 'size-guide'   },
+            { label: 'FAQ',            type: 'hash',   href: '/#faq'         },
         ],
     },
     {
@@ -47,16 +50,18 @@ const footerColumns: { title: string; links: FooterLink[] }[] = [
 const linkClass = 'text-sm hover:text-white transition-colors';
 
 export function Footer() {
-    const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+    const [sizeGuideOpen,    setSizeGuideOpen]    = useState(false);
+    const [emailSupportOpen, setEmailSupportOpen] = useState(false);
 
     return (
         <>
             <MeasurementGuideModal open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
+            <EmailSupportModal open={emailSupportOpen} onClose={() => setEmailSupportOpen(false)} />
 
             <footer className="bg-slate-900 text-slate-400">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
                     {/* Top row */}
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-10 pb-12">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 sm:gap-10 pb-12">
                         {/* Brand column */}
                         <div className="md:col-span-1">
                             <Link to="/" className="text-2xl font-bold text-white">Kere</Link>
@@ -112,7 +117,10 @@ export function Footer() {
                                             )}
                                             {l.type === 'modal' && (
                                                 <button
-                                                    onClick={() => setSizeGuideOpen(true)}
+                                                    onClick={() => {
+                                                        if (l.modal === 'size-guide') setSizeGuideOpen(true);
+                                                        if (l.modal === 'email-support') setEmailSupportOpen(true);
+                                                    }}
                                                     className={linkClass}
                                                 >
                                                     {l.label}
@@ -136,7 +144,7 @@ export function Footer() {
                         </p>
                         <form
                             onSubmit={(e) => e.preventDefault()}
-                            className="flex items-center justify-center gap-2 max-w-sm mx-auto"
+                            className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 max-w-sm mx-auto w-full px-2"
                         >
                             <input
                                 type="email"

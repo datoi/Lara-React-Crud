@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router';
 import { getPendingOrder } from '../hooks/useAuth';
 import { motion, AnimatePresence } from 'motion/react';
@@ -49,8 +50,23 @@ const STEP_LABELS: Record<Step, string> = {
     subcategory: 'Select Style',
     customize: 'Customize',
     design: 'Design',
-    preview: 'Review',
+    preview: 'Review & Order',
 };
+
+// Base prices by clothing type (₾)
+const BASE_PRICE: Record<string, number> = {
+    dress: 180, shirt: 90, trousers: 120, jacket: 250,
+    coat: 320, skirt: 100, suit: 450, blouse: 85,
+};
+const FABRIC_PREMIUM: Record<string, number> = {
+    silk: 80, cashmere: 120, wool: 60, linen: 20, cotton: 0, denim: 15, velvet: 70, leather: 200,
+};
+function estimatePrice(design: DesignState): number {
+    const base = BASE_PRICE[design.clothingType ?? ''] ?? 150;
+    const fabric = FABRIC_PREMIUM[design.fabric?.toLowerCase() ?? ''] ?? 0;
+    const cutAddon = (design.designElements?.cuts?.length ?? 0) * 15;
+    return base + fabric + cutAddon;
+}
 
 export default function DesignerApp() {
     const [step, setStep] = useState<Step>('type');
@@ -75,39 +91,63 @@ export default function DesignerApp() {
 
     const stepIndex = STEP_ORDER.indexOf(step);
 
+    const estimatedPrice = estimatePrice(design);
+
     return (
         <div className="min-h-screen bg-slate-50">
+            <Helmet>
+                <title>Design Your Custom Garment | Kere</title>
+                <meta name="description" content="Create a bespoke garment from scratch. Choose fabric, color, style and measurements — then a local Georgian tailor will craft it for you." />
+            </Helmet>
             {/* Header */}
             <header className="sticky top-0 z-50 bg-white border-b border-slate-200">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+                    <Link to="/" className="text-xl font-bold text-slate-900 hover:text-slate-700 transition-colors shrink-0">
                         Kere
                     </Link>
 
-                    {/* Step indicators */}
-                    <div className="flex items-center gap-2">
+                    {/* Step indicators — numbered with labels */}
+                    <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
                         {STEP_ORDER.map((s, i) => (
-                            <div key={s} className="flex items-center gap-2">
-                                <div
-                                    className={`w-2.5 h-2.5 rounded-full transition-all ${
-                                        i < stepIndex
-                                            ? 'bg-slate-900 scale-100'
-                                            : i === stepIndex
-                                            ? 'bg-slate-900 scale-125 ring-2 ring-slate-900/20'
-                                            : 'bg-slate-200'
-                                    }`}
-                                    title={STEP_LABELS[s]}
-                                />
+                            <div key={s} className="flex items-center gap-1 shrink-0">
+                                <div className="flex items-center gap-1.5">
+                                    <div
+                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-all ${
+                                            i < stepIndex
+                                                ? 'bg-slate-900 text-white'
+                                                : i === stepIndex
+                                                ? 'bg-slate-900 text-white ring-2 ring-slate-900/20 ring-offset-1'
+                                                : 'bg-slate-200 text-slate-400'
+                                        }`}
+                                    >
+                                        {i < stepIndex ? '✓' : i + 1}
+                                    </div>
+                                    <span className={`text-xs font-medium hidden sm:inline transition-colors ${
+                                        i === stepIndex ? 'text-slate-900' : i < stepIndex ? 'text-slate-500' : 'text-slate-300'
+                                    }`}>
+                                        {STEP_LABELS[s]}
+                                    </span>
+                                </div>
                                 {i < STEP_ORDER.length - 1 && (
-                                    <div className={`w-4 h-px ${i < stepIndex ? 'bg-slate-900' : 'bg-slate-200'}`} />
+                                    <div className={`w-5 h-px mx-1 ${i < stepIndex ? 'bg-slate-900' : 'bg-slate-200'}`} />
                                 )}
                             </div>
                         ))}
                     </div>
 
-                    <div className="text-sm text-slate-400">
-                        Step {stepIndex + 1} of {STEP_ORDER.length} — {STEP_LABELS[step]}
-                    </div>
+                    {/* Live price estimate */}
+                    {design.clothingType && (
+                        <motion.div
+                            key={estimatedPrice}
+                            initial={{ scale: 0.95, opacity: 0.7 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ duration: 0.2 }}
+                            className="shrink-0 text-right"
+                        >
+                            <p className="text-[10px] text-slate-400 leading-none mb-0.5">Est. price</p>
+                            <p className="text-base font-bold text-slate-900 leading-none">₾{estimatedPrice}</p>
+                        </motion.div>
+                    )}
                 </div>
             </header>
 

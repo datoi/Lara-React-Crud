@@ -126,7 +126,7 @@ export function CategoriesSection() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.45, delay: i * 0.07 }}
-                                className="relative rounded-2xl overflow-hidden aspect-square group cursor-pointer"
+                                className="relative rounded-2xl overflow-hidden aspect-video sm:aspect-square group cursor-pointer"
                             >
                                 <img
                                     src={image}

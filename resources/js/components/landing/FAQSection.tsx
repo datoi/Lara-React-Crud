@@ -263,7 +263,7 @@ export function FAQSection() {
                     <p className="text-slate-500 text-sm mb-6">
                         Our support team is here to help you with any questions or concerns.
                     </p>
-                    <div className="flex items-center justify-center gap-3">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
                         <button
                             onClick={handleEmailSupport}
                             className="bg-slate-900 text-white text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-700 transition-colors"

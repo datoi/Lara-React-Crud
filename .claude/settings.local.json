@@ -9,7 +9,11 @@
       "Bash(git push:*)",
       "Bash(npx tsc:*)",
       "Bash(npx vite:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(xargs grep:*)",
+      "Bash(node -e \"require\\('./node_modules/@types/react/index.d.ts'\\)\")",
+      "Bash(ls \"C:\\\\Users\\\\Davit\\\\.claude\\\\image-cache\\\\\" 2>/dev/null && ls \"C:\\\\Users\\\\Davit\\\\.claude\\\\image-cache\\\\\"*/)",
+      "Bash(npm install:*)"
     ]
   }
 }

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link, useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { ArrowLeft, Star, Minus, Plus, Check, Loader2, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Star, Minus, Plus, Check, Loader2, HelpCircle, User } from 'lucide-react';
 import { MeasurementGuideModal, type MeasurementKey } from '../components/MeasurementGuideModal';
 import { measurementWarning } from '../utils/measurementSanity';
 import {
     getAuthToken,
+    getAuthUser,
     saveReturnTo,
     savePendingOrder,
     getPendingOrder,
@@ -43,6 +45,8 @@ export default function ProductCustomization() {
     const [guideStep, setGuideStep] = useState<MeasurementKey | null>(null);
     const [reviews, setReviews]     = useState<{ id: number; rating: number; comment: string; reviewer: string; created_at: string }[]>([]);
     const [avgRating, setAvgRating] = useState<number | null>(null);
+
+    const authUser = getAuthUser();
 
     const openGuide = (key: string) => {
         const valid: MeasurementKey[] = ['chest', 'waist', 'hips', 'length'];
@@ -157,7 +161,7 @@ export default function ProductCustomization() {
             }
             clearPendingOrder();
             setOrdered(true);
-            setTimeout(() => navigate('/'), 2500);
+            setTimeout(() => navigate('/customer-dashboard'), 3000);
         } catch {
             setOrderError('Network error. Please try again.');
         } finally {
@@ -176,19 +180,46 @@ export default function ProductCustomization() {
 
     return (
         <div className="min-h-screen bg-slate-50">
+            <Helmet>
+                <title>{product.name} — Custom {product.category?.name ?? 'Garment'} | Kere</title>
+                <meta name="description" content={product.description ? product.description.slice(0, 160) : `Order a custom ${product.name.toLowerCase()} handcrafted by a local Georgian tailor on Kere.`} />
+                <script type="application/ld+json">{JSON.stringify({
+                    "@context": "https://schema.org",
+                    "@type": "Product",
+                    "name": product.name,
+                    "description": product.description ?? undefined,
+                    "image": product.images?.[0] ?? undefined,
+                    "offers": {
+                        "@type": "Offer",
+                        "price": product.price,
+                        "priceCurrency": "GEL",
+                        "availability": "https://schema.org/InStock"
+                    }
+                })}</script>
+            </Helmet>
             {/* Navbar */}
             <nav className="sticky top-0 z-50 bg-white border-b border-slate-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">
                         Kere
                     </Link>
-                    <Link
-                        to="/marketplace"
-                        className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 transition-colors"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Back to Marketplace
-                    </Link>
+                    <div className="flex items-center gap-4">
+                        {authUser && (
+                            <div className="flex items-center gap-2 text-sm text-slate-700">
+                                <div className="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center">
+                                    <User className="w-4 h-4 text-slate-600" />
+                                </div>
+                                <span className="font-medium hidden sm:inline">{authUser.first_name} {authUser.last_name}</span>
+                            </div>
+                        )}
+                        <Link
+                            to="/marketplace"
+                            className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 transition-colors"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            Back to Marketplace
+                        </Link>
+                    </div>
                 </div>
             </nav>
 
@@ -209,7 +240,7 @@ export default function ProductCustomization() {
                     >
                         <h2 className="text-2xl font-bold text-slate-900 mb-2">Order Placed!</h2>
                         <p className="text-slate-500">Your order has been sent to {tailor}. You'll hear back within 24 hours.</p>
-                        <p className="text-sm text-slate-400 mt-4">Redirecting you home…</p>
+                        <p className="text-sm text-slate-400 mt-4">Taking you to your orders…</p>
                     </motion.div>
                 </div>
             ) : (
@@ -320,7 +351,7 @@ export default function ProductCustomization() {
                             <div className="bg-white rounded-2xl border border-slate-200 p-5">
                                 <div className="text-sm font-semibold text-slate-700 mb-1">Custom Measurements (cm)</div>
                                 <p className="text-xs text-slate-400 mb-4">Optional — for a perfect fit, enter your measurements.</p>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {[
                                         { key: 'chest', label: 'Chest' },
                                         { key: 'waist', label: 'Waist' },

@@ -4,6 +4,8 @@ import { DashboardHeader } from '../components/tailor/DashboardHeader';
 import { StatsCards } from '../components/tailor/StatsCards';
 import { OrdersList, type TailorOrder } from '../components/tailor/OrdersList';
 import { ProductManager, type TailorProductFull } from '../components/tailor/ProductManager';
+import { TailorProfileEditor } from '../components/tailor/TailorProfileEditor';
+import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
 import { getAuthUser, getAuthToken } from '../hooks/useAuth';
 
 export default function TailorDashboard() {
@@ -115,30 +117,35 @@ export default function TailorDashboard() {
                     transition={{ duration: 0.3, delay: 0.15 }}
                 >
                     {loadingOrders ? (
-                        <div className="bg-white rounded-2xl border border-slate-200 px-6 py-12 text-center text-slate-400 text-sm">
-                            Loading orders…
-                        </div>
+                        <DashboardSkeleton />
                     ) : (
                         <OrdersList orders={orders} onStatusChange={handleStatusChange} />
                     )}
                 </motion.div>
 
                 {/* Products */}
+                {!loadingOrders && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.25 }}
+                    >
+                        {!loadingProducts && (
+                            <ProductManager
+                                products={products}
+                                onProductAdded={p => setProducts(prev => [p, ...prev])}
+                            />
+                        )}
+                    </motion.div>
+                )}
+
+                {/* Edit Profile */}
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.25 }}
+                    transition={{ duration: 0.3, delay: 0.35 }}
                 >
-                    {loadingProducts ? (
-                        <div className="bg-white rounded-2xl border border-slate-200 px-6 py-12 text-center text-slate-400 text-sm">
-                            Loading products…
-                        </div>
-                    ) : (
-                        <ProductManager
-                            products={products}
-                            onProductAdded={p => setProducts(prev => [p, ...prev])}
-                        />
-                    )}
+                    {token && user && <TailorProfileEditor token={token} tailorId={user.id} />}
                 </motion.div>
             </div>
         </div>

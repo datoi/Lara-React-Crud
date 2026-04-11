@@ -342,13 +342,13 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                         <table className="w-full">
                             <thead>
                                 <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
-                                    <th className="text-left px-6 py-3 font-semibold">Order</th>
-                                    <th className="text-left px-6 py-3 font-semibold">Customer</th>
-                                    <th className="text-left px-6 py-3 font-semibold">Type / Product</th>
-                                    <th className="text-left px-6 py-3 font-semibold">Status</th>
-                                    <th className="text-left px-6 py-3 font-semibold">Amount</th>
-                                    <th className="text-left px-6 py-3 font-semibold">Date</th>
-                                    <th className="px-6 py-3" />
+                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold">Order</th>
+                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold hidden sm:table-cell">Customer</th>
+                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold hidden md:table-cell">Type / Product</th>
+                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold">Status</th>
+                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold">Amount</th>
+                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold hidden lg:table-cell">Date</th>
+                                    <th className="px-4 sm:px-6 py-3" />
                                 </tr>
                             </thead>
                             <tbody>
@@ -366,22 +366,22 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                                             transition={{ delay: i * 0.06 }}
                                             className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
                                         >
-                                            <td className="px-6 py-4 text-sm font-mono text-slate-500">{order.order_number}</td>
-                                            <td className="px-6 py-4 text-sm font-medium text-slate-900">{order.customer.name}</td>
-                                            <td className="px-6 py-4 text-sm text-slate-600 max-w-[180px] truncate">{productLabel}</td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-4 sm:px-6 py-4 text-sm font-mono text-slate-500">{order.order_number}</td>
+                                            <td className="px-4 sm:px-6 py-4 text-sm font-medium text-slate-900 hidden sm:table-cell">{order.customer.name}</td>
+                                            <td className="px-4 sm:px-6 py-4 text-sm text-slate-600 max-w-[180px] truncate hidden md:table-cell">{productLabel}</td>
+                                            <td className="px-4 sm:px-6 py-4">
                                                 <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border ${status.classes}`}>
                                                     {status.label}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-sm font-bold text-slate-900">₾{order.total}</td>
-                                            <td className="px-6 py-4 text-sm text-slate-500">{order.created_at}</td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-4 sm:px-6 py-4 text-sm font-bold text-slate-900">₾{order.total}</td>
+                                            <td className="px-4 sm:px-6 py-4 text-sm text-slate-500 hidden lg:table-cell">{order.created_at}</td>
+                                            <td className="px-4 sm:px-6 py-4">
                                                 <button
                                                     onClick={() => setViewing(order)}
                                                     className="text-xs font-medium text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors"
                                                 >
-                                                    View Order
+                                                    View
                                                 </button>
                                             </td>
                                         </motion.tr>

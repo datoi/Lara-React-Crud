@@ -17,24 +17,26 @@ export function StatsCards({ stats }: StatsCardsProps) {
     const cards = [
         {
             label: 'Total Revenue',
-            value: `₾${stats.revenue.toLocaleString()}`,
+            value: stats.revenue > 0 ? `₾${stats.revenue.toLocaleString()}` : '₾0',
             icon: TrendingUp,
-            change: '+12% this month',
-            positive: true,
+            change: stats.revenue > 0 ? 'From completed orders' : 'No revenue yet',
+            positive: stats.revenue > 0,
         },
         {
             label: 'Active Orders',
             value: String(stats.activeOrders),
             icon: Package,
-            change: '3 due this week',
-            positive: true,
+            change: stats.activeOrders > 0
+                ? `${stats.activeOrders} need${stats.activeOrders === 1 ? 's' : ''} attention`
+                : 'No active orders',
+            positive: stats.activeOrders > 0,
         },
         {
             label: 'Products Listed',
             value: String(stats.productsListed),
             icon: ShoppingBag,
-            change: 'Last added 2 days ago',
-            positive: null,
+            change: stats.productsListed > 0 ? 'Visible in marketplace' : 'Add your first product',
+            positive: stats.productsListed > 0,
         },
         {
             label: 'Average Rating',
@@ -43,12 +45,12 @@ export function StatsCards({ stats }: StatsCardsProps) {
             change: stats.reviewsCount > 0
                 ? `Based on ${stats.reviewsCount} ${stats.reviewsCount === 1 ? 'review' : 'reviews'}`
                 : 'No reviews yet',
-            positive: null,
+            positive: stats.reviewsCount > 0,
         },
     ];
 
     return (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {cards.map((card, i) => (
                 <motion.div
                     key={card.label}
@@ -64,7 +66,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
                         </div>
                     </div>
                     <div className="text-2xl font-black text-slate-900 mb-1">{card.value}</div>
-                    <div className={`text-xs ${card.positive === true ? 'text-green-600' : 'text-slate-400'}`}>
+                    <div className={`text-xs ${card.positive ? 'text-green-600' : 'text-slate-400'}`}>
                         {card.change}
                     </div>
                 </motion.div>

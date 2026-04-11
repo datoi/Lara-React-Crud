@@ -26,6 +26,10 @@ class User extends Authenticatable
         'role',
         'api_token',
         'password',
+        'bio',
+        'specialty',
+        'years_experience',
+        'profile_image',
     ];
 
     /**

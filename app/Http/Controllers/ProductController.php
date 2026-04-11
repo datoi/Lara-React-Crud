@@ -55,6 +55,8 @@ class ProductController extends Controller
             'price_asc'  => $query->orderBy('price', 'asc'),
             'price_desc' => $query->orderBy('price', 'desc'),
             'name'       => $query->orderBy('name', 'asc'),
+            'popular'    => $query->orderByDesc('reviews_count'),
+            'rating'     => $query->orderByDesc('reviews_avg_rating'),
             default      => $query->latest(),
         };
 
@@ -101,6 +103,39 @@ class ProductController extends Controller
         return response()->json([
             'product' => $product,
             'related' => $related,
+        ]);
+    }
+
+    // ─── GET /api/products/{id}/meta ─────────────────────────────────────────
+
+    public function meta(int $id)
+    {
+        $product = Product::with('category')->findOrFail($id);
+        $image   = is_array($product->images) && count($product->images) ? $product->images[0] : null;
+
+        return response()->json([
+            'title'       => $product->name . ' — Custom ' . ($product->category->name ?? 'Garment') . ' | Kere',
+            'description' => $product->description
+                ? substr($product->description, 0, 160)
+                : 'Order a custom ' . strtolower($product->name) . ' handcrafted by a local Georgian tailor on Kere.',
+            'image'       => $image,
+        ]);
+    }
+
+    // ─── GET /api/platform/stats ─────────────────────────────────────────────
+
+    public function platformStats()
+    {
+        $tailorCount  = User::where('role', 'tailor')->count();
+        $ordersCount  = \App\Models\Order::whereNotIn('status', ['cancelled'])->count();
+        $reviewsCount = Review::count();
+        $avgRating    = $reviewsCount > 0 ? round(Review::avg('rating'), 1) : null;
+
+        return response()->json([
+            'tailors_count'  => $tailorCount,
+            'orders_count'   => $ordersCount,
+            'avg_rating'     => $avgRating,
+            'reviews_count'  => $reviewsCount,
         ]);
     }
 
