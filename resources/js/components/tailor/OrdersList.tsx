@@ -96,16 +96,21 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
 
     // Local status state — only syncs to DB when "Save Status" is clicked
     const [localStatus, setLocalStatus] = useState(order.status);
-    const [saving, setSaving]           = useState(false);
-    const [saved,  setSaved]            = useState(false);
+    const [saving,    setSaving]    = useState(false);
+    const [saved,     setSaved]     = useState(false);
+    const [saveError, setSaveError] = useState(false);
 
     const handleSave = async () => {
         if (!onStatusChange || saving) return;
         setSaving(true);
+        setSaveError(false);
         try {
             await onStatusChange(order.id, localStatus);
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
+        } catch {
+            setSaveError(true);
+            setTimeout(() => setSaveError(false), 4000);
         } finally {
             setSaving(false);
         }
@@ -304,6 +309,7 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
                                 <AnimatePresence>
                                     {saved && (
                                         <motion.div
+                                            key="saved"
                                             initial={{ opacity: 0, y: 6 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0 }}
@@ -312,6 +318,19 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
                                         >
                                             <CheckCircle className="w-3.5 h-3.5" />
                                             Status saved — customer notified
+                                        </motion.div>
+                                    )}
+                                    {saveError && (
+                                        <motion.div
+                                            key="error"
+                                            initial={{ opacity: 0, y: 6 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="flex items-center gap-1.5 text-xs font-medium text-red-600"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                            Failed to save — please try again
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
