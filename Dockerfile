@@ -1,10 +1,10 @@
 FROM php:8.2-cli-alpine
 
-# System dependencies
-RUN apk add --no-cache bash git nodejs npm sqlite-dev
+# System dependencies (postgresql-dev provides libpq for pdo_pgsql)
+RUN apk add --no-cache bash git nodejs npm postgresql-dev
 
 # PHP extensions
-RUN docker-php-ext-install pdo pdo_sqlite
+RUN docker-php-ext-install pdo pdo_pgsql
 
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -25,4 +25,4 @@ RUN composer dump-autoload --optimize
 
 EXPOSE 8080
 
-CMD ["bash", "render-start.sh"]
+CMD ["bash", "start.sh"]
