@@ -40,6 +40,7 @@ interface CustomerOrder {
     order_type: 'marketplace' | 'custom';
     status: string;
     total: number;
+    tailor_id: number | null;
     tailor_name: string | null;
     custom_design_data: DesignData | null;
     items: OrderItem[];
@@ -347,7 +348,20 @@ export default function CustomerDashboard() {
                                         </p>
                                         <p className="text-xs text-slate-400 mt-0.5">
                                             {new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                            {order.tailor_name && ` · ${order.tailor_name}`}
+                                            {order.tailor_name && (
+                                                <>
+                                                    {' · '}
+                                                    {order.tailor_id ? (
+                                                        <Link
+                                                            to={`/tailor/${order.tailor_id}`}
+                                                            onClick={e => e.stopPropagation()}
+                                                            className="hover:text-slate-700 hover:underline transition-colors"
+                                                        >
+                                                            {order.tailor_name}
+                                                        </Link>
+                                                    ) : order.tailor_name}
+                                                </>
+                                            )}
                                         </p>
                                     </div>
 
