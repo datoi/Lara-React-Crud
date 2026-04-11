@@ -1,7 +1,7 @@
 FROM php:8.2-apache
 
-# Enable mod_rewrite for Laravel routing
-RUN a2enmod rewrite headers
+# Enable mod_rewrite, disable conflicting MPM modules
+RUN a2dismod mpm_event || true && a2enmod mpm_prefork rewrite headers
 
 # System dependencies (libpq-dev for pdo_pgsql)
 RUN apt-get update && apt-get install -y \
