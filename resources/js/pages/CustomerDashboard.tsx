@@ -371,7 +371,7 @@ export default function CustomerDashboard() {
                                         <span className="text-sm font-bold text-slate-900">
                                             {order.total > 0 ? `₾${order.total}` : 'TBD'}
                                         </span>
-                                        {order.status === 'finished' && !order.has_review && (
+                                        {['finished', 'shipped'].includes(order.status) && !order.has_review && (
                                             <button
                                                 onClick={e => { e.stopPropagation(); setReviewOrder(order); }}
                                                 className="text-[10px] font-medium text-slate-500 border border-slate-200 rounded-full px-2 py-0.5 hover:bg-slate-50 transition-colors"
@@ -379,7 +379,7 @@ export default function CustomerDashboard() {
                                                 ★ Review
                                             </button>
                                         )}
-                                        {order.status === 'finished' && order.has_review && (
+                                        {['finished', 'shipped'].includes(order.status) && order.has_review && (
                                             <span className="text-[10px] text-green-600 font-medium">✓ Reviewed</span>
                                         )}
                                     </div>
