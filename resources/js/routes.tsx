@@ -21,6 +21,7 @@ import TermsOfService from './pages/TermsOfService';
 import RefundPolicy from './pages/RefundPolicy';
 import Contact from './pages/Contact';
 import TailorProfile from './pages/TailorProfile';
+import BecomePartner from './pages/BecomePartner';
 
 function wrap(el: ReactElement) {
     return <ErrorBoundary>{el}</ErrorBoundary>;
@@ -47,5 +48,7 @@ export const router = createBrowserRouter([
     { path: '/refund-policy',       element: wrap(<RefundPolicy />) },
     { path: '/contact',             element: wrap(<Contact />) },
     { path: '/tailor/:id',          element: wrap(<TailorProfile />) },
+    { path: '/partners',            element: wrap(<BecomePartner />) },
+    { path: '/become-a-tailor',     element: wrap(<BecomePartner />) },
     { path: '*',                    element: wrap(<NotFound />) },
 ]);

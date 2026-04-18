@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router';
 import { Sparkles, Shirt, Scissors, Wind, Star, HardHat } from 'lucide-react';
@@ -57,8 +57,7 @@ const CATEGORIES = [
 ];
 
 export function CategoriesSection() {
-    const [activeTab, setActiveTab]       = useState('dresses');
-    const [apiData, setApiData]           = useState<CategoryApi[]>([]);
+    const [apiData, setApiData] = useState<CategoryApi[]>([]);
 
     useEffect(() => {
         fetch('/api/categories')
@@ -85,30 +84,6 @@ export function CategoriesSection() {
                         Clothing Categories
                     </h2>
                     <p className="text-slate-500">Choose from a wide range of clothing types</p>
-                </motion.div>
-
-                {/* Tab pills */}
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: 0.1 }}
-                    className="flex flex-wrap justify-center gap-2 mb-8"
-                >
-                    {CATEGORIES.map(({ key, label, Icon }) => (
-                        <button
-                            key={key}
-                            onClick={() => setActiveTab(key)}
-                            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-                                activeTab === key
-                                    ? 'bg-slate-900 text-white border-slate-900'
-                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
-                            }`}
-                        >
-                            <Icon className="w-3.5 h-3.5" />
-                            {label}
-                        </button>
-                    ))}
                 </motion.div>
 
                 {/* 3×2 grid */}

@@ -1,19 +1,9 @@
 import { motion } from 'motion/react';
-
-type ClothingType = 'dress' | 'pants' | 'shirt' | 'hat' | 'scarf' | 'jacket';
+import { GARMENTS, type GarmentType } from '../designer/config';
 
 interface ClothingTypeSelectorProps {
-    onSelect: (type: ClothingType) => void;
+    onSelect: (type: GarmentType) => void;
 }
-
-const types: { type: ClothingType; emoji: string; label: string; description: string }[] = [
-    { type: 'dress', emoji: '👗', label: 'Dress', description: 'Maxi, mini, wrap, and more' },
-    { type: 'pants', emoji: '👖', label: 'Pants', description: 'Jeans, chinos, dress pants' },
-    { type: 'shirt', emoji: '👔', label: 'Shirt', description: 'Blouses, button-downs, tees' },
-    { type: 'hat', emoji: '🧢', label: 'Hat', description: 'Caps, beanies, fedoras' },
-    { type: 'scarf', emoji: '🧣', label: 'Scarf', description: 'Winter, silk, infinity scarves' },
-    { type: 'jacket', emoji: '🧥', label: 'Jacket', description: 'Bomber, blazer, trench coats' },
-];
 
 export function ClothingTypeSelector({ onSelect }: ClothingTypeSelectorProps) {
     return (
@@ -23,7 +13,7 @@ export function ClothingTypeSelector({ onSelect }: ClothingTypeSelectorProps) {
                 <p className="text-slate-500">Choose the type of clothing you want to create.</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {types.map((item, i) => (
+                {GARMENTS.map((item, i) => (
                     <motion.button
                         key={item.type}
                         initial={{ opacity: 0, y: 16 }}
@@ -34,7 +24,9 @@ export function ClothingTypeSelector({ onSelect }: ClothingTypeSelectorProps) {
                         onClick={() => onSelect(item.type)}
                         className="bg-white border border-slate-200 rounded-2xl p-6 text-left hover:border-slate-900 hover:shadow-md transition-all group"
                     >
-                        <span className="text-4xl mb-3 block group-hover:scale-110 transition-transform">{item.emoji}</span>
+                        <span className="text-4xl mb-3 block group-hover:scale-110 transition-transform">
+                            {item.emoji}
+                        </span>
                         <div className="font-bold text-slate-900">{item.label}</div>
                         <div className="text-sm text-slate-400 mt-1">{item.description}</div>
                     </motion.button>

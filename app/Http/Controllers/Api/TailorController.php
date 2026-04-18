@@ -96,7 +96,7 @@ class TailorController extends Controller
             'bio'              => 'nullable|string|max:1000',
             'specialty'        => 'nullable|string|max:200',
             'years_experience' => 'nullable|integer|min:0|max:60',
-            'profile_image'    => 'nullable|string|url',
+            'profile_image'    => 'nullable|string|max:2000',
         ]);
 
         $user->update($data);

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { ArrowLeft, Star, Minus, Plus, Check, Loader2, HelpCircle, User } from 'lucide-react';
+import { ArrowLeft, Star, Minus, Plus, Check, Loader2, HelpCircle, User, Info } from 'lucide-react';
 import { MeasurementGuideModal, type MeasurementKey } from '../components/MeasurementGuideModal';
 import { measurementWarning } from '../utils/measurementSanity';
 import {
@@ -25,6 +25,7 @@ interface ApiProduct {
     sizes: string[];
     is_customizable: boolean;
     category: { id: number; name: string; slug: string };
+    tailor_id: number | null;
     tailor_name: string | null;
 }
 
@@ -238,9 +239,9 @@ export default function ProductCustomization() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
                     >
-                        <h2 className="text-2xl font-bold text-slate-900 mb-2">Order Placed!</h2>
-                        <p className="text-slate-500">Your order has been sent to {tailor}. You'll hear back within 24 hours.</p>
-                        <p className="text-sm text-slate-400 mt-4">Taking you to your orders…</p>
+                        <h2 className="text-2xl font-bold text-slate-900 mb-2">Order submitted successfully!</h2>
+                        <p className="text-slate-500">Sent to {tailor}. Your tailor will review it and contact you within 24 hours.</p>
+                        <p className="text-sm text-slate-400 mt-4">Taking you to your dashboard…</p>
                     </motion.div>
                 </div>
             ) : (
@@ -264,7 +265,19 @@ export default function ProductCustomization() {
                                 )}
                             </div>
                             <div className="mt-4 p-4 bg-white rounded-xl border border-slate-200">
-                                <p className="text-sm text-slate-500 mb-1">by {tailor}</p>
+                                <p className="text-sm text-slate-500 mb-1">
+                                    by{' '}
+                                    {product.tailor_id ? (
+                                        <Link
+                                            to={`/tailor/${product.tailor_id}`}
+                                            className="font-medium text-slate-800 hover:text-slate-600 hover:underline transition-colors"
+                                        >
+                                            {tailor}
+                                        </Link>
+                                    ) : (
+                                        <span className="font-medium text-slate-800">{tailor}</span>
+                                    )}
+                                </p>
                                 <div className="flex items-center gap-1">
                                     {avgRating !== null ? (
                                         <>
@@ -349,8 +362,8 @@ export default function ProductCustomization() {
 
                             {/* Measurements */}
                             <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                                <div className="text-sm font-semibold text-slate-700 mb-1">Custom Measurements (cm)</div>
-                                <p className="text-xs text-slate-400 mb-4">Optional — for a perfect fit, enter your measurements.</p>
+                                <div className="text-sm font-semibold text-slate-700 mb-1">Custom Measurements <span className="font-normal text-slate-400">(optional)</span></div>
+                                <p className="text-xs text-slate-500 mb-4">Skip this for now and use standard sizing — or enter your measurements for a perfect fit. Your tailor can also take measurements when they contact you.</p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {[
                                         { key: 'chest', label: 'Chest' },
@@ -406,6 +419,14 @@ export default function ProductCustomization() {
                                 </div>
                             </div>
 
+                            {/* Tailor review notice */}
+                            <div className="flex items-start gap-2.5 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                <Info className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
+                                <p className="text-sm text-slate-600 leading-relaxed">
+                                    Your tailor will review your order and may contact you before production begins.
+                                </p>
+                            </div>
+
                             {/* Order summary */}
                             <div className="bg-slate-900 rounded-2xl p-5 text-white">
                                 <div className="space-y-2 mb-4 text-sm">
@@ -433,8 +454,8 @@ export default function ProductCustomization() {
                                     {placing && <Loader2 className="w-4 h-4 animate-spin" />}
                                     {placing ? 'Placing Order…' : 'Place Order'}
                                 </button>
-                                <p className="text-xs text-slate-500 text-center mt-3">
-                                    Tailor will confirm within 24 hours
+                                <p className="text-xs text-slate-400 text-center mt-3">
+                                    No payment required now — you'll confirm details with the tailor first
                                 </p>
                             </div>
                         </motion.div>

@@ -371,12 +371,13 @@ export default function Marketplace() {
                     </div>
                 ) : products.length === 0 ? (
                     <div className="text-center py-32">
-                        <p className="text-slate-400 mb-3">No designs found</p>
+                        <p className="text-slate-500 font-medium mb-1">No products found</p>
+                        <p className="text-slate-400 text-sm mb-4">Try different filters or search terms</p>
                         <button
                             onClick={() => { handleSearchChange(''); clearFilters(); }}
-                            className="text-sm text-slate-600 underline hover:text-slate-900"
+                            className="text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
                         >
-                            Clear search & filters
+                            Clear all filters
                         </button>
                     </div>
                 ) : (
@@ -420,7 +421,10 @@ export default function Marketplace() {
                                             product.tailor_name ?? 'Kere Tailor'
                                         )}</span>
                                         {product.reviews_count > 0 && (
-                                            <BadgeCheck className="w-3.5 h-3.5 text-slate-500 inline" aria-label="Verified tailor" />
+                                            <span className="inline-flex items-center gap-0.5 text-slate-500">
+                                                <BadgeCheck className="w-3.5 h-3.5" />
+                                                <span className="text-[10px] font-medium">Verified</span>
+                                            </span>
                                         )}
                                     </p>
                                     {/* Reviews */}

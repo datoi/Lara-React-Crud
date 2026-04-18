@@ -1,79 +1,58 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { Navigation } from '../components/landing/Navigation';
 import { Footer } from '../components/landing/Footer';
-import { Star, MapPin, CheckCircle } from 'lucide-react';
+import { Star, CheckCircle, Scissors } from 'lucide-react';
 
-const tailors = [
-    {
-        name: 'Nino Beridze',
-        specialty: 'Dresses & Evening Wear',
-        location: 'Vake, Tbilisi',
-        experience: '12 years',
-        rating: 4.9,
-        reviews: 87,
-        bio: 'Nino trained at the Tbilisi State Academy of Arts and specializes in flowing silhouettes and intricate embroidery. Her evening dresses have been worn at Georgian fashion events across Europe.',
-        emoji: '👗',
-    },
-    {
-        name: 'Giorgi Maisuradze',
-        specialty: 'Suits & Tailored Trousers',
-        location: 'Saburtalo, Tbilisi',
-        experience: '18 years',
-        rating: 5.0,
-        reviews: 142,
-        bio: "Giorgi learned the craft from his father and grandfather. He specializes in structured menswear and precision-cut women's trousers. Every seam is finished by hand.",
-        emoji: '🧥',
-    },
-    {
-        name: 'Tamar Kvanchilashvili',
-        specialty: 'Linen & Summer Wear',
-        location: 'Vera, Tbilisi',
-        experience: '8 years',
-        rating: 4.8,
-        reviews: 63,
-        bio: 'Tamar focuses on breathable natural fabrics — linen, cotton, and silk. Her designs are rooted in Georgian craft traditions while staying firmly modern and wearable.',
-        emoji: '🌿',
-    },
-    {
-        name: 'Levan Gogishvili',
-        specialty: 'Jackets & Outerwear',
-        location: 'Didube, Tbilisi',
-        experience: '15 years',
-        rating: 4.7,
-        reviews: 59,
-        bio: 'Levan built his reputation crafting wool coats and lined blazers. His workshop is known for immaculate finishing — buttonholes sewn by hand, full canvas construction on every jacket.',
-        emoji: '🧶',
-    },
-    {
-        name: 'Ana Jishkariani',
-        specialty: 'Scarves & Accessories',
-        location: 'Old Town, Tbilisi',
-        experience: '10 years',
-        rating: 4.9,
-        reviews: 41,
-        bio: 'Ana hand-weaves silk and wool scarves on a traditional loom. Each piece takes 2–3 days to complete and is unique. She also creates custom headwear and shawls.',
-        emoji: '🧣',
-    },
-    {
-        name: 'Mari Tsereteli',
-        specialty: 'Shirts & Blouses',
-        location: 'Gldani, Tbilisi',
-        experience: '6 years',
-        rating: 4.8,
-        reviews: 34,
-        bio: 'Mari combines traditional Georgian needlework patterns with contemporary blouse silhouettes. Her embroidered shirts have become a signature style among Kere customers.',
-        emoji: '✂️',
-    },
-];
+type Tailor = {
+    id:               number;
+    name:             string;
+    bio:              string | null;
+    specialty:        string | null;
+    years_experience: number | null;
+    profile_image:    string | null;
+    products_count:   number;
+    reviews_count:    number;
+    avg_rating:       number | null;
+};
+
+function TailorSkeleton() {
+    return (
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden animate-pulse">
+            <div className="bg-slate-100 h-44" />
+            <div className="p-6 space-y-3">
+                <div className="h-4 bg-slate-200 rounded w-2/3" />
+                <div className="h-3 bg-slate-200 rounded w-1/2" />
+                <div className="space-y-2 pt-1">
+                    <div className="h-3 bg-slate-200 rounded w-full" />
+                    <div className="h-3 bg-slate-200 rounded w-5/6" />
+                    <div className="h-3 bg-slate-200 rounded w-4/6" />
+                </div>
+                <div className="h-3 bg-slate-200 rounded w-1/3 mt-4" />
+            </div>
+        </div>
+    );
+}
 
 export default function OurTailors() {
+    const [tailors,  setTailors]  = useState<Tailor[]>([]);
+    const [loading,  setLoading]  = useState(true);
+
+    useEffect(() => {
+        fetch('/api/tailors', { headers: { 'Accept': 'application/json' } })
+            .then(r => r.ok ? r.json() : null)
+            .then(d => d?.tailors && setTailors(d.tailors))
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, []);
+
     return (
         <div className="min-h-screen bg-white">
             <Navigation />
 
             {/* Hero */}
-            <section className="py-16 md:py-24 bg-slate-900 text-white">
+            <section className="pt-24 pb-16 md:pt-28 md:pb-24 bg-slate-900 text-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -93,44 +72,91 @@ export default function OurTailors() {
             {/* Tailors grid */}
             <section className="py-16 md:py-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {tailors.map((tailor, i) => (
-                            <motion.div
-                                key={tailor.name}
-                                initial={{ opacity: 0, y: 24 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: i * 0.08 }}
-                                className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow"
-                            >
-                                {/* Avatar area */}
-                                <div className="bg-slate-100 h-40 flex items-center justify-center text-6xl">
-                                    {tailor.emoji}
-                                </div>
-                                <div className="p-6">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div>
-                                            <h3 className="font-bold text-slate-900 text-lg">{tailor.name}</h3>
-                                            <p className="text-sm text-slate-500">{tailor.specialty}</p>
+                    {!loading && tailors.length === 0 ? (
+                        <p className="text-center text-slate-400 py-16">No tailors yet.</p>
+                    ) : (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {loading
+                                ? Array.from({ length: 6 }).map((_, i) => <TailorSkeleton key={i} />)
+                                : tailors.map((tailor, i) => (
+                                    <motion.div
+                                        key={tailor.id}
+                                        initial={{ opacity: 0, y: 24 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.4, delay: Math.min(i * 0.07, 0.4) }}
+                                        className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
+                                    >
+                                        {/* Profile photo */}
+                                        <div className="bg-slate-100 h-44 flex items-center justify-center shrink-0">
+                                            {tailor.profile_image ? (
+                                                <img
+                                                    src={tailor.profile_image}
+                                                    alt={tailor.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center">
+                                                    <span className="text-3xl font-bold text-slate-500">
+                                                        {tailor.name.charAt(0)}
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
-                                        <CheckCircle className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
-                                    </div>
-                                    <p className="text-sm text-slate-600 leading-relaxed mb-4">{tailor.bio}</p>
-                                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-sm text-slate-500">
-                                        <div className="flex items-center gap-1">
-                                            <MapPin className="w-3.5 h-3.5" />
-                                            <span>{tailor.location}</span>
+
+                                        <div className="p-6 flex flex-col flex-1">
+                                            {/* Name + verified */}
+                                            <div className="flex items-start justify-between mb-1">
+                                                <div className="min-w-0">
+                                                    <h3 className="font-bold text-slate-900 text-lg truncate">{tailor.name}</h3>
+                                                    {tailor.specialty && (
+                                                        <p className="text-sm text-slate-500 truncate">{tailor.specialty}</p>
+                                                    )}
+                                                </div>
+                                                <CheckCircle className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5 ml-2" />
+                                            </div>
+
+                                            {/* Bio */}
+                                            <p className="text-sm text-slate-600 leading-relaxed mt-3 flex-1 line-clamp-3">
+                                                {tailor.bio ?? 'This tailor hasn\'t added a bio yet.'}
+                                            </p>
+
+                                            {/* Footer */}
+                                            <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                                                <div className="flex items-center gap-3">
+                                                    {tailor.years_experience != null && (
+                                                        <span className="flex items-center gap-1">
+                                                            <CheckCircle className="w-3.5 h-3.5 text-slate-400" />
+                                                            {tailor.years_experience} yrs
+                                                        </span>
+                                                    )}
+                                                    {tailor.products_count > 0 && (
+                                                        <span className="flex items-center gap-1">
+                                                            <Scissors className="w-3.5 h-3.5 text-slate-400" />
+                                                            {tailor.products_count} product{tailor.products_count !== 1 ? 's' : ''}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {tailor.avg_rating !== null && (
+                                                    <div className="flex items-center gap-1">
+                                                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                                        <span className="font-semibold text-slate-700">{tailor.avg_rating.toFixed(1)}</span>
+                                                        <span className="text-slate-400">({tailor.reviews_count})</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <Link
+                                                to={`/tailor/${tailor.id}`}
+                                                className="mt-4 text-center text-sm font-semibold text-slate-700 border border-slate-200 rounded-xl py-2 hover:bg-slate-50 transition-colors"
+                                            >
+                                                View profile
+                                            </Link>
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                            <span className="font-medium text-slate-700">{tailor.rating}</span>
-                                            <span className="text-slate-400">({tailor.reviews})</span>
-                                        </div>
-                                    </div>
-                                    <div className="mt-2 text-xs text-slate-400">{tailor.experience} experience</div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
+                                    </motion.div>
+                                ))
+                            }
+                        </div>
+                    )}
                 </div>
             </section>
 
@@ -158,7 +184,8 @@ export default function OurTailors() {
                     </motion.div>
                 </div>
             </section>
-        <Footer />
+
+            <Footer />
         </div>
     );
 }

@@ -50,7 +50,7 @@ export function HeroSection() {
                     transition={{ duration: 0.6, delay: 0.05 }}
                     className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight tracking-tight mb-5 max-w-5xl mx-auto"
                 >
-                    Custom Clothes,<br className="hidden sm:block" /> Made by Local Tailors
+                    Custom Clothing Made<br className="hidden sm:block" /> Exactly for Your Body
                 </motion.h1>
 
                 {/* Subtitle */}
@@ -60,7 +60,7 @@ export function HeroSection() {
                     transition={{ duration: 0.6, delay: 0.15 }}
                     className="text-base sm:text-lg text-white/75 mb-10 max-w-lg mx-auto leading-relaxed"
                 >
-                    Browse ready-made designs from Georgian tailors, or build your garment from scratch — fabric, cut, measurements, yours.
+                    Design your own clothes or order from trusted Georgian tailors
                 </motion.p>
 
                 {/* Two CTAs */}

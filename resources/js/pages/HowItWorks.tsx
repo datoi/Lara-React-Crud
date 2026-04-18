@@ -60,7 +60,7 @@ export default function HowItWorks() {
             <Navigation />
 
             {/* Hero */}
-            <section className="py-16 md:py-24 bg-slate-900 text-white">
+            <section className="pt-24 pb-16 md:pt-28 md:pb-24 bg-slate-900 text-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}

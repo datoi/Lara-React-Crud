@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Eye, Edit2, Trash2 } from 'lucide-react';
 import { AddProductModal, type TailorProductFull } from './AddProductModal';
@@ -6,13 +6,20 @@ import { AddProductModal, type TailorProductFull } from './AddProductModal';
 export type { TailorProductFull };
 
 interface ProductManagerProps {
-    products: TailorProductFull[];
-    onProductAdded?: (p: TailorProductFull) => void;
+    products:          TailorProductFull[];
+    onProductAdded?:   (p: TailorProductFull) => void;
+    externalOpen?:     boolean;
+    onExternalClose?:  () => void;
 }
 
-export function ProductManager({ products: initialProducts, onProductAdded }: ProductManagerProps) {
+export function ProductManager({ products: initialProducts, onProductAdded, externalOpen, onExternalClose }: ProductManagerProps) {
     const [products, setProducts] = useState<TailorProductFull[]>(initialProducts);
-    const [showModal, setShowModal]       = useState(false);
+    const [showModal, setShowModal] = useState(false);
+
+    // Allow parent to programmatically open the modal
+    useEffect(() => {
+        if (externalOpen) setShowModal(true);
+    }, [externalOpen]);
 
     const toggleStatus = (id: number) =>
         setProducts(prev => prev.map(p => p.id === id
@@ -42,13 +49,19 @@ export function ProductManager({ products: initialProducts, onProductAdded }: Pr
                 </div>
 
                 {products.length === 0 ? (
-                    <div className="px-6 py-12 text-center">
-                        <p className="text-slate-400 text-sm mb-3">No products listed yet.</p>
+                    <div className="px-6 py-14 flex flex-col items-center text-center">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-4 text-2xl">
+                            🧵
+                        </div>
+                        <p className="font-semibold text-slate-900 text-sm mb-1">No products yet</p>
+                        <p className="text-slate-400 text-xs max-w-xs mb-4 leading-relaxed">
+                            Customers browse products to place custom orders. Add your first listing to appear in the marketplace.
+                        </p>
                         <button
                             onClick={() => setShowModal(true)}
-                            className="text-slate-900 text-sm font-medium underline underline-offset-2"
+                            className="bg-slate-900 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-slate-700 transition-colors"
                         >
-                            Add your first product →
+                            Add your first product
                         </button>
                     </div>
                 ) : (
@@ -143,7 +156,7 @@ export function ProductManager({ products: initialProducts, onProductAdded }: Pr
             <AnimatePresence>
                 {showModal && (
                     <AddProductModal
-                        onClose={() => setShowModal(false)}
+                        onClose={() => { setShowModal(false); onExternalClose?.(); }}
                         onCreated={handleCreated}
                     />
                 )}

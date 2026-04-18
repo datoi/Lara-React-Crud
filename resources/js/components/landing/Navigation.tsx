@@ -41,6 +41,12 @@ export function Navigation() {
                         <a href="#faq" className={`text-sm transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
                             FAQ
                         </a>
+                        <Link
+                            to="/partners"
+                            className={`text-sm font-medium transition-colors ${scrolled ? 'text-slate-500 hover:text-slate-900' : 'text-white/60 hover:text-white/90'}`}
+                        >
+                            For Tailors
+                        </Link>
                     </div>
 
                     {/* Desktop right */}
@@ -115,6 +121,13 @@ export function Navigation() {
                                     {link.label}
                                 </a>
                             ))}
+                            <Link
+                                to="/partners"
+                                onClick={() => setMobileOpen(false)}
+                                className="block px-3 py-2 rounded-lg text-white/60 hover:bg-white/10 hover:text-white transition-colors text-sm"
+                            >
+                                For Tailors
+                            </Link>
 
                             {user ? (
                                 <div className="pt-2">

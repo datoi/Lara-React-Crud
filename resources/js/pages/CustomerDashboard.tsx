@@ -23,7 +23,16 @@ interface OrderItem {
     measurements: Record<string, string>;
 }
 
+// Supports both old shape (clothingType/subcategory) and new DesignConfig shape (garmentType/style)
 interface DesignData {
+    // new shape
+    garmentType?: string;
+    style?: string;
+    accentColor?: string;
+    components?: { neckline?: string; sleeves?: string; length?: string };
+    details?: string[];
+    notes?: string;
+    // old shape (kept for backward-compat with existing orders)
     clothingType?: string;
     subcategory?: string;
     fabric?: string;
@@ -113,11 +122,11 @@ function OrderDetailModal({ order, onClose }: { order: CustomerOrder; onClose: (
                             <div className="bg-slate-50 rounded-xl p-4">
                                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Custom Design</p>
                                 <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                                    {design.clothingType && (
-                                        <><span className="text-slate-500">Type</span><span className="font-medium text-slate-900 capitalize">{design.clothingType}</span></>
+                                    {(design.garmentType ?? design.clothingType) && (
+                                        <><span className="text-slate-500">Type</span><span className="font-medium text-slate-900 capitalize">{design.garmentType ?? design.clothingType}</span></>
                                     )}
-                                    {design.subcategory && (
-                                        <><span className="text-slate-500">Style</span><span className="font-medium text-slate-900">{design.subcategory}</span></>
+                                    {(design.style ?? design.subcategory) && (
+                                        <><span className="text-slate-500">Style</span><span className="font-medium text-slate-900">{design.style ?? design.subcategory}</span></>
                                     )}
                                     {design.fabric && (
                                         <><span className="text-slate-500">Fabric</span><span className="font-medium text-slate-900">{design.fabric}</span></>
@@ -129,15 +138,15 @@ function OrderDetailModal({ order, onClose }: { order: CustomerOrder; onClose: (
                             </div>
 
                             {/* Colors */}
-                            {(design.baseColor || design.lighterShade || design.darkerShade) && (
+                            {(design.baseColor || design.accentColor || design.lighterShade) && (
                                 <div className="bg-slate-50 rounded-xl p-4">
                                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Color Palette</p>
                                     <div className="flex gap-2">
                                         {[
                                             { label: 'Base',   color: design.baseColor },
+                                            { label: 'Accent', color: design.accentColor ?? design.additionalColor },
                                             { label: 'Light',  color: design.lighterShade },
                                             { label: 'Dark',   color: design.darkerShade },
-                                            { label: 'Accent', color: design.additionalColor },
                                         ].filter(c => c.color).map(c => (
                                             <div key={c.label} className="flex flex-col items-center gap-1">
                                                 <div className="w-10 h-10 rounded-lg border border-slate-200" style={{ backgroundColor: c.color }} />
@@ -149,10 +158,10 @@ function OrderDetailModal({ order, onClose }: { order: CustomerOrder; onClose: (
                             )}
 
                             {/* Notes */}
-                            {design.designElements?.customNotes && (
+                            {(design.notes ?? design.designElements?.customNotes) && (
                                 <div className="bg-slate-50 rounded-xl p-4">
                                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tailor Notes</p>
-                                    <p className="text-sm text-slate-600">{design.designElements.customNotes}</p>
+                                    <p className="text-sm text-slate-600">{design.notes ?? design.designElements?.customNotes}</p>
                                 </div>
                             )}
                         </div>
@@ -310,14 +319,24 @@ export default function CustomerDashboard() {
                     ) : orders.length === 0 ? (
                         <div className="py-16 text-center">
                             <ShoppingBag className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                            <p className="text-slate-400 mb-4">No orders yet</p>
-                            <Link
-                                to="/marketplace"
-                                className="inline-flex items-center gap-1.5 text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
-                            >
-                                Browse Marketplace
-                                <ChevronRight className="w-4 h-4" />
-                            </Link>
+                            <p className="text-slate-600 font-medium mb-1">You haven't placed any orders yet</p>
+                            <p className="text-slate-400 text-sm mb-4">Browse the marketplace or design your own clothing</p>
+                            <div className="flex flex-col sm:flex-row items-center gap-2">
+                                <Link
+                                    to="/marketplace"
+                                    className="inline-flex items-center gap-1.5 text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
+                                >
+                                    Browse Marketplace
+                                    <ChevronRight className="w-4 h-4" />
+                                </Link>
+                                <Link
+                                    to="/design"
+                                    className="inline-flex items-center gap-1.5 text-sm border border-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"
+                                >
+                                    Design Your Own
+                                    <ChevronRight className="w-4 h-4" />
+                                </Link>
+                            </div>
                         </div>
                     ) : (
                         <div className="divide-y divide-slate-50">
@@ -342,7 +361,7 @@ export default function CustomerDashboard() {
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium text-slate-900 text-sm truncate">
                                             {order.order_type === 'custom'
-                                                ? `Custom ${String((order.custom_design_data as Record<string, unknown>)?.clothingType ?? 'Design')}`
+                                                ? `Custom ${String((order.custom_design_data as Record<string, unknown>)?.garmentType ?? (order.custom_design_data as Record<string, unknown>)?.clothingType ?? 'Design')}`
                                                 : order.items[0]?.product_name ?? 'Order'
                                             }
                                         </p>
@@ -436,7 +455,7 @@ export default function CustomerDashboard() {
                     orderId={reviewOrder.id}
                     orderLabel={
                         reviewOrder.order_type === 'custom'
-                            ? `Custom ${String((reviewOrder.custom_design_data as Record<string, unknown>)?.clothingType ?? 'Design')}`
+                            ? `Custom ${String((reviewOrder.custom_design_data as Record<string, unknown>)?.garmentType ?? (reviewOrder.custom_design_data as Record<string, unknown>)?.clothingType ?? 'Design')}`
                             : reviewOrder.items[0]?.product_name ?? 'Order'
                     }
                     onClose={() => setReviewOrder(null)}

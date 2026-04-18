@@ -1,30 +1,24 @@
 import { motion } from 'motion/react';
-import { Shirt, Palette, DollarSign, ShoppingBag } from 'lucide-react';
+import { Shirt, Scissors, ShoppingBag } from 'lucide-react';
 
 const steps = [
     {
         icon: Shirt,
         number: 1,
-        title: 'Choose a Style',
-        description: 'Browse tailor designs or start from scratch with our custom designer tool.',
+        title: 'Choose or Design',
+        description: 'Browse ready-made designs from local tailors, or start from scratch with our designer tool.',
     },
     {
-        icon: Palette,
+        icon: Scissors,
         number: 2,
-        title: 'Customize It',
-        description: 'Pick fabric, colors, and measurements for a perfect personal fit.',
-    },
-    {
-        icon: DollarSign,
-        number: 3,
-        title: 'Place Your Order',
-        description: 'Confirm your design and pay securely. No hidden fees, ever.',
+        title: 'Tailor Creates It',
+        description: 'Your tailor reviews your order, confirms details with you, then crafts your garment by hand.',
     },
     {
         icon: ShoppingBag,
-        number: 4,
-        title: 'Get It Delivered',
-        description: 'Your garment is crafted locally and delivered straight to your door.',
+        number: 3,
+        title: 'Delivered to You',
+        description: 'Your custom garment is delivered straight to your door. Guaranteed to fit.',
     },
 ];
 
@@ -46,9 +40,9 @@ export function ProcessSection() {
                 </motion.div>
 
                 {/* Steps row */}
-                <div className="relative grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* Horizontal connector line (desktop only) */}
-                    <div className="hidden md:block absolute top-10 left-[12.5%] right-[12.5%] h-px bg-slate-200 z-0" />
+                    <div className="hidden md:block absolute top-10 left-[16.5%] right-[16.5%] h-px bg-slate-200 z-0" />
 
                     {steps.map((step, i) => (
                         <motion.div

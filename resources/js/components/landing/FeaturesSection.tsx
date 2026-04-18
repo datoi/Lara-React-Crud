@@ -1,21 +1,21 @@
 import { motion } from 'motion/react';
-import { CreditCard, CheckCircle, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, Ruler, ShieldCheck } from 'lucide-react';
 
 const guarantees = [
     {
-        icon: CreditCard,
-        title: 'Secure Payment',
-        description: 'Your payment is held securely until your order is completed to your satisfaction',
+        icon: BadgeCheck,
+        title: 'Verified Local Tailors',
+        description: 'Every tailor on Kere is a verified Georgian craftsperson. Made by real local tailors — not factories.',
     },
     {
-        icon: CheckCircle,
-        title: 'Free Fix Guarantee',
-        description: "If your product doesn't match specifications, we'll fix it for free",
+        icon: Ruler,
+        title: 'Custom-Fit Guarantee',
+        description: "Your garment is made to your exact measurements. If it doesn't fit perfectly, your tailor will adjust it.",
     },
     {
         icon: ShieldCheck,
         title: 'Quality Assurance',
-        description: 'Every piece is inspected before delivery to ensure it meets our standards',
+        description: 'Every piece is inspected before delivery to ensure it meets our standards.',
     },
 ];
 

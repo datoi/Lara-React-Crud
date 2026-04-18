@@ -55,3 +55,4 @@ Route::post('/support-email',                  [SupportEmailController::class, '
 
 // Upload
 Route::post('/upload/image',                   [UploadController::class, 'image']);
+Route::post('/upload/profile-image',           [UploadController::class, 'profileImage']);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, CheckCircle, Loader2 } from 'lucide-react';
+import { X, CheckCircle, Loader2, Phone } from 'lucide-react';
 import { Button } from '../ui/button';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -15,21 +15,31 @@ interface OrderItem {
     cm_measurements: Record<string, string> | null;
 }
 
+// Supports both old shape and new DesignConfig shape (garmentType/style/accentColor/components/details/notes)
 interface CustomDesign {
-    clothingType: string | null;
-    subcategory: string | null;
-    length: string;
-    sleeves: string;
-    neckline: string;
-    fabric: string;
-    baseColor: string;
-    lighterShade: string;
-    darkerShade: string;
-    additionalColor: string;
-    textureMaterial: string;
-    sizeStandard: string;
-    sizeCm: Record<string, string>;
-    designElements: { cuts: string[]; height: string; customNotes: string };
+    // new shape
+    garmentType?: string | null;
+    style?: string;
+    accentColor?: string;
+    components?: { neckline?: string; sleeves?: string; length?: string };
+    details?: string[];
+    notes?: string;
+    height?: string;
+    // old shape (backward-compat)
+    clothingType?: string | null;
+    subcategory?: string | null;
+    length?: string;
+    sleeves?: string;
+    neckline?: string;
+    fabric?: string;
+    baseColor?: string;
+    lighterShade?: string;
+    darkerShade?: string;
+    additionalColor?: string;
+    textureMaterial?: string;
+    sizeStandard?: string;
+    sizeCm?: Record<string, string>;
+    designElements?: { cuts?: string[]; height?: string; customNotes?: string };
 }
 
 export interface TailorOrder {
@@ -153,6 +163,15 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
                         </div>
                         <p className="font-bold text-slate-900">{order.customer.name}</p>
                         <p className="text-xs text-slate-500">{order.customer.email}</p>
+                        {order.customer.phone && (
+                            <a
+                                href={`tel:${order.customer.phone}`}
+                                className="inline-flex items-center gap-1 text-xs text-slate-700 font-medium mt-0.5 hover:text-slate-900 transition-colors"
+                            >
+                                <Phone className="w-3 h-3" />
+                                {order.customer.phone}
+                            </a>
+                        )}
                     </div>
                     <button
                         onClick={onClose}
@@ -199,13 +218,12 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
                         <>
                             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Garment Specs</div>
-                                <SpecRow label="Type"        value={cd.clothingType ?? undefined} />
-                                <SpecRow label="Subcategory" value={cd.subcategory ?? undefined} />
-                                <SpecRow label="Fabric"      value={cd.fabric} />
-                                <SpecRow label="Length"      value={cd.length} />
-                                <SpecRow label="Sleeves"     value={cd.sleeves} />
-                                <SpecRow label="Neckline"    value={cd.neckline} />
-                                <SpecRow label="Texture"     value={cd.textureMaterial} />
+                                <SpecRow label="Type"     value={(cd.garmentType ?? cd.clothingType) ?? undefined} />
+                                <SpecRow label="Style"    value={(cd.style ?? cd.subcategory) ?? undefined} />
+                                <SpecRow label="Fabric"   value={cd.fabric} />
+                                <SpecRow label="Neckline" value={cd.components?.neckline ?? cd.neckline} />
+                                <SpecRow label="Sleeves"  value={cd.components?.sleeves  ?? cd.sleeves} />
+                                <SpecRow label="Length"   value={cd.components?.length   ?? cd.length} />
                             </div>
 
                             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
@@ -213,9 +231,9 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
                                 <div className="flex gap-3 flex-wrap">
                                     {[
                                         { label: 'Base',   color: cd.baseColor },
+                                        { label: 'Accent', color: cd.accentColor ?? cd.additionalColor },
                                         { label: 'Light',  color: cd.lighterShade },
                                         { label: 'Dark',   color: cd.darkerShade },
-                                        { label: 'Accent', color: cd.additionalColor },
                                     ].filter(c => c.color).map(c => (
                                         <div key={c.label} className="flex flex-col items-center gap-1">
                                             <div className="w-10 h-10 rounded-xl border border-slate-200" style={{ backgroundColor: c.color }} />
@@ -232,26 +250,26 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
                                     ? <SpecRow key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={`${v} cm`} />
                                     : null
                                 )}
-                                {cd.designElements?.height && (
-                                    <SpecRow label="Height" value={`${cd.designElements.height} cm`} />
+                                {(cd.height ?? cd.designElements?.height) && (
+                                    <SpecRow label="Height" value={`${cd.height ?? cd.designElements?.height} cm`} />
                                 )}
                             </div>
 
-                            {cd.designElements?.cuts?.length > 0 && (
+                            {(cd.details ?? cd.designElements?.cuts ?? []).length > 0 && (
                                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Design Elements</div>
+                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Design Details</div>
                                     <div className="flex flex-wrap gap-2">
-                                        {cd.designElements.cuts.map(cut => (
-                                            <span key={cut} className="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full">{cut}</span>
+                                        {(cd.details ?? cd.designElements?.cuts ?? []).map(d => (
+                                            <span key={d} className="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full">{d}</span>
                                         ))}
                                     </div>
                                 </div>
                             )}
 
-                            {cd.designElements?.customNotes && (
+                            {(cd.notes ?? cd.designElements?.customNotes) && (
                                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                                     <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Custom Notes</div>
-                                    <p className="text-sm text-slate-700 leading-relaxed">{cd.designElements.customNotes}</p>
+                                    <p className="text-sm text-slate-700 leading-relaxed">{cd.notes ?? cd.designElements?.customNotes}</p>
                                 </div>
                             )}
                         </>
@@ -356,8 +374,14 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                 </div>
 
                 {orders.length === 0 ? (
-                    <div className="px-6 py-12 text-center text-slate-400 text-sm">
-                        No orders yet. They'll appear here once customers place them.
+                    <div className="px-6 py-14 flex flex-col items-center text-center">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-4 text-2xl">
+                            📦
+                        </div>
+                        <p className="font-semibold text-slate-900 text-sm mb-1">No orders yet</p>
+                        <p className="text-slate-400 text-xs max-w-xs leading-relaxed">
+                            Once customers discover your products and place orders, they'll show up here.
+                        </p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">

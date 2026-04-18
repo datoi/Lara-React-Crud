@@ -126,16 +126,18 @@ class ProductController extends Controller
 
     public function platformStats()
     {
-        $tailorCount  = User::where('role', 'tailor')->count();
-        $ordersCount  = \App\Models\Order::whereNotIn('status', ['cancelled'])->count();
-        $reviewsCount = Review::count();
-        $avgRating    = $reviewsCount > 0 ? round(Review::avg('rating'), 1) : null;
+        $tailorCount    = User::where('role', 'tailor')->count();
+        $customerCount  = User::where('role', 'customer')->count();
+        $ordersCount    = \App\Models\Order::whereNotIn('status', ['cancelled'])->count();
+        $reviewsCount   = Review::count();
+        $avgRating      = $reviewsCount > 0 ? round(Review::avg('rating'), 1) : null;
 
         return response()->json([
-            'tailors_count'  => $tailorCount,
-            'orders_count'   => $ordersCount,
-            'avg_rating'     => $avgRating,
-            'reviews_count'  => $reviewsCount,
+            'tailors_count'   => $tailorCount,
+            'customers_count' => $customerCount,
+            'orders_count'    => $ordersCount,
+            'avg_rating'      => $avgRating,
+            'reviews_count'   => $reviewsCount,
         ]);
     }
 
@@ -156,8 +158,9 @@ class ProductController extends Controller
             : null;
 
         return response()->json([
-            'avg_rating'    => $avgRating,
-            'reviews_count' => $reviewsCount,
+            'avg_rating'      => $avgRating,
+            'reviews_count'   => $reviewsCount,
+            'profile_complete' => !empty($user->bio) && !empty($user->specialty),
         ]);
     }
 

@@ -36,4 +36,24 @@ class UploadController extends Controller
             'url' => asset('storage/' . $path),
         ], 201);
     }
+
+    public function profileImage(Request $request)
+    {
+        $user = $this->authedUser($request);
+        if (!$user || $user->role !== 'tailor') {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:4096', // 4 MB
+        ]);
+
+        $file     = $request->file('image');
+        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $path     = $file->storeAs('profiles', $filename, 'public');
+
+        return response()->json([
+            'url' => asset('storage/' . $path),
+        ], 201);
+    }
 }
