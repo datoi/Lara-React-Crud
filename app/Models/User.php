@@ -30,6 +30,7 @@ class User extends Authenticatable
         'specialty',
         'years_experience',
         'profile_image',
+        'is_suspended',
     ];
 
     /**
@@ -52,7 +53,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
+            'is_suspended'      => 'boolean',
         ];
     }
 

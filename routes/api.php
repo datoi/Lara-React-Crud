@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SupportEmailController;
 use App\Http\Controllers\Api\TailorController;
+use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\UploadController;
 use Illuminate\Support\Facades\Route;
@@ -71,4 +72,12 @@ Route::middleware(['auth.bearer', 'throttle:10,1'])->group(function () {
 
     // Chat writes
     Route::post('/orders/{orderId}/messages', [MessageController::class, 'store']);
+});
+
+// ─── Admin (bearer + admin role, 30 req/min) ──────────────────────────────────
+Route::middleware(['auth.bearer', 'auth.admin', 'throttle:30,1'])->prefix('admin')->group(function () {
+    Route::get('/orders',               [AdminController::class, 'orders']);
+    Route::get('/users',                [AdminController::class, 'users']);
+    Route::patch('/orders/{id}/assign', [AdminController::class, 'assignTailor']);
+    Route::patch('/users/{id}/suspend', [AdminController::class, 'suspendUser']);
 });

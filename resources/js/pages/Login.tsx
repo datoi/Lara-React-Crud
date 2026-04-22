@@ -51,10 +51,14 @@ export default function Login() {
             }
 
             saveAuth(data.user as AuthUser, data.token as string);
-            // If customer was redirected here mid-flow, send them back
-            const returnTo = isCustomer ? getReturnTo() : null;
+            const savedRole = (data.user as AuthUser).role;
+            const returnTo = savedRole === 'customer' ? getReturnTo() : null;
             clearReturnTo();
-            navigate(returnTo ?? redirect);
+            navigate(
+                savedRole === 'admin'  ? '/admin-dashboard'  :
+                savedRole === 'tailor' ? '/tailor-dashboard' :
+                                        (returnTo ?? '/customer-dashboard')
+            );
         } catch {
             setErrors({ general: 'Network error. Please try again.' });
         } finally {

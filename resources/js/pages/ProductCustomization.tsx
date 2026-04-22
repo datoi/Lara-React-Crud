@@ -279,10 +279,10 @@ export default function ProductCustomization() {
                                             to={`/tailor/${product.tailor_id}`}
                                             className="font-medium text-slate-800 hover:text-slate-600 hover:underline transition-colors"
                                         >
-                                            {tailor}
+                                            {product.tailor_name}
                                         </Link>
                                     ) : (
-                                        <span className="font-medium text-slate-800">{tailor}</span>
+                                        <span className="font-medium text-slate-800">{product.tailor_name}</span>
                                     )}
                                 </p>
                                 <div className="flex items-center gap-1">

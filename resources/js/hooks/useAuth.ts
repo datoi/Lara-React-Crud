@@ -5,7 +5,7 @@ export interface AuthUser {
     name: string;
     email: string;
     phone: string;
-    role: 'customer' | 'tailor';
+    role: 'customer' | 'tailor' | 'admin';
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────

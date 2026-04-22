@@ -15,6 +15,9 @@ class BearerTokenAuth
         if ($raw) {
             $user = User::where('api_token', hash('sha256', $raw))->first();
             if ($user) {
+                if ($user->is_suspended) {
+                    return response()->json(['message' => 'Your account has been suspended.'], 403);
+                }
                 $request->setUserResolver(fn () => $user);
             }
         }

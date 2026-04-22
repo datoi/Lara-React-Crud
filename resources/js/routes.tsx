@@ -22,6 +22,7 @@ import RefundPolicy from './pages/RefundPolicy';
 import Contact from './pages/Contact';
 import TailorProfile from './pages/TailorProfile';
 import BecomePartner from './pages/BecomePartner';
+import AdminDashboard from './pages/AdminDashboard';
 
 function wrap(el: ReactElement) {
     return <ErrorBoundary>{el}</ErrorBoundary>;
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
     { path: '/register/tailor',     element: wrap(<RegisterTailor />) },
     { path: '/tailor-dashboard',    element: wrap(<TailorDashboard />) },
     { path: '/customer-dashboard',  element: wrap(<CustomerDashboard />) },
+    { path: '/admin-dashboard',     element: wrap(<AdminDashboard />) },
     // Info pages
     { path: '/how-it-works',        element: wrap(<HowItWorks />) },
     { path: '/about',               element: wrap(<AboutUs />) },

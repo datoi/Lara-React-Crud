@@ -62,7 +62,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'email'    => ['required', 'email'],
             'password' => ['required'],
-            'role'     => ['required', 'in:customer,tailor'],
+            'role'     => ['required', 'in:customer,tailor,admin'],
         ]);
 
         $user = User::where('email', $data['email'])->first();
@@ -73,7 +73,14 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if ($user->role !== $data['role']) {
+        if ($user->is_suspended) {
+            return response()->json([
+                'message' => 'This account has been suspended.',
+            ], 403);
+        }
+
+        // Admin can log in regardless of which role was selected on the form
+        if ($user->role !== 'admin' && $user->role !== $data['role']) {
             $expected = ucfirst($data['role']);
             return response()->json([
                 'message' => "Access denied. This account is not registered as a {$expected}.",

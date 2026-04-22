@@ -92,8 +92,6 @@ class TailorController extends Controller
             ->latest()
             ->get();
 
-        $productIds = $productModels->pluck('id');
-
         $products = $productModels->map(function ($p) use ($tailor) {
             return [
                 'id'              => $p->id,
@@ -107,10 +105,16 @@ class TailorController extends Controller
                 'is_customizable' => $p->is_customizable,
             ];
         });
-        $reviewsCount = Review::whereIn('product_id', $productIds)->count();
-        $avgRating    = $reviewsCount > 0
-            ? round(Review::whereIn('product_id', $productIds)->avg('rating'), 1)
-            : null;
+
+        // Aggregate tailor-level stats from already-loaded products — no extra DB queries
+        $reviewsCount = (int) $productModels->sum('reviews_count');
+        $avgRating    = null;
+        if ($reviewsCount > 0) {
+            $weightedSum = $productModels
+                ->where('reviews_count', '>', 0)
+                ->sum(fn($p) => $p->reviews_avg_rating * $p->reviews_count);
+            $avgRating = round($weightedSum / $reviewsCount, 1);
+        }
 
         return response()->json([
             'tailor'   => $this->tailorData($tailor, $productIds->count(), $reviewsCount, $avgRating),
