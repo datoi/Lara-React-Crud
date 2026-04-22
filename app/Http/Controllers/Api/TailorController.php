@@ -117,7 +117,7 @@ class TailorController extends Controller
         }
 
         return response()->json([
-            'tailor'   => $this->tailorData($tailor, $productIds->count(), $reviewsCount, $avgRating),
+            'tailor'   => $this->tailorData($tailor, $productModels->count(), $reviewsCount, $avgRating),
             'products' => $products,
         ]);
     }
