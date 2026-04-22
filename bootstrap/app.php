@@ -13,6 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->trustProxies(at: '*');
+        $middleware->alias([
+            'auth.bearer' => \App\Http\Middleware\BearerTokenAuth::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

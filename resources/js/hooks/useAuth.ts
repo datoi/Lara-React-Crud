@@ -23,17 +23,18 @@ export function getAuthUser(): AuthUser | null {
 }
 
 export function getAuthToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+    // Critical #1: token in sessionStorage — cleared on tab close, not accessible cross-tab
+    return sessionStorage.getItem(TOKEN_KEY);
 }
 
 export function saveAuth(user: AuthUser, token: string): void {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
-    localStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.setItem(TOKEN_KEY, token);
 }
 
 export function clearAuth(): void {
     localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
 }
 
 // ─── Return-to (post-login redirect) ─────────────────────────────────────────

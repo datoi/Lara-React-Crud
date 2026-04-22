@@ -10,25 +10,11 @@ use Illuminate\Http\Request;
 
 class TailorController extends Controller
 {
-    private function authedUser(Request $request): ?User
+    private function tailorData(User $tailor, int $productsCount = 0, int $reviewsCount = 0, ?float $avgRating = null): array
     {
-        $raw = $request->bearerToken();
-        if (!$raw) return null;
-        return User::where('api_token', hash('sha256', $raw))->first();
-    }
-
-    private function tailorData(User $tailor): array
-    {
-        $productIds    = Product::where('tailor_id', $tailor->id)->pluck('id');
-        $reviewsCount  = Review::whereIn('product_id', $productIds)->count();
-        $avgRating     = $reviewsCount > 0
-            ? round(Review::whereIn('product_id', $productIds)->avg('rating'), 1)
-            : null;
-        $productsCount = $productIds->count();
-
         return [
             'id'               => $tailor->id,
-            'name'             => trim(($tailor->first_name ?? '') . ' ' . ($tailor->last_name ?? '')) ?: $tailor->name,
+            'name'             => $tailor->getFullName(),
             'bio'              => $tailor->bio,
             'specialty'        => $tailor->specialty,
             'years_experience' => $tailor->years_experience,
@@ -43,12 +29,42 @@ class TailorController extends Controller
 
     public function index()
     {
-        $tailors = User::where('role', 'tailor')
-            ->get()
-            ->map(fn($t) => $this->tailorData($t))
-            ->values();
+        $tailors = User::where('role', 'tailor')->get();
 
-        return response()->json(['tailors' => $tailors]);
+        $productsByTailor = Product::whereIn('tailor_id', $tailors->pluck('id'))
+            ->select('id', 'tailor_id')
+            ->get()
+            ->groupBy('tailor_id');
+
+        $allProductIds = $productsByTailor->flatten()->pluck('id');
+        $reviewStats   = $allProductIds->isNotEmpty()
+            ? Review::whereIn('product_id', $allProductIds)
+                ->selectRaw('product_id, COUNT(*) as cnt, AVG(rating) as avg_r')
+                ->groupBy('product_id')
+                ->get()
+                ->keyBy('product_id')
+            : collect();
+
+        $result = $tailors->map(function ($tailor) use ($productsByTailor, $reviewStats) {
+            $products      = $productsByTailor->get($tailor->id, collect());
+            $productsCount = $products->count();
+            $reviewsCount  = 0;
+            $weightedSum   = 0.0;
+
+            foreach ($products->pluck('id') as $pid) {
+                if ($reviewStats->has($pid)) {
+                    $stat          = $reviewStats[$pid];
+                    $reviewsCount += $stat->cnt;
+                    $weightedSum  += $stat->avg_r * $stat->cnt;
+                }
+            }
+
+            $avgRating = $reviewsCount > 0 ? round($weightedSum / $reviewsCount, 1) : null;
+
+            return $this->tailorData($tailor, $productsCount, $reviewsCount, $avgRating);
+        })->values();
+
+        return response()->json(['tailors' => $result]);
     }
 
     // ─── GET /api/tailors/{id} ────────────────────────────────────────────────
@@ -65,20 +81,26 @@ class TailorController extends Controller
             ->get()
             ->map(function ($p) use ($tailor) {
                 return [
-                    'id'             => $p->id,
-                    'name'           => $p->name,
-                    'price'          => $p->price,
-                    'images'         => $p->images ?? [],
-                    'category'       => $p->category?->name,
-                    'tailor_name'    => trim(($tailor->first_name ?? '') . ' ' . ($tailor->last_name ?? '')) ?: $tailor->name,
-                    'reviews_count'  => (int) $p->reviews_count,
-                    'average_rating' => $p->reviews_avg_rating ? round((float) $p->reviews_avg_rating, 1) : null,
-                    'is_customizable'=> $p->is_customizable,
+                    'id'              => $p->id,
+                    'name'            => $p->name,
+                    'price'           => $p->price,
+                    'images'          => $p->images ?? [],
+                    'category'        => $p->category?->name,
+                    'tailor_name'     => $tailor->getFullName(),
+                    'reviews_count'   => (int) $p->reviews_count,
+                    'average_rating'  => $p->reviews_avg_rating ? round((float) $p->reviews_avg_rating, 1) : null,
+                    'is_customizable' => $p->is_customizable,
                 ];
             });
 
+        $productIds   = Product::where('tailor_id', $tailor->id)->pluck('id');
+        $reviewsCount = Review::whereIn('product_id', $productIds)->count();
+        $avgRating    = $reviewsCount > 0
+            ? round(Review::whereIn('product_id', $productIds)->avg('rating'), 1)
+            : null;
+
         return response()->json([
-            'tailor'   => $this->tailorData($tailor),
+            'tailor'   => $this->tailorData($tailor, $productIds->count(), $reviewsCount, $avgRating),
             'products' => $products,
         ]);
     }
@@ -87,20 +109,29 @@ class TailorController extends Controller
 
     public function updateProfile(Request $request)
     {
-        $user = $this->authedUser($request);
-        if (!$user || $user->role !== 'tailor') {
+        $user = $request->user();
+        if ($user->role !== 'tailor') {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
+
+        // Minor #16: max years_experience is dynamic (current year − 1960)
+        $maxExperience = (int) date('Y') - 1960;
 
         $data = $request->validate([
             'bio'              => 'nullable|string|max:1000',
             'specialty'        => 'nullable|string|max:200',
-            'years_experience' => 'nullable|integer|min:0|max:60',
+            'years_experience' => "nullable|integer|min:0|max:{$maxExperience}",
             'profile_image'    => 'nullable|string|max:2000',
         ]);
 
         $user->update($data);
 
-        return response()->json(['tailor' => $this->tailorData($user)]);
+        $productIds   = Product::where('tailor_id', $user->id)->pluck('id');
+        $reviewsCount = Review::whereIn('product_id', $productIds)->count();
+        $avgRating    = $reviewsCount > 0
+            ? round(Review::whereIn('product_id', $productIds)->avg('rating'), 1)
+            : null;
+
+        return response()->json(['tailor' => $this->tailorData($user, $productIds->count(), $reviewsCount, $avgRating)]);
     }
 }

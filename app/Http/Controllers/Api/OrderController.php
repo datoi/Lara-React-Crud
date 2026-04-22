@@ -11,35 +11,26 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
-    // ─── Token helper ────────────────────────────────────────────────────────
-
-    private function authedUser(Request $request): ?User
-    {
-        $raw = $request->bearerToken();
-        if (!$raw) return null;
-
-        return User::where('api_token', hash('sha256', $raw))->first();
-    }
-
     private function randomTailor(): ?User
     {
         return User::where('role', 'tailor')->inRandomOrder()->first();
     }
 
-    private function notify(int $userId, string $type, string $title, string $body, array $data = []): void
+    private function notify(int $userId, string $type, string $title, string $body, int $orderId, array $extra = []): void
     {
         KereNotification::create([
             'user_id' => $userId,
             'type'    => $type,
             'title'   => $title,
             'body'    => $body,
-            'data'    => $data,
+            'data'    => array_merge(['order_id' => $orderId], $extra),
             'is_read' => false,
         ]);
     }
@@ -48,79 +39,92 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        $user = $this->authedUser($request);
-        if (!$user) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
-
         $type = $request->input('order_type', 'marketplace');
 
         if ($type === 'custom') {
-            return $this->storeCustomOrder($request, $user);
+            return $this->storeCustomOrder($request, $request->user());
         }
 
-        return $this->storeMarketplaceOrder($request, $user);
+        return $this->storeMarketplaceOrder($request, $request->user());
     }
 
     private function storeMarketplaceOrder(Request $request, User $user)
     {
         $data = $request->validate([
             'product_id'      => 'required|exists:products,id',
-            'color'           => 'nullable|string',
-            'size'            => 'nullable|string',
-            'quantity'        => 'required|integer|min:1',
-            'cm_measurements' => 'nullable|array',
+            'color'           => 'nullable|string|max:100',
+            'size'            => 'nullable|string|max:50',
+            'quantity'        => 'required|integer|min:1|max:1000',
+            'cm_measurements' => 'nullable|array|max:20',
         ]);
 
-        $product  = Product::findOrFail($data['product_id']);
-        $subtotal = $product->price * $data['quantity'];
-        $shipping = 15;
+        $product = Product::findOrFail($data['product_id']);
+
+        // Critical #7: prevent overselling
+        if ($product->stock < $data['quantity']) {
+            return response()->json(['message' => 'Not enough stock available.'], 422);
+        }
+
+        $shipping = (int) config('app.shipping_cost', 15);
         $tailor   = $product->tailor_id
             ? User::find($product->tailor_id)
             : $this->randomTailor();
 
-        $order = Order::create([
-            'user_id'      => $user->id,
-            'tailor_id'    => $tailor?->id,
-            'order_number' => 'ORD-' . strtoupper(Str::random(8)),
-            'order_type'   => 'marketplace',
-            'status'       => 'pending',
-            'subtotal'     => $subtotal,
-            'shipping'     => $shipping,
-            'total'        => $subtotal + $shipping,
-            'first_name'   => $user->first_name ?? $user->name,
-            'last_name'    => $user->last_name  ?? '',
-            'email'        => $user->email,
-            'phone'        => $user->phone,
-            'address'      => 'N/A',
-            'city'         => 'Tbilisi',
-            'zip'          => '0100',
-            'country'      => 'GE',
-        ]);
+        // Critical #3: no tailor available
+        if (! $tailor) {
+            return response()->json(['message' => 'No tailor is currently available. Please try again later.'], 503);
+        }
 
-        $order->items()->create([
-            'product_id'      => $product->id,
-            'product_name'    => $product->name,
-            'color'           => $data['color'] ?? null,
-            'size'            => $data['size']  ?? null,
-            'quantity'        => $data['quantity'],
-            'price'           => $product->price,
-            'cm_measurements' => $data['cm_measurements'] ?? null,
-        ]);
+        $unitPrice = $product->price;
+        $subtotal  = $unitPrice * $data['quantity'];
 
-        // Notify tailor: new order received
-        if ($tailor) {
-            $customerName = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name;
+        $order = DB::transaction(function () use ($data, $user, $tailor, $product, $unitPrice, $subtotal, $shipping) {
+            // Decrement stock atomically to prevent race-condition overselling
+            Product::where('id', $product->id)
+                ->where('stock', '>=', $data['quantity'])
+                ->decrement('stock', $data['quantity']);
+
+            $order = Order::create([
+                'user_id'      => $user->id,
+                'tailor_id'    => $tailor->id,
+                'order_number' => 'ORD-' . strtoupper(Str::random(8)),
+                'order_type'   => 'marketplace',
+                'status'       => 'pending',
+                'subtotal'     => $subtotal,
+                'shipping'     => $shipping,
+                'total'        => $subtotal + $shipping,
+                'first_name'   => $user->first_name ?? $user->name,
+                'last_name'    => $user->last_name  ?? '',
+                'email'        => $user->email,
+                'phone'        => $user->phone,
+                'address'      => 'N/A',
+                'city'         => 'Tbilisi',
+                'zip'          => '0100',
+                'country'      => 'GE',
+            ]);
+
+            $order->items()->create([
+                'product_id'      => $product->id,
+                'product_name'    => $product->name,
+                'color'           => $data['color'] ?? null,
+                'size'            => $data['size']  ?? null,
+                'quantity'        => $data['quantity'],
+                'price'           => $unitPrice,
+                'cm_measurements' => $data['cm_measurements'] ?? null,
+            ]);
+
             $this->notify(
                 $tailor->id,
                 'new_order',
                 'New Order Received!',
-                "You received a new order for \"{$product->name}\" from {$customerName}.",
-                ['order_id' => $order->id, 'product_name' => $product->name]
+                "You received a new order for \"{$product->name}\" from {$user->getFullName()}.",
+                $order->id,
+                ['product_name' => $product->name]
             );
-        }
 
-        // Send confirmation email to customer
+            return $order;
+        });
+
         try {
             $order->load('items');
             Mail::to($user->email)->queue(new OrderConfirmation($order));
@@ -128,13 +132,10 @@ class OrderController extends Controller
             Log::error('OrderConfirmation email failed: ' . $e->getMessage());
         }
 
-        // Alert tailor by email
-        if ($tailor) {
-            try {
-                Mail::to($tailor->email)->queue(new NewOrderAlert($order, $user));
-            } catch (\Throwable $e) {
-                Log::error('NewOrderAlert email failed: ' . $e->getMessage());
-            }
+        try {
+            Mail::to($tailor->email)->queue(new NewOrderAlert($order, $user));
+        } catch (\Throwable $e) {
+            Log::error('NewOrderAlert email failed: ' . $e->getMessage());
         }
 
         return response()->json([
@@ -145,62 +146,75 @@ class OrderController extends Controller
 
     private function storeCustomOrder(Request $request, User $user)
     {
+        // Critical #2: explicit field-level validation with size limits
         $data = $request->validate([
-            'custom_design_data'              => 'required|array',
-            'custom_design_data.clothingType' => 'required|string',
+            'custom_design_data'                      => 'required|array|max:30',
+            'custom_design_data.clothingType'         => 'required|string|max:100',
+            'custom_design_data.fabric'               => 'nullable|string|max:100',
+            'custom_design_data.color'                => 'nullable|string|max:100',
+            'custom_design_data.embroidery'           => 'nullable|string|max:200',
+            'custom_design_data.pattern'              => 'nullable|string|max:100',
+            'custom_design_data.notes'                => 'nullable|string|max:1000',
+            'custom_design_data.measurements'         => 'nullable|array|max:20',
+            'custom_design_data.measurements.*'       => 'nullable|numeric|min:0|max:999',
+            'custom_design_data.designElements'       => 'nullable|array|max:20',
+            'custom_design_data.designElements.*'     => 'nullable|string|max:100',
+            'custom_design_data.colorPalette'         => 'nullable|array|max:10',
+            'custom_design_data.colorPalette.*'       => 'nullable|string|max:50',
         ]);
 
-        $shipping = 15;
-        $subtotal = 0;
+        $shipping = (int) config('app.shipping_cost', 15);
         $tailor   = $this->randomTailor();
 
-        $order = Order::create([
-            'user_id'            => $user->id,
-            'tailor_id'          => $tailor?->id,
-            'order_number'       => 'ORD-' . strtoupper(Str::random(8)),
-            'order_type'         => 'custom',
-            'status'             => 'pending',
-            'subtotal'           => $subtotal,
-            'shipping'           => $shipping,
-            'total'              => $subtotal + $shipping,
-            'custom_design_data' => $data['custom_design_data'],
-            'first_name'         => $user->first_name ?? $user->name,
-            'last_name'          => $user->last_name  ?? '',
-            'email'              => $user->email,
-            'phone'              => $user->phone,
-            'address'            => 'N/A',
-            'city'               => 'Tbilisi',
-            'zip'                => '0100',
-            'country'            => 'GE',
-        ]);
+        // Critical #3: no tailor available
+        if (! $tailor) {
+            return response()->json(['message' => 'No tailor is currently available. Please try again later.'], 503);
+        }
 
-        // Notify tailor: new custom design order
-        if ($tailor) {
-            $customerName = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name;
-            $clothingType = $data['custom_design_data']['clothingType'] ?? 'garment';
+        $order = DB::transaction(function () use ($data, $user, $tailor, $shipping) {
+            $order = Order::create([
+                'user_id'            => $user->id,
+                'tailor_id'          => $tailor->id,
+                'order_number'       => 'ORD-' . strtoupper(Str::random(8)),
+                'order_type'         => 'custom',
+                'status'             => 'pending',
+                'subtotal'           => 0,
+                'shipping'           => $shipping,
+                'total'              => $shipping,
+                'custom_design_data' => $data['custom_design_data'],
+                'first_name'         => $user->first_name ?? $user->name,
+                'last_name'          => $user->last_name  ?? '',
+                'email'              => $user->email,
+                'phone'              => $user->phone,
+                'address'            => 'N/A',
+                'city'               => 'Tbilisi',
+                'zip'                => '0100',
+                'country'            => 'GE',
+            ]);
+
+            $clothingType = $data['custom_design_data']['clothingType'];
             $this->notify(
                 $tailor->id,
                 'new_order',
                 'New Custom Design Order!',
-                "You received a custom {$clothingType} design from {$customerName}.",
-                ['order_id' => $order->id, 'clothing_type' => $clothingType]
+                "You received a custom {$clothingType} design from {$user->getFullName()}.",
+                $order->id,
+                ['clothing_type' => $clothingType]
             );
-        }
 
-        // Send confirmation email to customer
+            return $order;
+        });
+
         try {
             Mail::to($user->email)->queue(new OrderConfirmation($order));
         } catch (\Throwable $e) {
             Log::error('OrderConfirmation email failed (custom): ' . $e->getMessage());
         }
 
-        // Alert tailor by email
-        if ($tailor) {
-            try {
-                Mail::to($tailor->email)->queue(new NewOrderAlert($order, $user));
-            } catch (\Throwable $e) {
-                Log::error('NewOrderAlert email failed (custom): ' . $e->getMessage());
-            }
+        try {
+            Mail::to($tailor->email)->queue(new NewOrderAlert($order, $user));
+        } catch (\Throwable $e) {
+            Log::error('NewOrderAlert email failed (custom): ' . $e->getMessage());
         }
 
         return response()->json([
@@ -213,8 +227,8 @@ class OrderController extends Controller
 
     public function tailorOrders(Request $request)
     {
-        $user = $this->authedUser($request);
-        if (!$user || $user->role !== 'tailor') {
+        $user = $request->user();
+        if ($user->role !== 'tailor') {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
@@ -231,12 +245,15 @@ class OrderController extends Controller
 
     public function updateStatus(Request $request, int $id)
     {
-        $user = $this->authedUser($request);
-        if (!$user || $user->role !== 'tailor') {
+        $user = $request->user();
+        if ($user->role !== 'tailor') {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
-        $order = Order::with(['user', 'items.product'])->where('id', $id)->where('tailor_id', $user->id)->firstOrFail();
+        $order = Order::with(['user', 'items.product'])
+            ->where('id', $id)
+            ->where('tailor_id', $user->id)
+            ->firstOrFail();
 
         $data = $request->validate([
             'status' => 'required|in:pending,processing,shipped,delivered,finished,cancelled',
@@ -245,10 +262,10 @@ class OrderController extends Controller
         $oldStatus = $order->status;
         $order->update(['status' => $data['status']]);
 
-        // Notify customer on meaningful status changes
         $notifyStatuses = ['processing', 'shipped', 'delivered', 'finished', 'cancelled'];
-        if (in_array($data['status'], $notifyStatuses) && $data['status'] !== $oldStatus) {
-            $tailorName  = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name;
+        $shouldNotify   = in_array($data['status'], $notifyStatuses) && $data['status'] !== $oldStatus;
+
+        if ($shouldNotify) {
             $statusLabel = match ($data['status']) {
                 'processing' => 'In Progress',
                 'shipped'    => 'Shipped',
@@ -263,13 +280,10 @@ class OrderController extends Controller
                 'order_status',
                 'Order #' . $order->id . ' Status Updated',
                 "Your order #{$order->id} status has been updated to: {$statusLabel}.",
-                ['order_id' => $order->id, 'status' => $data['status']]
+                $order->id,
+                ['status' => $data['status']]
             );
-        }
 
-        // Send status update email to customer
-        $notifyStatuses = ['processing', 'shipped', 'delivered', 'finished', 'cancelled'];
-        if (in_array($data['status'], $notifyStatuses) && $data['status'] !== $oldStatus) {
             try {
                 Mail::to($order->user->email)->queue(new OrderStatusUpdated($order, $data['status']));
             } catch (\Throwable $e) {
@@ -295,7 +309,7 @@ class OrderController extends Controller
             'created_at'         => $order->created_at?->toDateString(),
             'custom_design_data' => $order->custom_design_data,
             'customer' => [
-                'name'  => trim(($order->user->first_name ?? '') . ' ' . ($order->user->last_name ?? '')) ?: $order->user->name,
+                'name'  => $order->user->getFullName(),
                 'email' => $order->user->email,
                 'phone' => $order->user->phone ?? '',
             ],

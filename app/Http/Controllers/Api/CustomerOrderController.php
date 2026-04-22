@@ -5,25 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Review;
-use App\Models\User;
 use Illuminate\Http\Request;
 
 class CustomerOrderController extends Controller
 {
-    private function authedUser(Request $request): ?User
-    {
-        $raw = $request->bearerToken();
-        if (!$raw) return null;
-        return User::where('api_token', hash('sha256', $raw))->first();
-    }
-
     // GET /api/customer/orders
     public function index(Request $request)
     {
-        $user = $this->authedUser($request);
-        if (!$user) {
-            return response()->json(['message' => 'Unauthorized.'], 401);
-        }
+        $user = $request->user();
 
         $orders = Order::with(['items.product', 'tailor'])
             ->where('user_id', $user->id)

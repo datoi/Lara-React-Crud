@@ -5,21 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Review;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
-    // ─── Token helper (shared pattern) ───────────────────────────────────────
-
-    private function authedUser(Request $request): ?User
-    {
-        $raw = $request->bearerToken();
-        if (!$raw) return null;
-        return User::where('api_token', hash('sha256', $raw))->first();
-    }
-
     // ─── GET /api/products ────────────────────────────────────────────────────
 
     public function index(Request $request)
@@ -64,9 +54,7 @@ class ProductController extends Controller
 
         // Append tailor_name and review summary to each product
         $paginator->getCollection()->transform(function ($p) {
-            $p->tailor_name    = $p->tailor
-                ? trim(($p->tailor->first_name ?? '') . ' ' . ($p->tailor->last_name ?? '')) ?: $p->tailor->name
-                : null;
+            $p->tailor_name    = $p->tailor?->getFullName();
             $p->reviews_count  = (int) $p->reviews_count;
             $p->average_rating = $p->reviews_avg_rating ? round((float) $p->reviews_avg_rating, 1) : null;
             unset($p->reviews_avg_rating);
@@ -82,9 +70,7 @@ class ProductController extends Controller
     {
         $product->loadCount('reviews')->loadAvg('reviews', 'rating');
         $product->load(['category', 'tailor']);
-        $product->tailor_name    = $product->tailor
-            ? trim(($product->tailor->first_name ?? '') . ' ' . ($product->tailor->last_name ?? '')) ?: $product->tailor->name
-            : null;
+        $product->tailor_name    = $product->tailor?->getFullName();
         $product->reviews_count  = (int) $product->reviews_count;
         $product->average_rating = $product->reviews_avg_rating ? round((float) $product->reviews_avg_rating, 1) : null;
         unset($product->reviews_avg_rating);
@@ -95,9 +81,7 @@ class ProductController extends Controller
             ->take(4)
             ->get()
             ->each(function ($p) {
-                $p->tailor_name = $p->tailor
-                    ? trim(($p->tailor->first_name ?? '') . ' ' . ($p->tailor->last_name ?? '')) ?: $p->tailor->name
-                    : null;
+                $p->tailor_name = $p->tailor?->getFullName();
             });
 
         return response()->json([
@@ -145,8 +129,8 @@ class ProductController extends Controller
 
     public function tailorStats(Request $request)
     {
-        $user = $this->authedUser($request);
-        if (!$user || $user->role !== 'tailor') {
+        $user = $request->user();
+        if ($user->role !== 'tailor') {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
@@ -168,8 +152,8 @@ class ProductController extends Controller
 
     public function tailorProducts(Request $request)
     {
-        $user = $this->authedUser($request);
-        if (!$user || $user->role !== 'tailor') {
+        $user = $request->user();
+        if ($user->role !== 'tailor') {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
@@ -186,8 +170,8 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        $user = $this->authedUser($request);
-        if (!$user || $user->role !== 'tailor') {
+        $user = $request->user();
+        if ($user->role !== 'tailor') {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
