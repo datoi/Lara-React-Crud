@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, CheckCircle, Loader2, Phone } from 'lucide-react';
 import { Button } from '../ui/button';
+import { OrderChat } from '../OrderChat';
+import { getAuthUser } from '../../hooks/useAuth';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -95,10 +97,11 @@ function SpecRow({ label, value }: { label: string; value?: string | null }) {
 
 // ─── Order detail modal ───────────────────────────────────────────────────────
 
-function OrderDetailModal({ order, onClose, onStatusChange }: {
+function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
     order: TailorOrder;
     onClose: () => void;
     onStatusChange?: (id: number, status: string) => Promise<void>;
+    currentUserId: number;
 }) {
     const status  = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending;
     const isCustom = order.order_type === 'custom';
@@ -355,6 +358,8 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
                             </div>
                         </div>
                     )}
+
+                    <OrderChat orderId={order.id} currentUserId={currentUserId} />
                 </div>
             </motion.div>
         </div>
@@ -365,6 +370,7 @@ function OrderDetailModal({ order, onClose, onStatusChange }: {
 
 export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
     const [viewing, setViewing] = useState<TailorOrder | null>(null);
+    const currentUserId = getAuthUser()?.id ?? 0;
 
     return (
         <>
@@ -444,6 +450,7 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                     <OrderDetailModal
                         key={viewing.id}
                         order={viewing}
+                        currentUserId={currentUserId}
                         onClose={() => setViewing(null)}
                         onStatusChange={onStatusChange
                             ? async (id, status) => {

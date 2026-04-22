@@ -9,6 +9,7 @@ import {
 import { getAuthToken, getAuthUser, clearAuth } from '../hooks/useAuth';
 import { NotificationBell } from '../components/NotificationBell';
 import { ReviewModal } from '../components/ReviewModal';
+import { OrderChat } from '../components/OrderChat';
 import { OrderCardSkeleton } from '../components/skeletons/OrderCardSkeleton';
 
 interface OrderItem {
@@ -77,7 +78,7 @@ function StatusBadge({ status }: { status: string }) {
     );
 }
 
-function OrderDetailModal({ order, onClose }: { order: CustomerOrder; onClose: () => void }) {
+function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOrder; currentUserId: number; onClose: () => void }) {
     const isCustom = order.order_type === 'custom';
     const design = order.custom_design_data;
 
@@ -203,6 +204,8 @@ function OrderDetailModal({ order, onClose }: { order: CustomerOrder; onClose: (
                             {order.total > 0 ? `₾${order.total}` : 'Quoted by tailor'}
                         </span>
                     </div>
+
+                    <OrderChat orderId={order.id} currentUserId={currentUserId} />
                 </div>
             </motion.div>
         </motion.div>
@@ -444,7 +447,7 @@ export default function CustomerDashboard() {
             {/* Order detail modal */}
             <AnimatePresence>
                 {selectedOrder && (
-                    <OrderDetailModal order={selectedOrder} onClose={() => setSelected(null)} />
+                    <OrderDetailModal order={selectedOrder} currentUserId={user?.id ?? 0} onClose={() => setSelected(null)} />
                 )}
             </AnimatePresence>
 

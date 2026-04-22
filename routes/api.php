@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SupportEmailController;
 use App\Http\Controllers\Api\TailorController;
+use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\UploadController;
 use Illuminate\Support\Facades\Route;
 
@@ -59,4 +60,8 @@ Route::middleware(['auth.bearer', 'throttle:60,1'])->group(function () {
     // Upload
     Route::post('/upload/image',         [UploadController::class, 'image']);
     Route::post('/upload/profile-image', [UploadController::class, 'profileImage']);
+
+    // Order chat
+    Route::get('/orders/{orderId}/messages',  [MessageController::class, 'index']);
+    Route::post('/orders/{orderId}/messages', [MessageController::class, 'store']);
 });
