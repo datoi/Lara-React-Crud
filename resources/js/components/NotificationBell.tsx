@@ -21,24 +21,32 @@ export function NotificationBell() {
 
     const token = getAuthToken();
 
-    const fetchNotifications = async () => {
-        if (!token) return;
-        try {
-            const res = await fetch('/api/notifications', {
-                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-            });
-            if (!res.ok) return;
-            const data = await res.json();
-            setNotifications(data.notifications ?? []);
-            setUnreadCount(data.unread_count ?? 0);
-        } catch { /* ignore */ }
-    };
-
     useEffect(() => {
+        if (!token) return;
+
+        const controller = new AbortController();
+
+        const fetchNotifications = async () => {
+            try {
+                const res = await fetch('/api/notifications', {
+                    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                    signal: controller.signal,
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                setNotifications(data.notifications ?? []);
+                setUnreadCount(data.unread_count ?? 0);
+            } catch (e) {
+                if (e instanceof DOMException && e.name === 'AbortError') return;
+            }
+        };
+
         fetchNotifications();
         const id = setInterval(fetchNotifications, 30_000);
-        return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        return () => {
+            clearInterval(id);
+            controller.abort();
+        };
     }, [token]);
 
     // Click-away close
@@ -54,10 +62,12 @@ export function NotificationBell() {
 
     const dismissOne = async (id: number) => {
         if (!token) return;
-        await fetch(`/api/notifications/${id}`, {
+        // Fix #10: check res.ok before mutating — prevents item vanishing on server failure
+        const res = await fetch(`/api/notifications/${id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         });
+        if (!res.ok) return;
         setNotifications(prev => {
             const updated = prev.filter(n => n.id !== id);
             setUnreadCount(updated.filter(n => !n.is_read).length);
@@ -67,10 +77,12 @@ export function NotificationBell() {
 
     const clearAll = async () => {
         if (!token) return;
-        await fetch('/api/notifications', {
+        // Fix #10: check res.ok before mutating
+        const res = await fetch('/api/notifications', {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         });
+        if (!res.ok) return;
         setNotifications([]);
         setUnreadCount(0);
     };
@@ -85,12 +97,30 @@ export function NotificationBell() {
         return date.toLocaleDateString();
     };
 
+    // Fix #9: mark all read when the dropdown is opened
+    const handleOpen = () => {
+        const opening = !open;
+        setOpen(opening);
+        if (opening && unreadCount > 0 && token) {
+            fetch('/api/notifications/read-all', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+            })
+                .then(res => {
+                    if (!res.ok) return;
+                    setUnreadCount(0);
+                    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+                })
+                .catch(() => {});
+        }
+    };
+
     if (!token) return null;
 
     return (
         <div ref={ref} className="relative">
             <button
-                onClick={() => setOpen(v => !v)}
+                onClick={handleOpen}
                 className="relative p-2 rounded-lg transition-colors text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                 aria-label="Notifications"
             >

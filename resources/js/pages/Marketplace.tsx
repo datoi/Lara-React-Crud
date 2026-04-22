@@ -39,8 +39,12 @@ export default function Marketplace() {
     const [categories, setCategories] = useState<ApiCategory[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [fetchError, setFetchError] = useState(false);
     const [retryKey, setRetryKey] = useState(0);
+    // Fix #3: page state for "Load more" pagination
+    const [page, setPage] = useState(1);
+    const isAppendRef = useRef(false);
 
     // Filters — initialise category from URL param (?category=jackets)
     const [search,           setSearch]           = useState('');
@@ -78,32 +82,83 @@ export default function Marketplace() {
         setSearchParams(next, { replace: true });
     };
 
-    // Load categories once
+    // Fix #11: clear debounce timer on unmount
+    useEffect(() => {
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
+    }, []);
+
+    // Load categories once — Fix #4: .catch() so silent failure doesn't blank the filter list
     useEffect(() => {
         fetch('/api/categories')
             .then(r => r.json())
-            .then(setCategories);
+            .then(setCategories)
+            .catch(() => {});
     }, []);
 
-    // Fetch products
+    // Fix #3: fetch products with page support — appends on Load More, replaces on filter change
+    const prevFiltersRef = useRef({ selectedCategory, debouncedSearch, priceMax, sort, retryKey });
+
     useEffect(() => {
-        setLoading(true);
+        const prev = prevFiltersRef.current;
+        const filtersChanged =
+            prev.selectedCategory !== selectedCategory ||
+            prev.debouncedSearch  !== debouncedSearch  ||
+            prev.priceMax         !== priceMax         ||
+            prev.sort             !== sort             ||
+            prev.retryKey         !== retryKey;
+
+        prevFiltersRef.current = { selectedCategory, debouncedSearch, priceMax, sort, retryKey };
+
+        // Filter changed while on a deeper page — reset to 1 (will re-trigger this effect)
+        if (filtersChanged && page !== 1) {
+            isAppendRef.current = false;
+            setPage(1);
+            return;
+        }
+
+        const append = isAppendRef.current;
+        isAppendRef.current = false;
+
+        if (append) setLoadingMore(true);
+        else { setLoading(true); setFetchError(false); }
+
+        const controller = new AbortController();
         const params = new URLSearchParams();
         if (selectedCategory) params.set('category', selectedCategory);
         if (debouncedSearch)   params.set('search', debouncedSearch);
         if (priceMax < 500)    params.set('max_price', String(priceMax));
         if (sort)              params.set('sort', sort);
+        params.set('page', String(page));
 
-        setFetchError(false);
-        fetch(`/api/products?${params}`)
+        fetch(`/api/products?${params}`, { signal: controller.signal })
             .then(r => r.json())
             .then(data => {
-                setProducts(data.data ?? []);
-                setTotal(data.total ?? (data.data?.length ?? 0));
+                const incoming: ApiProduct[] = data.data ?? [];
+                if (append) {
+                    setProducts(prev => [...prev, ...incoming]);
+                } else {
+                    setProducts(incoming);
+                }
+                setTotal(data.total ?? incoming.length);
                 setLoading(false);
+                setLoadingMore(false);
             })
-            .catch(() => { setLoading(false); setFetchError(true); });
-    }, [selectedCategory, debouncedSearch, priceMax, sort, retryKey]);
+            .catch(e => {
+                if (e instanceof DOMException && e.name === 'AbortError') return;
+                setLoading(false);
+                setLoadingMore(false);
+                setFetchError(true);
+            });
+
+        return () => controller.abort();
+    }, [selectedCategory, debouncedSearch, priceMax, sort, page, retryKey]);
+
+    const handleLoadMore = () => {
+        isAppendRef.current = true;
+        setPage(p => p + 1);
+    };
 
     const hasActiveFilters = selectedCategory !== '' || priceMax < 500;
 
@@ -111,6 +166,7 @@ export default function Marketplace() {
         setSelectedCategory('');
         setPriceMax(500);
         setSort('');
+        setPage(1);
         setShowFilters(false);
         setSearchParams({}, { replace: true });
     };
@@ -364,7 +420,7 @@ export default function Marketplace() {
 
                 {/* Grid */}
                 {fetchError ? (
-                    <ErrorFallback message="Failed to load products." onRetry={() => { setFetchError(false); setLoading(true); setRetryKey(k => k + 1); }} />
+                    <ErrorFallback message="Failed to load products." onRetry={() => { setFetchError(false); setLoading(true); setPage(1); setRetryKey(k => k + 1); }} />
                 ) : loading ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                         {[...Array(8)].map((_, i) => <ProductCardSkeleton key={i} />)}
@@ -453,6 +509,19 @@ export default function Marketplace() {
                                 </div>
                             </motion.div>
                         ))}
+                    </div>
+                )}
+
+                {/* Fix #3: Load more — only shown when there are more pages */}
+                {!loading && !fetchError && products.length > 0 && products.length < total && (
+                    <div className="mt-8 flex justify-center">
+                        <button
+                            onClick={handleLoadMore}
+                            disabled={loadingMore}
+                            className="px-6 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
+                        >
+                            {loadingMore ? 'Loading…' : `Load more (${total - products.length} remaining)`}
+                        </button>
                     </div>
                 )}
             </div>

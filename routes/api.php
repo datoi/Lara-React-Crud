@@ -27,13 +27,11 @@ Route::get('/tailors/{id}',                 [TailorController::class, 'show']);
 Route::get('/reviews/landing',              [ReviewController::class, 'landing']);
 Route::get('/platform/stats',               [ProductController::class, 'platformStats']);
 
-// ─── Authenticated (Bearer token, 60 req/min) ─────────────────────────────────
+// ─── Authenticated reads (60 req/min) ─────────────────────────────────────────
 Route::middleware(['auth.bearer', 'throttle:60,1'])->group(function () {
-    // Orders
-    Route::post('/orders', [OrderController::class, 'store']);
-
     // Customer
-    Route::get('/customer/orders', [CustomerOrderController::class, 'index']);
+    Route::get('/customer/orders',                             [CustomerOrderController::class, 'index']);
+    Route::get('/customer/orders/{orderId}/review-status',     [ReviewController::class, 'orderReviewStatus']);
 
     // Notifications
     Route::get('/notifications',                [NotificationController::class, 'index']);
@@ -42,17 +40,27 @@ Route::middleware(['auth.bearer', 'throttle:60,1'])->group(function () {
     Route::delete('/notifications/{id}',        [NotificationController::class, 'destroy']);
     Route::delete('/notifications',             [NotificationController::class, 'destroyAll']);
 
+    // Tailor reads
+    Route::get('/tailor/orders',   [OrderController::class, 'tailorOrders']);
+    Route::get('/tailor/stats',    [ProductController::class, 'tailorStats']);
+    Route::get('/tailor/products', [ProductController::class, 'tailorProducts']);
+
+    // Chat reads
+    Route::get('/orders/{orderId}/messages', [MessageController::class, 'index']);
+});
+
+// ─── Authenticated writes (10 req/min) ────────────────────────────────────────
+Route::middleware(['auth.bearer', 'throttle:10,1'])->group(function () {
+    // Orders
+    Route::post('/orders',                         [OrderController::class, 'store']);
+    Route::patch('/tailor/orders/{id}/status',     [OrderController::class, 'updateStatus']);
+
     // Tailor
-    Route::get('/tailor/orders',               [OrderController::class, 'tailorOrders']);
-    Route::patch('/tailor/orders/{id}/status', [OrderController::class, 'updateStatus']);
-    Route::patch('/tailor/profile',            [TailorController::class, 'updateProfile']);
-    Route::get('/tailor/stats',                [ProductController::class, 'tailorStats']);
-    Route::get('/tailor/products',             [ProductController::class, 'tailorProducts']);
-    Route::post('/tailor/products',            [ProductController::class, 'store']);
+    Route::patch('/tailor/profile',    [TailorController::class, 'updateProfile']);
+    Route::post('/tailor/products',    [ProductController::class, 'store']);
 
     // Reviews
-    Route::post('/reviews',                                      [ReviewController::class, 'store']);
-    Route::get('/customer/orders/{orderId}/review-status',       [ReviewController::class, 'orderReviewStatus']);
+    Route::post('/reviews', [ReviewController::class, 'store']);
 
     // Support
     Route::post('/support-email', [SupportEmailController::class, 'store']);
@@ -61,7 +69,6 @@ Route::middleware(['auth.bearer', 'throttle:60,1'])->group(function () {
     Route::post('/upload/image',         [UploadController::class, 'image']);
     Route::post('/upload/profile-image', [UploadController::class, 'profileImage']);
 
-    // Order chat
-    Route::get('/orders/{orderId}/messages',  [MessageController::class, 'index']);
+    // Chat writes
     Route::post('/orders/{orderId}/messages', [MessageController::class, 'store']);
 });

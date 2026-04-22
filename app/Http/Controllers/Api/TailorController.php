@@ -73,27 +73,29 @@ class TailorController extends Controller
     {
         $tailor = User::where('role', 'tailor')->findOrFail($id);
 
-        $products = Product::with('category')
+        // Fix #6: fetch models first, pluck IDs from the collection — eliminates the extra query below
+        $productModels = Product::with('category')
             ->withCount('reviews')
             ->withAvg('reviews', 'rating')
             ->where('tailor_id', $tailor->id)
             ->latest()
-            ->get()
-            ->map(function ($p) use ($tailor) {
-                return [
-                    'id'              => $p->id,
-                    'name'            => $p->name,
-                    'price'           => $p->price,
-                    'images'          => $p->images ?? [],
-                    'category'        => $p->category?->name,
-                    'tailor_name'     => $tailor->getFullName(),
-                    'reviews_count'   => (int) $p->reviews_count,
-                    'average_rating'  => $p->reviews_avg_rating ? round((float) $p->reviews_avg_rating, 1) : null,
-                    'is_customizable' => $p->is_customizable,
-                ];
-            });
+            ->get();
 
-        $productIds   = Product::where('tailor_id', $tailor->id)->pluck('id');
+        $productIds = $productModels->pluck('id');
+
+        $products = $productModels->map(function ($p) use ($tailor) {
+            return [
+                'id'              => $p->id,
+                'name'            => $p->name,
+                'price'           => $p->price,
+                'images'          => $p->images ?? [],
+                'category'        => $p->category?->name,
+                'tailor_name'     => $tailor->getFullName(),
+                'reviews_count'   => (int) $p->reviews_count,
+                'average_rating'  => $p->reviews_avg_rating ? round((float) $p->reviews_avg_rating, 1) : null,
+                'is_customizable' => $p->is_customizable,
+            ];
+        });
         $reviewsCount = Review::whereIn('product_id', $productIds)->count();
         $avgRating    = $reviewsCount > 0
             ? round(Review::whereIn('product_id', $productIds)->avg('rating'), 1)

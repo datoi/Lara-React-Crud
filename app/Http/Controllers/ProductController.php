@@ -191,6 +191,7 @@ class ProductController extends Controller
             'required_measurements' => 'nullable|array',
             'required_measurements.*' => 'string',
             'is_customizable'       => 'boolean',
+            'stock'                 => 'nullable|integer|min:0|max:9999',
         ]);
 
         $slug = Str::slug($data['name']) . '-' . Str::random(6);
@@ -209,7 +210,7 @@ class ProductController extends Controller
             'texture'               => $data['texture'] ?? null,
             'required_measurements' => $data['required_measurements'] ?? [],
             'is_customizable'       => $data['is_customizable'] ?? true,
-            'stock'                 => 100,
+            'stock'                 => $data['stock'] ?? 100,
         ]);
 
         $product->load('category');
@@ -237,8 +238,7 @@ class ProductController extends Controller
             'texture'               => $p->texture,
             'required_measurements' => $p->required_measurements ?? [],
             'is_customizable'       => $p->is_customizable,
-            'orders'                => 0,
-            'status'                => 'active',
+            'stock'                 => $p->stock,
         ];
     }
 }

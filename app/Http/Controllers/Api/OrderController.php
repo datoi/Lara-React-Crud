@@ -78,11 +78,16 @@ class OrderController extends Controller
         $unitPrice = $product->price;
         $subtotal  = $unitPrice * $data['quantity'];
 
+        try {
         $order = DB::transaction(function () use ($data, $user, $tailor, $product, $unitPrice, $subtotal, $shipping) {
-            // Decrement stock atomically to prevent race-condition overselling
-            Product::where('id', $product->id)
+            // Critical #1: capture affected rows — throws so transaction rolls back if stock is gone
+            $affected = Product::where('id', $product->id)
                 ->where('stock', '>=', $data['quantity'])
                 ->decrement('stock', $data['quantity']);
+
+            if ($affected === 0) {
+                throw new \RuntimeException('out_of_stock');
+            }
 
             $order = Order::create([
                 'user_id'      => $user->id,
@@ -124,6 +129,12 @@ class OrderController extends Controller
 
             return $order;
         });
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() === 'out_of_stock') {
+                return response()->json(['message' => 'Not enough stock available.'], 422);
+            }
+            throw $e;
+        }
 
         try {
             $order->load('items');

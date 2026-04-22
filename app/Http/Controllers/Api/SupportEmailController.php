@@ -42,7 +42,11 @@ class SupportEmailController extends Controller
             Mail::to($supportEmail)->queue(new SupportRequest($user, $data['subject'], $data['message']));
         } catch (\Throwable $e) {
             Log::error('SupportRequest email failed: ' . $e->getMessage());
-            return response()->json(['message' => 'Failed to send email. Please try again.'], 500);
+            // Row is already committed — return 202 so the client doesn't retry and create duplicates
+            return response()->json([
+                'success' => true,
+                'warning' => 'Your message was saved but the confirmation email could not be sent.',
+            ], 202);
         }
 
         return response()->json(['success' => true]);
