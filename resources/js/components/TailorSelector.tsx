@@ -19,6 +19,7 @@ interface Props {
 export function TailorSelector({ selectedTailorId, onChange, category }: Props) {
     const [tailors, setTailors] = useState<Tailor[]>([]);
     const [loading, setLoading] = useState(true);
+    const [fetchFailed, setFetchFailed] = useState(false);
 
     useEffect(() => {
         const url = category
@@ -27,16 +28,17 @@ export function TailorSelector({ selectedTailorId, onChange, category }: Props) 
         fetch(url)
             .then(r => r.json())
             .then(d => setTailors((d.tailors ?? []).slice(0, 6)))
-            .catch(() => {})
+            .catch(() => setFetchFailed(true))
             .finally(() => setLoading(false));
     }, [category]);
 
     // Tailor with the highest avg_rating gets the "Recommended" badge
-    const topRatedId = tailors.reduce<number | null>((best, t) => {
-        if (t.avg_rating === null) return best;
-        const bestRating = tailors.find(x => x.id === best)?.avg_rating ?? -1;
-        return t.avg_rating > bestRating ? t.id : best;
-    }, null);
+    const topRatedId = tailors.reduce<{ id: number | null; rating: number }>(
+        (best, t) => t.avg_rating !== null && t.avg_rating > best.rating
+            ? { id: t.id, rating: t.avg_rating }
+            : best,
+        { id: null, rating: -1 }
+    ).id;
 
     const isAutoSelected = selectedTailorId === null;
 
@@ -45,6 +47,14 @@ export function TailorSelector({ selectedTailorId, onChange, category }: Props) 
             <div className="bg-white rounded-2xl border border-slate-200 p-5 flex items-center justify-center py-8">
                 <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
             </div>
+        );
+    }
+
+    if (fetchFailed) {
+        return (
+            <p className="text-xs text-slate-400 text-center py-2">
+                Could not load tailors — your order will be auto-assigned.
+            </p>
         );
     }
 

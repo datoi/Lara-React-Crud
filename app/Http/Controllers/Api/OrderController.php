@@ -71,6 +71,9 @@ class OrderController extends Controller
         // Customer-chosen tailor takes priority; fall back to product's tailor then random
         if (!empty($data['tailor_id'])) {
             $tailor = User::where('id', $data['tailor_id'])->where('role', 'tailor')->first();
+            if (! $tailor) {
+                return response()->json(['message' => 'Selected tailor is not available.'], 422);
+            }
         } else {
             $tailor = $product->tailor_id
                 ? User::find($product->tailor_id)
@@ -159,6 +162,7 @@ class OrderController extends Controller
         return response()->json([
             'order_number' => $order->order_number,
             'total'        => $order->total,
+            'tailor_name'  => $tailor->getFullName(),
         ], 201);
     }
 
@@ -185,9 +189,14 @@ class OrderController extends Controller
         $shipping = (int) config('app.shipping_cost', 15);
 
         // Customer-chosen tailor takes priority; fall back to random
-        $tailor = !empty($data['tailor_id'])
-            ? User::where('id', $data['tailor_id'])->where('role', 'tailor')->first()
-            : $this->randomTailor();
+        if (!empty($data['tailor_id'])) {
+            $tailor = User::where('id', $data['tailor_id'])->where('role', 'tailor')->first();
+            if (! $tailor) {
+                return response()->json(['message' => 'Selected tailor is not available.'], 422);
+            }
+        } else {
+            $tailor = $this->randomTailor();
+        }
 
         // Critical #3: no tailor available
         if (! $tailor) {
@@ -243,6 +252,7 @@ class OrderController extends Controller
         return response()->json([
             'order_number' => $order->order_number,
             'total'        => $order->total,
+            'tailor_name'  => $tailor->getFullName(),
         ], 201);
     }
 

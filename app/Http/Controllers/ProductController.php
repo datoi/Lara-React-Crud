@@ -85,8 +85,9 @@ class ProductController extends Controller
             });
 
         return response()->json([
-            'product' => $product,
-            'related' => $related,
+            'product'       => $product,
+            'related'       => $related,
+            'shipping_cost' => (int) config('app.shipping_cost', 15),
         ]);
     }
 

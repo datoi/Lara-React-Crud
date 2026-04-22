@@ -40,6 +40,8 @@ export default function ProductCustomization() {
     const [selectedSize, setSelectedSize] = useState('M');
     const [measurements, setMeasurements] = useState({ chest: '', waist: '', hips: '', length: '' });
     const [quantity, setQuantity] = useState(1);
+    const [shippingCost, setShippingCost]         = useState(15);
+    const [assignedTailor, setAssignedTailor]     = useState('');
     const [selectedTailorId, setSelectedTailorId] = useState<number | null>(null);
     const [ordered, setOrdered]       = useState(false);
     const [placing, setPlacing]       = useState(false);
@@ -72,6 +74,7 @@ export default function ProductCustomization() {
             .then(data => {
                 const p: ApiProduct = data.product;
                 setProduct(p);
+                if (typeof data.shipping_cost === 'number') setShippingCost(data.shipping_cost);
 
                 // ── Thaw: restore selections saved before login redirect ──
                 const pending = getPendingOrder();
@@ -114,9 +117,8 @@ export default function ProductCustomization() {
     }
 
     const subtotal = product.price * quantity;
-    const shipping = 15;
+    const shipping = shippingCost;
     const total = subtotal + shipping;
-    const tailor = product.tailor_name ?? 'Local Tailor';
 
     const handleOrder = async () => {
         const token = getAuthToken();
@@ -163,7 +165,9 @@ export default function ProductCustomization() {
                 setOrderError(err.message ?? 'Something went wrong.');
                 return;
             }
+            const data = await res.json();
             clearPendingOrder();
+            setAssignedTailor(data.tailor_name ?? product!.tailor_name ?? 'Your tailor');
             setOrdered(true);
             setTimeout(() => navigate('/customer-dashboard'), 3000);
         } catch {
@@ -243,7 +247,7 @@ export default function ProductCustomization() {
                         transition={{ duration: 0.5, delay: 0.2 }}
                     >
                         <h2 className="text-2xl font-bold text-slate-900 mb-2">Order submitted successfully!</h2>
-                        <p className="text-slate-500">Sent to {tailor}. Your tailor will review it and contact you within 24 hours.</p>
+                        <p className="text-slate-500">Sent to {assignedTailor}. Your tailor will review it and contact you within 24 hours.</p>
                         <p className="text-sm text-slate-400 mt-4">Taking you to your dashboard…</p>
                     </motion.div>
                 </div>
@@ -416,7 +420,7 @@ export default function ProductCustomization() {
                                         <Minus className="w-4 h-4 text-slate-600" />
                                     </button>
                                     <span className="text-lg font-bold text-slate-900 w-8 text-center">{quantity}</span>
-                                    <button onClick={() => setQuantity(q => q + 1)} className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors">
+                                    <button onClick={() => setQuantity(q => Math.min(q + 1, 1000))} className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors">
                                         <Plus className="w-4 h-4 text-slate-600" />
                                     </button>
                                 </div>

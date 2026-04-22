@@ -45,6 +45,8 @@ export default function Marketplace() {
     // Fix #3: page state for "Load more" pagination
     const [page, setPage] = useState(1);
     const isAppendRef = useRef(false);
+    // Track which product IDs were just appended so only they animate on Load More
+    const newProductIdsRef = useRef<Set<number> | null>(null);
 
     // Filters — initialise category from URL param (?category=jackets)
     const [search,           setSearch]           = useState('');
@@ -137,8 +139,10 @@ export default function Marketplace() {
             .then(data => {
                 const incoming: ApiProduct[] = data.data ?? [];
                 if (append) {
+                    newProductIdsRef.current = new Set(incoming.map(p => p.id));
                     setProducts(prev => [...prev, ...incoming]);
                 } else {
+                    newProductIdsRef.current = null; // null = fresh load, all cards animate
                     setProducts(incoming);
                 }
                 setTotal(data.total ?? incoming.length);
@@ -438,12 +442,19 @@ export default function Marketplace() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {products.map((product, i) => (
+                        {products.map((product, i) => {
+                            // null = fresh load, all animate; Set = only new IDs animate
+                            const isNew = newProductIdsRef.current === null || newProductIdsRef.current.has(product.id);
+                            // For appended cards, delay by position within the new batch only
+                            const newBatchIndex = newProductIdsRef.current
+                                ? [...newProductIdsRef.current].indexOf(product.id)
+                                : i;
+                            return (
                             <motion.div
                                 key={product.id}
-                                initial={{ opacity: 0, y: 16 }}
+                                initial={isNew ? { opacity: 0, y: 16 } : false}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4, delay: i * 0.04 }}
+                                transition={{ duration: isNew ? 0.4 : 0, delay: isNew ? newBatchIndex * 0.04 : 0 }}
                                 className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
                                 onClick={() => navigate(`/product/${product.id}`)}
                             >
@@ -508,7 +519,8 @@ export default function Marketplace() {
                                     </div>
                                 </div>
                             </motion.div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 
