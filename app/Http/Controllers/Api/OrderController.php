@@ -56,6 +56,7 @@ class OrderController extends Controller
             'size'            => 'nullable|string|max:50',
             'quantity'        => 'required|integer|min:1|max:1000',
             'cm_measurements' => 'nullable|array|max:20',
+            'tailor_id'       => 'nullable|integer|exists:users,id',
         ]);
 
         $product = Product::findOrFail($data['product_id']);
@@ -66,9 +67,15 @@ class OrderController extends Controller
         }
 
         $shipping = (int) config('app.shipping_cost', 15);
-        $tailor   = $product->tailor_id
-            ? User::find($product->tailor_id)
-            : $this->randomTailor();
+
+        // Customer-chosen tailor takes priority; fall back to product's tailor then random
+        if (!empty($data['tailor_id'])) {
+            $tailor = User::where('id', $data['tailor_id'])->where('role', 'tailor')->first();
+        } else {
+            $tailor = $product->tailor_id
+                ? User::find($product->tailor_id)
+                : $this->randomTailor();
+        }
 
         // Critical #3: no tailor available
         if (! $tailor) {
@@ -172,10 +179,15 @@ class OrderController extends Controller
             'custom_design_data.designElements.*'     => 'nullable|string|max:100',
             'custom_design_data.colorPalette'         => 'nullable|array|max:10',
             'custom_design_data.colorPalette.*'       => 'nullable|string|max:50',
+            'tailor_id'                               => 'nullable|integer|exists:users,id',
         ]);
 
         $shipping = (int) config('app.shipping_cost', 15);
-        $tailor   = $this->randomTailor();
+
+        // Customer-chosen tailor takes priority; fall back to random
+        $tailor = !empty($data['tailor_id'])
+            ? User::where('id', $data['tailor_id'])->where('role', 'tailor')->first()
+            : $this->randomTailor();
 
         // Critical #3: no tailor available
         if (! $tailor) {

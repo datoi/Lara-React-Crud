@@ -27,9 +27,20 @@ class TailorController extends Controller
 
     // ─── GET /api/tailors ─────────────────────────────────────────────────────
 
-    public function index()
+    public function index(Request $request)
     {
-        $tailors = User::where('role', 'tailor')->get();
+        $query = User::where('role', 'tailor');
+
+        // Optional category filter: only tailors with products in that category
+        $category = $request->query('category');
+        if ($category) {
+            $tailorIds = Product::whereHas('category', fn ($q) =>
+                $q->where('slug', $category)->orWhere('name', $category)
+            )->pluck('tailor_id')->filter()->unique();
+            $query->whereIn('id', $tailorIds);
+        }
+
+        $tailors = $query->get();
 
         $productsByTailor = Product::whereIn('tailor_id', $tailors->pluck('id'))
             ->select('id', 'tailor_id')

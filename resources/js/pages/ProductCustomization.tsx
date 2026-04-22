@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { ArrowLeft, Star, Minus, Plus, Check, Loader2, HelpCircle, User, Info } from 'lucide-react';
 import { MeasurementGuideModal, type MeasurementKey } from '../components/MeasurementGuideModal';
 import { measurementWarning } from '../utils/measurementSanity';
+import { TailorSelector } from '../components/TailorSelector';
 import {
     getAuthToken,
     getAuthUser,
@@ -39,6 +40,7 @@ export default function ProductCustomization() {
     const [selectedSize, setSelectedSize] = useState('M');
     const [measurements, setMeasurements] = useState({ chest: '', waist: '', hips: '', length: '' });
     const [quantity, setQuantity] = useState(1);
+    const [selectedTailorId, setSelectedTailorId] = useState<number | null>(null);
     const [ordered, setOrdered]       = useState(false);
     const [placing, setPlacing]       = useState(false);
     const [orderError, setOrderError] = useState('');
@@ -153,6 +155,7 @@ export default function ProductCustomization() {
                     cm_measurements: Object.fromEntries(
                         Object.entries(measurements).filter(([, v]) => v !== '')
                     ),
+                    tailor_id: selectedTailorId,
                 }),
             });
             if (!res.ok) {
@@ -426,6 +429,13 @@ export default function ProductCustomization() {
                                     Your tailor will review your order and may contact you before production begins.
                                 </p>
                             </div>
+
+                            {/* Tailor selector */}
+                            <TailorSelector
+                                selectedTailorId={selectedTailorId}
+                                onChange={setSelectedTailorId}
+                                category={product.category?.slug}
+                            />
 
                             {/* Order summary */}
                             <div className="bg-slate-900 rounded-2xl p-5 text-white">

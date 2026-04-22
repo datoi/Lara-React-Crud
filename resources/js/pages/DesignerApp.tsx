@@ -20,6 +20,7 @@ import { getAuthToken, saveReturnTo, savePendingOrder, clearPendingOrder, getPen
 import { GarmentSVG } from '../components/designer/GarmentSVG';
 import { MeasurementGuideModal, type MeasurementKey } from '../components/MeasurementGuideModal';
 import { measurementWarning } from '../utils/measurementSanity';
+import { TailorSelector } from '../components/TailorSelector';
 
 // ─── Pending order restore ─────────────────────────────────────────────────────
 
@@ -514,14 +515,16 @@ function PreviewPanel({ config }: { config: DesignConfig }) {
 // ─── Summary panel (right) ────────────────────────────────────────────────────
 
 interface SummaryProps {
-    config:     DesignConfig;
-    submitting: boolean;
-    submitted:  boolean;
-    error:      string;
-    onSubmit:   () => void;
+    config:           DesignConfig;
+    submitting:       boolean;
+    submitted:        boolean;
+    error:            string;
+    onSubmit:         () => void;
+    selectedTailorId: number | null;
+    onTailorChange:   (id: number | null) => void;
 }
 
-function SummaryPanel({ config, submitting, submitted, error, onSubmit }: SummaryProps) {
+function SummaryPanel({ config, submitting, submitted, error, onSubmit, selectedTailorId, onTailorChange }: SummaryProps) {
     const { base, fabric: fabricAddon, details: detailsAddon, total } = useMemo(
         () => calcPrice(config), [config]
     );
@@ -679,6 +682,12 @@ function SummaryPanel({ config, submitting, submitted, error, onSubmit }: Summar
                 <span>Your design goes to a tailor who confirms all details with you first. No payment now.</span>
             </div>
 
+            {/* Tailor selector */}
+            <TailorSelector
+                selectedTailorId={selectedTailorId}
+                onChange={onTailorChange}
+            />
+
             {/* Spacer */}
             <div className="flex-1" />
 
@@ -747,10 +756,11 @@ export default function DesignerApp() {
         return INITIAL_CONFIG;
     });
 
-    const [submitting,  setSubmitting]  = useState(false);
-    const [submitted,   setSubmitted]   = useState(false);
-    const [submitError, setSubmitError] = useState('');
-    const [guideStep,   setGuideStep]   = useState<MeasurementKey | null>(null);
+    const [submitting,       setSubmitting]       = useState(false);
+    const [submitted,        setSubmitted]        = useState(false);
+    const [submitError,      setSubmitError]      = useState('');
+    const [guideStep,        setGuideStep]        = useState<MeasurementKey | null>(null);
+    const [selectedTailorId, setSelectedTailorId] = useState<number | null>(null);
 
     const { total } = useMemo(() => calcPrice(config), [config]);
 
@@ -772,7 +782,7 @@ export default function DesignerApp() {
                     'Authorization': `Bearer ${token}`,
                     'Accept':        'application/json',
                 },
-                body: JSON.stringify({ order_type: 'custom', custom_design_data: config }),
+                body: JSON.stringify({ order_type: 'custom', custom_design_data: config, tailor_id: selectedTailorId }),
             });
             if (!res.ok) {
                 const err = await res.json();
@@ -787,7 +797,7 @@ export default function DesignerApp() {
         } finally {
             setSubmitting(false);
         }
-    }, [config, navigate]);
+    }, [config, navigate, selectedTailorId]);
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -860,6 +870,8 @@ export default function DesignerApp() {
                                 submitted={submitted}
                                 error={submitError}
                                 onSubmit={handleSubmit}
+                                selectedTailorId={selectedTailorId}
+                                onTailorChange={setSelectedTailorId}
                             />
                         </div>
                     </div>
