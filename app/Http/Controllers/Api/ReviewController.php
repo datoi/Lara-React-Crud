@@ -42,13 +42,17 @@ class ReviewController extends Controller
             $productId = $order->items->first()?->product_id;
         }
 
-        $review = Review::create([
-            'order_id'   => $order->id,
-            'user_id'    => $user->id,
-            'product_id' => $productId,
-            'rating'     => $data['rating'],
-            'comment'    => $data['comment'],
-        ]);
+        try {
+            $review = Review::create([
+                'order_id'   => $order->id,
+                'user_id'    => $user->id,
+                'product_id' => $productId,
+                'rating'     => $data['rating'],
+                'comment'    => $data['comment'],
+            ]);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            return response()->json(['message' => 'You have already reviewed this order.'], 422);
+        }
 
         return response()->json(['review' => $review], 201);
     }

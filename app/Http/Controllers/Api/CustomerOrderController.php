@@ -17,20 +17,21 @@ class CustomerOrderController extends Controller
         $orders = Order::with(['items.product', 'tailor'])
             ->where('user_id', $user->id)
             ->latest()
-            ->get()
-            ->map(function ($order) {
-                $tailorName = null;
-                if ($order->tailor) {
-                    $tailorName = trim(($order->tailor->first_name ?? '') . ' ' . ($order->tailor->last_name ?? ''))
-                        ?: $order->tailor->name;
-                }
+            ->get();
+
+        $reviewedOrderIds = Review::whereIn('order_id', $orders->pluck('id'))
+            ->pluck('order_id')
+            ->flip();
+
+        $orders = $orders->map(function ($order) use ($reviewedOrderIds) {
+                $tailorName = $order->tailor?->getFullName();
 
                 $items = $order->items->map(function ($item) {
                     return [
                         'id'           => $item->id,
                         'product_id'   => $item->product_id,
-                        'product_name' => $item->product->name ?? 'Custom Design',
-                        'image'        => $item->product->images[0] ?? null,
+                        'product_name' => $item->product?->name ?? 'Custom Design',
+                        'image'        => $item->product?->images[0] ?? null,
                         'color'        => $item->color,
                         'size'         => $item->size,
                         'quantity'     => $item->quantity,
@@ -49,7 +50,7 @@ class CustomerOrderController extends Controller
                     'custom_design_data' => $order->custom_design_data,
                     'items'              => $items,
                     'created_at'         => $order->created_at->toISOString(),
-                    'has_review'         => Review::where('order_id', $order->id)->exists(),
+                    'has_review'         => $reviewedOrderIds->has($order->id),
                 ];
             });
 

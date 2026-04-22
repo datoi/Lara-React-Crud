@@ -17,7 +17,7 @@ class UploadController extends Controller
         }
 
         $request->validate([
-            'image' => 'required|image|max:5120', // 5 MB
+            'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120', // 5 MB
         ]);
 
         $file     = $request->file('image');

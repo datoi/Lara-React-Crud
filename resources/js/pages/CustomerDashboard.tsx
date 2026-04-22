@@ -102,7 +102,7 @@ function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOr
                     <div>
                         <h3 className="font-semibold text-slate-900">Order #{order.id}</h3>
                         <p className="text-xs text-slate-400 mt-0.5">
-                            {new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            {new Date(order.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
                         </p>
                     </div>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors">
@@ -172,7 +172,7 @@ function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOr
                                 <div key={item.id} className="flex gap-3 bg-slate-50 rounded-xl p-3">
                                     <div className="w-14 h-16 rounded-lg overflow-hidden bg-slate-200 flex-shrink-0">
                                         {item.image ? (
-                                            <img src={item.image} alt={item.product_name} className="w-full h-full object-cover" />
+                                            <img src={item.image} alt={item.product_name} className="w-full h-full object-cover" loading="lazy" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-2xl">👗</div>
                                         )}
@@ -369,7 +369,7 @@ export default function CustomerDashboard() {
                                             }
                                         </p>
                                         <p className="text-xs text-slate-400 mt-0.5">
-                                            {new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            {new Date(order.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                                             {order.tailor_name && (
                                                 <>
                                                     {' · '}

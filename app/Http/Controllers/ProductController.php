@@ -50,7 +50,8 @@ class ProductController extends Controller
             default      => $query->latest(),
         };
 
-        $paginator = $query->paginate(24)->withQueryString();
+        $page      = max(1, min((int) $request->get('page', 1), 500));
+        $paginator = $query->paginate(24, ['*'], 'page', $page)->withQueryString();
 
         // Append tailor_name and review summary to each product
         $paginator->getCollection()->transform(function ($p) {
