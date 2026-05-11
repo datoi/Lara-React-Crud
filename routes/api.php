@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\TailorController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\UploadController;
+use App\Http\Controllers\Api\CustomizerProductController;
+use App\Http\Controllers\Api\SavedDesignController;
+use App\Http\Controllers\Api\CustomizerAdminController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Public ───────────────────────────────────────────────────────────────────
@@ -74,10 +77,48 @@ Route::middleware(['auth.bearer', 'throttle:10,1'])->group(function () {
     Route::post('/orders/{orderId}/messages', [MessageController::class, 'store']);
 });
 
+// ─── Customizer — Public ──────────────────────────────────────────────────────
+Route::prefix('customizer')->group(function () {
+    Route::get('/products',              [CustomizerProductController::class, 'index']);
+    Route::get('/products/{slug}',       [CustomizerProductController::class, 'show']);
+    Route::post('/preview',              [CustomizerProductController::class, 'preview']);
+});
+
+// ─── Customizer — Auth-protected ──────────────────────────────────────────────
+Route::middleware(['auth.bearer', 'throttle:30,1'])->prefix('customizer')->group(function () {
+    Route::get('/designs',        [SavedDesignController::class, 'index']);
+    Route::post('/designs',       [SavedDesignController::class, 'store']);
+    Route::get('/designs/{id}',   [SavedDesignController::class, 'show']);
+    Route::put('/designs/{id}',   [SavedDesignController::class, 'update']);
+    Route::delete('/designs/{id}',[SavedDesignController::class, 'destroy']);
+});
+
 // ─── Admin (bearer + admin role, 30 req/min) ──────────────────────────────────
 Route::middleware(['auth.bearer', 'auth.admin', 'throttle:30,1'])->prefix('admin')->group(function () {
     Route::get('/orders',               [AdminController::class, 'orders']);
     Route::get('/users',                [AdminController::class, 'users']);
     Route::patch('/orders/{id}/assign', [AdminController::class, 'assignTailor']);
     Route::patch('/users/{id}/suspend', [AdminController::class, 'suspendUser']);
+
+    // Customizer admin CRUD
+    Route::prefix('customizer')->group(function () {
+        // Products
+        Route::get('/products',               [CustomizerAdminController::class, 'indexProducts']);
+        Route::post('/products',              [CustomizerAdminController::class, 'storeProduct']);
+        Route::put('/products/{id}',          [CustomizerAdminController::class, 'updateProduct']);
+        Route::delete('/products/{id}',       [CustomizerAdminController::class, 'destroyProduct']);
+        // Layer categories
+        Route::post('/categories',            [CustomizerAdminController::class, 'storeCategory']);
+        Route::put('/categories/{id}',        [CustomizerAdminController::class, 'updateCategory']);
+        Route::delete('/categories/{id}',     [CustomizerAdminController::class, 'destroyCategory']);
+        // Layer options (with image upload)
+        Route::post('/options',               [CustomizerAdminController::class, 'storeOption']);
+        Route::post('/options/{id}',          [CustomizerAdminController::class, 'updateOption']); // POST for multipart
+        Route::delete('/options/{id}',        [CustomizerAdminController::class, 'destroyOption']);
+        // Fabrics
+        Route::get('/fabrics',                [CustomizerAdminController::class, 'indexFabrics']);
+        Route::post('/fabrics',               [CustomizerAdminController::class, 'storeFabric']);
+        Route::post('/fabrics/{id}',          [CustomizerAdminController::class, 'updateFabric']); // POST for multipart
+        Route::delete('/fabrics/{id}',        [CustomizerAdminController::class, 'destroyFabric']);
+    });
 });

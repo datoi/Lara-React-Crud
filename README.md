@@ -914,4 +914,90 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+---
+
+### [2026-05-02] Layer-Based 2D Clothing Customizer Engine
+
+**What was done:** Built a full layer-based 2D clothing configurator — the "Sumissura-style" engine where transparent PNG/SVG images are stacked on top of each other via CSS `position: absolute`, and user selections swap individual layers in real time (no canvas, no 3D, no AI).
+
+**How the engine works (read this before touching it):**
+
+Each `customizer_product` has a set of `layer_categories` (e.g. Body, Fabric, Sleeves, Collar, Buttons). Each category has a `z_index` that controls stack order — lower = rendered behind. Within each category are `layer_options`, each pointing to a transparent PNG or SVG file. Selecting an option swaps only that layer; all other layers are unaffected. The `PreviewCanvas.tsx` component renders `<img>` tags absolutely positioned inside a fixed `aspect-[3/4]` container, sorted by `z_index`.
+
+**Fabric tinting:** The Fabric layer category is marked `is_colorable: true`. The selected fabric's `color_hex` is injected as the CSS `color` property on that layer's `<img>`. SVG files in this layer use `fill="currentColor"` so the hex is picked up directly. This avoids canvas drawing or CSS filters.
+
+**Stacking order for Classic Shirt:**
+
+| z_index | Category | Role |
+|---------|----------|------|
+| 1 | Body | Base silhouette outline |
+| 2 | Fabric | Color fill overlay (`is_colorable: true`) |
+| 3 | Sleeves | Sleeve shape (long / short / rolled) |
+| 4 | Collar | Collar style (spread / button-down / mandarin) |
+| 5 | Buttons | Button placket |
+
+**How to add a new product:**
+1. `POST /api/admin/customizer/products` with `{ name, slug, base_price }`
+2. `POST /api/admin/customizer/categories` for each layer, specifying `z_index` and `is_colorable`
+3. Upload SVG/PNG options via `POST /api/admin/customizer/options` (multipart with `image` field)
+4. Navigate to `/customize/{slug}`
+
+**How to add a new layer category:**
+1. Decide its `z_index` position in the stack (must not conflict with existing layers)
+2. `POST /api/admin/customizer/categories` with `{ customizer_product_id, name, slug, z_index, is_required, is_colorable }`
+3. Upload at least one option (mark it `is_default: true`)
+4. `useCustomizer` hook auto-initializes the new category to its default
+
+**How z_index stacking works:**
+- Layer categories are sorted by `z_index` ascending before rendering
+- Each `<img>` receives `style={{ zIndex: category.z_index }}`
+- All layers are `position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain`
+- Transparent PNG/SVG only paints where the artwork exists — everything else is see-through, revealing layers below
+- The container background is a CSS checkered pattern so transparency is visible
+
+**How fabric tinting works:**
+- Categories with `is_colorable: true` receive the selected `Fabric.color_hex` as their CSS `color` property
+- SVG layers in this category must use `fill="currentColor"` — the SVG fill then equals the hex
+- A `Fabric` record stores `color_hex` (always) and optionally `texture_image_path` (tileable PNG)
+- Global fabrics (`customizer_product_id = null`) are merged with product-specific fabrics in the API response
+
+**Where the logic is:**
+
+Backend:
+- Migrations: `database/migrations/2026_05_02_000001–000005_*.php`
+- Models: `CustomizerProduct`, `LayerCategory`, `LayerOption`, `Fabric`, `SavedDesign`
+- Resources: `app/Http/Resources/Customizer*.php`, `LayerCategory*.php`, `LayerOption*.php`, `Fabric*.php`, `SavedDesign*.php`
+- Form Requests: `PreviewDesignRequest`, `StoreDesignRequest`, `StoreLayerOptionRequest`
+- Controllers:
+  - `CustomizerProductController` — public product listing + single product + preview pricing
+  - `SavedDesignController` — auth-protected design CRUD
+  - `CustomizerAdminController` — admin CRUD for products / categories / options (with image upload) / fabrics
+- Routes: `routes/api.php` under `/api/customizer/*` (public + auth) and `/api/admin/customizer/*` (admin)
+- Seeder: `database/seeders/CustomizerSeeder.php` — "Classic Shirt" with 5 categories, 12 options, 6 fabrics; SVGs generated via PHP string templates and saved to `storage/app/public/layers/`
+
+Frontend:
+- Types: `resources/js/types/customizer.ts`
+- Hooks: `useProductData.ts` (fetch + shape), `useCustomizer.ts` (state: selections, fabric, price)
+- Components: `resources/js/components/customizer/`
+  - `PreviewCanvas.tsx` — stacked `<img>` layer renderer with `AnimatePresence` fade transitions
+  - `CategoryTabs.tsx` — accessible `role="tab"` navigation with Motion `layoutId` indicator
+  - `OptionSwatch.tsx` — thumbnail button with checkered background + selected check badge
+  - `FabricPicker.tsx` — color circle swatches (same pattern as existing ProductCustomization)
+  - `OptionPanel.tsx` — tabs + option grid + fabric picker wrapper
+  - `PriceSummary.tsx` — reactive price breakdown (base + per-option modifiers + fabric modifier)
+  - `SaveDesignModal.tsx` — name-and-save modal, calls `POST /api/customizer/designs`
+  - `Customizer.tsx` — top-level wrapper: preview left, options right; Reset/Save/Order CTAs
+- Pages:
+  - `CustomizePage.tsx` at `/customize/:slug`
+  - `MyDesignsPage.tsx` at `/my-designs`
+  - `CustomizerAdminPage.tsx` at `/admin/customizer` (admin-only)
+
+**The Hook:** `useCustomizer` initializes selections from each category's `is_default` option. `totalPrice` is a `useMemo` that recomputes instantly on every selection change — no API call needed for pricing. The `preview` endpoint (`POST /api/customizer/preview`) exists for server-side price validation before order submission, but the UI uses client-side computation for latency-free feedback.
+
+**To run fresh:**
+```bash
+php artisan migrate:fresh --seed   # creates all tables + Classic Shirt data
+php artisan storage:link           # serves SVG assets from /storage/layers/
+```
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*
