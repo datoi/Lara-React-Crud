@@ -514,7 +514,7 @@ export default function Marketplace() {
                                             onClick={e => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
                                             className="text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors active:scale-95"
                                         >
-                                            Customize
+                                            Check the product
                                         </button>
                                     </div>
                                 </div>

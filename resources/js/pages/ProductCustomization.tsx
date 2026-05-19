@@ -5,7 +5,6 @@ import { motion } from 'motion/react';
 import { ArrowLeft, Star, Minus, Plus, Check, Loader2, HelpCircle, User, Info } from 'lucide-react';
 import { MeasurementGuideModal, type MeasurementKey } from '../components/MeasurementGuideModal';
 import { measurementWarning } from '../utils/measurementSanity';
-import { TailorSelector } from '../components/TailorSelector';
 import {
     getAuthToken,
     getAuthUser,
@@ -75,6 +74,9 @@ export default function ProductCustomization() {
                 const p: ApiProduct = data.product;
                 setProduct(p);
                 if (typeof data.shipping_cost === 'number') setShippingCost(data.shipping_cost);
+
+                // Auto-assign the product's tailor for marketplace orders
+                if (p.tailor_id) setSelectedTailorId(p.tailor_id);
 
                 // ── Thaw: restore selections saved before login redirect ──
                 const pending = getPendingOrder();
@@ -434,12 +436,24 @@ export default function ProductCustomization() {
                                 </p>
                             </div>
 
-                            {/* Tailor selector */}
-                            <TailorSelector
-                                selectedTailorId={selectedTailorId}
-                                onChange={setSelectedTailorId}
-                                category={product.category?.slug}
-                            />
+                            {/* Tailor — fixed to the product's tailor */}
+                            {product.tailor_name && (
+                                <div className="flex items-center gap-3 bg-white rounded-2xl border border-slate-200 p-4">
+                                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                                        <User className="w-4 h-4 text-slate-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-400">Made by</p>
+                                        {product.tailor_id ? (
+                                            <Link to={`/tailor/${product.tailor_id}`} className="text-sm font-semibold text-slate-900 hover:underline">
+                                                {product.tailor_name}
+                                            </Link>
+                                        ) : (
+                                            <p className="text-sm font-semibold text-slate-900">{product.tailor_name}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Order summary */}
                             <div className="bg-slate-900 rounded-2xl p-5 text-white">
