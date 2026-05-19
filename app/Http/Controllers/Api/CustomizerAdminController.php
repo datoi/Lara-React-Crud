@@ -23,7 +23,7 @@ class CustomizerAdminController extends Controller
 
     public function indexProducts(): JsonResponse
     {
-        $products = CustomizerProduct::with('layerCategories.options')->get();
+        $products = CustomizerProduct::with('layerCategories.options.children')->get();
 
         return response()->json([
             'products' => CustomizerProductResource::collection($products),
@@ -35,11 +35,19 @@ class CustomizerAdminController extends Controller
         $data = $request->validate([
             'name'        => ['required', 'string', 'max:255'],
             'slug'        => ['required', 'string', 'unique:customizer_products,slug'],
+            'category'    => ['nullable', 'string', 'max:80'],
             'description' => ['nullable', 'string'],
             'base_price'  => ['required', 'numeric', 'min:0'],
             'is_active'   => ['nullable', 'boolean'],
+            'preview'     => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
         ]);
 
+        if ($request->hasFile('preview')) {
+            $data['preview_image_path'] = $request->file('preview')
+                ->store('product-previews', 'public');
+        }
+
+        unset($data['preview']);
         $product = CustomizerProduct::create($data);
 
         return response()->json(['product' => new CustomizerProductResource($product)], 201);
@@ -52,11 +60,22 @@ class CustomizerAdminController extends Controller
         $data = $request->validate([
             'name'        => ['sometimes', 'string', 'max:255'],
             'slug'        => ['sometimes', 'string', 'unique:customizer_products,slug,' . $id],
+            'category'    => ['nullable', 'string', 'max:80'],
             'description' => ['nullable', 'string'],
             'base_price'  => ['sometimes', 'numeric', 'min:0'],
             'is_active'   => ['nullable', 'boolean'],
+            'preview'     => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
         ]);
 
+        if ($request->hasFile('preview')) {
+            if ($product->preview_image_path) {
+                Storage::disk('public')->delete($product->preview_image_path);
+            }
+            $data['preview_image_path'] = $request->file('preview')
+                ->store('product-previews', 'public');
+        }
+
+        unset($data['preview']);
         $product->update($data);
 
         return response()->json(['product' => new CustomizerProductResource($product)]);
@@ -76,6 +95,7 @@ class CustomizerAdminController extends Controller
         $data = $request->validate([
             'customizer_product_id' => ['required', 'integer', 'exists:customizer_products,id'],
             'name'                  => ['required', 'string', 'max:120'],
+            'children_label'        => ['nullable', 'string', 'max:120'],
             'slug'                  => ['required', 'string', 'max:120'],
             'z_index'               => ['required', 'integer', 'min:1'],
             'is_required'           => ['nullable', 'boolean'],
@@ -93,11 +113,12 @@ class CustomizerAdminController extends Controller
         $category = LayerCategory::findOrFail($id);
 
         $data = $request->validate([
-            'name'          => ['sometimes', 'string', 'max:120'],
-            'z_index'       => ['sometimes', 'integer', 'min:1'],
-            'is_required'   => ['nullable', 'boolean'],
-            'is_colorable'  => ['nullable', 'boolean'],
-            'display_order' => ['nullable', 'integer', 'min:0'],
+            'name'           => ['sometimes', 'string', 'max:120'],
+            'children_label' => ['nullable', 'string', 'max:120'],
+            'z_index'        => ['sometimes', 'integer', 'min:1'],
+            'is_required'    => ['nullable', 'boolean'],
+            'is_colorable'   => ['nullable', 'boolean'],
+            'display_order'  => ['nullable', 'integer', 'min:0'],
         ]);
 
         $category->update($data);
@@ -127,10 +148,11 @@ class CustomizerAdminController extends Controller
 
         $option = LayerOption::create([
             'layer_category_id' => $request->layer_category_id,
+            'parent_option_id'  => $request->parent_option_id ?? null,
             'name'              => $request->name,
             'slug'              => $request->slug,
             'image_path'        => $path,
-            'thumbnail_path'    => $path, // Same file as thumbnail (no resize needed for SVG)
+            'thumbnail_path'    => $path,
             'price_modifier'    => $request->price_modifier ?? 0,
             'is_default'        => $request->boolean('is_default', false),
             'is_active'         => true,
@@ -154,7 +176,7 @@ class CustomizerAdminController extends Controller
 
         // Handle optional image replacement
         if ($request->hasFile('image')) {
-            $request->validate(['image' => ['file', 'mimes:png,svg', 'max:4096']]);
+            $request->validate(['image' => ['file', 'mimes:png,svg,jpg,jpeg,webp', 'max:4096']]);
             $file     = $request->file('image');
             $ext      = $file->getClientOriginalExtension();
             $filename = Str::uuid() . '.' . $ext;

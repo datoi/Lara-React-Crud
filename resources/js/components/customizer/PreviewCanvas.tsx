@@ -28,13 +28,15 @@
  */
 import { useMemo } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import type { LayerCategory, Fabric } from '../../types/customizer';
+import type { LayerCategory, LayerOption, Fabric } from '../../types/customizer';
 
 interface PreviewCanvasProps {
     layerCategories: LayerCategory[];
     selections: Record<number, number>;
     selectedFabric: Fabric | null;
     loading?: boolean;
+    /** If provided, used to resolve the effective option (parent or child) per category */
+    resolveOption?: (category: LayerCategory) => LayerOption | null;
 }
 
 export default function PreviewCanvas({
@@ -42,6 +44,7 @@ export default function PreviewCanvas({
     selections,
     selectedFabric,
     loading = false,
+    resolveOption,
 }: PreviewCanvasProps) {
     // Sort ascending: lowest z_index renders first (behind)
     const sorted = useMemo(
@@ -97,21 +100,28 @@ export default function PreviewCanvas({
             aria-label={`Shirt preview${selectedFabric ? ` in ${selectedFabric.name}` : ''}`}
         >
             {sorted.map(category => {
-                // Collar is a pure UI selector — it has no canvas layer of its own.
-                // Its selection is consumed above to drive the usePeterPan flag.
+                // Legacy pure-UI collar category (no canvas layer of its own)
                 if (category.slug === 'collar') return null;
 
-                const selectedOptionId = selections[category.id];
-                const option =
-                    category.options.find(o => o.id === selectedOptionId) ??
-                    category.options.find(o => o.is_default) ??
-                    category.options[0];
+                // Resolve effective option: uses child sub-selection when available
+                const option = resolveOption
+                    ? resolveOption(category)
+                    : (() => {
+                        const selectedOptionId = selections[category.id];
+                        const parent = category.options.find(o => o.id === selectedOptionId)
+                            ?? category.options.find(o => o.is_default)
+                            ?? category.options[0];
+                        if (!parent) return null;
+                        // Legacy collar-variant system
+                        if (category.slug === 'sleeves') return parent;
+                        return parent;
+                    })();
 
                 if (!option) return null;
 
-                // For sleeve layers, pick the image that matches the active collar variant.
+                // Legacy collar-variant image switching (only when resolveOption not provided)
                 let src = option.image_url;
-                if (category.slug === 'sleeves') {
+                if (!resolveOption && category.slug === 'sleeves') {
                     if (collarVariant === 'alt1') src = option.thumbnail_url;
                     else if (collarVariant === 'alt2') src = option.alt_image_url ?? option.image_url;
                 }
@@ -119,25 +129,18 @@ export default function PreviewCanvas({
                 return (
                     <AnimatePresence mode="popLayout" key={category.id}>
                         <motion.img
-                            key={`${category.id}-${option.id}-${collarVariant}`}
+                            key={`${category.id}-${option.id}`}
                             src={src}
                             alt={`${category.name}: ${option.name}`}
                             draggable={false}
                             className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
                             style={{
                                 zIndex: category.z_index,
-                                // Colorable layers (collar, sleeves) are greyscaled so
-                                // the multiply blend produces a clean hue from the container.
-                                // Non-colorable detail layers (buttons) stay in their
-                                // natural colour so pearl/horn accuracy is preserved.
                                 filter: category.is_colorable
                                     ? 'grayscale(1) brightness(1.15)'
                                     : undefined,
                                 mixBlendMode: category.is_colorable ? 'multiply' : undefined,
-                                // Scale sleeve images to normalise different photo zoom levels.
-                                // The scale value comes from the active collar option's
-                                // display_scale field (set per photo batch in the seeder).
-                                transform: category.slug === 'sleeves' && collarScale !== 1
+                                transform: !resolveOption && category.slug === 'sleeves' && collarScale !== 1
                                     ? `scale(${collarScale})`
                                     : undefined,
                                 transformOrigin: 'center top',

@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LayerOption extends Model
 {
     protected $fillable = [
         'layer_category_id',
+        'parent_option_id',
         'name',
         'slug',
         'image_path',
@@ -32,5 +34,13 @@ class LayerOption extends Model
     public function layerCategory(): BelongsTo
     {
         return $this->belongsTo(LayerCategory::class);
+    }
+
+    /** Sub-options (e.g. collar variants that belong to a specific sleeve option) */
+    public function children(): HasMany
+    {
+        return $this->hasMany(LayerOption::class, 'parent_option_id')
+                    ->where('is_active', true)
+                    ->orderBy('display_order');
     }
 }

@@ -14,6 +14,7 @@ class CustomizerProduct extends Model
         'description',
         'base_price',
         'is_active',
+        'preview_image_path',
     ];
 
     protected $casts = [

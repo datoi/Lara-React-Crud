@@ -11,6 +11,7 @@ class LayerCategory extends Model
     protected $fillable = [
         'customizer_product_id',
         'name',
+        'children_label',
         'slug',
         'z_index',
         'is_required',
@@ -30,9 +31,11 @@ class LayerCategory extends Model
         return $this->belongsTo(CustomizerProduct::class);
     }
 
+    /** Only top-level options (not children of another option) */
     public function options(): HasMany
     {
         return $this->hasMany(LayerOption::class)
+                    ->whereNull('parent_option_id')
                     ->where('is_active', true)
                     ->orderBy('display_order');
     }

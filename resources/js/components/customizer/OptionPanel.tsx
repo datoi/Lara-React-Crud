@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import type { LayerCategory, Fabric } from '../../types/customizer';
+import type { LayerCategory, LayerOption, Fabric } from '../../types/customizer';
 import CategoryTabs from './CategoryTabs';
 import OptionSwatch from './OptionSwatch';
 import FabricPicker from './FabricPicker';
@@ -9,29 +9,31 @@ interface OptionPanelProps {
     layerCategories: LayerCategory[];
     fabrics: Fabric[];
     selections: Record<number, number>;
+    subSelections: Record<number, number>;
     fabricId: number | null;
     onSelectOption: (categoryId: number, optionId: number) => void;
+    onSelectSubOption: (parentOptionId: number, childOptionId: number) => void;
     onSelectFabric: (fabricId: number | null) => void;
+}
+
+/** True if any top-level option in this category has sub-options */
+function categoryHasChildren(category: LayerCategory): boolean {
+    return category.options.some(o => o.children && o.children.length > 0);
 }
 
 export default function OptionPanel({
     layerCategories,
     fabrics,
     selections,
+    subSelections,
     fabricId,
     onSelectOption,
+    onSelectSubOption,
     onSelectFabric,
 }: OptionPanelProps) {
-    // Only show categories that have more than one option.
-    // Single-option layers (button overlays etc.) need no UI picker.
     const choosableCategories = layerCategories.filter(c => c.options.length > 1);
-
-    // Stacked layout: show all choosable categories at once as titled sections.
-    // Used when the product has multiple independent selector categories (e.g.
-    // Sleeves + Collar on Woman's Top) so the user sees all choices simultaneously.
     const useStackedLayout = choosableCategories.length > 1;
 
-    // Tab layout state (used when there's only one choosable category)
     const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
     useEffect(() => {
         if (!useStackedLayout && choosableCategories.length > 0 && activeCategoryId === null) {
@@ -41,26 +43,35 @@ export default function OptionPanel({
 
     const activeCategory = choosableCategories.find(c => c.id === activeCategoryId) ?? null;
 
-    return (
-        <div className="flex flex-col gap-4">
-            {choosableCategories.length === 0 && (
-                <p className="text-sm text-slate-400 py-4 text-center">
-                    More options coming soon.
-                </p>
-            )}
+    const renderCategory = (category: LayerCategory, i: number) => {
+        const selectedParentId = selections[category.id];
+        const selectedParent   = category.options.find(o => o.id === selectedParentId)
+            ?? category.options.find(o => o.is_default)
+            ?? category.options[0]
+            ?? null;
+        const hasChildren = categoryHasChildren(category);
 
-            {/* ── Stacked layout (multiple categories shown simultaneously) ── */}
-            {useStackedLayout && choosableCategories.map((category, i) => (
-                <motion.div
-                    key={category.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: i * 0.07 }}
-                    className={i > 0 ? 'border-t border-slate-100 pt-4' : undefined}
-                >
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                        {category.name}
-                    </p>
+        return (
+            <motion.div
+                key={category.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.07 }}
+                className={useStackedLayout && i > 0 ? 'border-t border-slate-100 pt-4' : undefined}
+            >
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                    {category.name}
+                </p>
+
+                {hasChildren ? (
+                    <HierarchicalPicker
+                        category={category}
+                        selectedParentId={selectedParentId}
+                        subSelections={subSelections}
+                        onSelectParent={id => onSelectOption(category.id, id)}
+                        onSelectChild={onSelectSubOption}
+                    />
+                ) : (
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                         {category.options.map(option => (
                             <OptionSwatch
@@ -71,10 +82,23 @@ export default function OptionPanel({
                             />
                         ))}
                     </div>
-                </motion.div>
-            ))}
+                )}
+            </motion.div>
+        );
+    };
 
-            {/* ── Tab layout (single choosable category) ── */}
+    return (
+        <div className="flex flex-col gap-4">
+            {choosableCategories.length === 0 && (
+                <p className="text-sm text-slate-400 py-4 text-center">
+                    More options coming soon.
+                </p>
+            )}
+
+            {/* Stacked layout */}
+            {useStackedLayout && choosableCategories.map((cat, i) => renderCategory(cat, i))}
+
+            {/* Tab layout */}
             {!useStackedLayout && choosableCategories.length > 0 && (
                 <>
                     <CategoryTabs
@@ -87,23 +111,12 @@ export default function OptionPanel({
                         role="tabpanel"
                         className="min-h-[160px]"
                     >
-                        {activeCategory && (
-                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                                {activeCategory.options.map(option => (
-                                    <OptionSwatch
-                                        key={option.id}
-                                        option={option}
-                                        isSelected={selections[activeCategory.id] === option.id}
-                                        onSelect={() => onSelectOption(activeCategory.id, option.id)}
-                                    />
-                                ))}
-                            </div>
-                        )}
+                        {activeCategory && renderCategory(activeCategory, 0)}
                     </div>
                 </>
             )}
 
-            {/* Fabric / colour picker — always visible */}
+            {/* Fabric / colour picker */}
             {fabrics.length > 0 && (
                 <div className="border-t border-slate-100 pt-4">
                     <FabricPicker
@@ -113,6 +126,71 @@ export default function OptionPanel({
                     />
                 </div>
             )}
+        </div>
+    );
+}
+
+// ── Two-level picker: parent pills → labeled child swatches ──────────────────
+
+function HierarchicalPicker({
+    category,
+    selectedParentId,
+    subSelections,
+    onSelectParent,
+    onSelectChild,
+}: {
+    category: LayerCategory;
+    selectedParentId: number | undefined;
+    subSelections: Record<number, number>;
+    onSelectParent: (id: number) => void;
+    onSelectChild: (parentId: number, childId: number) => void;
+}) {
+    const selectedParent = category.options.find(o => o.id === selectedParentId)
+        ?? category.options[0];
+    const children = selectedParent?.children ?? [];
+    const childrenLabel = category.children_label ?? 'Style';
+
+    return (
+        <div className="space-y-4">
+            {/* Parent options — image swatches */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {category.options.map(option => (
+                    <OptionSwatch
+                        key={option.id}
+                        option={option}
+                        isSelected={(selectedParentId ?? category.options[0]?.id) === option.id}
+                        onSelect={() => onSelectParent(option.id)}
+                    />
+                ))}
+            </div>
+
+            {/* Sub-styles section with its own label */}
+            <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                    {childrenLabel}
+                </p>
+
+                {children.length > 0 ? (
+                    <motion.div
+                        key={selectedParent?.id}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="grid grid-cols-3 sm:grid-cols-4 gap-2"
+                    >
+                        {children.map(child => (
+                            <OptionSwatch
+                                key={child.id}
+                                option={child}
+                                isSelected={subSelections[selectedParent!.id] === child.id}
+                                onSelect={() => onSelectChild(selectedParent!.id, child.id)}
+                            />
+                        ))}
+                    </motion.div>
+                ) : (
+                    <p className="text-xs text-slate-400 italic">No {childrenLabel.toLowerCase()} options yet.</p>
+                )}
+            </div>
         </div>
     );
 }

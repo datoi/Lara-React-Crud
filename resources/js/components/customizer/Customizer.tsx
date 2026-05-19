@@ -33,12 +33,15 @@ export default function Customizer({
 }: CustomizerProps) {
     const {
         selections,
+        subSelections,
         fabricId,
         selectOption,
+        selectSubOption,
         selectFabric,
         reset,
         getConfiguration,
         totalPrice,
+        resolveOption,
     } = useCustomizer({ basePrice: product.base_price, layerCategories, fabrics });
 
     const [saveOpen, setSaveOpen]   = useState(false);
@@ -59,6 +62,7 @@ export default function Customizer({
                     layerCategories={layerCategories}
                     selections={selections}
                     selectedFabric={selectedFabric}
+                    resolveOption={resolveOption}
                 />
                 {/* Fabric swatch label below preview */}
                 {selectedFabric && (
@@ -86,8 +90,10 @@ export default function Customizer({
                         layerCategories={layerCategories}
                         fabrics={fabrics}
                         selections={selections}
+                        subSelections={subSelections}
                         fabricId={fabricId}
                         onSelectOption={selectOption}
+                        onSelectSubOption={selectSubOption}
                         onSelectFabric={selectFabric}
                     />
                 </div>

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Users, Package, ShieldAlert, LogOut, CheckCircle } from 'lucide-react';
+import { Users, Package, ShieldAlert, LogOut, CheckCircle, Scissors } from 'lucide-react';
 import { getAuthUser, getAuthToken, clearAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
 
@@ -200,6 +200,13 @@ export default function AdminDashboard() {
                         </span>
                     </div>
                     <div className="flex items-center gap-3">
+                        <Link
+                            to="/admin/customizer"
+                            className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                        >
+                            <Scissors className="w-4 h-4" />
+                            <span className="hidden sm:inline">Design Studio</span>
+                        </Link>
                         <div className="flex items-center gap-2 text-sm text-slate-700">
                             <ShieldAlert className="w-4 h-4 text-slate-400" />
                             <span className="hidden sm:inline font-medium">

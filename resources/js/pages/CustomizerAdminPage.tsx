@@ -14,7 +14,7 @@ import { Link, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import {
     Plus, Trash2, Loader2, ChevronDown, ChevronUp,
-    Upload, ArrowLeft, Pencil, X,
+    Upload, ArrowLeft, X,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { getAuthToken, getAuthUser } from '../hooks/useAuth';
@@ -33,9 +33,9 @@ export default function CustomizerAdminPage() {
     const user     = getAuthUser();
     const token    = getAuthToken();
 
-    // Auth guard
+    // Auth guard — redirect to admin login if not authenticated as admin
     useEffect(() => {
-        if (!token || user?.role !== 'admin') navigate('/');
+        if (!token || user?.role !== 'admin') navigate('/admin/login', { replace: true });
     }, [token, user, navigate]);
 
     const [tab, setTab] = useState<'products' | 'fabrics'>('products');
@@ -85,6 +85,16 @@ export default function CustomizerAdminPage() {
 
 // ── Products section ──────────────────────────────────────────────────────────
 
+const GARMENT_CATEGORIES = [
+    { key: 'shirt',      label: 'Shirt / Top' },
+    { key: 'womens-top', label: "Woman's Top"  },
+    { key: 'dress',      label: 'Dress'        },
+    { key: 'trousers',   label: 'Trousers'     },
+    { key: 'jacket',     label: 'Jacket'       },
+    { key: 'skirt',      label: 'Skirt'        },
+    { key: 'coat',       label: 'Coat'         },
+];
+
 function ProductsSection({ token }: { token: string }) {
     const [products, setProducts]   = useState<AdminProduct[]>([]);
     const [loading, setLoading]     = useState(true);
@@ -92,11 +102,14 @@ function ProductsSection({ token }: { token: string }) {
     const [expanded, setExpanded]   = useState<number | null>(null);
 
     // New product form
-    const [newName, setNewName]     = useState('');
-    const [newSlug, setNewSlug]     = useState('');
-    const [newPrice, setNewPrice]   = useState('');
-    const [newDesc, setNewDesc]     = useState('');
-    const [saving, setSaving]       = useState(false);
+    const [newName, setNewName]         = useState('');
+    const [newSlug, setNewSlug]         = useState('');
+    const [newPrice, setNewPrice]       = useState('');
+    const [newDesc, setNewDesc]         = useState('');
+    const [newCategory, setNewCategory] = useState('shirt');
+    const [newPreview, setNewPreview]   = useState<File | null>(null);
+    const [saving, setSaving]           = useState(false);
+    const previewRef = useRef<HTMLInputElement>(null);
 
     const load = () => {
         setLoading(true);
@@ -114,20 +127,26 @@ function ProductsSection({ token }: { token: string }) {
         if (!newName || !newSlug || !newPrice) return;
         setSaving(true);
         try {
+            const fd = new FormData();
+            fd.append('name', newName);
+            fd.append('slug', newSlug);
+            fd.append('base_price', newPrice);
+            fd.append('description', newDesc);
+            fd.append('category', newCategory);
+            fd.append('is_active', '1');
+            if (newPreview) fd.append('preview', newPreview);
+
             const res = await fetch('/api/admin/customizer/products', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                    Accept: 'application/json',
-                },
-                body: JSON.stringify({
-                    name: newName, slug: newSlug,
-                    base_price: parseFloat(newPrice),
-                    description: newDesc, is_active: true,
-                }),
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                body: fd,
             });
-            if (res.ok) { setCreating(false); setNewName(''); setNewSlug(''); setNewPrice(''); setNewDesc(''); load(); }
+            if (res.ok) {
+                setCreating(false);
+                setNewName(''); setNewSlug(''); setNewPrice(''); setNewDesc('');
+                setNewCategory('shirt'); setNewPreview(null);
+                load();
+            }
         } finally { setSaving(false); }
     };
 
@@ -164,7 +183,52 @@ function ProductsSection({ token }: { token: string }) {
                         <FormField label="Slug" value={newSlug} onChange={setNewSlug} placeholder="classic-shirt" />
                         <FormField label="Base Price (₾)" value={newPrice} onChange={setNewPrice} placeholder="89" type="number" />
                         <FormField label="Description" value={newDesc} onChange={setNewDesc} placeholder="Optional" />
+                        <div>
+                            <label className="block text-xs font-medium text-slate-600 mb-1">Garment Category</label>
+                            <select
+                                value={newCategory}
+                                onChange={e => setNewCategory(e.target.value)}
+                                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
+                            >
+                                {GARMENT_CATEGORIES.map(c => (
+                                    <option key={c.key} value={c.key}>{c.label}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
+
+                    {/* Preview image upload */}
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Preview Image</label>
+                        <div
+                            onClick={() => previewRef.current?.click()}
+                            className="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center cursor-pointer hover:border-slate-400 transition-colors"
+                        >
+                            {newPreview ? (
+                                <div className="flex items-center justify-center gap-2">
+                                    <img
+                                        src={URL.createObjectURL(newPreview)}
+                                        alt="preview"
+                                        className="h-16 w-16 object-cover rounded"
+                                    />
+                                    <p className="text-xs text-slate-700">{newPreview.name}</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <Upload className="w-5 h-5 text-slate-400 mx-auto mb-1" />
+                                    <p className="text-xs text-slate-500">Click to upload preview image (PNG, JPG, WebP)</p>
+                                </>
+                            )}
+                            <input
+                                ref={previewRef}
+                                type="file"
+                                accept=".png,.jpg,.jpeg,.webp"
+                                className="hidden"
+                                onChange={e => setNewPreview(e.target.files?.[0] ?? null)}
+                            />
+                        </div>
+                    </div>
+
                     <div className="flex gap-2 justify-end">
                         <Button variant="outline" size="sm" onClick={() => setCreating(false)}>Cancel</Button>
                         <Button variant="default" size="sm" onClick={handleCreate} disabled={saving}>
@@ -176,36 +240,153 @@ function ProductsSection({ token }: { token: string }) {
 
             {/* Product list */}
             {products.map(product => (
-                <div key={product.id} className="bg-white rounded-2xl border border-slate-200">
-                    {/* Product row */}
-                    <div className="flex items-center justify-between p-4">
-                        <div>
-                            <p className="font-semibold text-slate-900">{product.name}</p>
-                            <p className="text-xs text-slate-400">/{product.slug} · ₾{product.base_price}</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => setExpanded(e => e === product.id ? null : product.id)} aria-label="Toggle categories">
-                                {expanded === product.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDelete(product.id)} aria-label="Delete product">
-                                <Trash2 className="w-4 h-4 text-slate-400" />
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Expanded: categories + options */}
-                    {expanded === product.id && (
-                        <div className="border-t border-slate-100 p-4 space-y-4">
-                            <CategoriesSection productId={product.id} token={token} categories={product.layer_categories ?? []} onRefresh={load} />
-                        </div>
-                    )}
-                </div>
+                <ProductCard
+                    key={product.id}
+                    product={product}
+                    token={token}
+                    expanded={expanded === product.id}
+                    onToggle={() => setExpanded(e => e === product.id ? null : product.id)}
+                    onDelete={() => handleDelete(product.id)}
+                    onRefresh={load}
+                />
             ))}
         </div>
     );
 }
 
-// ── Categories section (nested under product) ─────────────────────────────────
+// ── Product card (with preview image update) ──────────────────────────────────
+
+function ProductCard({
+    product, token, expanded, onToggle, onDelete, onRefresh,
+}: {
+    product: AdminProduct;
+    token: string;
+    expanded: boolean;
+    onToggle: () => void;
+    onDelete: () => void;
+    onRefresh: () => void;
+}) {
+    const imgRef  = useRef<HTMLInputElement>(null);
+    const nameRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading]   = useState(false);
+    const [editingName, setEditingName] = useState(false);
+    const [nameValue, setNameValue]   = useState(product.name);
+    const [savingName, setSavingName] = useState(false);
+
+    const handleImageChange = async (file: File) => {
+        setUploading(true);
+        const fd = new FormData();
+        fd.append('preview', file);
+        try {
+            await fetch(`/api/admin/customizer/products/${product.id}`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                body: fd,
+            });
+            onRefresh();
+        } finally { setUploading(false); }
+    };
+
+    const handleSaveName = async () => {
+        const trimmed = nameValue.trim();
+        if (!trimmed || trimmed === product.name) { setEditingName(false); setNameValue(product.name); return; }
+        setSavingName(true);
+        try {
+            await fetch(`/api/admin/customizer/products/${product.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                body: JSON.stringify({ name: trimmed }),
+            });
+            onRefresh();
+        } finally { setSavingName(false); setEditingName(false); }
+    };
+
+    return (
+        <div className="bg-white rounded-2xl border border-slate-200">
+            <div className="flex items-center justify-between p-4 gap-3">
+                {/* Preview thumbnail */}
+                <button
+                    type="button"
+                    onClick={() => imgRef.current?.click()}
+                    className="relative shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 hover:opacity-80 transition-opacity"
+                    title="Click to change preview image"
+                >
+                    {product.preview_image_url ? (
+                        <img src={product.preview_image_url} alt={product.name} className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                            <Upload className="w-4 h-4 text-slate-400" />
+                        </div>
+                    )}
+                    {uploading && (
+                        <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                            <Loader2 className="w-4 h-4 animate-spin text-slate-600" />
+                        </div>
+                    )}
+                    <input
+                        ref={imgRef}
+                        type="file"
+                        accept=".png,.jpg,.jpeg,.webp"
+                        className="hidden"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) handleImageChange(f); }}
+                    />
+                </button>
+
+                <div className="flex-1 min-w-0">
+                    {editingName ? (
+                        <div className="flex items-center gap-1.5">
+                            <input
+                                ref={nameRef}
+                                autoFocus
+                                type="text"
+                                value={nameValue}
+                                onChange={e => setNameValue(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') { setEditingName(false); setNameValue(product.name); } }}
+                                onBlur={handleSaveName}
+                                className="flex-1 border border-slate-300 rounded-lg px-2 py-1 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                            />
+                            {savingName && <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400 shrink-0" />}
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => { setEditingName(true); setTimeout(() => nameRef.current?.select(), 0); }}
+                            className="font-semibold text-slate-900 hover:text-slate-600 text-left truncate w-full transition-colors"
+                            title="Click to edit name"
+                        >
+                            {product.name}
+                        </button>
+                    )}
+                    <p className="text-xs text-slate-400 mt-0.5">/{product.slug} · ₾{product.base_price} · {product.category}</p>
+                    {!product.preview_image_url && (
+                        <p className="text-[10px] text-amber-500 mt-0.5">No preview image — click thumbnail to upload</p>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" onClick={onToggle} aria-label="Toggle categories">
+                        {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={onDelete} aria-label="Delete product">
+                        <Trash2 className="w-4 h-4 text-slate-400" />
+                    </Button>
+                </div>
+            </div>
+
+            {expanded && (
+                <div className="border-t border-slate-100 p-4 space-y-4">
+                    <CategoriesSection productId={product.id} token={token} categories={product.layer_categories ?? []} onRefresh={onRefresh} />
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ── Option groups section (flat, no extra expansion needed) ──────────────────
+
+function toSlug(name: string): string {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
 
 function CategoriesSection({
     productId, token, categories, onRefresh,
@@ -215,25 +396,39 @@ function CategoriesSection({
     categories: (LayerCategory & { options: LayerOption[] })[];
     onRefresh: () => void;
 }) {
-    const [creating, setCreating] = useState(false);
-    const [form, setForm]         = useState({ name: '', slug: '', z_index: '1', is_required: true, is_colorable: false, display_order: '0' });
-    const [saving, setSaving]     = useState(false);
-    const [expandedCat, setExpandedCat] = useState<number | null>(null);
+    const [groupName, setGroupName]         = useState('');
+    const [childrenLabel, setChildrenLabel] = useState('');
+    const [savingGroup, setSavingGroup]     = useState(false);
+    const [addingGroup, setAddingGroup]     = useState(false);
 
-    const handleCreate = async () => {
-        setSaving(true);
+    const nextZIndex = categories.length > 0
+        ? Math.max(...categories.map(c => c.z_index)) + 1
+        : 1;
+
+    const handleAddGroup = async () => {
+        if (!groupName.trim()) return;
+        setSavingGroup(true);
         try {
             const res = await fetch('/api/admin/customizer/categories', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
-                body: JSON.stringify({ ...form, customizer_product_id: productId, z_index: parseInt(form.z_index), display_order: parseInt(form.display_order) }),
+                body: JSON.stringify({
+                    customizer_product_id: productId,
+                    name: groupName.trim(),
+                    children_label: childrenLabel.trim() || null,
+                    slug: toSlug(groupName.trim()),
+                    z_index: nextZIndex,
+                    display_order: categories.length,
+                    is_required: true,
+                    is_colorable: false,
+                }),
             });
-            if (res.ok) { setCreating(false); onRefresh(); }
-        } finally { setSaving(false); }
+            if (res.ok) { setGroupName(''); setChildrenLabel(''); setAddingGroup(false); onRefresh(); }
+        } finally { setSavingGroup(false); }
     };
 
-    const handleDeleteCat = async (id: number) => {
-        if (!window.confirm('Delete this category and all its options?')) return;
+    const handleDeleteGroup = async (id: number) => {
+        if (!window.confirm('Delete this option group and all its styles?')) return;
         await fetch(`/api/admin/customizer/categories/${id}`, {
             method: 'DELETE', headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         });
@@ -241,104 +436,116 @@ function CategoriesSection({
     };
 
     return (
-        <div className="space-y-3">
+        <div className="space-y-4">
+            {/* Header */}
             <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-slate-700">Layer Categories</span>
-                <Button variant="outline" size="sm" onClick={() => setCreating(c => !c)}>
-                    <Plus className="w-3 h-3" /> Category
+                <span className="text-sm font-semibold text-slate-700">Option Groups</span>
+                <Button variant="outline" size="sm" onClick={() => setAddingGroup(g => !g)}>
+                    <Plus className="w-3 h-3" /> Add Group
                 </Button>
             </div>
 
-            {creating && (
-                <div className="bg-slate-50 rounded-xl p-3 space-y-2 border border-slate-200">
+            {/* New group form */}
+            {addingGroup && (
+                <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-2">
                     <div className="grid grid-cols-2 gap-2">
-                        <FormField label="Name" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} placeholder="Collar" />
-                        <FormField label="Slug" value={form.slug} onChange={v => setForm(f => ({ ...f, slug: v }))} placeholder="collar" />
-                        <FormField label="z-index" value={form.z_index} onChange={v => setForm(f => ({ ...f, z_index: v }))} type="number" />
-                        <FormField label="Display order" value={form.display_order} onChange={v => setForm(f => ({ ...f, display_order: v }))} type="number" />
-                    </div>
-                    <div className="flex gap-4 text-sm text-slate-600">
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                            <input type="checkbox" checked={form.is_required} onChange={e => setForm(f => ({ ...f, is_required: e.target.checked }))} />
-                            Required
-                        </label>
-                        <label className="flex items-center gap-1.5 cursor-pointer">
-                            <input type="checkbox" checked={form.is_colorable} onChange={e => setForm(f => ({ ...f, is_colorable: e.target.checked }))} />
-                            Colorable (CSS tint)
-                        </label>
+                        <div>
+                            <label className="block text-xs font-medium text-slate-600 mb-1">Group name</label>
+                            <input
+                                autoFocus
+                                type="text"
+                                value={groupName}
+                                onChange={e => setGroupName(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') handleAddGroup(); }}
+                                placeholder="e.g. Sleeves"
+                                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-slate-600 mb-1">
+                                Sub-styles label <span className="text-slate-400 font-normal">(optional)</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={childrenLabel}
+                                onChange={e => setChildrenLabel(e.target.value)}
+                                placeholder="e.g. Collar"
+                                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                            />
+                        </div>
                     </div>
                     <div className="flex gap-2 justify-end">
-                        <Button variant="outline" size="sm" onClick={() => setCreating(false)}>Cancel</Button>
-                        <Button variant="default" size="sm" onClick={handleCreate} disabled={saving}>
-                            {saving && <Loader2 className="w-3 h-3 animate-spin" />} Save
+                        <Button variant="outline" size="sm" onClick={() => setAddingGroup(false)}>Cancel</Button>
+                        <Button variant="default" size="sm" onClick={handleAddGroup} disabled={savingGroup || !groupName.trim()}>
+                            {savingGroup && <Loader2 className="w-3 h-3 animate-spin" />} Add
                         </Button>
                     </div>
                 </div>
             )}
 
-            {categories.map(cat => (
-                <div key={cat.id} className="border border-slate-100 rounded-xl overflow-hidden">
-                    <div className="flex items-center justify-between px-3 py-2 bg-slate-50">
-                        <span className="text-xs font-medium text-slate-700">
-                            {cat.name} <span className="text-slate-400">(z={cat.z_index}{cat.is_colorable ? ', colorable' : ''})</span>
-                        </span>
-                        <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => setExpandedCat(e => e === cat.id ? null : cat.id)}>
-                                {expandedCat === cat.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteCat(cat.id)}>
-                                <Trash2 className="w-3.5 h-3.5 text-slate-400" />
-                            </Button>
-                        </div>
-                    </div>
-                    {expandedCat === cat.id && (
-                        <div className="p-3">
-                            <OptionsSection categoryId={cat.id} token={token} options={cat.options ?? []} onRefresh={onRefresh} />
-                        </div>
-                    )}
-                </div>
+            {/* Empty state */}
+            {categories.length === 0 && !addingGroup && (
+                <p className="text-xs text-slate-400 text-center py-4">
+                    No option groups yet. Add one above — e.g. "Sleeve" or "Collar".
+                </p>
+            )}
+
+            {/* Each group + its styles, all visible at once */}
+            {categories.map(group => (
+                <OptionGroupCard
+                    key={group.id}
+                    group={group}
+                    token={token}
+                    onDeleteGroup={() => handleDeleteGroup(group.id)}
+                    onRefresh={onRefresh}
+                />
             ))}
         </div>
     );
 }
 
-// ── Options section (nested under category) ───────────────────────────────────
+// ── Style card: one top-level option with its sub-styles ─────────────────────
 
-function OptionsSection({
-    categoryId, token, options, onRefresh,
+function StyleCard({
+    option, categoryId, token, onDelete, onRefresh,
 }: {
+    option: LayerOption;
     categoryId: number;
     token: string;
-    options: LayerOption[];
+    onDelete: () => void;
     onRefresh: () => void;
 }) {
-    const [creating, setCreating] = useState(false);
-    const [form, setForm]         = useState({ name: '', slug: '', price_modifier: '0', is_default: false });
-    const [file, setFile]         = useState<File | null>(null);
-    const [saving, setSaving]     = useState(false);
-    const fileRef = useRef<HTMLInputElement>(null);
+    const [addingSubStyle, setAddingSubStyle] = useState(false);
+    const [subName, setSubName]               = useState('');
+    const [subFile, setSubFile]               = useState<File | null>(null);
+    const [saving, setSaving]                 = useState(false);
+    const subFileRef = useRef<HTMLInputElement>(null);
 
-    const handleCreate = async () => {
-        if (!file) return;
+    const children: LayerOption[] = (option as any).children ?? [];
+
+    const handleAddSubStyle = async () => {
+        if (!subName.trim() || !subFile) return;
         setSaving(true);
         const fd = new FormData();
         fd.append('layer_category_id', String(categoryId));
-        fd.append('name', form.name);
-        fd.append('slug', form.slug);
-        fd.append('price_modifier', form.price_modifier);
-        fd.append('is_default', form.is_default ? '1' : '0');
-        fd.append('image', file);
+        fd.append('parent_option_id', String(option.id));
+        fd.append('name', subName.trim());
+        fd.append('slug', toSlug(subName.trim() + '-' + option.id));
+        fd.append('price_modifier', '0');
+        fd.append('is_default', children.length === 0 ? '1' : '0');
+        fd.append('display_order', String(children.length));
+        fd.append('image', subFile);
         try {
             const res = await fetch('/api/admin/customizer/options', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
                 body: fd,
             });
-            if (res.ok) { setCreating(false); setFile(null); onRefresh(); }
+            if (res.ok) { setAddingSubStyle(false); setSubName(''); setSubFile(null); onRefresh(); }
         } finally { setSaving(false); }
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDeleteSubStyle = async (id: number) => {
         await fetch(`/api/admin/customizer/options/${id}`, {
             method: 'DELETE', headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         });
@@ -346,88 +553,319 @@ function OptionsSection({
     };
 
     return (
-        <div className="space-y-2">
-            <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-slate-500 font-medium">Options ({options.length})</span>
-                <Button variant="ghost" size="sm" onClick={() => setCreating(c => !c)} className="h-7 text-xs">
-                    <Plus className="w-3 h-3" /> Add Option
-                </Button>
-            </div>
-
-            {/* Existing options */}
-            <div className="grid grid-cols-2 gap-1.5">
-                {options.map(opt => (
-                    <div key={opt.id} className="flex items-center gap-2 bg-slate-50 rounded-lg p-1.5">
-                        {/* Checkered preview */}
-                        <div
-                            className="w-8 h-8 rounded border border-slate-200 shrink-0 overflow-hidden"
-                            style={{ backgroundImage: 'repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%)', backgroundSize: '6px 6px' }}
-                        >
-                            <img src={opt.thumbnail_url} alt={opt.name} className="w-full h-full object-contain" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-slate-700 truncate">{opt.name}</p>
-                            {opt.price_modifier !== 0 && (
-                                <p className="text-[10px] text-slate-400">+₾{opt.price_modifier}</p>
-                            )}
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDelete(opt.id)}>
-                            <X className="w-3 h-3 text-slate-400" />
-                        </Button>
-                    </div>
-                ))}
-            </div>
-
-            {/* Upload form */}
-            {creating && (
-                <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-2 mt-2">
-                    <div className="grid grid-cols-2 gap-2">
-                        <FormField label="Name" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} />
-                        <FormField label="Slug" value={form.slug} onChange={v => setForm(f => ({ ...f, slug: v }))} />
-                        <FormField label="Price modifier (₾)" value={form.price_modifier} onChange={v => setForm(f => ({ ...f, price_modifier: v }))} type="number" />
-                    </div>
-                    <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
-                        <input type="checkbox" checked={form.is_default} onChange={e => setForm(f => ({ ...f, is_default: e.target.checked }))} />
-                        Mark as default
-                    </label>
-                    {/* Drag-drop file area */}
-                    <div
-                        onClick={() => fileRef.current?.click()}
-                        className="border-2 border-dashed border-slate-200 rounded-lg p-4 text-center cursor-pointer hover:border-slate-400 transition-colors"
-                    >
-                        {file ? (
-                            <p className="text-xs text-slate-700 font-medium">{file.name}</p>
-                        ) : (
-                            <>
-                                <Upload className="w-5 h-5 text-slate-400 mx-auto mb-1" />
-                                <p className="text-xs text-slate-500">Click to upload PNG or SVG</p>
-                            </>
-                        )}
-                        <input
-                            ref={fileRef}
-                            type="file"
-                            accept=".png,.svg"
-                            className="hidden"
-                            onChange={e => setFile(e.target.files?.[0] ?? null)}
-                        />
-                    </div>
-                    {/* Preview against checkered bg */}
-                    {file && (
-                        <div
-                            className="w-16 h-16 rounded mx-auto"
-                            style={{ backgroundImage: 'repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%)', backgroundSize: '8px 8px' }}
-                        >
-                            <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-contain" />
-                        </div>
-                    )}
-                    <div className="flex gap-2 justify-end">
-                        <Button variant="outline" size="sm" onClick={() => setCreating(false)}>Cancel</Button>
-                        <Button variant="default" size="sm" onClick={handleCreate} disabled={saving || !file}>
-                            {saving && <Loader2 className="w-3 h-3 animate-spin" />} Upload
-                        </Button>
-                    </div>
+        <div className="border border-slate-200 rounded-xl overflow-hidden">
+            {/* Top-level option header */}
+            <div className="flex items-center gap-3 p-3 bg-slate-50 border-b border-slate-100">
+                <div
+                    className="w-12 h-14 rounded-lg overflow-hidden shrink-0 border border-slate-200"
+                    style={{ backgroundImage: 'repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%)', backgroundSize: '8px 8px' }}
+                >
+                    <img src={option.thumbnail_url} alt={option.name} className="w-full h-full object-contain" />
                 </div>
-            )}
+                <span className="flex-1 text-sm font-semibold text-slate-800">{option.name}</span>
+                <button onClick={onDelete} className="text-slate-400 hover:text-red-500 transition-colors p-1">
+                    <Trash2 className="w-3.5 h-3.5" />
+                </button>
+            </div>
+
+            {/* Sub-styles section */}
+            <div className="p-3 space-y-2">
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                    Sub-styles for "{option.name}"
+                    <span className="text-slate-400 font-normal ml-1">(e.g. collar variants)</span>
+                </p>
+
+                {/* Existing sub-styles */}
+                {children.length > 0 && (
+                    <div className="grid grid-cols-3 gap-1.5">
+                        {children.map(child => (
+                            <div key={child.id} className="relative group/sub rounded-lg overflow-hidden border border-slate-200 bg-white">
+                                <div
+                                    className="aspect-[3/4] w-full overflow-hidden"
+                                    style={{ backgroundImage: 'repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%)', backgroundSize: '8px 8px' }}
+                                >
+                                    <img src={child.thumbnail_url} alt={child.name} className="w-full h-full object-contain" />
+                                </div>
+                                <div className="px-1.5 py-1 text-center">
+                                    <p className="text-[10px] font-medium text-slate-600 truncate">{child.name}</p>
+                                </div>
+                                <button
+                                    onClick={() => handleDeleteSubStyle(child.id)}
+                                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/80 border border-slate-200 flex items-center justify-center opacity-0 group-hover/sub:opacity-100 transition-opacity hover:bg-red-50"
+                                >
+                                    <X className="w-2.5 h-2.5 text-slate-500" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Add sub-style */}
+                {addingSubStyle ? (
+                    <div className="border border-slate-200 rounded-lg p-2.5 bg-white space-y-2">
+                        <input
+                            autoFocus
+                            type="text"
+                            value={subName}
+                            onChange={e => setSubName(e.target.value)}
+                            placeholder={`e.g. Classic Collar (${option.name})`}
+                            className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        />
+                        <div
+                            onClick={() => subFileRef.current?.click()}
+                            className="border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:border-slate-400 transition-colors"
+                        >
+                            {subFile ? (
+                                <div className="flex items-center gap-2 p-2">
+                                    <div
+                                        className="w-10 h-12 rounded overflow-hidden shrink-0"
+                                        style={{ backgroundImage: 'repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%)', backgroundSize: '6px 6px' }}
+                                    >
+                                        <img src={URL.createObjectURL(subFile)} alt="preview" className="w-full h-full object-contain" />
+                                    </div>
+                                    <p className="text-[10px] text-slate-600 truncate">{subFile.name}</p>
+                                </div>
+                            ) : (
+                                <div className="p-4 text-center">
+                                    <Upload className="w-4 h-4 text-slate-300 mx-auto mb-1" />
+                                    <p className="text-[10px] text-slate-500">Upload image</p>
+                                </div>
+                            )}
+                            <input ref={subFileRef} type="file" accept=".png,.jpg,.jpeg,.svg,.webp" className="hidden"
+                                onChange={e => setSubFile(e.target.files?.[0] ?? null)} />
+                        </div>
+                        <div className="flex gap-1.5 justify-end">
+                            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setAddingSubStyle(false); setSubName(''); setSubFile(null); }}>
+                                Cancel
+                            </Button>
+                            <Button variant="default" size="sm" className="h-7 text-xs" onClick={handleAddSubStyle} disabled={saving || !subName.trim() || !subFile}>
+                                {saving && <Loader2 className="w-3 h-3 animate-spin" />} Save
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <button
+                        onClick={() => setAddingSubStyle(true)}
+                        className="w-full border border-dashed border-slate-200 rounded-lg py-2 text-[11px] font-medium text-slate-400 hover:text-slate-600 hover:border-slate-400 transition-colors flex items-center justify-center gap-1"
+                    >
+                        <Plus className="w-3 h-3" /> Add Sub-style
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Single option group card ──────────────────────────────────────────────────
+
+function OptionGroupCard({
+    group, token, onDeleteGroup, onRefresh,
+}: {
+    group: LayerCategory & { options: LayerOption[] };
+    token: string;
+    onDeleteGroup: () => void;
+    onRefresh: () => void;
+}) {
+    const [addingStyle, setAddingStyle]       = useState(false);
+    const [styleName, setStyleName]           = useState('');
+    const [styleFile, setStyleFile]           = useState<File | null>(null);
+    const [saving, setSaving]                 = useState(false);
+    const [childrenLabel, setChildrenLabel]   = useState((group as any).children_label ?? '');
+    const [savingLabel, setSavingLabel]       = useState(false);
+    const [editingGroupName, setEditingGroupName] = useState(false);
+    const [groupNameValue, setGroupNameValue]     = useState(group.name);
+    const [savingGroupName, setSavingGroupName]   = useState(false);
+    const groupNameRef = useRef<HTMLInputElement>(null);
+    const fileRef = useRef<HTMLInputElement>(null);
+
+    const handleSaveGroupName = async () => {
+        const trimmed = groupNameValue.trim();
+        if (!trimmed || trimmed === group.name) { setEditingGroupName(false); setGroupNameValue(group.name); return; }
+        setSavingGroupName(true);
+        try {
+            await fetch(`/api/admin/customizer/categories/${group.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                body: JSON.stringify({ name: trimmed }),
+            });
+            onRefresh();
+        } finally { setSavingGroupName(false); setEditingGroupName(false); }
+    };
+
+    const handleSaveLabel = async () => {
+        setSavingLabel(true);
+        try {
+            await fetch(`/api/admin/customizer/categories/${group.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                body: JSON.stringify({ children_label: childrenLabel.trim() || null }),
+            });
+            onRefresh();
+        } finally { setSavingLabel(false); }
+    };
+
+    const handleAddStyle = async () => {
+        if (!styleName.trim() || !styleFile) return;
+        setSaving(true);
+        const fd = new FormData();
+        fd.append('layer_category_id', String(group.id));
+        fd.append('name', styleName.trim());
+        fd.append('slug', toSlug(styleName.trim()));
+        fd.append('price_modifier', '0');
+        fd.append('is_default', group.options.length === 0 ? '1' : '0');
+        fd.append('display_order', String(group.options.length));
+        fd.append('image', styleFile);
+        try {
+            const res = await fetch('/api/admin/customizer/options', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                body: fd,
+            });
+            if (res.ok) {
+                setAddingStyle(false);
+                setStyleName('');
+                setStyleFile(null);
+                onRefresh();
+            }
+        } finally { setSaving(false); }
+    };
+
+    const handleDeleteStyle = async (id: number) => {
+        await fetch(`/api/admin/customizer/options/${id}`, {
+            method: 'DELETE', headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        });
+        onRefresh();
+    };
+
+    return (
+        <div className="border border-slate-200 rounded-2xl overflow-hidden">
+            {/* Group header */}
+            <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                    {editingGroupName ? (
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                            <input
+                                ref={groupNameRef}
+                                autoFocus
+                                type="text"
+                                value={groupNameValue}
+                                onChange={e => setGroupNameValue(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') handleSaveGroupName(); if (e.key === 'Escape') { setEditingGroupName(false); setGroupNameValue(group.name); } }}
+                                onBlur={handleSaveGroupName}
+                                className="flex-1 border border-slate-300 rounded-lg px-2 py-1 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                            />
+                            {savingGroupName && <Loader2 className="w-3 h-3 animate-spin text-slate-400 shrink-0" />}
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => { setEditingGroupName(true); setTimeout(() => groupNameRef.current?.select(), 0); }}
+                            className="text-sm font-semibold text-slate-800 hover:text-slate-600 text-left transition-colors"
+                            title="Click to edit group name"
+                        >
+                            {group.name}
+                        </button>
+                    )}
+                    <button onClick={onDeleteGroup} className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded shrink-0" title="Delete group">
+                        <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+                {/* Sub-styles label */}
+                <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-500 shrink-0">Sub-styles label:</span>
+                    <input
+                        type="text"
+                        value={childrenLabel}
+                        onChange={e => setChildrenLabel(e.target.value)}
+                        onBlur={handleSaveLabel}
+                        onKeyDown={e => { if (e.key === 'Enter') handleSaveLabel(); }}
+                        placeholder="e.g. Collar"
+                        className="flex-1 border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-slate-900 bg-white"
+                    />
+                    {savingLabel && <Loader2 className="w-3 h-3 animate-spin text-slate-400 shrink-0" />}
+                </div>
+            </div>
+
+            <div className="p-4 space-y-4">
+                {/* Existing styles — each with its own sub-styles section */}
+                {group.options.map(opt => (
+                    <StyleCard
+                        key={opt.id}
+                        option={opt}
+                        categoryId={group.id}
+                        token={token}
+                        onDelete={() => handleDeleteStyle(opt.id)}
+                        onRefresh={onRefresh}
+                    />
+                ))}
+
+                {/* Add style form */}
+                {addingStyle ? (
+                    <div className="border border-slate-200 rounded-xl p-3 bg-white space-y-2.5">
+                        <p className="text-xs font-semibold text-slate-700">Add a style to "{group.name}"</p>
+
+                        <input
+                            autoFocus
+                            type="text"
+                            value={styleName}
+                            onChange={e => setStyleName(e.target.value)}
+                            placeholder="Style name (e.g. Short Sleeve)"
+                            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        />
+
+                        {/* Image upload */}
+                        <div
+                            onClick={() => fileRef.current?.click()}
+                            className="border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-slate-400 transition-colors overflow-hidden"
+                        >
+                            {styleFile ? (
+                                <div className="flex items-center gap-3 p-3">
+                                    <div
+                                        className="w-16 h-20 rounded-lg overflow-hidden shrink-0"
+                                        style={{ backgroundImage: 'repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%)', backgroundSize: '8px 8px' }}
+                                    >
+                                        <img src={URL.createObjectURL(styleFile)} alt="preview" className="w-full h-full object-contain" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-medium text-slate-700">{styleFile.name}</p>
+                                        <p className="text-[10px] text-slate-400 mt-0.5">Click to change</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="p-6 text-center">
+                                    <Upload className="w-6 h-6 text-slate-300 mx-auto mb-2" />
+                                    <p className="text-xs text-slate-500 font-medium">Upload image for this style</p>
+                                    <p className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, SVG — max 4 MB</p>
+                                </div>
+                            )}
+                            <input
+                                ref={fileRef}
+                                type="file"
+                                accept=".png,.jpg,.jpeg,.svg,.webp"
+                                className="hidden"
+                                onChange={e => setStyleFile(e.target.files?.[0] ?? null)}
+                            />
+                        </div>
+
+                        <div className="flex gap-2 justify-end">
+                            <Button variant="outline" size="sm" onClick={() => { setAddingStyle(false); setStyleName(''); setStyleFile(null); }}>
+                                Cancel
+                            </Button>
+                            <Button variant="default" size="sm" onClick={handleAddStyle} disabled={saving || !styleName.trim() || !styleFile}>
+                                {saving && <Loader2 className="w-3 h-3 animate-spin" />} Save Style
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <button
+                        onClick={() => setAddingStyle(true)}
+                        className="w-full border-2 border-dashed border-slate-200 rounded-xl py-3 text-xs font-medium text-slate-400 hover:text-slate-600 hover:border-slate-400 transition-colors flex items-center justify-center gap-1.5"
+                    >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Style
+                    </button>
+                )}
+            </div>
         </div>
     );
 }

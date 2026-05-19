@@ -15,9 +15,10 @@ class StoreLayerOptionRequest extends FormRequest
     {
         return [
             'layer_category_id' => ['required', 'integer', 'exists:layer_categories,id'],
+            'parent_option_id'  => ['nullable', 'integer', 'exists:layer_options,id'],
             'name'              => ['required', 'string', 'max:120'],
             'slug'              => ['required', 'string', 'max:120'],
-            'image'             => ['required', 'file', 'mimes:png,svg', 'max:4096'],
+            'image'             => ['required', 'file', 'mimes:png,svg,jpg,jpeg,webp', 'max:4096'],
             'price_modifier'    => ['nullable', 'numeric', 'min:0'],
             'is_default'        => ['nullable', 'boolean'],
             'display_order'     => ['nullable', 'integer', 'min:0'],

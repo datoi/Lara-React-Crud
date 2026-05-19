@@ -54,7 +54,7 @@ export function Navigation() {
                         {user ? (
                             <>
                                 <Link
-                                    to={user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
+                                    to={user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
                                     className={`flex items-center gap-2 text-sm transition-colors ${scrolled ? 'text-slate-700 hover:text-slate-900' : 'text-white/90 hover:text-white'}`}
                                 >
                                     <div className={`w-7 h-7 rounded-full flex items-center justify-center ${scrolled ? 'bg-slate-200' : 'bg-white/20'}`}>
@@ -132,7 +132,7 @@ export function Navigation() {
                             {user ? (
                                 <div className="pt-2">
                                     <Link
-                                        to={user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
+                                        to={user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
                                         onClick={() => setMobileOpen(false)}
                                         className="flex items-center gap-2 px-3 py-2 text-sm text-white font-medium hover:bg-white/10 rounded-lg transition-colors"
                                     >

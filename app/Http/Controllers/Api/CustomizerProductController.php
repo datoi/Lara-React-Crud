@@ -30,7 +30,7 @@ class CustomizerProductController extends Controller
         $product = CustomizerProduct::where('slug', $slug)
             ->where('is_active', true)
             ->with([
-                'layerCategories.options',
+                'layerCategories.options.children',
                 'fabrics' => fn ($q) => $q->where('is_active', true)->orderBy('display_order'),
             ])
             ->firstOrFail();

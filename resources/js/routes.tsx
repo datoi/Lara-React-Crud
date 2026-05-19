@@ -26,6 +26,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import CustomizePage from './pages/CustomizePage';
 import MyDesignsPage from './pages/MyDesignsPage';
 import CustomizerAdminPage from './pages/CustomizerAdminPage';
+import AdminLogin from './pages/AdminLogin';
 
 function wrap(el: ReactElement) {
     return <ErrorBoundary>{el}</ErrorBoundary>;
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
     // ── Customizer ───────────────────────────────────────────────────────────
     { path: '/customize/:slug',     element: wrap(<CustomizePage />) },
     { path: '/my-designs',          element: wrap(<MyDesignsPage />) },
+    { path: '/admin/login',         element: wrap(<AdminLogin />) },
     { path: '/admin/customizer',    element: wrap(<CustomizerAdminPage />) },
     // Info pages
     { path: '/how-it-works',        element: wrap(<HowItWorks />) },

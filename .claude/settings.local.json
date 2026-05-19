@@ -13,7 +13,13 @@
       "Bash(xargs grep:*)",
       "Bash(node -e \"require\\('./node_modules/@types/react/index.d.ts'\\)\")",
       "Bash(ls \"C:\\\\Users\\\\Davit\\\\.claude\\\\image-cache\\\\\" 2>/dev/null && ls \"C:\\\\Users\\\\Davit\\\\.claude\\\\image-cache\\\\\"*/)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(grep -r 'eval\\\\|exec\\\\|$_GET\\\\|$_POST\\\\|$_REQUEST' /c/xampp/htdocs/lara-react-crud/app '--include=*.php')",
+      "Bash(wc -l /c/xampp/htdocs/lara-react-crud/resources/js/components/*.tsx)",
+      "Bash(xargs wc:*)",
+      "Bash(identify -format \"%f: %wx%h\\\\n\" *.jpg *.png)",
+      "Bash(python3 -c ':*)",
+      "Bash(php -r ':*)"
     ]
   }
 }

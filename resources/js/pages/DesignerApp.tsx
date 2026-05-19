@@ -25,6 +25,7 @@ interface Product {
     category: string;
     description: string;
     base_price: number;
+    preview_image_url: string | null;
 }
 
 // ─── Step 1: Category picker ──────────────────────────────────────────────────
@@ -138,20 +139,37 @@ function ProductStep({
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: i * 0.1 }}
                             whileHover={{ scale: 1.02 }}
-                            className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-lg transition-all text-left"
+                            className="bg-white rounded-lg shadow-sm border border-slate-200 hover:shadow-lg transition-all text-left overflow-hidden"
                         >
-                            <div className="flex items-start justify-between gap-4">
-                                <div>
-                                    <h3 className="font-semibold text-slate-900">{product.name}</h3>
-                                    <p className="text-xs text-slate-400 mt-1 leading-relaxed line-clamp-2">
-                                        {product.description}
-                                    </p>
-                                </div>
-                                <ArrowRight className="w-4 h-4 text-slate-300 shrink-0 mt-1" />
+                            {/* Preview image */}
+                            <div className="w-full aspect-[4/3] bg-slate-100 overflow-hidden">
+                                {product.preview_image_url ? (
+                                    <img
+                                        src={product.preview_image_url}
+                                        alt={product.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                        <span className="text-4xl opacity-30">{CATEGORIES.find(c => c.key === category)?.emoji ?? '👕'}</span>
+                                    </div>
+                                )}
                             </div>
-                            <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-                                <span className="text-xs text-slate-400">Starting from</span>
-                                <span className="text-sm font-bold text-slate-900">₾{product.base_price}</span>
+
+                            <div className="p-4">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                        <h3 className="font-semibold text-slate-900">{product.name}</h3>
+                                        <p className="text-xs text-slate-400 mt-1 leading-relaxed line-clamp-2">
+                                            {product.description}
+                                        </p>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" />
+                                </div>
+                                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                                    <span className="text-xs text-slate-400">Starting from</span>
+                                    <span className="text-sm font-bold text-slate-900">₾{product.base_price}</span>
+                                </div>
                             </div>
                         </motion.button>
                     ))}

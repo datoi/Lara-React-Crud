@@ -54,6 +54,45 @@ class AuthController extends Controller
     }
 
     /**
+     * POST /api/admin/auth
+     * Dedicated admin login — accepts { username, password }.
+     * Looks up a user by name where role = 'admin'.
+     */
+    public function adminLogin(Request $request)
+    {
+        $data = $request->validate([
+            'username' => ['required', 'string'],
+            'password' => ['required', 'string'],
+        ]);
+
+        $user = User::where('name', $data['username'])
+                    ->where('role', 'admin')
+                    ->first();
+
+        if (!$user || !Hash::check($data['password'], $user->password)) {
+            return response()->json([
+                'message' => 'Invalid credentials.',
+            ], 401);
+        }
+
+        $token = Str::random(60);
+        $user->update(['api_token' => hash('sha256', $token)]);
+
+        return response()->json([
+            'token' => $token,
+            'user'  => [
+                'id'         => $user->id,
+                'first_name' => $user->first_name,
+                'last_name'  => $user->last_name,
+                'name'       => $user->name,
+                'email'      => $user->email,
+                'phone'      => $user->phone,
+                'role'       => $user->role,
+            ],
+        ]);
+    }
+
+    /**
      * POST /api/login
      * Body: { email, password }
      */

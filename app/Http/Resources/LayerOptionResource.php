@@ -10,18 +10,19 @@ class LayerOptionResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'             => $this->id,
-            'name'           => $this->name,
-            'slug'           => $this->slug,
-            'image_url'      => $this->resolveUrl($this->image_path),
-            'thumbnail_url'  => $this->resolveUrl($this->thumbnail_path ?? $this->image_path),
-            'alt_image_url'  => $this->alt_image_path
-                                    ? $this->resolveUrl($this->alt_image_path)
-                                    : null,
-            'display_scale'  => $this->display_scale ?? 1.0,
-            'price_modifier' => $this->price_modifier,
-            'is_default'     => $this->is_default,
-            'display_order'  => $this->display_order,
+            'id'               => $this->id,
+            'name'             => $this->name,
+            'slug'             => $this->slug,
+            'image_url'        => $this->resolveUrl($this->image_path),
+            'thumbnail_url'    => $this->resolveUrl($this->thumbnail_path ?? $this->image_path),
+            'alt_image_url'    => $this->alt_image_path
+                                      ? $this->resolveUrl($this->alt_image_path)
+                                      : null,
+            'display_scale'    => $this->display_scale ?? 1.0,
+            'price_modifier'   => $this->price_modifier,
+            'is_default'       => $this->is_default,
+            'display_order'    => $this->display_order,
+            'children'         => self::collection($this->whenLoaded('children')),
         ];
     }
 

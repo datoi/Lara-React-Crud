@@ -13,11 +13,15 @@ export interface LayerOption {
     price_modifier: number;
     is_default: boolean;
     display_order: number;
+    /** Sub-options (e.g. collar variants for a specific sleeve type) */
+    children?: LayerOption[];
 }
 
 export interface LayerCategory {
     id: number;
     name: string;
+    /** Label for the sub-styles section (e.g. "Collar") */
+    children_label: string | null;
     slug: string;
     /** Lower value renders behind higher value — layer 1 is the bottom silhouette */
     z_index: number;
@@ -42,8 +46,10 @@ export interface CustomizerProduct {
     id: number;
     name: string;
     slug: string;
+    category: string;
     description: string | null;
     base_price: number;
+    preview_image_url: string | null;
     layer_categories: LayerCategory[];
     fabrics: Fabric[];
 }

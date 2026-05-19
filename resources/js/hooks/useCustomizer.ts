@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import type {
     LayerCategory,
+    LayerOption,
     Fabric,
     DesignConfiguration,
 } from '../types/customizer';
@@ -13,44 +14,77 @@ interface UseCustomizerOptions {
 
 interface UseCustomizerReturn {
     selections: Record<number, number>;
+    /** Maps parentOptionId → selected childOptionId */
+    subSelections: Record<number, number>;
     fabricId: number | null;
     selectOption: (categoryId: number, optionId: number) => void;
-    selectFabric: (fabricId: number | null) => void;
+    selectSubOption: (parentOptionId: number, childOptionId: number) => void;
     reset: () => void;
     getConfiguration: () => DesignConfiguration;
     totalPrice: number;
+    /** Returns the effective option to render for a category (child if sub-selected, else parent) */
+    resolveOption: (category: LayerCategory) => LayerOption | null;
 }
 
-/**
- * Manages all selection state for the customizer engine.
- *
- * Initializes each layer category to its is_default option.
- * Computes totalPrice reactively: base + option modifiers + fabric modifier.
- */
+function firstChild(option: LayerOption): LayerOption | null {
+    return option.children?.[0] ?? null;
+}
+
 export function useCustomizer({
     basePrice,
     layerCategories,
     fabrics,
 }: UseCustomizerOptions): UseCustomizerReturn {
 
-    // Build default selections from is_default option in each category
     const buildDefaults = useCallback((): Record<number, number> => {
         const defaults: Record<number, number> = {};
         for (const category of layerCategories) {
-            const def = category.options.find(o => o.is_default) ?? category.options[0];
+            // Only top-level options (no parent) as primary selections
+            const topLevel = category.options.filter(o => !o.children || true);
+            const def = topLevel.find(o => o.is_default) ?? topLevel[0];
             if (def) defaults[category.id] = def.id;
         }
         return defaults;
     }, [layerCategories]);
 
+    const buildSubDefaults = useCallback((selections: Record<number, number>): Record<number, number> => {
+        const subDefaults: Record<number, number> = {};
+        for (const category of layerCategories) {
+            for (const option of category.options) {
+                if (option.children && option.children.length > 0) {
+                    const defChild = option.children.find(c => c.is_default) ?? option.children[0];
+                    if (defChild) subDefaults[option.id] = defChild.id;
+                }
+            }
+        }
+        return subDefaults;
+    }, [layerCategories]);
+
     const [selections, setSelections] = useState<Record<number, number>>(buildDefaults);
-    const [fabricId, setFabricId]     = useState<number | null>(
-        // Default to first available fabric
+    const [subSelections, setSubSelections] = useState<Record<number, number>>(
+        () => buildSubDefaults(buildDefaults())
+    );
+    const [fabricId, setFabricId] = useState<number | null>(
         () => fabrics[0]?.id ?? null
     );
 
     const selectOption = useCallback((categoryId: number, optionId: number) => {
         setSelections(prev => ({ ...prev, [categoryId]: optionId }));
+        // When switching parent, auto-select first child of new parent if not already set
+        setSubSelections(prev => {
+            const category = layerCategories.find(c => c.id === categoryId);
+            if (!category) return prev;
+            const option = category.options.find(o => o.id === optionId);
+            if (!option?.children?.length) return prev;
+            if (prev[optionId] !== undefined) return prev; // already has a sub-selection
+            const defChild = option.children.find(c => c.is_default) ?? option.children[0];
+            if (!defChild) return prev;
+            return { ...prev, [optionId]: defChild.id };
+        });
+    }, [layerCategories]);
+
+    const selectSubOption = useCallback((parentOptionId: number, childOptionId: number) => {
+        setSubSelections(prev => ({ ...prev, [parentOptionId]: childOptionId }));
     }, []);
 
     const selectFabric = useCallback((id: number | null) => {
@@ -58,16 +92,41 @@ export function useCustomizer({
     }, []);
 
     const reset = useCallback(() => {
-        setSelections(buildDefaults());
+        const defaults = buildDefaults();
+        setSelections(defaults);
+        setSubSelections(buildSubDefaults(defaults));
         setFabricId(fabrics[0]?.id ?? null);
-    }, [buildDefaults, fabrics]);
+    }, [buildDefaults, buildSubDefaults, fabrics]);
 
     const getConfiguration = useCallback((): DesignConfiguration => ({
         selections,
         fabric_id: fabricId,
     }), [selections, fabricId]);
 
-    // Reactive total price computation
+    /**
+     * Resolves which option's image the canvas should render for a category.
+     * If the selected parent option has children and one is sub-selected, returns that child.
+     * Otherwise returns the selected parent option.
+     */
+    const resolveOption = useCallback((category: LayerCategory): LayerOption | null => {
+        const selectedOptionId = selections[category.id];
+        const parentOption = category.options.find(o => o.id === selectedOptionId)
+            ?? category.options.find(o => o.is_default)
+            ?? category.options[0]
+            ?? null;
+
+        if (!parentOption) return null;
+
+        if (parentOption.children && parentOption.children.length > 0) {
+            const childId = subSelections[parentOption.id];
+            const child = parentOption.children.find(c => c.id === childId)
+                ?? parentOption.children[0];
+            if (child) return child;
+        }
+
+        return parentOption;
+    }, [selections, subSelections]);
+
     const totalPrice = useMemo(() => {
         let total = basePrice;
 
@@ -89,11 +148,13 @@ export function useCustomizer({
 
     return {
         selections,
+        subSelections,
         fabricId,
         selectOption,
-        selectFabric,
+        selectSubOption,
         reset,
         getConfiguration,
         totalPrice,
+        resolveOption,
     };
 }
