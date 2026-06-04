@@ -114,7 +114,7 @@ export function GuaranteeSection() {
                                             <p className="text-sm text-slate-500">{current.location}</p>
                                         )}
                                         {!current.location && current.id > 0 && (
-                                            <p className="text-xs text-green-600 font-medium">✓ Verified Purchase</p>
+                                            <p className="text-xs text-slate-700 font-medium">✓ Verified Purchase</p>
                                         )}
                                     </div>
                                 </div>

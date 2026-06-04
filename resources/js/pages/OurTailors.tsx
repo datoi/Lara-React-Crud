@@ -138,7 +138,7 @@ export default function OurTailors() {
                                                 </div>
                                                 {tailor.avg_rating !== null && (
                                                     <div className="flex items-center gap-1">
-                                                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                                        <Star className="w-3.5 h-3.5 fill-slate-500 text-slate-500" />
                                                         <span className="font-semibold text-slate-700">{tailor.avg_rating.toFixed(1)}</span>
                                                         <span className="text-slate-400">({tailor.reviews_count})</span>
                                                     </div>

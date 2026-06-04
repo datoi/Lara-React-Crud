@@ -106,7 +106,7 @@ export function LocalTailorsSection() {
                         <ul className="space-y-2 mb-8">
                             {bullets.map((b) => (
                                 <li key={b} className="flex items-center gap-2 text-slate-600 text-sm">
-                                    <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                                    <span className="w-2 h-2 rounded-full bg-slate-500 flex-shrink-0" />
                                     {b}
                                 </li>
                             ))}

@@ -18,9 +18,13 @@ use App\Http\Controllers\Api\CustomizerAdminController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Public ───────────────────────────────────────────────────────────────────
-Route::post('/register',    [AuthController::class, 'register'])->middleware('throttle:10,1');
-Route::post('/login',       [AuthController::class, 'login'])->middleware('throttle:10,1');
-Route::post('/admin/auth',  [AuthController::class, 'adminLogin'])->middleware('throttle:10,1');
+Route::post('/register',                [AuthController::class, 'register'])->middleware('throttle:10,1');
+Route::post('/register/initiate',       [AuthController::class, 'registerInitiate'])->middleware('throttle:10,1');
+Route::post('/register/verify-email',   [AuthController::class, 'registerVerifyEmail'])->middleware('throttle:20,1');
+Route::post('/register/verify-phone',   [AuthController::class, 'registerVerifyPhone'])->middleware('throttle:20,1');
+Route::post('/register/resend',         [AuthController::class, 'registerResend'])->middleware('throttle:10,1');
+Route::post('/login',                   [AuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/admin/auth',              [AuthController::class, 'adminLogin'])->middleware('throttle:10,1');
 
 Route::get('/products',                     [ProductController::class, 'index']);
 Route::get('/products/{product}',           [ProductController::class, 'show']);
@@ -73,6 +77,7 @@ Route::middleware(['auth.bearer', 'throttle:10,1'])->group(function () {
     // Upload
     Route::post('/upload/image',         [UploadController::class, 'image']);
     Route::post('/upload/profile-image', [UploadController::class, 'profileImage']);
+    Route::post('/uploads',              [UploadController::class, 'design']);
 
     // Chat writes
     Route::post('/orders/{orderId}/messages', [MessageController::class, 'store']);
@@ -107,20 +112,19 @@ Route::middleware(['auth.bearer', 'auth.admin', 'throttle:30,1'])->prefix('admin
         Route::get('/products',               [CustomizerAdminController::class, 'indexProducts']);
         Route::post('/products',              [CustomizerAdminController::class, 'storeProduct']);
         Route::put('/products/{id}',          [CustomizerAdminController::class, 'updateProduct']);
-        Route::post('/products/{id}',         [CustomizerAdminController::class, 'updateProduct']); // POST for multipart (image upload)
         Route::delete('/products/{id}',       [CustomizerAdminController::class, 'destroyProduct']);
         // Layer categories
         Route::post('/categories',            [CustomizerAdminController::class, 'storeCategory']);
         Route::put('/categories/{id}',        [CustomizerAdminController::class, 'updateCategory']);
         Route::delete('/categories/{id}',     [CustomizerAdminController::class, 'destroyCategory']);
-        // Layer options (with image upload)
+        // Layer options (with image upload — use POST + _method=PUT for multipart)
         Route::post('/options',               [CustomizerAdminController::class, 'storeOption']);
-        Route::post('/options/{id}',          [CustomizerAdminController::class, 'updateOption']); // POST for multipart
+        Route::put('/options/{id}',           [CustomizerAdminController::class, 'updateOption']);
         Route::delete('/options/{id}',        [CustomizerAdminController::class, 'destroyOption']);
         // Fabrics
         Route::get('/fabrics',                [CustomizerAdminController::class, 'indexFabrics']);
         Route::post('/fabrics',               [CustomizerAdminController::class, 'storeFabric']);
-        Route::post('/fabrics/{id}',          [CustomizerAdminController::class, 'updateFabric']); // POST for multipart
+        Route::put('/fabrics/{id}',           [CustomizerAdminController::class, 'updateFabric']);
         Route::delete('/fabrics/{id}',        [CustomizerAdminController::class, 'destroyFabric']);
     });
 });

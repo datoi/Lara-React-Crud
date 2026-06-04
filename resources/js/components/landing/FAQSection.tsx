@@ -106,7 +106,7 @@ function SupportModal({ onClose }: { onClose: () => void }) {
                             animate={{ scale: 1 }}
                             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
                         >
-                            <CheckCircle className="w-14 h-14 text-green-500 mb-4" />
+                            <CheckCircle className="w-14 h-14 text-slate-700 mb-4" />
                         </motion.div>
                         <p className="font-semibold text-slate-900 mb-1">Message Sent!</p>
                         <p className="text-sm text-slate-500">Our support team will get back to you shortly.</p>
@@ -150,7 +150,7 @@ function SupportModal({ onClose }: { onClose: () => void }) {
                             <p className="text-xs text-slate-400 text-right mt-0.5">{message.length}/5000</p>
                         </div>
 
-                        {error && <p className="text-xs text-red-500">{error}</p>}
+                        {error && <p className="text-xs text-slate-600">{error}</p>}
 
                         <div className="flex gap-3 pt-1">
                             <Button
@@ -186,7 +186,7 @@ export function FAQSection() {
     const handleEmailSupport = () => {
         const user = getAuthUser();
         if (!user) {
-            navigate('/signin');
+            navigate('/login/customer');
             return;
         }
         setSupportOpen(true);

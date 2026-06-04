@@ -121,7 +121,7 @@ export function ReviewModal({ open, orderId, orderLabel, onClose, onSubmitted }:
                                 <p className="text-xs text-slate-400 text-right mt-1">{comment.length}/1000</p>
                             </div>
 
-                            {error && <p className="text-xs text-red-500">{error}</p>}
+                            {error && <p className="text-xs text-slate-600">{error}</p>}
 
                             <button
                                 onClick={handleSubmit}

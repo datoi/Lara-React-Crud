@@ -541,6 +541,42 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-06-03] Custom Order Flow — End-to-End
+
+**What was done:** Implemented the full custom order flow from three entry points (Landing, Marketplace, /design) through tailor selection and order review to submission.
+
+**New routes:** `/design/tailor-select` (TailorSelectStep.tsx), `/design/review` (OrderReview.tsx).
+
+**Draft persistence:** `useCustomOrderDraft.ts` — sessionStorage-backed draft object survives page refresh and the auth gate redirect. Shape: `{ garment_type, customization, design_file_url, tailor_notes, tailor_id, assignment_mode, estimated_price }`.
+
+**Upload path:** DesignerApp.tsx now has a two-tab toggle — "Use the designer" (existing product grid) and "Upload my own design" (file input, preview, notes). File upload hits `POST /api/uploads` (UploadController::design), returns `file_url`.
+
+**Designer path:** CustomizePage.tsx `handleOrder` now saves the customization config to the draft and navigates to `/design/tailor-select` instead of the broken `/checkout/customizer` route.
+
+**Tailor selection:** "Let Kere Choose" card + tailor grid. Grid dims when auto-match is selected. Unavailable tailors shown at reduced opacity with "Currently Busy" badge, not selectable. If no available tailors for the garment type, only "Let Kere Choose" is shown with an explanation.
+
+**Random assignment (server-side):** `OrderController::matchTailorForGarment()` finds the least-busy available tailor whose specialty matches the garment type (LIKE match + fallback to specialty-null tailors). If none found, order is created with `status = pending_assignment`, `tailor_id = null`. Admin receives a KereNotification.
+
+**Tailor availability check at submit:** If a manually chosen tailor's `is_available` flipped to false between selection and submit, the endpoint returns 409 and the frontend sends the user back to `/design/tailor-select` with an error message.
+
+**Admin unassigned queue:** AdminDashboard has a new "Unassigned" tab showing `status = pending_assignment` orders. Assigning a tailor from the dropdown sets `status → pending` and notifies the customer. Tab shows a count badge when orders are waiting.
+
+**DB migrations:**
+- `2026_06_03_000001_extend_orders_custom_flow.php` — adds `tailor_assignment_mode` to orders, adds `pending_assignment` to status enum.
+- `2026_06_03_000002_add_tailor_availability_fields.php` — adds `is_available` (bool, default true) and `turnaround_days` (varchar, nullable) to users.
+
+**API changes:**
+- `POST /api/uploads` — any authenticated user, accepts jpg/png/pdf/svg ≤10MB, returns `{ file_url }`.
+- `GET /api/tailors` — now also accepts `?garment_type=` param (alias for `?category=`). Returns `is_available`, `turnaround_days`, `starting_price` in every tailor object.
+- `POST /api/orders` — extended to accept `tailor_assignment_mode: 'manual'|'random'` and the new `custom_design_data` fields (`garment_type`, `design_file_url`, `tailor_notes`, `customization`). Old `clothingType` field still supported for backward compatibility.
+
+**Entry points:**
+- Landing HeroSection: "Design Your Own" renamed to "Start Your Design".
+- Marketplace: dark banner above the product grid linking to `/design`.
+- /design: already the flow entry point.
+
+---
+
 ### [2026-04-10] Verified Review & Rating System
 
 **What was done:** Implemented a full review system. Customers can leave one review per finished order from their dashboard. Reviews are linked to the order and optionally to a product. The product page shows reviews with an average star rating. The landing page carousel fetches real 5-star reviews and falls back to static testimonials when the database is empty.

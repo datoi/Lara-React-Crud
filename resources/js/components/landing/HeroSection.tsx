@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Link } from 'react-router';
-import { ArrowRight, Scissors, ShoppingBag } from 'lucide-react';
+import { ArrowRight, Scissors, ShoppingBag, Upload } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface PlatformStats {
@@ -32,16 +32,6 @@ export function HeroSection() {
             <div className="absolute inset-0 bg-black/50" />
 
             <div className="relative z-10 w-full text-center px-4 sm:px-6">
-                {/* Pill badge */}
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4 }}
-                    className="inline-flex items-center gap-2 bg-white/10 border border-white/20 backdrop-blur-sm text-white/90 text-xs font-medium px-4 py-1.5 rounded-full mb-6"
-                >
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                    Tbilisi-based tailors · Bespoke clothing · Guaranteed fit
-                </motion.div>
 
                 {/* Headline */}
                 <motion.h1
@@ -63,28 +53,49 @@ export function HeroSection() {
                     Design your own clothes or order from trusted Georgian tailors
                 </motion.p>
 
-                {/* Two CTAs */}
+                {/* Primary CTAs */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.25 }}
                     className="flex flex-col sm:flex-row items-center justify-center gap-3"
                 >
+                    {/* Primary — solid white */}
                     <Link
                         to="/marketplace"
-                        className="inline-flex items-center gap-2 bg-white text-slate-900 font-semibold px-7 py-3.5 rounded-full hover:bg-white/90 transition-all text-sm sm:text-base shadow-lg w-full sm:w-auto justify-center"
+                        className="inline-flex items-center gap-2 bg-white text-slate-900 font-semibold px-7 py-3.5 rounded-full hover:bg-slate-100 transition-all text-sm sm:text-base shadow-lg w-full sm:w-auto justify-center"
                     >
                         <ShoppingBag className="w-4 h-4" />
                         Browse Marketplace
                     </Link>
+
+                    {/* Secondary — ghost */}
                     <Link
                         to="/design"
-                        className="inline-flex items-center gap-2 bg-white/10 border border-white/30 backdrop-blur-sm text-white font-semibold px-7 py-3.5 rounded-full hover:bg-white/20 transition-all text-sm sm:text-base w-full sm:w-auto justify-center"
+                        className="inline-flex items-center gap-2 bg-transparent border border-white/50 text-white font-semibold px-7 py-3.5 rounded-full hover:bg-white/10 transition-all text-sm sm:text-base w-full sm:w-auto justify-center"
                     >
                         <Scissors className="w-4 h-4" />
-                        Design Your Own
+                        Start Your Design
                         <ArrowRight className="w-4 h-4" />
                     </Link>
+                </motion.div>
+
+                {/* Tertiary — upload, visually separated */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.38 }}
+                    className="flex items-center justify-center gap-3 mt-6"
+                >
+                    <div className="w-12 h-px bg-white/20" />
+                    <Link
+                        to="/design"
+                        className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white/80 hover:text-white hover:bg-white/15 font-medium px-5 py-2.5 rounded-full transition-all text-sm"
+                    >
+                        <Upload className="w-3.5 h-3.5" />
+                        Upload Your Own Design
+                    </Link>
+                    <div className="w-12 h-px bg-white/20" />
                 </motion.div>
 
                 {/* Social proof numbers — only shown if we have real data */}

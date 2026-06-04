@@ -35,7 +35,7 @@ export function EmailSupportModal({ open, onClose }: Props) {
                             Cancel
                         </button>
                         <button
-                            onClick={() => { onClose(); navigate('/signin'); }}
+                            onClick={() => { onClose(); navigate('/login/customer'); }}
                             className="px-4 py-2 text-sm bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
                         >
                             Sign In
@@ -99,7 +99,7 @@ export function EmailSupportModal({ open, onClose }: Props) {
 
                 {sent ? (
                     <div className="px-6 py-10 text-center">
-                        <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                        <CheckCircle className="w-12 h-12 text-slate-700 mx-auto mb-4" />
                         <p className="font-semibold text-slate-900 mb-1">Message Sent!</p>
                         <p className="text-sm text-slate-500">We'll respond within 24 hours to <strong>{user.email}</strong>.</p>
                         <button
@@ -148,7 +148,7 @@ export function EmailSupportModal({ open, onClose }: Props) {
                             />
                         </div>
 
-                        {error && <p className="text-sm text-red-600">{error}</p>}
+                        {error && <p className="text-sm text-slate-600">{error}</p>}
 
                         <div className="flex gap-3 pt-1">
                             <button

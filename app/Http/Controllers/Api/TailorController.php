@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class TailorController extends Controller
 {
-    private function tailorData(User $tailor, int $productsCount = 0, int $reviewsCount = 0, ?float $avgRating = null): array
+    private function tailorData(User $tailor, int $productsCount = 0, int $reviewsCount = 0, ?float $avgRating = null, ?float $startingPrice = null): array
     {
         return [
             'id'               => $tailor->id,
@@ -22,20 +22,29 @@ class TailorController extends Controller
             'products_count'   => $productsCount,
             'reviews_count'    => $reviewsCount,
             'avg_rating'       => $avgRating,
+            'is_available'     => (bool) ($tailor->is_available ?? true),
+            'turnaround_days'  => $tailor->turnaround_days,
+            'starting_price'   => $startingPrice,
         ];
     }
 
     // ─── GET /api/tailors ─────────────────────────────────────────────────────
+    // Accepts ?category= or ?garment_type= (both filter by category slug/name)
 
     public function index(Request $request)
     {
         $query = User::where('role', 'tailor');
 
-        // Optional category filter: only tailors with products in that category
-        $category = $request->query('category');
-        if ($category) {
+        // Accept both ?category= (marketplace) and ?garment_type= (custom order flow)
+        $filter = $request->query('category') ?? $request->query('garment_type');
+        if ($filter) {
+            // Normalize garment_type keys (e.g. womens_top → womens top, womens-top → womens top)
+            $normalized = str_replace(['-', '_'], ' ', strtolower($filter));
             $tailorIds = Product::whereHas('category', fn ($q) =>
-                $q->where('slug', $category)->orWhere('name', $category)
+                $q->where('slug', $filter)
+                  ->orWhere('name', $filter)
+                  ->orWhereRaw('LOWER(slug) LIKE ?', ["%{$normalized}%"])
+                  ->orWhereRaw('LOWER(name) LIKE ?', ["%{$normalized}%"])
             )->pluck('tailor_id')->filter()->unique();
             $query->whereIn('id', $tailorIds);
         }
@@ -43,7 +52,7 @@ class TailorController extends Controller
         $tailors = $query->get();
 
         $productsByTailor = Product::whereIn('tailor_id', $tailors->pluck('id'))
-            ->select('id', 'tailor_id')
+            ->select('id', 'tailor_id', 'price')
             ->get()
             ->groupBy('tailor_id');
 
@@ -70,9 +79,10 @@ class TailorController extends Controller
                 }
             }
 
-            $avgRating = $reviewsCount > 0 ? round($weightedSum / $reviewsCount, 1) : null;
+            $avgRating     = $reviewsCount > 0 ? round($weightedSum / $reviewsCount, 1) : null;
+            $startingPrice = $products->isNotEmpty() ? (float) $products->min('price') : null;
 
-            return $this->tailorData($tailor, $productsCount, $reviewsCount, $avgRating);
+            return $this->tailorData($tailor, $productsCount, $reviewsCount, $avgRating, $startingPrice);
         })->values();
 
         return response()->json(['tailors' => $result]);

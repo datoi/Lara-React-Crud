@@ -113,7 +113,7 @@ export function TailorSelector({ selectedTailorId, onChange, category }: Props) 
                                     <Check className="w-3 h-3 text-white" />
                                 </span>
                             ) : isRecommended ? (
-                                <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wide bg-amber-400 text-white px-1.5 py-0.5 rounded-full leading-none">
+                                <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wide bg-slate-800 text-white px-1.5 py-0.5 rounded-full leading-none">
                                     Top
                                 </span>
                             ) : null}
@@ -127,7 +127,7 @@ export function TailorSelector({ selectedTailorId, onChange, category }: Props) 
                             <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                                 {tailor.avg_rating !== null ? (
                                     <div className="flex items-center gap-0.5">
-                                        <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                                        <Star className="w-2.5 h-2.5 fill-slate-500 text-slate-500" />
                                         <span className="text-[10px] font-medium text-slate-700">
                                             {tailor.avg_rating.toFixed(1)}
                                         </span>

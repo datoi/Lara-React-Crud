@@ -6,29 +6,29 @@ import { saveAuth, getAuthToken, getAuthUser } from '../hooks/useAuth';
 
 export default function AdminLogin() {
     const navigate  = useNavigate();
-    const usernameRef = useRef<HTMLInputElement>(null);
+    const emailRef  = useRef<HTMLInputElement>(null);
 
-    const [username, setUsername] = useState('');
+    const [email,    setEmail]    = useState('');
     const [password, setPassword] = useState('');
     const [error,    setError]    = useState<string | null>(null);
     const [loading,  setLoading]  = useState(false);
 
-    // Already logged in as admin — skip straight to customizer
+    // Already logged in as admin — go straight to dashboard
     useEffect(() => {
         const token = getAuthToken();
         const user  = getAuthUser();
         if (token && user?.role === 'admin') {
-            navigate('/admin/customizer', { replace: true });
+            navigate('/admin-dashboard', { replace: true });
         }
     }, [navigate]);
 
     useEffect(() => {
-        usernameRef.current?.focus();
+        emailRef.current?.focus();
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!username || !password) return;
+        if (!email || !password) return;
 
         setError(null);
         setLoading(true);
@@ -37,7 +37,7 @@ export default function AdminLogin() {
             const res = await fetch('/api/admin/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({ email, password }),
             });
 
             const data = await res.json();
@@ -48,7 +48,7 @@ export default function AdminLogin() {
             }
 
             saveAuth(data.user, data.token);
-            navigate('/admin/customizer', { replace: true });
+            navigate('/admin-dashboard', { replace: true });
         } catch {
             setError('Network error. Please try again.');
         } finally {
@@ -76,16 +76,16 @@ export default function AdminLogin() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block text-xs font-medium text-slate-400 mb-1.5">
-                            Username
+                            Email
                         </label>
                         <input
-                            ref={usernameRef}
-                            type="text"
-                            value={username}
-                            onChange={e => setUsername(e.target.value)}
-                            autoComplete="username"
+                            ref={emailRef}
+                            type="email"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            autoComplete="email"
                             className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition"
-                            placeholder="Username"
+                            placeholder="admin@kere.ge"
                         />
                     </div>
 
@@ -104,14 +104,14 @@ export default function AdminLogin() {
                     </div>
 
                     {error && (
-                        <p className="text-sm text-red-400 bg-red-950/40 border border-red-900 rounded-xl px-4 py-2.5">
+                        <p className="text-sm text-slate-300 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5">
                             {error}
                         </p>
                     )}
 
                     <button
                         type="submit"
-                        disabled={loading || !username || !password}
+                        disabled={loading || !email || !password}
                         className="w-full bg-white text-slate-900 font-semibold text-sm rounded-xl py-3 hover:bg-slate-100 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                         {loading && <Loader2 className="w-4 h-4 animate-spin" />}

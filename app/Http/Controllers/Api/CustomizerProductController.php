@@ -70,8 +70,14 @@ class CustomizerProductController extends Controller
         $optionModifiers = 0.0;
         $resolvedSelections = [];
 
+        // Eager-load all selected options + their category in one query to avoid N+1
+        $options = LayerOption::with('layerCategory')
+            ->whereIn('id', array_values($selections))
+            ->get()
+            ->keyBy('id');
+
         foreach ($selections as $categoryId => $optionId) {
-            $option = LayerOption::find($optionId);
+            $option = $options->get($optionId);
             if ($option && $option->layerCategory->customizer_product_id === $product->id) {
                 $optionModifiers += $option->price_modifier;
                 $resolvedSelections[(int) $categoryId] = (int) $optionId;

@@ -15,16 +15,21 @@ export default function MyDesignsPage() {
     const [designs, setDesigns]   = useState<SavedDesign[]>([]);
     const [loading, setLoading]   = useState(true);
     const [deleting, setDeleting] = useState<number | null>(null);
+    const [error, setError]       = useState<string | null>(null);
 
     useEffect(() => {
-        if (!token) { navigate('/signin'); return; }
+        if (!token) { navigate('/login/customer'); return; }
 
         fetch('/api/customizer/designs', {
             headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         })
-            .then(r => r.json())
-            .then(d => setDesigns(d.designs ?? []))
-            .catch(() => {})
+            .then(r => {
+                if (r.status === 401) { navigate('/login/customer'); return null; }
+                if (!r.ok) throw new Error('Failed to load');
+                return r.json();
+            })
+            .then(d => d && setDesigns(d.designs ?? []))
+            .catch(() => setError('Failed to load designs. Please try again.'))
             .finally(() => setLoading(false));
     }, [token, navigate]);
 
@@ -32,11 +37,17 @@ export default function MyDesignsPage() {
         if (!window.confirm('Delete this design?')) return;
         setDeleting(id);
         try {
-            await fetch(`/api/customizer/designs/${id}`, {
+            const res = await fetch(`/api/customizer/designs/${id}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token!}`, Accept: 'application/json' },
             });
-            setDesigns(prev => prev.filter(d => d.id !== id));
+            if (res.ok) {
+                setDesigns(prev => prev.filter(d => d.id !== id));
+            } else {
+                setError('Could not delete design. Please try again.');
+            }
+        } catch {
+            setError('Network error. Please try again.');
         } finally {
             setDeleting(null);
         }
@@ -74,11 +85,17 @@ export default function MyDesignsPage() {
                     <Button
                         variant="default"
                         size="sm"
-                        onClick={() => navigate('/customize/classic-shirt')}
+                        onClick={() => navigate('/marketplace')}
                     >
                         New Design
                     </Button>
                 </div>
+
+                {error && (
+                    <div className="mb-4 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-4 py-3">
+                        {error}
+                    </div>
+                )}
 
                 {loading ? (
                     <div className="flex justify-center py-16">
@@ -90,7 +107,7 @@ export default function MyDesignsPage() {
                         <Button
                             variant="outline"
                             size="default"
-                            onClick={() => navigate('/customize/classic-shirt')}
+                            onClick={() => navigate('/marketplace')}
                         >
                             Start Customizing
                         </Button>

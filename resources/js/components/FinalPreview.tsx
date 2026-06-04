@@ -92,7 +92,7 @@ export function FinalPreview({ config, onBack }: FinalPreviewProps) {
         if (!token) {
             savePendingOrder({ type: 'custom', design: config as unknown as Record<string, unknown> });
             saveReturnTo('/design');
-            navigate('/signin');
+            navigate('/login/customer');
             return;
         }
         setSubmitting(true);
@@ -149,9 +149,9 @@ export function FinalPreview({ config, onBack }: FinalPreviewProps) {
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                        className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6"
+                        className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6"
                     >
-                        <Check className="w-10 h-10 text-green-600" />
+                        <Check className="w-10 h-10 text-slate-700" />
                     </motion.div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2">Design submitted successfully!</h3>
                     <p className="text-slate-500">A tailor will review your design and contact you to confirm details before starting.</p>
@@ -274,7 +274,7 @@ export function FinalPreview({ config, onBack }: FinalPreviewProps) {
                                 You can adjust details later with your tailor. No payment required now.
                             </p>
                             {submitError && (
-                                <p className="text-xs text-red-500 text-center">{submitError}</p>
+                                <p className="text-xs text-slate-600 text-center">{submitError}</p>
                             )}
                             <button
                                 onClick={handleSubmit}

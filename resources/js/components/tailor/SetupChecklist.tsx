@@ -53,7 +53,7 @@ export function SetupChecklist({ profileComplete, productsCount, onAddProduct, o
             <div className="flex items-center justify-between mb-5">
                 <h3 className="font-bold text-slate-900 text-sm">Setup progress</h3>
                 {readyForOrders ? (
-                    <span className="text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
+                    <span className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full">
                         Shop live ✓
                     </span>
                 ) : (
@@ -83,7 +83,7 @@ export function SetupChecklist({ profileComplete, productsCount, onAddProduct, o
                 {items.map(item => (
                     <div key={item.label} className="flex items-start gap-3">
                         {item.done
-                            ? <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                            ? <CheckCircle className="w-5 h-5 text-slate-700 shrink-0 mt-0.5" />
                             : <Circle     className="w-5 h-5 text-slate-300 shrink-0 mt-0.5" />
                         }
                         <div className="flex-1 min-w-0">

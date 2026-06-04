@@ -66,7 +66,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
                         </div>
                     </div>
                     <div className="text-2xl font-black text-slate-900 mb-1">{card.value}</div>
-                    <div className={`text-xs ${card.positive ? 'text-green-600' : 'text-slate-400'}`}>
+                    <div className={`text-xs ${card.positive ? 'text-slate-700' : 'text-slate-400'}`}>
                         {card.change}
                     </div>
                 </motion.div>

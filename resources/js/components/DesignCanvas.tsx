@@ -223,13 +223,13 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                                                     value={val}
                                                     onChange={e => updateCm(key, e.target.value)}
                                                     className={`w-full border rounded-lg px-2 py-2 text-sm pr-6 focus:outline-none focus:ring-2 focus:ring-slate-900 ${
-                                                        warning ? 'border-amber-400' : 'border-slate-200'
+                                                        warning ? 'border-slate-400' : 'border-slate-200'
                                                     }`}
                                                 />
                                                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">cm</span>
                                             </div>
                                             {warning && (
-                                                <p className="text-[10px] text-amber-600 mt-1 leading-tight">{warning}</p>
+                                                <p className="text-[10px] text-slate-600 mt-1 leading-tight">{warning}</p>
                                             )}
                                         </div>
                                     );

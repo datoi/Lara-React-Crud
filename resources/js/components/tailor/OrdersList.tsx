@@ -66,12 +66,12 @@ interface OrdersListProps {
 // ─── Status config ────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; classes: string }> = {
-    pending:    { label: 'Pending',     classes: 'bg-amber-50 text-amber-700 border-amber-200' },
-    processing: { label: 'In Progress', classes: 'bg-blue-50 text-blue-700 border-blue-200' },
-    shipped:    { label: 'Shipped',     classes: 'bg-purple-50 text-purple-700 border-purple-200' },
-    finished:   { label: 'Finished',    classes: 'bg-green-50 text-green-700 border-green-200' },
-    delivered:  { label: 'Delivered',   classes: 'bg-green-50 text-green-700 border-green-200' },
-    cancelled:  { label: 'Cancelled',   classes: 'bg-red-50 text-red-700 border-red-200' },
+    pending:    { label: 'Pending',     classes: 'bg-slate-100 text-slate-600 border-slate-200' },
+    processing: { label: 'In Progress', classes: 'bg-slate-100 text-slate-700 border-slate-200' },
+    shipped:    { label: 'Shipped',     classes: 'bg-slate-50 text-slate-600 border-slate-200' },
+    finished:   { label: 'Finished',    classes: 'bg-slate-50 text-slate-900 border-slate-200' },
+    delivered:  { label: 'Delivered',   classes: 'bg-slate-50 text-slate-900 border-slate-200' },
+    cancelled:  { label: 'Cancelled',   classes: 'bg-slate-100 text-slate-600 border-slate-200' },
 };
 
 // Options shown in the dropdown (tailor can set these)
@@ -158,7 +158,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                             </span>
                             <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border ${
                                 isCustom
-                                    ? 'bg-violet-50 text-violet-700 border-violet-200'
+                                    ? 'bg-slate-800 text-white border-slate-700'
                                     : 'bg-slate-50 text-slate-600 border-slate-200'
                             }`}>
                                 {isCustom ? 'Custom Design' : 'Marketplace'}
@@ -335,7 +335,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0 }}
                                             transition={{ duration: 0.3 }}
-                                            className="flex items-center gap-1.5 text-xs font-medium text-green-700"
+                                            className="flex items-center gap-1.5 text-xs font-medium text-slate-900"
                                         >
                                             <CheckCircle className="w-3.5 h-3.5" />
                                             Status saved — customer notified
@@ -348,7 +348,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0 }}
                                             transition={{ duration: 0.3 }}
-                                            className="flex items-center gap-1.5 text-xs font-medium text-red-600"
+                                            className="flex items-center gap-1.5 text-xs font-medium text-slate-600"
                                         >
                                             <X className="w-3.5 h-3.5" />
                                             Failed to save — please try again

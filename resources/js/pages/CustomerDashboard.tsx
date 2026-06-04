@@ -59,12 +59,12 @@ interface CustomerOrder {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Package }> = {
-    pending:    { label: 'Pending',     color: 'bg-amber-100 text-amber-700',  icon: Clock },
-    processing: { label: 'In Progress', color: 'bg-blue-100 text-blue-700',    icon: Scissors },
+    pending:    { label: 'Pending',     color: 'bg-slate-100 text-slate-600',  icon: Clock },
+    processing: { label: 'In Progress', color: 'bg-slate-100 text-slate-700',  icon: Scissors },
     shipped:    { label: 'Shipped',     color: 'bg-slate-100 text-slate-700',  icon: Truck },
-    finished:   { label: 'Finished',    color: 'bg-green-100 text-green-700',  icon: CheckCircle },
-    delivered:  { label: 'Delivered',   color: 'bg-green-100 text-green-700',  icon: CheckCircle },
-    cancelled:  { label: 'Cancelled',   color: 'bg-red-100 text-red-700',      icon: X },
+    finished:   { label: 'Finished',    color: 'bg-slate-900 text-white',      icon: CheckCircle },
+    delivered:  { label: 'Delivered',   color: 'bg-slate-900 text-white',      icon: CheckCircle },
+    cancelled:  { label: 'Cancelled',   color: 'bg-slate-200 text-slate-600',  icon: X },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -218,18 +218,22 @@ export default function CustomerDashboard() {
     const token     = getAuthToken();
     const [orders, setOrders]           = useState<CustomerOrder[]>([]);
     const [loading, setLoading]         = useState(true);
+    const [fetchError, setFetchError]   = useState(false);
+    const [retryKey, setRetryKey]       = useState(0);
     const [selectedOrder, setSelected]  = useState<CustomerOrder | null>(null);
     const [reviewOrder, setReviewOrder] = useState<CustomerOrder | null>(null);
 
     useEffect(() => {
-        if (!token) { navigate('/signin'); return; }
+        if (!token) { navigate('/login/customer'); return; }
+        setLoading(true);
+        setFetchError(false);
         fetch('/api/customer/orders', {
             headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         })
-            .then(r => r.json())
+            .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
             .then(d => { setOrders(d.orders ?? []); setLoading(false); })
-            .catch(() => setLoading(false));
-    }, [token, navigate]);
+            .catch(() => { setFetchError(true); setLoading(false); });
+    }, [token, navigate, retryKey]);
 
     const handleSignOut = () => { clearAuth(); navigate('/'); };
 
@@ -319,12 +323,23 @@ export default function CustomerDashboard() {
                         <div className="px-5 py-4 space-y-2">
                             {[...Array(3)].map((_, i) => <OrderCardSkeleton key={i} />)}
                         </div>
+                    ) : fetchError ? (
+                        <div className="py-12 text-center px-5">
+                            <p className="text-slate-500 font-medium mb-2">Failed to load orders</p>
+                            <p className="text-slate-400 text-sm mb-4">Check your connection and try again.</p>
+                            <button
+                                onClick={() => setRetryKey(k => k + 1)}
+                                className="text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
+                            >
+                                Retry
+                            </button>
+                        </div>
                     ) : orders.length === 0 ? (
                         <div className="py-16 text-center">
                             <ShoppingBag className="w-10 h-10 text-slate-200 mx-auto mb-3" />
                             <p className="text-slate-600 font-medium mb-1">You haven't placed any orders yet</p>
                             <p className="text-slate-400 text-sm mb-4">Browse the marketplace or design your own clothing</p>
-                            <div className="flex flex-col sm:flex-row items-center gap-2">
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
                                 <Link
                                     to="/marketplace"
                                     className="inline-flex items-center gap-1.5 text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
@@ -402,7 +417,7 @@ export default function CustomerDashboard() {
                                             </button>
                                         )}
                                         {['finished', 'shipped'].includes(order.status) && order.has_review && (
-                                            <span className="text-[10px] text-green-600 font-medium">✓ Reviewed</span>
+                                            <span className="text-[10px] text-slate-500 font-medium">✓ Reviewed</span>
                                         )}
                                     </div>
 

@@ -10,6 +10,7 @@ class Order extends Model
 {
     protected $fillable = [
         'user_id', 'tailor_id', 'order_number', 'order_type', 'status',
+        'tailor_assignment_mode',
         'subtotal', 'shipping', 'total',
         'custom_design_data',
         'first_name', 'last_name', 'email', 'phone',

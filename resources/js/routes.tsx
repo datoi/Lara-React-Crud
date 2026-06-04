@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router';
 import { type ReactElement } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { RouteGuard } from './components/RouteGuard';
 import Landing from './pages/Landing';
 import DesignerApp from './pages/DesignerApp';
 import Marketplace from './pages/Marketplace';
@@ -27,28 +28,36 @@ import CustomizePage from './pages/CustomizePage';
 import MyDesignsPage from './pages/MyDesignsPage';
 import CustomizerAdminPage from './pages/CustomizerAdminPage';
 import AdminLogin from './pages/AdminLogin';
+import TailorSelectStep from './pages/TailorSelectStep';
+import OrderReview from './pages/OrderReview';
 
 function wrap(el: ReactElement) {
     return <ErrorBoundary>{el}</ErrorBoundary>;
 }
 
+function guard(el: ReactElement, role?: 'customer' | 'tailor' | 'admin') {
+    return wrap(<RouteGuard role={role}>{el}</RouteGuard>);
+}
+
 export const router = createBrowserRouter([
     { path: '/',                    element: wrap(<Landing />) },
-    { path: '/design',              element: wrap(<DesignerApp />) },
+    { path: '/design',               element: wrap(<DesignerApp />) },
+    { path: '/design/tailor-select', element: wrap(<TailorSelectStep />) },
+    { path: '/design/review',        element: wrap(<OrderReview />) },
     { path: '/marketplace',         element: wrap(<Marketplace />) },
     { path: '/product/:id',         element: wrap(<ProductCustomization />) },
     { path: '/signin',              element: wrap(<RoleSelection />) },
     { path: '/login/:role',         element: wrap(<Login />) },
     { path: '/register/customer',   element: wrap(<RegisterCustomer />) },
     { path: '/register/tailor',     element: wrap(<RegisterTailor />) },
-    { path: '/tailor-dashboard',    element: wrap(<TailorDashboard />) },
-    { path: '/customer-dashboard',  element: wrap(<CustomerDashboard />) },
-    { path: '/admin-dashboard',     element: wrap(<AdminDashboard />) },
+    { path: '/tailor-dashboard',    element: guard(<TailorDashboard />, 'tailor') },
+    { path: '/customer-dashboard',  element: guard(<CustomerDashboard />, 'customer') },
+    { path: '/admin-dashboard',     element: guard(<AdminDashboard />, 'admin') },
     // ── Customizer ───────────────────────────────────────────────────────────
     { path: '/customize/:slug',     element: wrap(<CustomizePage />) },
-    { path: '/my-designs',          element: wrap(<MyDesignsPage />) },
+    { path: '/my-designs',          element: guard(<MyDesignsPage />) },
     { path: '/admin/login',         element: wrap(<AdminLogin />) },
-    { path: '/admin/customizer',    element: wrap(<CustomizerAdminPage />) },
+    { path: '/admin/customizer',    element: guard(<CustomizerAdminPage />, 'admin') },
     // Info pages
     { path: '/how-it-works',        element: wrap(<HowItWorks />) },
     { path: '/about',               element: wrap(<AboutUs />) },

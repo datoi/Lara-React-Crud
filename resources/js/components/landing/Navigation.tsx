@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { Menu, X, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getAuthUser } from '../../hooks/useAuth';
+import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
 import { NotificationBell } from '../NotificationBell';
 
 export function Navigation() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [scrolled, setScrolled]     = useState(false);
-    const user                        = getAuthUser();
+    const user  = getAuthToken() ? getAuthUser() : null;
     useEffect(() => {
         function onScroll() {
             setScrolled(window.scrollY > 60);
@@ -72,7 +72,7 @@ export function Navigation() {
                         ) : (
                             <>
                                 <Link
-                                    to="/signin"
+                                    to="/login/customer"
                                     className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${scrolled ? 'text-slate-700 border border-slate-300 hover:bg-slate-50' : 'text-white border border-white/40 hover:bg-white/10'}`}
                                 >
                                     Sign In
@@ -143,7 +143,7 @@ export function Navigation() {
                             ) : (
                                 <div className="flex gap-2 pt-2">
                                     <Link
-                                        to="/signin"
+                                        to="/login/customer"
                                         onClick={() => setMobileOpen(false)}
                                         className="flex-1 text-center border border-white/30 text-white px-4 py-2.5 rounded-lg hover:bg-white/10 transition-colors text-sm font-medium"
                                     >

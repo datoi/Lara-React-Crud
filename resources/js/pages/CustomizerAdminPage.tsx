@@ -359,7 +359,7 @@ function ProductCard({
                     )}
                     <p className="text-xs text-slate-400 mt-0.5">/{product.slug} · ₾{product.base_price} · {product.category}</p>
                     {!product.preview_image_url && (
-                        <p className="text-[10px] text-amber-500 mt-0.5">No preview image — click thumbnail to upload</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">No preview image — click thumbnail to upload</p>
                     )}
                 </div>
 
@@ -563,7 +563,7 @@ function StyleCard({
                     <img src={option.thumbnail_url} alt={option.name} className="w-full h-full object-contain" />
                 </div>
                 <span className="flex-1 text-sm font-semibold text-slate-800">{option.name}</span>
-                <button onClick={onDelete} className="text-slate-400 hover:text-red-500 transition-colors p-1">
+                <button onClick={onDelete} className="text-slate-400 hover:text-slate-700 transition-colors p-1">
                     <Trash2 className="w-3.5 h-3.5" />
                 </button>
             </div>
@@ -591,7 +591,7 @@ function StyleCard({
                                 </div>
                                 <button
                                     onClick={() => handleDeleteSubStyle(child.id)}
-                                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/80 border border-slate-200 flex items-center justify-center opacity-0 group-hover/sub:opacity-100 transition-opacity hover:bg-red-50"
+                                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/80 border border-slate-200 flex items-center justify-center opacity-0 group-hover/sub:opacity-100 transition-opacity hover:bg-slate-100"
                                 >
                                     <X className="w-2.5 h-2.5 text-slate-500" />
                                 </button>
@@ -766,7 +766,7 @@ function OptionGroupCard({
                             {group.name}
                         </button>
                     )}
-                    <button onClick={onDeleteGroup} className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded shrink-0" title="Delete group">
+                    <button onClick={onDeleteGroup} className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded shrink-0" title="Delete group">
                         <Trash2 className="w-3.5 h-3.5" />
                     </button>
                 </div>

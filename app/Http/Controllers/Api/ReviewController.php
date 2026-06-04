@@ -29,12 +29,12 @@ class ReviewController extends Controller
             return response()->json(['message' => 'Order not found.'], 404);
         }
 
-        if (! in_array($order->status, ['shipped', 'finished', 'delivered'])) {
-            return response()->json(['message' => 'You can only review a shipped, delivered, or finished order.'], 422);
+        if ($order->status !== 'delivered') {
+            return response()->json(['message' => 'You can only review a delivered order.'], 422);
         }
 
-        if (Review::where('order_id', $order->id)->exists()) {
-            return response()->json(['message' => 'You have already reviewed this order.'], 422);
+        if (Review::where('order_id', $order->id)->where('user_id', $user->id)->exists()) {
+            return response()->json(['message' => 'You have already reviewed this order.'], 409);
         }
 
         $productId = null;
@@ -51,7 +51,7 @@ class ReviewController extends Controller
                 'comment'    => $data['comment'],
             ]);
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-            return response()->json(['message' => 'You have already reviewed this order.'], 422);
+            return response()->json(['message' => 'You have already reviewed this order.'], 409);
         }
 
         return response()->json(['review' => $review], 201);

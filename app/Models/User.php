@@ -31,6 +31,8 @@ class User extends Authenticatable
         'years_experience',
         'profile_image',
         'is_suspended',
+        'is_available',
+        'turnaround_days',
     ];
 
     /**
@@ -54,7 +56,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
-            'is_suspended'      => 'boolean',
+            'is_suspended'  => 'boolean',
+            'is_available'  => 'boolean',
         ];
     }
 

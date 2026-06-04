@@ -280,9 +280,9 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 transition={{ type: 'spring', stiffness: 220, damping: 16 }}
-                                className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center"
+                                className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center"
                             >
-                                <Check className="w-8 h-8 text-green-600" />
+                                <Check className="w-8 h-8 text-white" />
                             </motion.div>
                             <p className="font-bold text-slate-900">Product Published!</p>
                             <p className="text-sm text-slate-500">Your listing is now live on the marketplace.</p>
@@ -389,7 +389,7 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                                         />
                                         <button
                                             onClick={() => removeImage(url)}
-                                            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-slate-900 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
                                             <X className="w-3 h-3 text-white" />
                                         </button>
@@ -484,7 +484,7 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                                             <div className="w-4 h-4 rounded-full border border-slate-200 flex-shrink-0" style={{ backgroundColor: hex }} />
                                             <span className="text-xs font-mono text-slate-600">{hex}</span>
                                             <button onClick={() => removeColor(hex)} className="ml-1">
-                                                <X className="w-3 h-3 text-slate-400 hover:text-red-500 transition-colors" />
+                                                <X className="w-3 h-3 text-slate-400 hover:text-slate-700 transition-colors" />
                                             </button>
                                         </div>
                                     ))}
@@ -569,7 +569,7 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
 
                 {/* Footer */}
                 <div className="px-6 py-4 border-t border-slate-100 flex-shrink-0">
-                    {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
+                    {error && <p className="text-xs text-slate-600 mb-3">{error}</p>}
                     <div className="flex gap-3">
                         <button
                             onClick={onClose}

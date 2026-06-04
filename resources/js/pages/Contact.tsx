@@ -96,7 +96,7 @@ export default function Contact() {
                     >
                         {sent ? (
                             <div className="flex flex-col items-center justify-center h-full text-center py-12 border border-slate-200 rounded-2xl">
-                                <CheckCircle className="w-12 h-12 text-green-500 mb-4" />
+                                <CheckCircle className="w-12 h-12 text-slate-700 mb-4" />
                                 <h3 className="text-xl font-bold text-slate-900 mb-2">Message Sent!</h3>
                                 <p className="text-slate-500">Thanks for reaching out. We'll get back to you within 24 hours.</p>
                             </div>

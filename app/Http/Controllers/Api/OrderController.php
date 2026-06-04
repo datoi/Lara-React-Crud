@@ -20,7 +20,27 @@ class OrderController extends Controller
 {
     private function randomTailor(): ?User
     {
-        return User::where('role', 'tailor')->inRandomOrder()->first();
+        return User::where('role', 'tailor')
+            ->where(fn ($q) => $q->where('is_available', true)->orWhereNull('is_available'))
+            ->inRandomOrder()
+            ->first();
+    }
+
+    // Match the least-busy available tailor whose specialty matches the garment type
+    private function matchTailorForGarment(string $garmentType): ?User
+    {
+        $keyword = '%' . str_replace(['-', '_'], ' ', strtolower($garmentType)) . '%';
+
+        return User::where('role', 'tailor')
+            ->where(fn ($q) => $q->where('is_available', true)->orWhereNull('is_available'))
+            ->where(function ($q) use ($keyword) {
+                $q->whereRaw('LOWER(specialty) LIKE ?', [$keyword])
+                  ->orWhereNull('specialty'); // tailors without a specialty are eligible
+            })
+            ->orderByRaw(
+                "(SELECT COUNT(*) FROM orders WHERE orders.tailor_id = users.id AND orders.status IN ('pending','processing')) ASC"
+            )
+            ->first();
     }
 
     private function notify(int $userId, string $type, string $title, string $body, int $orderId, array $extra = []): void
@@ -55,8 +75,12 @@ class OrderController extends Controller
             'color'           => 'nullable|string|max:100',
             'size'            => 'nullable|string|max:50',
             'quantity'        => 'required|integer|min:1|max:1000',
-            'cm_measurements' => 'nullable|array|max:20',
-            'tailor_id'       => 'nullable|integer|exists:users,id',
+            'cm_measurements'         => ['nullable', 'array'],
+            'cm_measurements.chest'   => ['nullable', 'numeric', 'min:0'],
+            'cm_measurements.waist'   => ['nullable', 'numeric', 'min:0'],
+            'cm_measurements.hips'    => ['nullable', 'numeric', 'min:0'],
+            'cm_measurements.length'  => ['nullable', 'numeric', 'min:0'],
+            'tailor_id'               => 'nullable|integer|exists:users,id',
         ]);
 
         $product = Product::findOrFail($data['product_id']);
@@ -168,10 +192,17 @@ class OrderController extends Controller
 
     private function storeCustomOrder(Request $request, User $user)
     {
-        // Critical #2: explicit field-level validation with size limits
         $data = $request->validate([
-            'custom_design_data'                      => 'required|array|max:30',
-            'custom_design_data.clothingType'         => 'required|string|max:100',
+            'tailor_assignment_mode'                  => 'nullable|in:manual,random',
+            'custom_design_data'                      => 'required|array|max:50',
+            // Support old shape (clothingType) and new shape (garment_type)
+            'custom_design_data.clothingType'         => 'nullable|string|max:100',
+            'custom_design_data.garment_type'         => 'nullable|string|max:100',
+            // New fields from custom order flow
+            'custom_design_data.design_file_url'      => 'nullable|url|max:2000',
+            'custom_design_data.tailor_notes'         => 'nullable|string|max:500',
+            'custom_design_data.customization'        => 'nullable|array|max:50',
+            // Existing fields
             'custom_design_data.fabric'               => 'nullable|string|max:100',
             'custom_design_data.color'                => 'nullable|string|max:100',
             'custom_design_data.embroidery'           => 'nullable|string|max:200',
@@ -186,53 +217,91 @@ class OrderController extends Controller
             'tailor_id'                               => 'nullable|integer|exists:users,id',
         ]);
 
-        $shipping = (int) config('app.shipping_cost', 15);
+        // Resolve the canonical garment identifier (new field takes priority)
+        $garmentType = $data['custom_design_data']['garment_type']
+            ?? $data['custom_design_data']['clothingType']
+            ?? null;
 
-        // Customer-chosen tailor takes priority; fall back to random
-        if (!empty($data['tailor_id'])) {
-            $tailor = User::where('id', $data['tailor_id'])->where('role', 'tailor')->first();
+        if (! $garmentType) {
+            return response()->json(['message' => 'Garment type is required.'], 422);
+        }
+
+        $assignmentMode = $data['tailor_assignment_mode'] ?? 'manual';
+        $shipping       = (int) config('app.shipping_cost', 15);
+        $status         = 'pending';
+        $tailor         = null;
+
+        if ($assignmentMode === 'random') {
+            $tailor = $this->matchTailorForGarment($garmentType);
             if (! $tailor) {
-                return response()->json(['message' => 'Selected tailor is not available.'], 422);
+                $status = 'pending_assignment';
             }
         } else {
-            $tailor = $this->randomTailor();
+            // Manual: customer chose a specific tailor or left it null (fallback to random)
+            if (! empty($data['tailor_id'])) {
+                $tailor = User::where('id', $data['tailor_id'])
+                    ->where('role', 'tailor')
+                    ->where(fn ($q) => $q->where('is_available', true)->orWhereNull('is_available'))
+                    ->first();
+
+                if (! $tailor) {
+                    // Tailor became unavailable between selection and submit
+                    return response()->json([
+                        'message' => 'This tailor is no longer available. Please choose another.',
+                    ], 409);
+                }
+            } else {
+                $tailor = $this->randomTailor();
+                if (! $tailor) {
+                    $status = 'pending_assignment';
+                }
+            }
         }
 
-        // Critical #3: no tailor available
-        if (! $tailor) {
-            return response()->json(['message' => 'No tailor is currently available. Please try again later.'], 503);
-        }
-
-        $order = DB::transaction(function () use ($data, $user, $tailor, $shipping) {
+        $order = DB::transaction(function () use ($data, $user, $tailor, $shipping, $status, $assignmentMode, $garmentType) {
             $order = Order::create([
-                'user_id'            => $user->id,
-                'tailor_id'          => $tailor->id,
-                'order_number'       => 'ORD-' . strtoupper(Str::random(8)),
-                'order_type'         => 'custom',
-                'status'             => 'pending',
-                'subtotal'           => 0,
-                'shipping'           => $shipping,
-                'total'              => $shipping,
-                'custom_design_data' => $data['custom_design_data'],
-                'first_name'         => $user->first_name ?? $user->name,
-                'last_name'          => $user->last_name  ?? '',
-                'email'              => $user->email,
-                'phone'              => $user->phone,
-                'address'            => 'N/A',
-                'city'               => 'Tbilisi',
-                'zip'                => '0100',
-                'country'            => 'GE',
+                'user_id'                => $user->id,
+                'tailor_id'              => $tailor?->id,
+                'order_number'           => 'ORD-' . strtoupper(Str::random(8)),
+                'order_type'             => 'custom',
+                'tailor_assignment_mode' => $assignmentMode,
+                'status'                 => $status,
+                'subtotal'               => 0,
+                'shipping'               => $shipping,
+                'total'                  => $shipping,
+                'custom_design_data'     => $data['custom_design_data'],
+                'first_name'             => $user->first_name ?? $user->name,
+                'last_name'              => $user->last_name  ?? '',
+                'email'                  => $user->email,
+                'phone'                  => $user->phone,
+                'address'                => 'N/A',
+                'city'                   => 'Tbilisi',
+                'zip'                    => '0100',
+                'country'                => 'GE',
             ]);
 
-            $clothingType = $data['custom_design_data']['clothingType'];
-            $this->notify(
-                $tailor->id,
-                'new_order',
-                'New Custom Design Order!',
-                "You received a custom {$clothingType} design from {$user->getFullName()}.",
-                $order->id,
-                ['clothing_type' => $clothingType]
-            );
+            if ($tailor) {
+                $this->notify(
+                    $tailor->id,
+                    'new_order',
+                    'New Custom Design Order!',
+                    "You received a custom {$garmentType} design from {$user->getFullName()}.",
+                    $order->id,
+                    ['clothing_type' => $garmentType]
+                );
+            } else {
+                // Notify first admin of unassigned order
+                $admin = User::where('role', 'admin')->first();
+                if ($admin) {
+                    $this->notify(
+                        $admin->id,
+                        'unassigned_order',
+                        'Unassigned Order Needs Tailor',
+                        "Order #{$order->order_number} needs a tailor assigned.",
+                        $order->id
+                    );
+                }
+            }
 
             return $order;
         });
@@ -243,16 +312,19 @@ class OrderController extends Controller
             Log::error('OrderConfirmation email failed (custom): ' . $e->getMessage());
         }
 
-        try {
-            Mail::to($tailor->email)->queue(new NewOrderAlert($order, $user));
-        } catch (\Throwable $e) {
-            Log::error('NewOrderAlert email failed (custom): ' . $e->getMessage());
+        if ($tailor) {
+            try {
+                Mail::to($tailor->email)->queue(new NewOrderAlert($order, $user));
+            } catch (\Throwable $e) {
+                Log::error('NewOrderAlert email failed (custom): ' . $e->getMessage());
+            }
         }
 
         return response()->json([
             'order_number' => $order->order_number,
             'total'        => $order->total,
-            'tailor_name'  => $tailor->getFullName(),
+            'tailor_name'  => $tailor?->getFullName(),
+            'status'       => $order->status,
         ], 201);
     }
 
@@ -293,7 +365,24 @@ class OrderController extends Controller
         ]);
 
         $oldStatus = $order->status;
-        $order->update(['status' => $data['status']]);
+        $newStatus = $data['status'];
+
+        // Define valid forward-only transitions
+        $validTransitions = [
+            'pending'    => ['processing', 'cancelled'],
+            'processing' => ['shipped', 'cancelled'],
+            'shipped'    => ['finished', 'delivered', 'cancelled'],
+            'finished'   => ['delivered'],
+            'delivered'  => [],
+            'cancelled'  => [],
+        ];
+
+        $allowed = $validTransitions[$oldStatus] ?? [];
+        if ($newStatus !== $oldStatus && !in_array($newStatus, $allowed, true)) {
+            return response()->json(['message' => 'Invalid status transition.'], 422);
+        }
+
+        $order->update(['status' => $newStatus]);
 
         $notifyStatuses = ['processing', 'shipped', 'delivered', 'finished', 'cancelled'];
         $shouldNotify   = in_array($data['status'], $notifyStatuses) && $data['status'] !== $oldStatus;

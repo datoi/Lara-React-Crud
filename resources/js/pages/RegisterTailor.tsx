@@ -113,7 +113,7 @@ export default function RegisterTailor() {
 
                         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
                             {errors.general && (
-                                <div className="mb-5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+                                <div className="mb-5 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-4 py-3">
                                     {errors.general}
                                 </div>
                             )}
@@ -128,9 +128,9 @@ export default function RegisterTailor() {
                                             value={form.first_name}
                                             onChange={set('first_name')}
                                             placeholder="Nino"
-                                            className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.first_name ? 'border-red-400' : 'border-slate-200'}`}
+                                            className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.first_name ? 'border-slate-400' : 'border-slate-200'}`}
                                         />
-                                        {errors.first_name && <p className="text-xs text-red-500 mt-1">{errors.first_name}</p>}
+                                        {errors.first_name && <p className="text-xs text-slate-600 mt-1">{errors.first_name}</p>}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Last Name</label>
@@ -139,9 +139,9 @@ export default function RegisterTailor() {
                                             value={form.last_name}
                                             onChange={set('last_name')}
                                             placeholder="Beridze"
-                                            className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.last_name ? 'border-red-400' : 'border-slate-200'}`}
+                                            className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.last_name ? 'border-slate-400' : 'border-slate-200'}`}
                                         />
-                                        {errors.last_name && <p className="text-xs text-red-500 mt-1">{errors.last_name}</p>}
+                                        {errors.last_name && <p className="text-xs text-slate-600 mt-1">{errors.last_name}</p>}
                                     </div>
                                 </div>
 
@@ -153,9 +153,9 @@ export default function RegisterTailor() {
                                         value={form.email}
                                         onChange={set('email')}
                                         placeholder="nino@example.com"
-                                        className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.email ? 'border-red-400' : 'border-slate-200'}`}
+                                        className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.email ? 'border-slate-400' : 'border-slate-200'}`}
                                     />
-                                    {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+                                    {errors.email && <p className="text-xs text-slate-600 mt-1">{errors.email}</p>}
                                 </div>
 
                                 {/* Phone */}
@@ -166,9 +166,9 @@ export default function RegisterTailor() {
                                         value={form.phone}
                                         onChange={set('phone')}
                                         placeholder="+995 555 123 456"
-                                        className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.phone ? 'border-red-400' : 'border-slate-200'}`}
+                                        className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.phone ? 'border-slate-400' : 'border-slate-200'}`}
                                     />
-                                    {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+                                    {errors.phone && <p className="text-xs text-slate-600 mt-1">{errors.phone}</p>}
                                 </div>
 
                                 {/* Password */}
@@ -180,7 +180,7 @@ export default function RegisterTailor() {
                                             value={form.password}
                                             onChange={set('password')}
                                             placeholder="Min. 8 characters"
-                                            className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.password ? 'border-red-400' : 'border-slate-200'}`}
+                                            className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.password ? 'border-slate-400' : 'border-slate-200'}`}
                                         />
                                         <button
                                             type="button"
@@ -190,7 +190,7 @@ export default function RegisterTailor() {
                                             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                         </button>
                                     </div>
-                                    {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+                                    {errors.password && <p className="text-xs text-slate-600 mt-1">{errors.password}</p>}
                                 </div>
 
                                 {/* Confirm Password */}
@@ -202,7 +202,7 @@ export default function RegisterTailor() {
                                             value={form.password_confirmation}
                                             onChange={set('password_confirmation')}
                                             placeholder="Repeat password"
-                                            className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.password_confirmation ? 'border-red-400' : 'border-slate-200'}`}
+                                            className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.password_confirmation ? 'border-slate-400' : 'border-slate-200'}`}
                                         />
                                         <button
                                             type="button"
@@ -212,7 +212,7 @@ export default function RegisterTailor() {
                                             {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                         </button>
                                     </div>
-                                    {errors.password_confirmation && <p className="text-xs text-red-500 mt-1">{errors.password_confirmation}</p>}
+                                    {errors.password_confirmation && <p className="text-xs text-slate-600 mt-1">{errors.password_confirmation}</p>}
                                 </div>
 
                                 <Button

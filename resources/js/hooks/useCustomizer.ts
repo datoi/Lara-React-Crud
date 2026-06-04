@@ -24,6 +24,7 @@ interface UseCustomizerReturn {
     totalPrice: number;
     /** Returns the effective option to render for a category (child if sub-selected, else parent) */
     resolveOption: (category: LayerCategory) => LayerOption | null;
+    selectFabric: (id: number | null) => void;
 }
 
 function firstChild(option: LayerOption): LayerOption | null {
@@ -40,7 +41,7 @@ export function useCustomizer({
         const defaults: Record<number, number> = {};
         for (const category of layerCategories) {
             // Only top-level options (no parent) as primary selections
-            const topLevel = category.options.filter(o => !o.children || true);
+            const topLevel = category.options.filter(o => !o.parent_option_id);
             const def = topLevel.find(o => o.is_default) ?? topLevel[0];
             if (def) defaults[category.id] = def.id;
         }
@@ -152,6 +153,7 @@ export function useCustomizer({
         fabricId,
         selectOption,
         selectSubOption,
+        selectFabric,
         reset,
         getConfiguration,
         totalPrice,

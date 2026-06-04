@@ -15,6 +15,7 @@ interface AdminOrder {
     status: string;
     total: number;
     created_at: string;
+    tailor_assignment_mode: string;
     customer: { id: number; name: string; email: string } | null;
     tailor:   { id: number; name: string } | null;
     items:    { id: number; product_name: string; quantity: number; price: number }[];
@@ -38,12 +39,12 @@ interface AssignSlot {
 // ─── Status badge (matches existing palette) ─────────────────────────────────
 
 const STATUS_CLASSES: Record<string, string> = {
-    pending:    'bg-amber-50 text-amber-700 border-amber-200',
-    processing: 'bg-blue-50 text-blue-700 border-blue-200',
+    pending:    'bg-slate-100 text-slate-600 border-slate-200',
+    processing: 'bg-slate-100 text-slate-700 border-slate-200',
     shipped:    'bg-slate-50 text-slate-700 border-slate-200',
-    finished:   'bg-green-50 text-green-700 border-green-200',
-    delivered:  'bg-green-50 text-green-700 border-green-200',
-    cancelled:  'bg-red-50 text-red-700 border-red-200',
+    finished:   'bg-slate-900 text-white border-slate-900',
+    delivered:  'bg-slate-900 text-white border-slate-900',
+    cancelled:  'bg-slate-200 text-slate-600 border-slate-300',
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -62,7 +63,7 @@ export default function AdminDashboard() {
     const user     = getAuthUser();
     const token    = getAuthToken();
 
-    const [tab,     setTab]     = useState<'orders' | 'users'>('orders');
+    const [tab,     setTab]     = useState<'orders' | 'users' | 'unassigned'>('orders');
     const [orders,  setOrders]  = useState<AdminOrder[]>([]);
     const [users,   setUsers]   = useState<AdminUser[]>([]);
     const [loadingOrders, setLoadingOrders] = useState(true);
@@ -77,7 +78,7 @@ export default function AdminDashboard() {
 
     // ── Auth guard ───────────────────────────────────────────────────────────
     useEffect(() => {
-        if (!token || user?.role !== 'admin') navigate('/');
+        if (!token || user?.role !== 'admin') navigate('/admin/login', { replace: true });
     }, [token, user, navigate]);
 
     // ── Fetch orders ─────────────────────────────────────────────────────────
@@ -143,7 +144,11 @@ export default function AdminDashboard() {
             });
             if (!res.ok) return;
             const data = await res.json();
-            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, tailor: data.tailor } : o));
+            setOrders(prev => prev.map(o => o.id === orderId ? {
+                ...o,
+                tailor:  data.tailor,
+                status:  data.status ?? o.status,
+            } : o));
             setAssignMap(prev => ({ ...prev, [orderId]: { ...prev[orderId], saving: false, saved: true } }));
             setTimeout(() => {
                 setAssignMap(prev => ({ ...prev, [orderId]: { ...prev[orderId], saved: false } }));
@@ -172,9 +177,11 @@ export default function AdminDashboard() {
 
     const handleSignOut = () => { clearAuth(); navigate('/'); };
 
+    const unassignedOrders = orders.filter(o => o.status === 'pending_assignment');
+
     const stats = [
         { label: 'Total Orders', value: orders.length,                         icon: Package },
-        { label: 'Total Users',  value: users.length,                          icon: Users },
+        { label: 'Unassigned',   value: unassignedOrders.length,               icon: Package },
         { label: 'Tailors',      value: tailors.length,                        icon: Users },
         { label: 'Suspended',    value: users.filter(u => u.is_suspended).length, icon: ShieldAlert },
     ];
@@ -255,17 +262,22 @@ export default function AdminDashboard() {
 
                 {/* ── Tabs ── */}
                 <div className="flex gap-2">
-                    {(['orders', 'users'] as const).map(t => (
+                    {(['orders', 'unassigned', 'users'] as const).map(t => (
                         <button
                             key={t}
                             onClick={() => setTab(t)}
-                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors capitalize ${
+                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors capitalize ${
                                 tab === t
                                     ? 'bg-slate-900 text-white'
                                     : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                             }`}
                         >
                             {t}
+                            {t === 'unassigned' && unassignedOrders.length > 0 && (
+                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === 'unassigned' ? 'bg-white text-slate-900' : 'bg-slate-200 text-slate-700'}`}>
+                                    {unassignedOrders.length}
+                                </span>
+                            )}
                         </button>
                     ))}
                 </div>
@@ -359,7 +371,7 @@ export default function AdminDashboard() {
                                                             </Button>
 
                                                             {slot.saved && (
-                                                                <span className="flex items-center gap-1 text-xs text-green-700 font-medium">
+                                                                <span className="flex items-center gap-1 text-xs text-slate-900 font-medium">
                                                                     <CheckCircle className="w-3.5 h-3.5" />
                                                                     Saved
                                                                 </span>
@@ -370,6 +382,112 @@ export default function AdminDashboard() {
                                                                 Current: {order.tailor.name}
                                                             </p>
                                                         )}
+                                                    </td>
+                                                </motion.tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+
+                {/* ── Unassigned orders ── */}
+                {tab === 'unassigned' && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
+                    >
+                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                            <div>
+                                <h2 className="font-bold text-slate-900">Unassigned Orders</h2>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                    Orders awaiting a tailor — assign one to move them to pending.
+                                </p>
+                            </div>
+                            <span className="text-xs text-slate-400">{unassignedOrders.length} total</span>
+                        </div>
+
+                        {loadingOrders ? (
+                            <div className="px-6 py-14 text-center text-sm text-slate-400">Loading…</div>
+                        ) : unassignedOrders.length === 0 ? (
+                            <div className="px-6 py-14 text-center text-sm text-slate-400">
+                                No unassigned orders.
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
+                                            <th className="text-left px-6 py-3 font-semibold">Order #</th>
+                                            <th className="text-left px-6 py-3 font-semibold hidden sm:table-cell">Customer</th>
+                                            <th className="text-left px-6 py-3 font-semibold hidden md:table-cell">Design</th>
+                                            <th className="text-left px-6 py-3 font-semibold">Assign Tailor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {unassignedOrders.map((order, i) => {
+                                            const slot    = assignMap[order.id] ?? { tailorId: '', saving: false, saved: false };
+                                            const changed = slot.tailorId !== String(order.tailor?.id ?? '');
+
+                                            return (
+                                                <motion.tr
+                                                    key={order.id}
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    transition={{ delay: i * 0.025 }}
+                                                    className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
+                                                >
+                                                    <td className="px-6 py-4">
+                                                        <p className="text-xs font-mono text-slate-500">{order.order_number}</p>
+                                                        <p className="text-xs text-slate-400 mt-0.5">{order.created_at}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4 hidden sm:table-cell">
+                                                        <p className="text-sm font-medium text-slate-900">{order.customer?.name ?? '—'}</p>
+                                                        <p className="text-xs text-slate-400">{order.customer?.email}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4 hidden md:table-cell">
+                                                        <p className="text-xs text-slate-600 max-w-[200px] truncate">
+                                                            Custom design
+                                                        </p>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <select
+                                                                value={slot.tailorId}
+                                                                onChange={e => setAssignMap(prev => ({
+                                                                    ...prev,
+                                                                    [order.id]: { ...prev[order.id], tailorId: e.target.value, saved: false },
+                                                                }))}
+                                                                disabled={slot.saving || tailors.length === 0}
+                                                                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:opacity-50"
+                                                            >
+                                                                <option value="">— Select tailor —</option>
+                                                                {tailors.map(t => (
+                                                                    <option key={t.id} value={String(t.id)}>{t.name}</option>
+                                                                ))}
+                                                            </select>
+
+                                                            <Button
+                                                                variant="default"
+                                                                size="sm"
+                                                                onClick={() => handleAssign(order.id)}
+                                                                disabled={!changed || !slot.tailorId || slot.saving}
+                                                                className="h-7 px-3 text-xs"
+                                                            >
+                                                                {slot.saving ? 'Saving…' : 'Assign'}
+                                                            </Button>
+
+                                                            {slot.saved && (
+                                                                <span className="flex items-center gap-1 text-xs text-slate-900 font-medium">
+                                                                    <CheckCircle className="w-3.5 h-3.5" />
+                                                                    Saved
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                 </motion.tr>
                                             );
@@ -425,7 +543,7 @@ export default function AdminDashboard() {
                                                 <td className="px-6 py-4 text-xs text-slate-400 hidden md:table-cell">{u.created_at}</td>
                                                 <td className="px-6 py-4">
                                                     <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border ${
-                                                        u.role === 'tailor'  ? 'bg-violet-50 text-violet-700 border-violet-200' :
+                                                        u.role === 'tailor'  ? 'bg-slate-800 text-white border-slate-700' :
                                                         u.role === 'admin'   ? 'bg-slate-900 text-white border-slate-900' :
                                                                                'bg-slate-50 text-slate-600 border-slate-200'
                                                     }`}>
@@ -434,11 +552,11 @@ export default function AdminDashboard() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {u.is_suspended ? (
-                                                        <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border bg-red-50 text-red-700 border-red-200">
+                                                        <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border bg-slate-200 text-slate-700 border-slate-300">
                                                             Suspended
                                                         </span>
                                                     ) : (
-                                                        <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border bg-green-50 text-green-700 border-green-200">
+                                                        <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border bg-slate-50 text-slate-900 border-slate-200">
                                                             Active
                                                         </span>
                                                     )}

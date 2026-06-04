@@ -166,14 +166,14 @@ export function TailorProfileEditor({ token, tailorId }: Props) {
                                     <button
                                         type="button"
                                         onClick={() => setProfile(p => ({ ...p, profile_image: '' }))}
-                                        className="inline-flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 transition-colors"
+                                        className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 transition-colors"
                                     >
                                         <X className="w-3 h-3" /> Remove photo
                                     </button>
                                 )}
 
                                 {uploadError && (
-                                    <p className="text-xs text-red-500">{uploadError}</p>
+                                    <p className="text-xs text-slate-600">{uploadError}</p>
                                 )}
 
                                 <p className="text-xs text-slate-400">JPG, PNG or WebP · max 4 MB</p>
@@ -229,7 +229,7 @@ export function TailorProfileEditor({ token, tailorId }: Props) {
                             {saving ? 'Saving…' : 'Save Profile'}
                         </button>
                         {saved && (
-                            <span className="flex items-center gap-1.5 text-sm text-green-600">
+                            <span className="flex items-center gap-1.5 text-sm text-slate-700">
                                 <CheckCircle className="w-4 h-4" /> Saved!
                             </span>
                         )}

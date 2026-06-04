@@ -19,7 +19,7 @@ class StoreDesignRequest extends FormRequest
             'configuration'         => ['required', 'array'],
             'configuration.selections' => ['required', 'array'],
             'configuration.selections.*' => ['integer'],
-            'configuration.fabric_id'    => ['nullable', 'integer'],
+            'configuration.fabric_id'    => ['nullable', 'integer', 'exists:fabrics,id'],
         ];
     }
 }

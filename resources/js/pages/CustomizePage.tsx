@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import Customizer from '../components/customizer/Customizer';
 import { useProductData } from '../hooks/useProductData';
 import { getAuthUser, saveReturnTo } from '../hooks/useAuth';
+import { saveDraft } from '../hooks/useCustomOrderDraft';
 import type { DesignConfiguration } from '../types/customizer';
 
 export default function CustomizePage() {
@@ -21,12 +22,17 @@ export default function CustomizePage() {
 
     const handleOrder = (configuration: DesignConfiguration) => {
         if (!authUser) {
-            saveReturnTo(window.location.pathname);
-            navigate('/signin');
+            saveReturnTo('/design/tailor-select');
+            navigate('/login/customer');
             return;
         }
-        // Navigate to checkout — pass configuration as route state
-        navigate('/checkout/customizer', { state: { configuration, productSlug: slug } });
+        // Save the customization to the shared draft, then continue to tailor selection
+        saveDraft({
+            customization:   configuration as unknown as Record<string, unknown>,
+            design_file_url: null,
+            estimated_price: product?.base_price ?? 0,
+        });
+        navigate('/design/tailor-select');
     };
 
     if (loading) {

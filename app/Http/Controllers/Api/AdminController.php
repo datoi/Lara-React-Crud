@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\KereNotification;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ class AdminController extends Controller
                     'name'  => $o->user->getFullName(),
                     'email' => $o->user->email,
                 ] : null,
+                'tailor_assignment_mode' => $o->tailor_assignment_mode ?? 'manual',
                 'tailor' => $o->tailor ? [
                     'id'   => $o->tailor->id,
                     'name' => $o->tailor->getFullName(),
@@ -69,10 +71,29 @@ class AdminController extends Controller
             ->firstOrFail();
 
         $order = Order::findOrFail($id);
-        $order->update(['tailor_id' => $tailor->id]);
+        $wasUnassigned = $order->status === 'pending_assignment';
+
+        $updates = ['tailor_id' => $tailor->id];
+        if ($wasUnassigned) {
+            $updates['status'] = 'pending';
+        }
+        $order->update($updates);
+
+        // Notify the customer that their order now has a tailor
+        if ($wasUnassigned && $order->user_id) {
+            KereNotification::create([
+                'user_id' => $order->user_id,
+                'type'    => 'order_assigned',
+                'title'   => 'Tailor Assigned!',
+                'body'    => "A tailor has been assigned to your order #{$order->order_number}.",
+                'data'    => ['order_id' => $order->id],
+                'is_read' => false,
+            ]);
+        }
 
         return response()->json([
-            'tailor' => ['id' => $tailor->id, 'name' => $tailor->getFullName()],
+            'tailor'  => ['id' => $tailor->id, 'name' => $tailor->getFullName()],
+            'status'  => $order->fresh()->status,
         ]);
     }
 

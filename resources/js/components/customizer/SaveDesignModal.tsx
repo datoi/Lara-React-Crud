@@ -117,7 +117,7 @@ export default function SaveDesignModal({
                         />
 
                         {error && (
-                            <p className="text-xs text-red-500 mb-3">{error}</p>
+                            <p className="text-xs text-slate-600 mb-3">{error}</p>
                         )}
 
                         <div className="flex gap-2">

@@ -124,11 +124,11 @@ export default function TailorDashboard() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -12 }}
                         transition={{ duration: 0.25 }}
-                        className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-green-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-lg flex items-center gap-2.5 max-w-sm w-full mx-4"
+                        className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-lg flex items-center gap-2.5 max-w-sm w-full mx-4"
                     >
-                        <CheckCircle className="w-4 h-4 text-green-300 shrink-0" />
+                        <CheckCircle className="w-4 h-4 text-slate-300 shrink-0" />
                         <span className="flex-1">Your product is now live. Customers can start ordering from you.</span>
-                        <button onClick={() => setProductJustAdded(false)} className="text-green-300 hover:text-white transition-colors ml-1">
+                        <button onClick={() => setProductJustAdded(false)} className="text-slate-300 hover:text-white transition-colors ml-1">
                             <X className="w-4 h-4" />
                         </button>
                     </motion.div>
@@ -227,7 +227,7 @@ export default function TailorDashboard() {
                     {token && user && (
                         <>
                             {!profileComplete && (
-                                <div className="mb-3 flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+                                <div className="mb-3 flex items-center gap-2 text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
                                     <span className="text-base">💡</span>
                                     <span>
                                         <strong>Complete your profile</strong> — tailors with a bio and specialty get

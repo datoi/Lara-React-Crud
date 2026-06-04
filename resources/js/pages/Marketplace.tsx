@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, SlidersHorizontal, X, Palette, Star, ChevronDown, BadgeCheck } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Palette, Star, ChevronDown, BadgeCheck, ArrowRight } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { ProductCardSkeleton } from '../components/skeletons/ProductCardSkeleton';
 import { ErrorFallback } from '../components/ErrorFallback';
@@ -192,7 +192,7 @@ export default function Marketplace() {
             </Helmet>
             {/* Navbar */}
             <nav className="sticky top-0 z-50 bg-white border-b border-slate-100">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
                     <Link to="/" className="text-xl font-bold text-slate-900 hover:text-slate-700 transition-colors">
                         Kere
                     </Link>
@@ -220,12 +220,26 @@ export default function Marketplace() {
                 </div>
             </nav>
 
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Page header */}
                 <div className="mb-6">
                     <h1 className="text-3xl font-bold text-slate-900">Marketplace</h1>
                     <p className="text-slate-500 mt-1">Browse designs from local Georgian tailors</p>
                 </div>
+
+                {/* Custom design banner */}
+                <Link
+                    to="/design"
+                    className="flex items-center justify-between gap-4 bg-slate-900 text-white rounded-xl px-6 py-4 mb-6 hover:bg-slate-800 transition-colors group"
+                >
+                    <div>
+                        <p className="font-semibold text-sm sm:text-base">Have your own design? Upload it</p>
+                        <p className="text-slate-400 text-xs sm:text-sm mt-0.5">
+                            Bring your sketch or idea — our tailors will bring it to life.
+                        </p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors shrink-0" />
+                </Link>
 
                 {/* Search + Filters row */}
                 <div className="flex gap-3 mb-3">
@@ -441,7 +455,7 @@ export default function Marketplace() {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {products.map((product, i) => {
                             // null = fresh load, all animate; Set = only new IDs animate
                             const isNew = newProductIdsRef.current === null || newProductIdsRef.current.has(product.id);

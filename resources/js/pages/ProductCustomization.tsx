@@ -69,8 +69,13 @@ export default function ProductCustomization() {
 
     useEffect(() => {
         fetch(`/api/products/${id}`)
-            .then(r => r.json())
+            .then(r => {
+                if (r.status === 404) { setLoading(false); return null; }
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
             .then(data => {
+                if (!data) return;
                 const p: ApiProduct = data.product;
                 setProduct(p);
                 if (typeof data.shipping_cost === 'number') setShippingCost(data.shipping_cost);
@@ -173,7 +178,7 @@ export default function ProductCustomization() {
             setOrdered(true);
             setTimeout(() => navigate('/customer-dashboard'), 3000);
         } catch {
-            setOrderError('Network error. Please try again.');
+            setOrderError('Connection lost. Please try again.');
         } finally {
             setPlacing(false);
         }
@@ -239,9 +244,9 @@ export default function ProductCustomization() {
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ duration: 0.6 }}
-                        className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6"
+                        className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6"
                     >
-                        <Check className="w-10 h-10 text-green-600" />
+                        <Check className="w-10 h-10 text-slate-600" />
                     </motion.div>
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -290,7 +295,7 @@ export default function ProductCustomization() {
                                 <div className="flex items-center gap-1">
                                     {avgRating !== null ? (
                                         <>
-                                            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                                            <Star className="w-4 h-4 fill-slate-400 text-slate-400" />
                                             <span className="text-sm font-medium text-slate-700">{avgRating.toFixed(1)}</span>
                                             <span className="text-sm text-slate-400">({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})</span>
                                         </>
@@ -325,8 +330,10 @@ export default function ProductCustomization() {
                                             <button
                                                 key={hex}
                                                 onClick={() => setSelectedColor(hex)}
+                                                onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setSelectedColor(hex); } }}
+                                                tabIndex={0}
                                                 title={hex}
-                                                className="relative w-9 h-9 rounded-full border-2 transition-all hover:scale-110"
+                                                className="relative w-8 h-8 rounded-full border-2 transition-all hover:scale-110"
                                                 style={{
                                                     backgroundColor: hex,
                                                     borderColor: selectedColor === hex ? '#0F172A' : '#E2E8F0',
@@ -401,12 +408,12 @@ export default function ProductCustomization() {
                                                         placeholder="0"
                                                         value={val}
                                                         onChange={e => setMeasurements(m => ({ ...m, [key]: e.target.value }))}
-                                                        className={`w-full border rounded-lg px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-slate-900 ${warning ? 'border-amber-400' : 'border-slate-200'}`}
+                                                        className={`w-full border rounded-lg px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-slate-900 ${warning ? 'border-slate-400' : 'border-slate-200'}`}
                                                     />
                                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">cm</span>
                                                 </div>
                                                 {warning && (
-                                                    <p className="text-[10px] text-amber-600 mt-1 leading-tight">{warning}</p>
+                                                    <p className="text-[10px] text-slate-500 mt-1 leading-tight">{warning}</p>
                                                 )}
                                             </div>
                                         );
@@ -418,11 +425,29 @@ export default function ProductCustomization() {
                             <div className="bg-white rounded-2xl border border-slate-200 p-5">
                                 <div className="text-sm font-semibold text-slate-700 mb-3">Quantity</div>
                                 <div className="flex items-center gap-4">
-                                    <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors">
+                                    <button
+                                        onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                                        disabled={quantity === 1}
+                                        className="w-10 h-10 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
                                         <Minus className="w-4 h-4 text-slate-600" />
                                     </button>
-                                    <span className="text-lg font-bold text-slate-900 w-8 text-center">{quantity}</span>
-                                    <button onClick={() => setQuantity(q => Math.min(q + 1, 1000))} className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors">
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={1000}
+                                        value={quantity}
+                                        onChange={e => {
+                                            const v = parseInt(e.target.value, 10);
+                                            if (!isNaN(v) && v >= 1 && v <= 1000) setQuantity(v);
+                                        }}
+                                        className="text-lg font-bold text-slate-900 w-14 text-center border border-slate-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                                    />
+                                    <button
+                                        onClick={() => setQuantity(q => Math.min(q + 1, 1000))}
+                                        disabled={quantity >= 1000}
+                                        className="w-10 h-10 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
                                         <Plus className="w-4 h-4 text-slate-600" />
                                     </button>
                                 </div>
@@ -455,6 +480,19 @@ export default function ProductCustomization() {
                                 </div>
                             )}
 
+                            {/* Measurement sanity banner */}
+                            {Object.values(measurements).some(v => {
+                                const n = parseFloat(v);
+                                return v !== '' && !isNaN(n) && (n > 150 || n < 30);
+                            }) && (
+                                <div className="flex items-start gap-2.5 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                    <Info className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
+                                    <p className="text-sm text-slate-700 leading-relaxed">
+                                        These measurements seem unusual — please double-check before ordering.
+                                    </p>
+                                </div>
+                            )}
+
                             {/* Order summary */}
                             <div className="bg-slate-900 rounded-2xl p-5 text-white">
                                 <div className="space-y-2 mb-4 text-sm">
@@ -472,7 +510,7 @@ export default function ProductCustomization() {
                                     </div>
                                 </div>
                                 {orderError && (
-                                    <p className="text-xs text-red-400 text-center mb-2">{orderError}</p>
+                                    <p className="text-xs text-slate-400 text-center mb-2">{orderError}</p>
                                 )}
                                 <button
                                     onClick={handleOrder}
@@ -558,7 +596,7 @@ export default function ProductCustomization() {
                         </p>
                         <div className="flex flex-col gap-3">
                             <button
-                                onClick={() => navigate('/signin')}
+                                onClick={() => navigate('/login/customer')}
                                 className="w-full bg-slate-900 text-white font-semibold py-3 rounded-xl hover:bg-slate-700 transition-colors"
                             >
                                 Sign In
