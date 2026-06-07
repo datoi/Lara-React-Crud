@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { Award, Users, Heart, Clock } from 'lucide-react';
 import { Link } from 'react-router';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PlatformStats {
     tailors_count: number;
@@ -10,14 +11,9 @@ interface PlatformStats {
     reviews_count: number;
 }
 
-const bullets = [
-    'Tbilisi-based tailors, vetted by Kere',
-    'Domestic & imported fabric options',
-    "Free alterations if the fit isn't right",
-];
-
 export function LocalTailorsSection() {
     const [stats, setStats] = useState<PlatformStats | null>(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         fetch('/api/platform/stats')
@@ -26,11 +22,17 @@ export function LocalTailorsSection() {
             .catch(() => {});
     }, []);
 
+    const bullets = [
+        t('localTailors.bullet1'),
+        t('localTailors.bullet2'),
+        t('localTailors.bullet3'),
+    ];
+
     const cards = [
-        { icon: Award, label: stats?.tailors_count ? String(stats.tailors_count) : '—', sublabel: 'Local Tailors' },
-        { icon: Users, label: stats?.orders_count  ? String(stats.orders_count)  : '—', sublabel: 'Orders Fulfilled' },
-        { icon: Heart, label: stats?.avg_rating    ? `${stats.avg_rating}★`      : '—', sublabel: 'Avg. Rating' },
-        { icon: Clock, label: '7–14d',                                                   sublabel: 'Avg. Turnaround' },
+        { icon: Award, label: stats?.tailors_count ? String(stats.tailors_count) : '—', sublabel: t('localTailors.statTailors') },
+        { icon: Users, label: stats?.orders_count  ? String(stats.orders_count)  : '—', sublabel: t('localTailors.statOrders') },
+        { icon: Heart, label: stats?.avg_rating    ? `${stats.avg_rating}★`      : '—', sublabel: t('localTailors.statRating') },
+        { icon: Clock, label: '7–14d',                                                   sublabel: t('localTailors.statTurnaround') },
     ];
 
     return (
@@ -64,8 +66,8 @@ export function LocalTailorsSection() {
                                 <Award className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                                <p className="font-bold text-sm">Master Craftsmen</p>
-                                <p className="text-xs text-slate-300">Certified Experts</p>
+                                <p className="font-bold text-sm">{t('localTailors.badgeTitle')}</p>
+                                <p className="text-xs text-slate-300">{t('localTailors.badgeSubtitle')}</p>
                             </div>
                         </motion.div>
                     </motion.div>
@@ -78,10 +80,10 @@ export function LocalTailorsSection() {
                         transition={{ duration: 0.6 }}
                     >
                         <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-                            Made by Local Tailors
+                            {t('localTailors.title')}
                         </h2>
                         <p className="text-slate-500 text-base leading-relaxed mb-8">
-                            Your custom clothing is crafted by skilled local tailors who bring quality craftsmanship and attention to detail to every piece.
+                            {t('localTailors.subtitle')}
                         </p>
 
                         {/* 2x2 stat cards */}
@@ -116,7 +118,7 @@ export function LocalTailorsSection() {
                             to="/design"
                             className="inline-block border border-slate-900 text-slate-900 text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-50 transition-colors"
                         >
-                            Start Your Design
+                            {t('localTailors.startDesign')}
                         </Link>
                     </motion.div>
                 </div>

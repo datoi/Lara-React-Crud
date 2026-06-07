@@ -26,7 +26,8 @@
       "Bash(php -l /c/xampp/htdocs/lara-react-crud/app/Models/Verification.php)",
       "Bash(php -l /c/xampp/htdocs/lara-react-crud/app/Mail/OtpCode.php)",
       "Bash(composer require:*)",
-      "Bash(grep -l \"sqlite\\\\|AUTOINCREMENT\\\\|TEXT NOT NULL DEFAULT\" database/migrations/2026_06_03_*.php)"
+      "Bash(grep -l \"sqlite\\\\|AUTOINCREMENT\\\\|TEXT NOT NULL DEFAULT\" database/migrations/2026_06_03_*.php)",
+      "Bash(wc -l /c/xampp/htdocs/lara-react-crud/resources/js/pages/*.tsx)"
     ]
   }
 }

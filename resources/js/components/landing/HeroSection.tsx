@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router';
 import { ArrowRight, Scissors, ShoppingBag, Upload } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PlatformStats {
     tailors_count: number;
@@ -12,6 +13,7 @@ interface PlatformStats {
 
 export function HeroSection() {
     const [stats, setStats] = useState<PlatformStats | null>(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         fetch('/api/platform/stats')
@@ -40,7 +42,7 @@ export function HeroSection() {
                     transition={{ duration: 0.6, delay: 0.05 }}
                     className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight tracking-tight mb-5 max-w-5xl mx-auto"
                 >
-                    Custom Clothing Made<br className="hidden sm:block" /> Exactly for Your Body
+                    {t('hero.headline')}
                 </motion.h1>
 
                 {/* Subtitle */}
@@ -50,7 +52,7 @@ export function HeroSection() {
                     transition={{ duration: 0.6, delay: 0.15 }}
                     className="text-base sm:text-lg text-white/75 mb-10 max-w-lg mx-auto leading-relaxed"
                 >
-                    Design your own clothes or order from trusted Georgian tailors
+                    {t('hero.subtitle')}
                 </motion.p>
 
                 {/* Primary CTAs */}
@@ -66,7 +68,7 @@ export function HeroSection() {
                         className="inline-flex items-center gap-2 bg-white text-slate-900 font-semibold px-7 py-3.5 rounded-full hover:bg-slate-100 transition-all text-sm sm:text-base shadow-lg w-full sm:w-auto justify-center"
                     >
                         <ShoppingBag className="w-4 h-4" />
-                        Browse Marketplace
+                        {t('hero.browseMarketplace')}
                     </Link>
 
                     {/* Secondary — ghost */}
@@ -75,7 +77,7 @@ export function HeroSection() {
                         className="inline-flex items-center gap-2 bg-transparent border border-white/50 text-white font-semibold px-7 py-3.5 rounded-full hover:bg-white/10 transition-all text-sm sm:text-base w-full sm:w-auto justify-center"
                     >
                         <Scissors className="w-4 h-4" />
-                        Start Your Design
+                        {t('hero.startYourDesign')}
                         <ArrowRight className="w-4 h-4" />
                     </Link>
                 </motion.div>
@@ -93,7 +95,7 @@ export function HeroSection() {
                         className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white/80 hover:text-white hover:bg-white/15 font-medium px-5 py-2.5 rounded-full transition-all text-sm"
                     >
                         <Upload className="w-3.5 h-3.5" />
-                        Upload Your Own Design
+                        {t('hero.uploadYourDesign')}
                     </Link>
                     <div className="w-12 h-px bg-white/20" />
                 </motion.div>
@@ -110,7 +112,7 @@ export function HeroSection() {
                             <>
                                 <div className="text-center">
                                     <p className="text-white font-bold text-lg sm:text-xl">{stats.tailors_count}</p>
-                                    <p>Local tailor{stats.tailors_count !== 1 ? 's' : ''}</p>
+                                    <p>{stats.tailors_count !== 1 ? t('hero.localTailors') : t('hero.localTailor')}</p>
                                 </div>
                             </>
                         )}
@@ -121,7 +123,7 @@ export function HeroSection() {
                             <>
                                 <div className="text-center">
                                     <p className="text-white font-bold text-lg sm:text-xl">{stats.orders_count}</p>
-                                    <p>Order{stats.orders_count !== 1 ? 's' : ''} fulfilled</p>
+                                    <p>{stats.orders_count !== 1 ? t('hero.ordersFulfilled') : t('hero.orderFulfilled')}</p>
                                 </div>
                             </>
                         )}
@@ -132,7 +134,7 @@ export function HeroSection() {
                                 )}
                                 <div className="text-center">
                                     <p className="text-white font-bold text-lg sm:text-xl">{stats.avg_rating}★</p>
-                                    <p>Average rating</p>
+                                    <p>{t('hero.averageRating')}</p>
                                 </div>
                             </>
                         )}

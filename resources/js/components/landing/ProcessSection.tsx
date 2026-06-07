@@ -1,28 +1,31 @@
 import { motion } from 'motion/react';
 import { Shirt, Scissors, ShoppingBag } from 'lucide-react';
-
-const steps = [
-    {
-        icon: Shirt,
-        number: 1,
-        title: 'Choose or Design',
-        description: 'Browse ready-made designs from local tailors, or start from scratch with our designer tool.',
-    },
-    {
-        icon: Scissors,
-        number: 2,
-        title: 'Tailor Creates It',
-        description: 'Your tailor reviews your order, confirms details with you, then crafts your garment by hand.',
-    },
-    {
-        icon: ShoppingBag,
-        number: 3,
-        title: 'Delivered to You',
-        description: 'Your custom garment is delivered straight to your door. Guaranteed to fit.',
-    },
-];
+import { useTranslation } from 'react-i18next';
 
 export function ProcessSection() {
+    const { t } = useTranslation();
+
+    const steps = [
+        {
+            icon: Shirt,
+            number: 1,
+            title: t('process.step1Title'),
+            description: t('process.step1Desc'),
+        },
+        {
+            icon: Scissors,
+            number: 2,
+            title: t('process.step2Title'),
+            description: t('process.step2Desc'),
+        },
+        {
+            icon: ShoppingBag,
+            number: 3,
+            title: t('process.step3Title'),
+            description: t('process.step3Desc'),
+        },
+    ];
+
     return (
         <section id="how-it-works" className="py-16 md:py-24 bg-slate-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -33,9 +36,9 @@ export function ProcessSection() {
                     transition={{ duration: 0.5 }}
                     className="text-center mb-16"
                 >
-                    <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">How It Works</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{t('process.sectionTitle')}</h2>
                     <p className="text-slate-500 text-lg max-w-xl mx-auto">
-                        From idea to finished garment in four simple steps.
+                        {t('process.sectionSubtitle')}
                     </p>
                 </motion.div>
 

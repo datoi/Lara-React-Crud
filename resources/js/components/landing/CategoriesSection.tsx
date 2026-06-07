@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router';
 import { Sparkles, Shirt, Scissors, Wind, Star, HardHat } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface CategoryApi {
     id: number;
@@ -11,53 +12,54 @@ interface CategoryApi {
     sample_image: string | null;
 }
 
-const CATEGORIES = [
-    {
-        key: 'dresses',
-        label: 'Dresses',
-        description: 'Mini, Midi, Maxi - designed for you',
-        Icon: Sparkles,
-        fallback: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80',
-    },
-    {
-        key: 'shirts',
-        label: 'Shirts',
-        description: 'Custom fit, any style',
-        Icon: Shirt,
-        fallback: 'https://images.unsplash.com/photo-1603252109303-2751441dd157?w=800&q=80',
-    },
-    {
-        key: 'pants',
-        label: 'Pants',
-        description: 'Perfect fit for every occasion',
-        Icon: Scissors,
-        fallback: 'https://images.unsplash.com/photo-1594938298603-c8148c4b4d2f?w=800&q=80',
-    },
-    {
-        key: 'jackets',
-        label: 'Jackets',
-        description: 'Stylish and tailored',
-        Icon: Wind,
-        fallback: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&q=80',
-    },
-    {
-        key: 'scarves',
-        label: 'Scarves',
-        description: 'Unique patterns and fabrics',
-        Icon: Star,
-        fallback: 'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=800&q=80',
-    },
-    {
-        key: 'hats',
-        label: 'Hats',
-        description: 'Personalized headwear',
-        Icon: HardHat,
-        fallback: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800&q=80',
-    },
-];
-
 export function CategoriesSection() {
     const [apiData, setApiData] = useState<CategoryApi[]>([]);
+    const { t } = useTranslation();
+
+    const CATEGORIES = [
+        {
+            key: 'dresses',
+            label: t('categories.dressesLabel'),
+            description: t('categories.dressesDesc'),
+            Icon: Sparkles,
+            fallback: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80',
+        },
+        {
+            key: 'shirts',
+            label: t('categories.shirtsLabel'),
+            description: t('categories.shirtsDesc'),
+            Icon: Shirt,
+            fallback: 'https://images.unsplash.com/photo-1603252109303-2751441dd157?w=800&q=80',
+        },
+        {
+            key: 'pants',
+            label: t('categories.pantsLabel'),
+            description: t('categories.pantsDesc'),
+            Icon: Scissors,
+            fallback: 'https://images.unsplash.com/photo-1594938298603-c8148c4b4d2f?w=800&q=80',
+        },
+        {
+            key: 'jackets',
+            label: t('categories.jacketsLabel'),
+            description: t('categories.jacketsDesc'),
+            Icon: Wind,
+            fallback: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&q=80',
+        },
+        {
+            key: 'scarves',
+            label: t('categories.scarvesLabel'),
+            description: t('categories.scarvesDesc'),
+            Icon: Star,
+            fallback: 'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=800&q=80',
+        },
+        {
+            key: 'hats',
+            label: t('categories.hatsLabel'),
+            description: t('categories.hatsDesc'),
+            Icon: HardHat,
+            fallback: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800&q=80',
+        },
+    ];
 
     useEffect(() => {
         fetch('/api/categories')
@@ -81,9 +83,9 @@ export function CategoriesSection() {
                     className="text-center mb-8"
                 >
                     <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-3">
-                        Clothing Categories
+                        {t('categories.sectionTitle')}
                     </h2>
-                    <p className="text-slate-500">Choose from a wide range of clothing types</p>
+                    <p className="text-slate-500">{t('categories.sectionSubtitle')}</p>
                 </motion.div>
 
                 {/* 3×2 grid */}
@@ -115,7 +117,7 @@ export function CategoriesSection() {
                                 {/* Coming Soon badge */}
                                 {isEmpty && (
                                     <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm border border-white/30 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full">
-                                        Coming Soon
+                                        {t('categories.comingSoon')}
                                     </div>
                                 )}
 
@@ -129,14 +131,14 @@ export function CategoriesSection() {
 
                                     {isEmpty ? (
                                         <span className="inline-flex items-center justify-center bg-white/10 border border-white/20 text-white/50 text-xs font-medium px-3 py-1.5 rounded-lg w-fit cursor-not-allowed select-none">
-                                            Notify Me
+                                            {t('categories.notifyMe')}
                                         </span>
                                     ) : (
                                         <Link
                                             to={`/marketplace?category=${cat.key}`}
                                             className="inline-flex items-center justify-center bg-white/15 backdrop-blur-sm border border-white/30 text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-white hover:text-slate-900 transition-all w-fit"
                                         >
-                                            Design Yours
+                                            {t('categories.designYours')}
                                         </Link>
                                     )}
                                 </div>

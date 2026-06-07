@@ -5,7 +5,7 @@ import { FeaturesSection } from '../components/landing/FeaturesSection';
 import { ProcessSection } from '../components/landing/ProcessSection';
 import { SizeFitSection } from '../components/landing/SizeFitSection';
 import { LocalTailorsSection } from '../components/landing/LocalTailorsSection';
-import { CategoriesSection } from '../components/landing/CategoriesSection';
+import { MarketplaceCarousel } from '../components/landing/MarketplaceCarousel';
 import { GuaranteeSection } from '../components/landing/GuaranteeSection';
 import { CTASection } from '../components/landing/CTASection';
 import { FAQSection } from '../components/landing/FAQSection';
@@ -34,9 +34,9 @@ export default function Landing() {
             </Helmet>
             <Navigation />
             <HeroSection />
+            <MarketplaceCarousel />
             <FeaturesSection />
             <ProcessSection />
-            <CategoriesSection />
             <SizeFitSection />
             <LocalTailorsSection />
             <GuaranteeSection />

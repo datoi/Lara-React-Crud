@@ -2,12 +2,39 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { Menu, X, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
 import { NotificationBell } from '../NotificationBell';
+
+function LanguageToggle({ scrolled }: { scrolled: boolean }) {
+    const { i18n } = useTranslation();
+    const isKa = i18n.language === 'ka';
+
+    const toggle = () => {
+        const next = isKa ? 'en' : 'ka';
+        i18n.changeLanguage(next);
+        localStorage.setItem('kere_lang', next);
+    };
+
+    return (
+        <button
+            onClick={toggle}
+            className={`text-xs font-semibold px-2.5 py-1 rounded-md border transition-colors ${
+                scrolled
+                    ? 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                    : 'border-white/30 text-white/80 hover:bg-white/10'
+            }`}
+            title={isKa ? 'Switch to English' : 'ქართულზე გადართვა'}
+        >
+            {isKa ? 'EN' : 'ქართ'}
+        </button>
+    );
+}
 
 export function Navigation() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [scrolled, setScrolled]     = useState(false);
+    const { t } = useTranslation();
     const user  = getAuthToken() ? getAuthUser() : null;
     useEffect(() => {
         function onScroll() {
@@ -33,19 +60,19 @@ export function Navigation() {
                     {/* Desktop center links */}
                     <div className="hidden md:flex items-center gap-8">
                         <a href="#how-it-works" className={`text-sm transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
-                            How It Works
+                            {t('nav.howItWorks')}
                         </a>
                         <a href="#categories" className={`text-sm transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
-                            Categories
+                            {t('nav.categories')}
                         </a>
                         <a href="#faq" className={`text-sm transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
-                            FAQ
+                            {t('nav.faq')}
                         </a>
                         <Link
                             to="/partners"
                             className={`text-sm font-medium transition-colors ${scrolled ? 'text-slate-500 hover:text-slate-900' : 'text-white/60 hover:text-white/90'}`}
                         >
-                            For Tailors
+                            {t('nav.forTailors')}
                         </Link>
                     </div>
 
@@ -75,16 +102,18 @@ export function Navigation() {
                                     to="/login/customer"
                                     className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${scrolled ? 'text-slate-700 border border-slate-300 hover:bg-slate-50' : 'text-white border border-white/40 hover:bg-white/10'}`}
                                 >
-                                    Sign In
+                                    {t('nav.signIn')}
                                 </Link>
                                 <Link
                                     to="/design"
                                     className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${scrolled ? 'bg-slate-900 text-white hover:bg-slate-700' : 'bg-white text-slate-900 hover:bg-white/90'}`}
                                 >
-                                    Start Designing
+                                    {t('nav.startDesigning')}
                                 </Link>
                             </>
                         )}
+                        <div className={`w-px h-5 mx-2 ${scrolled ? 'bg-slate-300' : 'bg-white/25'}`} />
+                        <LanguageToggle scrolled={scrolled} />
                     </div>
 
                     {/* Mobile toggle */}
@@ -108,9 +137,9 @@ export function Navigation() {
                     >
                         <div className="px-4 py-4 space-y-2">
                             {[
-                                { to: '#how-it-works', label: 'How It Works' },
-                                { to: '#categories',   label: 'Categories' },
-                                { to: '#faq',          label: 'FAQ' },
+                                { to: '#how-it-works', label: t('nav.howItWorks') },
+                                { to: '#categories',   label: t('nav.categories') },
+                                { to: '#faq',          label: t('nav.faq') },
                             ].map(link => (
                                 <a
                                     key={link.to}
@@ -126,8 +155,13 @@ export function Navigation() {
                                 onClick={() => setMobileOpen(false)}
                                 className="block px-3 py-2 rounded-lg text-white/60 hover:bg-white/10 hover:text-white transition-colors text-sm"
                             >
-                                For Tailors
+                                {t('nav.forTailors')}
                             </Link>
+
+                            {/* Language toggle in mobile */}
+                            <div className="pt-1 pb-1">
+                                <LanguageToggle scrolled={false} />
+                            </div>
 
                             {user ? (
                                 <div className="pt-2">
@@ -147,14 +181,14 @@ export function Navigation() {
                                         onClick={() => setMobileOpen(false)}
                                         className="flex-1 text-center border border-white/30 text-white px-4 py-2.5 rounded-lg hover:bg-white/10 transition-colors text-sm font-medium"
                                     >
-                                        Sign In
+                                        {t('nav.signIn')}
                                     </Link>
                                     <Link
                                         to="/design"
                                         onClick={() => setMobileOpen(false)}
                                         className="flex-1 text-center bg-white text-slate-900 px-4 py-2.5 rounded-lg hover:bg-white/90 transition-colors text-sm font-medium"
                                     >
-                                        Start Designing
+                                        {t('nav.startDesigning')}
                                     </Link>
                                 </div>
                             )}

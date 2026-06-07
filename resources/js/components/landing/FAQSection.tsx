@@ -2,37 +2,12 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, X, Loader2, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
 import { Button } from '../ui/button';
 
-const faqs = [
-    {
-        q: 'How do I place a custom clothing order?',
-        a: "Browse the marketplace to find a tailor whose style matches yours, or use our custom designer to describe exactly what you want. Then submit your order and we'll connect you with the right tailor.",
-    },
-    {
-        q: "What if the finished item doesn't fit?",
-        a: "Every order includes a free revision. If there's a fit issue, your tailor will adjust it at no extra cost. If you're still not satisfied, we offer a full refund.",
-    },
-    {
-        q: 'How long does an order take?',
-        a: "Most orders are completed within 5–14 business days depending on complexity. You'll see the estimated delivery time before confirming your order.",
-    },
-    {
-        q: 'Can I provide my own measurements?',
-        a: 'Yes! Our customization forms let you enter exact measurements (chest, waist, hips, length, inseam) in centimeters for a perfect fit.',
-    },
-    {
-        q: 'Do you deliver outside Tbilisi?',
-        a: 'Yes. We deliver to all major cities across Georgia. Delivery time may vary by location.',
-    },
-    {
-        q: 'How do I become a tailor on Kere?',
-        a: 'Click "Sign In" in the navigation and choose the tailor option. Our team will review your application and onboard you within 2–3 business days.',
-    },
-];
-
 function SupportModal({ onClose }: { onClose: () => void }) {
+    const { t } = useTranslation();
     const user    = getAuthUser();
     const token   = getAuthToken();
     const [subject,    setSubject]    = useState('');
@@ -42,8 +17,8 @@ function SupportModal({ onClose }: { onClose: () => void }) {
     const [error,      setError]      = useState('');
 
     const handleSend = async () => {
-        if (!subject.trim()) { setError('Please enter a subject.'); return; }
-        if (!message.trim()) { setError('Please enter a message.'); return; }
+        if (!subject.trim()) { setError(t('faq.enterSubject')); return; }
+        if (!message.trim()) { setError(t('faq.enterMessage')); return; }
 
         setSending(true);
         setError('');
@@ -59,13 +34,13 @@ function SupportModal({ onClose }: { onClose: () => void }) {
             });
             if (!res.ok) {
                 const d = await res.json();
-                setError(d.message ?? 'Something went wrong.');
+                setError(d.message ?? t('faq.somethingWentWrong'));
                 return;
             }
             setSent(true);
             setTimeout(onClose, 2200);
         } catch {
-            setError('Network error. Please try again.');
+            setError(t('faq.networkError'));
         } finally {
             setSending(false);
         }
@@ -90,7 +65,7 @@ function SupportModal({ onClose }: { onClose: () => void }) {
             >
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                    <h3 className="font-bold text-slate-900">Email Support</h3>
+                    <h3 className="font-bold text-slate-900">{t('faq.emailSupport')}</h3>
                     <button
                         onClick={onClose}
                         className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
@@ -108,14 +83,14 @@ function SupportModal({ onClose }: { onClose: () => void }) {
                         >
                             <CheckCircle className="w-14 h-14 text-slate-700 mb-4" />
                         </motion.div>
-                        <p className="font-semibold text-slate-900 mb-1">Message Sent!</p>
-                        <p className="text-sm text-slate-500">Our support team will get back to you shortly.</p>
+                        <p className="font-semibold text-slate-900 mb-1">{t('faq.messageSent')}</p>
+                        <p className="text-sm text-slate-500">{t('faq.messageSentDesc')}</p>
                     </div>
                 ) : (
                     <div className="p-5 space-y-4">
                         {/* From — read-only */}
                         <div>
-                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">From</label>
+                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">{t('faq.from')}</label>
                             <input
                                 type="email"
                                 value={user?.email ?? ''}
@@ -126,10 +101,10 @@ function SupportModal({ onClose }: { onClose: () => void }) {
 
                         {/* Subject */}
                         <div>
-                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Subject</label>
+                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">{t('faq.subject')}</label>
                             <input
                                 type="text"
-                                placeholder="How can we help?"
+                                placeholder={t('faq.subjectPlaceholder')}
                                 value={subject}
                                 onChange={e => setSubject(e.target.value)}
                                 className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
@@ -138,10 +113,10 @@ function SupportModal({ onClose }: { onClose: () => void }) {
 
                         {/* Message */}
                         <div>
-                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">Message</label>
+                            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-1.5">{t('faq.message')}</label>
                             <textarea
                                 rows={5}
-                                placeholder="Describe your issue or question in detail…"
+                                placeholder={t('faq.messagePlaceholder')}
                                 value={message}
                                 onChange={e => setMessage(e.target.value)}
                                 maxLength={5000}
@@ -159,7 +134,7 @@ function SupportModal({ onClose }: { onClose: () => void }) {
                                 onClick={onClose}
                                 disabled={sending}
                             >
-                                Cancel
+                                {t('faq.cancel')}
                             </Button>
                             <Button
                                 variant="default"
@@ -168,7 +143,7 @@ function SupportModal({ onClose }: { onClose: () => void }) {
                                 disabled={sending}
                             >
                                 {sending && <Loader2 className="w-4 h-4 animate-spin" />}
-                                {sending ? 'Sending…' : 'Send'}
+                                {sending ? t('faq.sending') : t('faq.send')}
                             </Button>
                         </div>
                     </div>
@@ -179,9 +154,19 @@ function SupportModal({ onClose }: { onClose: () => void }) {
 }
 
 export function FAQSection() {
-    const [open,          setOpen]          = useState<number | null>(null);
-    const [supportOpen,   setSupportOpen]   = useState(false);
+    const { t } = useTranslation();
+    const [open,        setOpen]        = useState<number | null>(null);
+    const [supportOpen, setSupportOpen] = useState(false);
     const navigate = useNavigate();
+
+    const faqs = [
+        { q: t('faq.q1'), a: t('faq.a1') },
+        { q: t('faq.q2'), a: t('faq.a2') },
+        { q: t('faq.q3'), a: t('faq.a3') },
+        { q: t('faq.q4'), a: t('faq.a4') },
+        { q: t('faq.q5'), a: t('faq.a5') },
+        { q: t('faq.q6'), a: t('faq.a6') },
+    ];
 
     const handleEmailSupport = () => {
         const user = getAuthUser();
@@ -206,8 +191,8 @@ export function FAQSection() {
                     <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center mx-auto mb-5 text-2xl">
                         ❓
                     </div>
-                    <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Frequently Asked Questions</h2>
-                    <p className="text-slate-500">Everything you need to know about Kere.</p>
+                    <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{t('faq.sectionTitle')}</h2>
+                    <p className="text-slate-500">{t('faq.sectionSubtitle')}</p>
                 </motion.div>
 
                 <div className="space-y-3">
@@ -259,19 +244,19 @@ export function FAQSection() {
                     transition={{ duration: 0.5 }}
                     className="mt-10 bg-white border border-slate-200 rounded-2xl p-8 text-center"
                 >
-                    <p className="font-semibold text-slate-900 text-lg mb-2">Still have questions?</p>
+                    <p className="font-semibold text-slate-900 text-lg mb-2">{t('faq.stillHaveQuestions')}</p>
                     <p className="text-slate-500 text-sm mb-6">
-                        Our support team is here to help you with any questions or concerns.
+                        {t('faq.stillHaveQuestionsDesc')}
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
                         <button
                             onClick={handleEmailSupport}
                             className="bg-slate-900 text-white text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-700 transition-colors"
                         >
-                            Email Support
+                            {t('faq.emailSupport')}
                         </button>
                         <button className="border border-slate-300 text-slate-700 text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-50 transition-colors">
-                            Live Chat
+                            {t('faq.liveChat')}
                         </button>
                     </div>
                 </motion.div>

@@ -1,25 +1,28 @@
 import { motion } from 'motion/react';
 import { BadgeCheck, Ruler, ShieldCheck } from 'lucide-react';
-
-const guarantees = [
-    {
-        icon: BadgeCheck,
-        title: 'Verified Local Tailors',
-        description: 'Every tailor on Kere is a verified Georgian craftsperson. Made by real local tailors — not factories.',
-    },
-    {
-        icon: Ruler,
-        title: 'Custom-Fit Guarantee',
-        description: "Your garment is made to your exact measurements. If it doesn't fit perfectly, your tailor will adjust it.",
-    },
-    {
-        icon: ShieldCheck,
-        title: 'Quality Assurance',
-        description: 'Every piece is inspected before delivery to ensure it meets our standards.',
-    },
-];
+import { useTranslation } from 'react-i18next';
 
 export function FeaturesSection() {
+    const { t } = useTranslation();
+
+    const guarantees = [
+        {
+            icon: BadgeCheck,
+            title: t('features.verifiedTailorsTitle'),
+            description: t('features.verifiedTailorsDesc'),
+        },
+        {
+            icon: Ruler,
+            title: t('features.customFitTitle'),
+            description: t('features.customFitDesc'),
+        },
+        {
+            icon: ShieldCheck,
+            title: t('features.qualityTitle'),
+            description: t('features.qualityDesc'),
+        },
+    ];
+
     return (
         <section className="py-16 md:py-24 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -31,10 +34,10 @@ export function FeaturesSection() {
                     className="text-center mb-14"
                 >
                     <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-                        The Kere Guarantee
+                        {t('features.sectionTitle')}
                     </h2>
                     <p className="text-slate-500 text-lg max-w-xl mx-auto">
-                        Your peace of mind is our priority
+                        {t('features.sectionSubtitle')}
                     </p>
                 </motion.div>
 

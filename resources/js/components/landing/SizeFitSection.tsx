@@ -1,28 +1,30 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { FileText, Pencil, CheckCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
-
-const features = [
-    {
-        icon: FileText,
-        title: 'Step-by-Step Instructions',
-        description: 'Simple visual guides to help you take accurate measurements at home',
-    },
-    {
-        icon: Pencil,
-        title: 'Standard Sizes Available',
-        description: 'Choose from XS to XL, or provide custom measurements for a perfect fit',
-    },
-    {
-        icon: CheckCircle,
-        title: 'Reduce Sizing Mistakes',
-        description: 'Our guidance helps ensure your garment fits exactly as you want',
-    },
-];
 
 export function SizeFitSection() {
     const [guideOpen, setGuideOpen] = useState(false);
+    const { t } = useTranslation();
+
+    const features = [
+        {
+            icon: FileText,
+            title: t('sizeFit.step1Title'),
+            description: t('sizeFit.step1Desc'),
+        },
+        {
+            icon: Pencil,
+            title: t('sizeFit.step2Title'),
+            description: t('sizeFit.step2Desc'),
+        },
+        {
+            icon: CheckCircle,
+            title: t('sizeFit.step3Title'),
+            description: t('sizeFit.step3Desc'),
+        },
+    ];
 
     return (
         <section className="py-16 md:py-24 bg-white">
@@ -36,10 +38,10 @@ export function SizeFitSection() {
                         transition={{ duration: 0.6 }}
                     >
                         <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-                            Easy Size &amp; Fit Guidance
+                            {t('sizeFit.title')}
                         </h2>
                         <p className="text-slate-500 text-base mb-8 leading-relaxed">
-                            We guide you step-by-step to take accurate body measurements — no experience needed.
+                            {t('sizeFit.subtitle')}
                         </p>
 
                         <div className="space-y-6 mb-8">
@@ -69,7 +71,7 @@ export function SizeFitSection() {
                             onClick={() => setGuideOpen(true)}
                             className="border border-slate-900 text-slate-900 text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-50 transition-colors"
                         >
-                            View Measurement Guide
+                            {t('sizeFit.viewGuide')}
                         </motion.button>
                     </motion.div>
 
@@ -88,9 +90,9 @@ export function SizeFitSection() {
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
                             <p className="text-xs font-semibold uppercase tracking-widest text-slate-300 mb-1">
-                                Professional Guidance
+                                {t('sizeFit.badgeTop')}
                             </p>
-                            <p className="text-white text-lg font-semibold">Get the perfect fit every time</p>
+                            <p className="text-white text-lg font-semibold">{t('sizeFit.badgeBottom')}</p>
                         </div>
                     </motion.div>
                 </div>

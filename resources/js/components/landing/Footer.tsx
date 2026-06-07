@@ -1,57 +1,59 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { MapPin, Phone, Mail, Facebook, Instagram, Twitter, CreditCard } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
 import { EmailSupportModal } from '../EmailSupportModal';
-
-// link type: 'router' = <Link to>, 'hash' = <a href> (scrolls on landing), 'modal' = button
-type FooterLink =
-    | { label: string; type: 'router'; to: string }
-    | { label: string; type: 'hash'; href: string }
-    | { label: string; type: 'modal'; modal: 'size-guide' | 'email-support' };
-
-const footerColumns: { title: string; links: FooterLink[] }[] = [
-    {
-        title: 'Product',
-        links: [
-            { label: 'How It Works', type: 'hash',   href: '/#how-it-works' },
-            { label: 'Categories',   type: 'hash',   href: '/#categories'   },
-            { label: 'Design Gallery', type: 'router', to: '/marketplace'   },
-        ],
-    },
-    {
-        title: 'Company',
-        links: [
-            { label: 'About Us',         type: 'router', to: '/about'            },
-            { label: 'Our Tailors',      type: 'router', to: '/our-tailors'      },
-            { label: 'Tailor Dashboard', type: 'router', to: '/tailor-dashboard' },
-        ],
-    },
-    {
-        title: 'Support',
-        links: [
-            { label: 'Help Center',    type: 'router', to: '/help'           },
-            { label: 'Contact Us',     type: 'router', to: '/contact'        },
-            { label: 'Email Support',  type: 'modal',  modal: 'email-support' },
-            { label: 'Size Guide',     type: 'modal',  modal: 'size-guide'   },
-            { label: 'FAQ',            type: 'hash',   href: '/#faq'         },
-        ],
-    },
-    {
-        title: 'Legal',
-        links: [
-            { label: 'Privacy Policy',    type: 'router', to: '/privacy'       },
-            { label: 'Terms of Service',  type: 'router', to: '/terms'         },
-            { label: 'Refund Policy',     type: 'router', to: '/refund-policy' },
-        ],
-    },
-];
 
 const linkClass = 'text-sm hover:text-white transition-colors';
 
 export function Footer() {
     const [sizeGuideOpen,    setSizeGuideOpen]    = useState(false);
     const [emailSupportOpen, setEmailSupportOpen] = useState(false);
+    const { t } = useTranslation();
+
+    // link type: 'router' = <Link to>, 'hash' = <a href> (scrolls on landing), 'modal' = button
+    type FooterLink =
+        | { label: string; type: 'router'; to: string }
+        | { label: string; type: 'hash'; href: string }
+        | { label: string; type: 'modal'; modal: 'size-guide' | 'email-support' };
+
+    const footerColumns: { title: string; links: FooterLink[] }[] = [
+        {
+            title: t('footer.product'),
+            links: [
+                { label: t('footer.howItWorks'),   type: 'hash',   href: '/#how-it-works' },
+                { label: t('footer.categories'),   type: 'hash',   href: '/#categories'   },
+                { label: t('footer.designGallery'), type: 'router', to: '/marketplace'   },
+            ],
+        },
+        {
+            title: t('footer.company'),
+            links: [
+                { label: t('footer.aboutUs'),         type: 'router', to: '/about'            },
+                { label: t('footer.ourTailors'),      type: 'router', to: '/our-tailors'      },
+                { label: t('footer.tailorDashboard'), type: 'router', to: '/tailor-dashboard' },
+            ],
+        },
+        {
+            title: t('footer.support'),
+            links: [
+                { label: t('footer.helpCenter'),   type: 'router', to: '/help'           },
+                { label: t('footer.contactUs'),    type: 'router', to: '/contact'        },
+                { label: t('footer.emailSupport'), type: 'modal',  modal: 'email-support' },
+                { label: t('footer.sizeGuide'),    type: 'modal',  modal: 'size-guide'   },
+                { label: t('footer.faq'),          type: 'hash',   href: '/#faq'         },
+            ],
+        },
+        {
+            title: t('footer.legal'),
+            links: [
+                { label: t('footer.privacyPolicy'),   type: 'router', to: '/privacy'       },
+                { label: t('footer.termsOfService'),  type: 'router', to: '/terms'         },
+                { label: t('footer.refundPolicy'),    type: 'router', to: '/refund-policy' },
+            ],
+        },
+    ];
 
     return (
         <>
@@ -66,12 +68,12 @@ export function Footer() {
                         <div className="md:col-span-1">
                             <Link to="/" className="text-2xl font-bold text-white">Kere</Link>
                             <p className="mt-3 text-sm leading-relaxed mb-6">
-                                Creating custom clothing that's as unique as you are. Design, customize, and wear your perfect fit.
+                                {t('footer.tagline')}
                             </p>
                             <div className="space-y-2 text-sm">
                                 <div className="flex items-center gap-2">
                                     <MapPin className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                                    <span>Tbilisi, Georgia</span>
+                                    <span>{t('footer.location')}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Phone className="w-4 h-4 text-slate-500 flex-shrink-0" />
@@ -138,9 +140,9 @@ export function Footer() {
 
                     {/* Newsletter */}
                     <div className="py-8 text-center">
-                        <p className="font-semibold text-white mb-1">Stay Updated</p>
+                        <p className="font-semibold text-white mb-1">{t('footer.stayUpdated')}</p>
                         <p className="text-sm text-slate-400 mb-5">
-                            Subscribe to our newsletter for design tips and exclusive offers
+                            {t('footer.newsletterDesc')}
                         </p>
                         <form
                             onSubmit={(e) => e.preventDefault()}
@@ -148,14 +150,14 @@ export function Footer() {
                         >
                             <input
                                 type="email"
-                                placeholder="Your email address"
+                                placeholder={t('footer.emailPlaceholder')}
                                 className="flex-1 bg-slate-800 border border-slate-700 text-white text-sm px-4 py-2.5 rounded-lg placeholder:text-slate-500 focus:outline-none focus:border-slate-500"
                             />
                             <button
                                 type="submit"
                                 className="bg-white text-slate-900 text-sm font-medium px-5 py-2.5 rounded-lg hover:bg-slate-100 transition-colors flex-shrink-0"
                             >
-                                Subscribe
+                                {t('footer.subscribe')}
                             </button>
                         </form>
                     </div>
@@ -165,9 +167,9 @@ export function Footer() {
 
                     {/* Bottom bar */}
                     <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
-                        <span>© {new Date().getFullYear()} Kere. All rights reserved.</span>
+                        <span>© {new Date().getFullYear()} Kere. {t('footer.allRightsReserved')}</span>
                         <div className="flex items-center gap-2 text-slate-500">
-                            <span>We accept:</span>
+                            <span>{t('footer.weAccept')}</span>
                             <div className="flex items-center gap-2">
                                 <div className="border border-slate-700 rounded px-2 py-0.5 text-xs text-slate-300 flex items-center gap-1">
                                     <CreditCard className="w-3 h-3" />

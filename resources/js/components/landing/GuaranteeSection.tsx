@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight, Quote } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Review {
     id: number;
@@ -11,42 +12,45 @@ interface Review {
     avatar?: string;
 }
 
-const STATIC_REVIEWS: Review[] = [
-    {
-        id: -1,
-        comment: 'I sent in my measurements, chose the fabric, and the dress arrived fitting perfectly. Working with a real local tailor made all the difference.',
-        reviewer: 'Nino Beridze',
-        location: 'Tbilisi, Georgia',
-        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&auto=format&fit=crop&crop=face',
-        rating: 5,
-    },
-    {
-        id: -2,
-        comment: "I designed a suit from scratch — fabric, cut, lining — and the tailor followed every detail. Will never buy off-the-rack again.",
-        reviewer: 'Davit Merabishvili',
-        location: 'Batumi, Georgia',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&auto=format&fit=crop&crop=face',
-        rating: 5,
-    },
-    {
-        id: -3,
-        comment: 'The custom notes field let me describe exactly what I wanted. The tailor got it right on the first try. Incredible service.',
-        reviewer: 'Nino Kvaratskhelia',
-        location: 'Kutaisi, Georgia',
-        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&auto=format&fit=crop&crop=face',
-        rating: 5,
-    },
-];
-
 export function GuaranteeSection() {
-    const [reviews, setReviews] = useState<Review[]>(STATIC_REVIEWS);
-    const [active, setActive]   = useState(0);
+    const { t } = useTranslation();
+    const [active, setActive] = useState(0);
+    const [apiReviews, setApiReviews] = useState<Review[]>([]);
+
+    const staticReviews: Review[] = [
+        {
+            id: -1,
+            comment: t('guarantee.review1'),
+            reviewer: 'Nino Beridze',
+            location: 'Tbilisi, Georgia',
+            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&auto=format&fit=crop&crop=face',
+            rating: 5,
+        },
+        {
+            id: -2,
+            comment: t('guarantee.review2'),
+            reviewer: 'Davit Merabishvili',
+            location: 'Batumi, Georgia',
+            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&auto=format&fit=crop&crop=face',
+            rating: 5,
+        },
+        {
+            id: -3,
+            comment: t('guarantee.review3'),
+            reviewer: 'Nino Kvaratskhelia',
+            location: 'Kutaisi, Georgia',
+            avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&auto=format&fit=crop&crop=face',
+            rating: 5,
+        },
+    ];
+
+    const reviews = apiReviews.length > 0 ? apiReviews : staticReviews;
 
     useEffect(() => {
         fetch('/api/reviews/landing')
             .then(r => r.json())
             .then(d => {
-                if (d.reviews?.length) setReviews(d.reviews);
+                if (d.reviews?.length) setApiReviews(d.reviews);
             })
             .catch(() => {});
     }, []);
@@ -69,10 +73,10 @@ export function GuaranteeSection() {
                         className="text-center mb-12"
                     >
                         <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-3">
-                            What Our Customers Say
+                            {t('guarantee.title')}
                         </h2>
                         <p className="text-slate-500">
-                            Real reviews from customers who ordered through Kere
+                            {t('guarantee.subtitle')}
                         </p>
                     </motion.div>
 
@@ -114,7 +118,7 @@ export function GuaranteeSection() {
                                             <p className="text-sm text-slate-500">{current.location}</p>
                                         )}
                                         {!current.location && current.id > 0 && (
-                                            <p className="text-xs text-slate-700 font-medium">✓ Verified Purchase</p>
+                                            <p className="text-xs text-slate-700 font-medium">{t('guarantee.verifiedPurchase')}</p>
                                         )}
                                     </div>
                                 </div>
@@ -157,8 +161,8 @@ export function GuaranteeSection() {
                         transition={{ duration: 0.5, delay: 0.2 }}
                         className="text-center mt-14"
                     >
-                        <p className="text-slate-500 text-sm mb-1">Share your style with us</p>
-                        <p className="text-xl font-bold text-slate-900">#MyKereStyle</p>
+                        <p className="text-slate-500 text-sm mb-1">{t('guarantee.shareStyle')}</p>
+                        <p className="text-xl font-bold text-slate-900">{t('guarantee.hashtag')}</p>
                     </motion.div>
                 </div>
             </section>
