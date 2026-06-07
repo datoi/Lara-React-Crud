@@ -19,6 +19,32 @@ php artisan config:clear
 echo "==> Running migrations..."
 php artisan migrate --force
 
+echo "==> Ensuring admin user credentials..."
+php artisan tinker --execute="
+\$password = env('ADMIN_PASSWORD', 'KERE123');
+\$exists = \DB::table('users')->where('email', 'admin@kere.ge')->exists();
+if (\$exists) {
+    \DB::table('users')->where('email', 'admin@kere.ge')->update([
+        'password'          => Hash::make(\$password),
+        'role'              => 'admin',
+        'email_verified_at' => now(),
+        'updated_at'        => now(),
+    ]);
+    echo 'Admin password synced.' . PHP_EOL;
+} else {
+    \DB::table('users')->insert([
+        'name'              => 'Admin',
+        'email'             => 'admin@kere.ge',
+        'password'          => Hash::make(\$password),
+        'role'              => 'admin',
+        'email_verified_at' => now(),
+        'created_at'        => now(),
+        'updated_at'        => now(),
+    ]);
+    echo 'Admin user created.' . PHP_EOL;
+}
+"
+
 echo "==> Seeding categories and products..."
 php artisan db:seed --force --class=ClothingSeeder
 
