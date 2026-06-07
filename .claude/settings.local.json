@@ -19,7 +19,14 @@
       "Bash(xargs wc:*)",
       "Bash(identify -format \"%f: %wx%h\\\\n\" *.jpg *.png)",
       "Bash(python3 -c ':*)",
-      "Bash(php -r ':*)"
+      "Bash(php -r ':*)",
+      "Bash(xargs sed:*)",
+      "Bash(php -l /c/xampp/htdocs/lara-react-crud/app/Http/Controllers/Api/AuthController.php)",
+      "Bash(php -l /c/xampp/htdocs/lara-react-crud/app/Services/OtpService.php)",
+      "Bash(php -l /c/xampp/htdocs/lara-react-crud/app/Models/Verification.php)",
+      "Bash(php -l /c/xampp/htdocs/lara-react-crud/app/Mail/OtpCode.php)",
+      "Bash(composer require:*)",
+      "Bash(grep -l \"sqlite\\\\|AUTOINCREMENT\\\\|TEXT NOT NULL DEFAULT\" database/migrations/2026_06_03_*.php)"
     ]
   }
 }
