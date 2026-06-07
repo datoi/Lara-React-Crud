@@ -15,4 +15,13 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
+    server: {
+        host: '0.0.0.0',
+        cors: true,
+        hmr: process.env.CODESPACE_NAME ? {
+            host: `${process.env.CODESPACE_NAME}-5173.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`,
+            protocol: 'wss',
+            clientPort: 443,
+        } : undefined,
+    },
 });
