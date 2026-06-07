@@ -71,7 +71,8 @@ export default function RegisterCustomer() {
 
         setSubmitting(true);
         try {
-            const res = await fetch('/api/register/initiate', {
+            // Email verification temporarily disabled — register directly
+            const res = await fetch('/api/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
                 body: JSON.stringify({ ...form, role: 'customer' }),
@@ -92,9 +93,8 @@ export default function RegisterCustomer() {
                 return;
             }
 
-            setVerificationId(data.verification_id);
-            setEmailHint(data.email ?? form.email);
-            setStep('email-otp');
+            saveAuth(data.user as AuthUser, data.token as string);
+            navigate('/customer-dashboard');
         } catch {
             setFormErrors({ general: 'Network error. Please try again.' });
         } finally {
@@ -124,8 +124,8 @@ export default function RegisterCustomer() {
                                 transition={{ duration: 0.35 }}
                                 className="max-w-lg mx-auto"
                             >
-                                {/* Progress */}
-                                <StepProgress current={1 as 1 | 2} />
+                                {/* Progress — hidden while email verification is disabled */}
+                                {/* <StepProgress current={1 as 1 | 2} /> */}
 
                                 <div className="text-center mb-8">
                                     <h1 className="text-3xl font-bold text-slate-900 mb-2">Create your account</h1>
@@ -224,7 +224,7 @@ export default function RegisterCustomer() {
                                         </div>
 
                                         <Button type="submit" disabled={submitting} className="w-full bg-slate-900 hover:bg-slate-700 text-white h-11 mt-2">
-                                            {submitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Sending code…</> : 'Continue'}
+                                            {submitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Creating account…</> : 'Continue'}
                                         </Button>
                                     </form>
                                 </div>
