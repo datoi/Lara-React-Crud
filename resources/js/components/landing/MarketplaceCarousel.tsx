@@ -103,16 +103,24 @@ export function MarketplaceCarousel() {
             if (!containerRef.current) return;
             const newVc = getVC();
             const newCW = containerRef.current.offsetWidth / newVc;
+            if (newCW === 0) return;
             vcRef.current   = newVc;
             cardWRef.current = newCW;
             setVc(newVc);
             setCardW(newCW);
-            // Reposition without animation after resize
             x.set(-(idxRef.current + newVc) * newCW);
         };
         measure();
+        // Retry after paint in case layout isn't ready yet
+        const t = setTimeout(measure, 100);
+        const ro = new ResizeObserver(measure);
+        if (containerRef.current) ro.observe(containerRef.current);
         window.addEventListener('resize', measure);
-        return () => window.removeEventListener('resize', measure);
+        return () => {
+            clearTimeout(t);
+            ro.disconnect();
+            window.removeEventListener('resize', measure);
+        };
     }, [x]);
 
     // ── set initial position when products arrive ────────────────────────────
