@@ -457,19 +457,31 @@ closeCart(): void
 
 ## 7. Deployment
 
+### External Services
+
+| Service | Purpose | Account |
+|---|---|---|
+| **Railway** | App hosting — runs PHP server, PostgreSQL database, background queue worker | railway.com |
+| **Cloudflare** | DNS management + proxy for `kereforyou.com` — connects domain to Railway, provides CDN and DDoS protection | cloudflare.com |
+| **Resend** | Transactional email — sends OTP verification codes via HTTP API (not SMTP, which Railway blocks). Domain `kereforyou.com` is verified on Resend. | resend.com |
+
+**Why Resend over Gmail SMTP:** Railway blocks all outbound SMTP ports (465 and 587). Resend uses HTTP (port 443) which is never blocked. The native `resend/resend-laravel` package is installed — set `MAIL_MAILER=resend` and `RESEND_API_KEY`.
+
+**Domain setup:** `kereforyou.com` is registered on Cloudflare Registrar. DNS is managed in Cloudflare. Railway is connected via CNAME auto-configured through Railway's Cloudflare integration. Resend domain verification DNS records are also in Cloudflare.
+
 ### Railway via Nixpacks
 
 **Files involved:**
 - `nixpacks.toml` — PHP 8.3, Node.js 20, required extensions
 - `Procfile` — `web: bash start.sh`
-- `start.sh` — Runs migrations, starts server
+- `start.sh` — Clears config cache, runs migrations, starts server
 
-**Required PHP extensions:** `pdo`, `pdo_sqlite`, `pdo_mysql`, `mbstring`, `tokenizer`, `xml`, `ctype`, `fileinfo`, `openssl`, `curl`
+**Required PHP extensions:** `pdo`, `pdo_pgsql`, `pgsql`, `mbstring`, `tokenizer`, `xml`, `ctype`, `fileinfo`, `openssl`, `curl`
 
 **Build phases:**
 1. `composer install --no-dev --optimize-autoloader`
 2. `npm ci && npm run build`
-3. `php artisan migrate --force`
+3. `php artisan config:clear && php artisan migrate --force`
 
 **Key env vars for Railway:**
 
@@ -477,11 +489,16 @@ closeCart(): void
 |---|---|
 | `APP_KEY` | Laravel encryption key (required) |
 | `APP_ENV` | Set to `production` |
-| `APP_URL` | Full Railway URL (for HTTPS termination) |
-| `DB_CONNECTION` | `sqlite` (default) or `mysql` |
+| `APP_URL` | `https://kereforyou.com` |
+| `DATABASE_URL` | PostgreSQL connection string (auto-set by Railway Postgres addon) |
 | `TRUSTED_PROXIES` | `*` — Railway terminates HTTPS at proxy layer |
+| `MAIL_MAILER` | `resend` |
+| `RESEND_API_KEY` | Resend API key (get from resend.com/api-keys) |
+| `MAIL_FROM_ADDRESS` | `noreply@kereforyou.com` |
+| `MAIL_FROM_NAME` | `Kere` |
+| `ADMIN_PASSWORD` | Admin panel password (synced on every deploy) |
 
-**HTTPS Note:** Railway terminates SSL at the load balancer. The app must trust all proxies (`TRUSTED_PROXIES=*`) to correctly detect HTTPS and generate correct URLs. Set in `TrustProxies` middleware or `AppServiceProvider`.
+**HTTPS Note:** Railway terminates SSL at the load balancer. The app must trust all proxies (`TRUSTED_PROXIES=*`) to correctly detect HTTPS and generate correct URLs.
 
 ---
 
@@ -538,6 +555,26 @@ Duration: only `0.5` or `0.6`. Delays: increments of `0.1` or `0.2`. No spring o
 ## 9. Project Evolution & Logic Log
 
 All features and fixes are logged here in reverse chronological order.
+
+---
+
+### [2026-06-07] Production Email + Custom Domain Setup
+
+**What was done:** Fixed email OTP delivery on Railway deployment. Purchased and connected `kereforyou.com` domain.
+
+**Problem:** Railway blocks all outbound SMTP ports (465 and 587). Gmail and Resend SMTP both timed out. Silent catch block in `AuthController::registerInitiate()` was swallowing the exception and returning "code sent" even when email failed.
+
+**Fix:** Installed `resend/resend-laravel` package which uses Resend's HTTP API (port 443, never blocked). Set `MAIL_MAILER=resend` and `RESEND_API_KEY` in Railway env vars.
+
+**Domain:** `kereforyou.com` registered on Cloudflare Registrar. Connected to Railway via one-click Cloudflare DNS integration. Domain verified on Resend — `MAIL_FROM_ADDRESS=noreply@kereforyou.com`.
+
+**Where the logic is:**
+- `composer.json` / `composer.lock` — `resend/resend-laravel` package
+- `config/mail.php` — `resend` mailer already defined (Laravel built-in)
+- Railway env vars: `MAIL_MAILER=resend`, `RESEND_API_KEY`, `MAIL_FROM_ADDRESS=noreply@kereforyou.com`
+- Cloudflare: DNS for `kereforyou.com` (CNAME → Railway, plus Resend DKIM/SPF/DMARC records)
+
+**The Hook:** Resend free tier (3,000 emails/month) is sufficient for MVP. If volume grows, upgrade Resend plan. Do NOT switch back to SMTP — Railway permanently blocks those ports.
 
 ---
 
