@@ -128,10 +128,20 @@ export function MarketplaceCarousel() {
 
     // ── set initial position when products arrive ────────────────────────────
     useEffect(() => {
-        if (products.length > 0 && cardWRef.current > 0) {
-            x.set(-vcRef.current * cardWRef.current);
+        if (products.length === 0) return;
+        const apply = () => {
+            if (!containerRef.current) return;
+            const newVc = getVC();
+            const newCW = containerRef.current.offsetWidth / newVc;
+            if (newCW === 0) return;
+            vcRef.current    = newVc;
+            cardWRef.current = newCW;
+            setVc(newVc);
+            setCardW(newCW);
+            x.set(-newVc * newCW);
             idxRef.current = 0;
-        }
+        };
+        requestAnimationFrame(() => requestAnimationFrame(apply));
     }, [products, x]);
 
     const N  = products.length;
