@@ -99,7 +99,7 @@ export function Navigation() {
                         ) : (
                             <>
                                 <Link
-                                    to="/login/customer"
+                                    to="/signin"
                                     className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${scrolled ? 'text-slate-700 border border-slate-300 hover:bg-slate-50' : 'text-white border border-white/40 hover:bg-white/10'}`}
                                 >
                                     {t('nav.signIn')}
@@ -177,7 +177,7 @@ export function Navigation() {
                             ) : (
                                 <div className="flex gap-2 pt-2">
                                     <Link
-                                        to="/login/customer"
+                                        to="/signin"
                                         onClick={() => setMobileOpen(false)}
                                         className="flex-1 text-center border border-white/30 text-white px-4 py-2.5 rounded-lg hover:bg-white/10 transition-colors text-sm font-medium"
                                     >
