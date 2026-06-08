@@ -3,9 +3,8 @@ echo "== Postgres PHP driver =="
 if ! php -m | grep -qi pdo_pgsql; then
   sudo apt-get update -y
   sudo apt-get install -y libpq-dev
-  sudo docker-php-ext-install pdo_pgsql pgsql \
-    || sudo apt-get install -y php-pgsql \
-    || echo "WARN: pdo_pgsql failed"
+  sudo docker-php-ext-install pdo_pgsql || true
+  sudo -E docker-php-ext-enable pdo_pgsql || true
 fi
 
 echo "== composer + npm =="
@@ -28,4 +27,5 @@ done
 echo "== migrate + seed =="
 php artisan migrate:fresh --seed || echo "WARN: migrate failed — run manually"
 php artisan storage:link || true
+
 echo "== done =="
