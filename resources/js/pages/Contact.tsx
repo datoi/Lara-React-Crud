@@ -4,8 +4,10 @@ import { Navigation } from '../components/landing/Navigation';
 import { Footer } from '../components/landing/Footer';
 import { EmailSupportModal } from '../components/EmailSupportModal';
 import { MapPin, Mail, Clock, Send, CheckCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function Contact() {
+    const { t } = useTranslation();
     const [form, setForm] = useState({ name: '', email: '', message: '' });
     const [sent, setSent] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -32,10 +34,8 @@ export default function Contact() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Contact Us</h1>
-                    <p className="text-lg text-slate-500 max-w-2xl">
-                        Have a question, feedback, or need help? We'd love to hear from you.
-                    </p>
+                    <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">{t('contact.title')}</h1>
+                    <p className="text-lg text-slate-500 max-w-2xl">{t('contact.subtitle')}</p>
                 </motion.div>
 
                 <div className="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-16">
@@ -47,14 +47,14 @@ export default function Contact() {
                         className="space-y-8"
                     >
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900 mb-6">Get in Touch</h2>
+                            <h2 className="text-xl font-bold text-slate-900 mb-6">{t('contact.getInTouch')}</h2>
                             <div className="space-y-5">
                                 <div className="flex items-start gap-4">
                                     <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
                                         <Mail className="w-5 h-5 text-slate-700" />
                                     </div>
                                     <div>
-                                        <p className="font-medium text-slate-900">Email</p>
+                                        <p className="font-medium text-slate-900">{t('contact.emailLabel')}</p>
                                         <a href="mailto:dato.tadiashvili13@gmail.com" className="text-slate-500 hover:text-slate-700 transition-colors text-sm">
                                             dato.tadiashvili13@gmail.com
                                         </a>
@@ -62,7 +62,7 @@ export default function Contact() {
                                             onClick={() => setSupportOpen(true)}
                                             className="mt-2 text-xs font-medium text-slate-900 border border-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
                                         >
-                                            Open Email Support
+                                            {t('contact.openEmailSupport')}
                                         </button>
                                     </div>
                                 </div>
@@ -71,8 +71,8 @@ export default function Contact() {
                                         <MapPin className="w-5 h-5 text-slate-700" />
                                     </div>
                                     <div>
-                                        <p className="font-medium text-slate-900">Location</p>
-                                        <p className="text-slate-500 text-sm">Tbilisi, Georgia</p>
+                                        <p className="font-medium text-slate-900">{t('contact.locationLabel')}</p>
+                                        <p className="text-slate-500 text-sm">{t('contact.locationValue')}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
@@ -80,8 +80,8 @@ export default function Contact() {
                                         <Clock className="w-5 h-5 text-slate-700" />
                                     </div>
                                     <div>
-                                        <p className="font-medium text-slate-900">Response Time</p>
-                                        <p className="text-slate-500 text-sm">We reply within 24 hours on business days.</p>
+                                        <p className="font-medium text-slate-900">{t('contact.responseTimeLabel')}</p>
+                                        <p className="text-slate-500 text-sm">{t('contact.responseTimeValue')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -97,24 +97,24 @@ export default function Contact() {
                         {sent ? (
                             <div className="flex flex-col items-center justify-center h-full text-center py-12 border border-slate-200 rounded-2xl">
                                 <CheckCircle className="w-12 h-12 text-slate-700 mb-4" />
-                                <h3 className="text-xl font-bold text-slate-900 mb-2">Message Sent!</h3>
-                                <p className="text-slate-500">Thanks for reaching out. We'll get back to you within 24 hours.</p>
+                                <h3 className="text-xl font-bold text-slate-900 mb-2">{t('contact.sentTitle')}</h3>
+                                <p className="text-slate-500">{t('contact.sentDesc')}</p>
                             </div>
                         ) : (
                             <form onSubmit={handleSubmit} className="space-y-5 border border-slate-200 rounded-2xl p-8">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Name</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('contact.nameLabel')}</label>
                                     <input
                                         type="text"
                                         required
                                         value={form.name}
                                         onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                                         className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-slate-500 transition-colors"
-                                        placeholder="Your name"
+                                        placeholder={t('contact.namePlaceholder')}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('contact.emailFieldLabel')}</label>
                                     <input
                                         type="email"
                                         required
@@ -125,14 +125,14 @@ export default function Contact() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Message</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('contact.messageLabel')}</label>
                                     <textarea
                                         required
                                         rows={5}
                                         value={form.message}
                                         onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
                                         className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-slate-500 transition-colors resize-none"
-                                        placeholder="How can we help you?"
+                                        placeholder={t('contact.messagePlaceholder')}
                                     />
                                 </div>
                                 <button
@@ -141,11 +141,11 @@ export default function Contact() {
                                     className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-60"
                                 >
                                     {submitting ? (
-                                        <span>Sending…</span>
+                                        <span>{t('contact.sending')}</span>
                                     ) : (
                                         <>
                                             <Send className="w-4 h-4" />
-                                            Send Message
+                                            {t('contact.sendMessage')}
                                         </>
                                     )}
                                 </button>

@@ -7,10 +7,12 @@ import { useProductData } from '../hooks/useProductData';
 import { getAuthUser, saveReturnTo } from '../hooks/useAuth';
 import { saveDraft } from '../hooks/useCustomOrderDraft';
 import type { DesignConfiguration } from '../types/customizer';
+import { useTranslation } from 'react-i18next';
 
 export default function CustomizePage() {
     const { slug }   = useParams<{ slug: string }>();
     const navigate   = useNavigate();
+    const { t }      = useTranslation();
     const authUser   = getAuthUser();
 
     const goBack = () => {
@@ -46,9 +48,9 @@ export default function CustomizePage() {
     if (error || !product) {
         return (
             <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
-                <p className="text-slate-500">{error ?? 'Product not found.'}</p>
+                <p className="text-slate-500">{error ?? t('productCustomization.productNotFound')}</p>
                 <Link to="/marketplace" className="text-slate-900 underline text-sm">
-                    Back to Marketplace
+                    {t('productCustomization.backToMarketplace')}
                 </Link>
             </div>
         );
@@ -75,7 +77,7 @@ export default function CustomizePage() {
                         className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        Back
+                        {t('tailorSelect.back')}
                     </button>
                 </div>
             </nav>

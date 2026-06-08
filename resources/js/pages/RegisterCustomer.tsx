@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, Loader2, Mail, CheckCircle2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { saveAuth, type AuthUser } from '../hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -27,22 +28,21 @@ const EMPTY: FormState = {
     password_confirmation: '',
 };
 
-const RESEND_COOLDOWN = 60; // seconds
+const RESEND_COOLDOWN = 60;
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function RegisterCustomer() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [step, setStep] = useState<Step>('form');
 
-    // Step 1 state
     const [form, setForm] = useState<FormState>(EMPTY);
     const [formErrors, setFormErrors] = useState<Partial<FormState & { general: string }>>({});
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm]   = useState(false);
     const [submitting, setSubmitting]     = useState(false);
 
-    // Shared OTP state
     const [verificationId, setVerificationId] = useState('');
     const [emailHint, setEmailHint]           = useState('');
 
@@ -53,14 +53,14 @@ export default function RegisterCustomer() {
 
     function validateForm(): boolean {
         const e: Partial<FormState & { general: string }> = {};
-        if (!form.first_name.trim())  e.first_name = 'Required';
-        if (!form.last_name.trim())   e.last_name  = 'Required';
-        if (!form.email.trim())       e.email      = 'Required';
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Invalid email';
-        if (!form.phone.trim())       e.phone      = 'Required';
-        if (!form.password)           e.password   = 'Required';
-        else if (form.password.length < 8) e.password = 'At least 8 characters';
-        if (form.password !== form.password_confirmation) e.password_confirmation = 'Passwords do not match';
+        if (!form.first_name.trim())  e.first_name = t('register.errorRequired');
+        if (!form.last_name.trim())   e.last_name  = t('register.errorRequired');
+        if (!form.email.trim())       e.email      = t('register.errorRequired');
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = t('register.errorInvalidEmail');
+        if (!form.phone.trim())       e.phone      = t('register.errorRequired');
+        if (!form.password)           e.password   = t('register.errorRequired');
+        else if (form.password.length < 8) e.password = t('register.errorMinPassword');
+        if (form.password !== form.password_confirmation) e.password_confirmation = t('register.errorPasswordMatch');
         setFormErrors(e);
         return Object.keys(e).length === 0;
     }
@@ -87,7 +87,7 @@ export default function RegisterCustomer() {
                     }
                     setFormErrors(mapped);
                 } else {
-                    setFormErrors({ general: data.message ?? 'Registration failed.' });
+                    setFormErrors({ general: data.message ?? t('register.errorRegistrationFailed') });
                 }
                 return;
             }
@@ -96,7 +96,7 @@ export default function RegisterCustomer() {
             setEmailHint(data.email ?? form.email);
             setStep('email-otp');
         } catch {
-            setFormErrors({ general: 'Network error. Please try again.' });
+            setFormErrors({ general: t('register.errorNetwork') });
         } finally {
             setSubmitting(false);
         }
@@ -124,12 +124,11 @@ export default function RegisterCustomer() {
                                 transition={{ duration: 0.35 }}
                                 className="max-w-lg mx-auto"
                             >
-                                {/* Progress */}
                                 <StepProgress current={1 as 1 | 2} />
 
                                 <div className="text-center mb-8">
-                                    <h1 className="text-3xl font-bold text-slate-900 mb-2">Create your account</h1>
-                                    <p className="text-slate-500">Join Kere and start ordering custom clothing.</p>
+                                    <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('register.customerTitle')}</h1>
+                                    <p className="text-slate-500">{t('register.customerSubtitle')}</p>
                                 </div>
 
                                 <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
@@ -142,23 +141,23 @@ export default function RegisterCustomer() {
                                     <form onSubmit={handleFormSubmit} noValidate className="space-y-4">
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-slate-700 mb-1">First Name</label>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.firstName')}</label>
                                                 <input
                                                     type="text"
                                                     value={form.first_name}
                                                     onChange={setField('first_name')}
-                                                    placeholder="Nino"
+                                                    placeholder={t('register.firstNamePlaceholder')}
                                                     className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.first_name ? 'border-slate-400' : 'border-slate-200'}`}
                                                 />
                                                 {formErrors.first_name && <p className="text-xs text-slate-600 mt-1">{formErrors.first_name}</p>}
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-slate-700 mb-1">Last Name</label>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.lastName')}</label>
                                                 <input
                                                     type="text"
                                                     value={form.last_name}
                                                     onChange={setField('last_name')}
-                                                    placeholder="Beridze"
+                                                    placeholder={t('register.lastNamePlaceholder')}
                                                     className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.last_name ? 'border-slate-400' : 'border-slate-200'}`}
                                                 />
                                                 {formErrors.last_name && <p className="text-xs text-slate-600 mt-1">{formErrors.last_name}</p>}
@@ -166,37 +165,37 @@ export default function RegisterCustomer() {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.email')}</label>
                                             <input
                                                 type="email"
                                                 value={form.email}
                                                 onChange={setField('email')}
-                                                placeholder="nino@example.com"
+                                                placeholder={t('register.emailPlaceholder')}
                                                 className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.email ? 'border-slate-400' : 'border-slate-200'}`}
                                             />
                                             {formErrors.email && <p className="text-xs text-slate-600 mt-1">{formErrors.email}</p>}
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.phone')}</label>
                                             <input
                                                 type="tel"
                                                 value={form.phone}
                                                 onChange={setField('phone')}
-                                                placeholder="+995 555 123 456"
+                                                placeholder={t('register.phonePlaceholder')}
                                                 className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.phone ? 'border-slate-400' : 'border-slate-200'}`}
                                             />
                                             {formErrors.phone && <p className="text-xs text-slate-600 mt-1">{formErrors.phone}</p>}
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.password')}</label>
                                             <div className="relative">
                                                 <input
                                                     type={showPassword ? 'text' : 'password'}
                                                     value={form.password}
                                                     onChange={setField('password')}
-                                                    placeholder="Min. 8 characters"
+                                                    placeholder={t('register.passwordPlaceholder')}
                                                     className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.password ? 'border-slate-400' : 'border-slate-200'}`}
                                                 />
                                                 <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -207,13 +206,13 @@ export default function RegisterCustomer() {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-1">Confirm Password</label>
+                                            <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.confirmPassword')}</label>
                                             <div className="relative">
                                                 <input
                                                     type={showConfirm ? 'text' : 'password'}
                                                     value={form.password_confirmation}
                                                     onChange={setField('password_confirmation')}
-                                                    placeholder="Repeat password"
+                                                    placeholder={t('register.confirmPasswordPlaceholder')}
                                                     className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.password_confirmation ? 'border-slate-400' : 'border-slate-200'}`}
                                                 />
                                                 <button type="button" onClick={() => setShowConfirm(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -224,18 +223,20 @@ export default function RegisterCustomer() {
                                         </div>
 
                                         <Button type="submit" disabled={submitting} className="w-full bg-slate-900 hover:bg-slate-700 text-white h-11 mt-2">
-                                            {submitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Sending code…</> : 'Continue'}
+                                            {submitting
+                                                ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />{t('register.sendingCode')}</>
+                                                : t('register.continue')}
                                         </Button>
                                     </form>
                                 </div>
 
                                 <p className="text-center text-sm text-slate-500 mt-5">
-                                    Already have an account?{' '}
-                                    <Link to="/login/customer" className="text-slate-900 font-medium hover:underline">Sign in</Link>
+                                    {t('register.haveAccount')}{' '}
+                                    <Link to="/login/customer" className="text-slate-900 font-medium hover:underline">{t('register.signIn')}</Link>
                                 </p>
                                 <p className="text-center text-sm text-slate-500 mt-2">
-                                    Joining as a tailor?{' '}
-                                    <Link to="/register/tailor" className="text-slate-900 font-medium hover:underline">Register here</Link>
+                                    {t('register.joiningAsTailor')}{' '}
+                                    <Link to="/register/tailor" className="text-slate-900 font-medium hover:underline">{t('register.registerHere')}</Link>
                                 </p>
                             </motion.div>
                         )}
@@ -252,8 +253,8 @@ export default function RegisterCustomer() {
                                 <StepProgress current={2 as 1 | 2} />
                                 <OtpStep
                                     icon={<Mail className="w-6 h-6 text-slate-600" />}
-                                    title="Verify your email"
-                                    description={`We sent a 6-digit code to ${emailHint}`}
+                                    title={t('register.verifyEmailTitle')}
+                                    description={t('register.verifyEmailDesc', { email: emailHint })}
                                     verificationId={verificationId}
                                     otpType="email"
                                     endpoint="/api/register/verify-email"
@@ -266,7 +267,6 @@ export default function RegisterCustomer() {
                                 />
                             </motion.div>
                         )}
-
                     </AnimatePresence>
                 </div>
             </div>
@@ -277,9 +277,10 @@ export default function RegisterCustomer() {
 // ─── Step progress indicator ─────────────────────────────────────────────────
 
 function StepProgress({ current }: { current: 1 | 2 }) {
+    const { t } = useTranslation();
     const steps = [
-        { n: 1, label: 'Details' },
-        { n: 2, label: 'Email' },
+        { n: 1, label: t('register.stepDetails') },
+        { n: 2, label: t('register.stepEmail') },
     ];
     return (
         <div className="flex items-center justify-center gap-2 mb-8">
@@ -306,7 +307,7 @@ function StepProgress({ current }: { current: 1 | 2 }) {
     );
 }
 
-// ─── OTP input step (reused for email + phone) ───────────────────────────────
+// ─── OTP input step ───────────────────────────────────────────────────────────
 
 interface OtpStepProps {
     icon: React.ReactNode;
@@ -321,6 +322,7 @@ interface OtpStepProps {
 }
 
 function OtpStep({ icon, title, description, verificationId, otpType, endpoint, onSuccess, onBack, isLastStep }: OtpStepProps) {
+    const { t } = useTranslation();
     const [digits, setDigits]     = useState(['', '', '', '', '', '']);
     const [error, setError]       = useState('');
     const [loading, setLoading]   = useState(false);
@@ -341,10 +343,7 @@ function OtpStep({ icon, title, description, verificationId, otpType, endpoint, 
         setCooldown(RESEND_COOLDOWN);
         timerRef.current = setInterval(() => {
             setCooldown(c => {
-                if (c <= 1) {
-                    clearInterval(timerRef.current!);
-                    return 0;
-                }
+                if (c <= 1) { clearInterval(timerRef.current!); return 0; }
                 return c - 1;
             });
         }, 1000);
@@ -359,16 +358,11 @@ function OtpStep({ icon, title, description, verificationId, otpType, endpoint, 
         setDigits(next);
         setError('');
         if (val && i < 5) inputRefs.current[i + 1]?.focus();
-        // Auto-submit when all 6 filled
-        if (val && i === 5 && next.every(d => d)) {
-            submitCode(next.join(''));
-        }
+        if (val && i === 5 && next.every(d => d)) submitCode(next.join(''));
     };
 
     const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Backspace' && !digits[i] && i > 0) {
-            inputRefs.current[i - 1]?.focus();
-        }
+        if (e.key === 'Backspace' && !digits[i] && i > 0) inputRefs.current[i - 1]?.focus();
     };
 
     const handlePaste = (e: React.ClipboardEvent) => {
@@ -391,26 +385,21 @@ function OtpStep({ icon, title, description, verificationId, otpType, endpoint, 
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
                 body: JSON.stringify({ verification_id: verificationId, code: codeStr }),
             });
-
             const data = await res.json();
-
             if (res.status === 410) {
-                // Session expired — force back to start
-                setError('Session expired. Please start over.');
+                setError(t('register.sessionExpired'));
                 setTimeout(() => onBack(), 2000);
                 return;
             }
-
             if (!res.ok) {
-                setError(data.message ?? 'Incorrect code. Please try again.');
+                setError(data.message ?? t('register.incorrectCode'));
                 setDigits(['', '', '', '', '', '']);
                 inputRefs.current[0]?.focus();
                 return;
             }
-
             onSuccess(data as Record<string, unknown>);
         } catch {
-            setError('Network error. Please try again.');
+            setError(t('register.errorNetwork'));
         } finally {
             setLoading(false);
         }
@@ -426,19 +415,13 @@ function OtpStep({ icon, title, description, verificationId, otpType, endpoint, 
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
                 body: JSON.stringify({ verification_id: verificationId, type: otpType }),
             });
-
             const data = await res.json();
-
-            if (!res.ok) {
-                setError(data.message ?? 'Could not resend code.');
-                return;
-            }
-
+            if (!res.ok) { setError(data.message ?? t('register.resendFailed')); return; }
             setDigits(['', '', '', '', '', '']);
             inputRefs.current[0]?.focus();
             startCooldown();
         } catch {
-            setError('Network error. Please try again.');
+            setError(t('register.errorNetwork'));
         } finally {
             setResending(false);
         }
@@ -461,7 +444,6 @@ function OtpStep({ icon, title, description, verificationId, otpType, endpoint, 
                     </div>
                 )}
 
-                {/* 6-digit input */}
                 <div className="flex gap-2 justify-center mb-6" onPaste={handlePaste}>
                     {digits.map((d, i) => (
                         <input
@@ -488,8 +470,8 @@ function OtpStep({ icon, title, description, verificationId, otpType, endpoint, 
                     className="w-full bg-slate-900 hover:bg-slate-700 text-white h-11"
                 >
                     {loading
-                        ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />{isLastStep ? 'Creating account…' : 'Verifying…'}</>
-                        : isLastStep ? 'Create Account' : 'Verify'}
+                        ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />{isLastStep ? t('register.creatingAccount') : t('register.verifying')}</>
+                        : isLastStep ? t('register.createAccount') : t('register.verify')}
                 </Button>
 
                 <div className="mt-4 text-center">
@@ -500,21 +482,17 @@ function OtpStep({ icon, title, description, verificationId, otpType, endpoint, 
                         className="text-sm text-slate-500 hover:text-slate-900 disabled:opacity-50 transition-colors"
                     >
                         {resending
-                            ? 'Sending…'
+                            ? t('register.resendSending')
                             : cooldown > 0
-                            ? `Resend in ${cooldown}s`
-                            : "Didn't receive it? Resend"}
+                            ? t('register.resendCooldown', { s: cooldown })
+                            : t('register.resendPrompt')}
                     </button>
                 </div>
             </div>
 
             <div className="mt-5 text-center">
-                <button
-                    type="button"
-                    onClick={onBack}
-                    className="text-sm text-slate-500 hover:text-slate-900 transition-colors"
-                >
-                    ← Back
+                <button type="button" onClick={onBack} className="text-sm text-slate-500 hover:text-slate-900 transition-colors">
+                    ← {t('register.stepDetails')}
                 </button>
             </div>
         </>

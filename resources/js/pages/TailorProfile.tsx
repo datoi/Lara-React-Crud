@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { Navigation } from '../components/landing/Navigation';
 import { Footer } from '../components/landing/Footer';
 import { Star, Briefcase, BadgeCheck, Loader2, ArrowLeft, Package, ShieldCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface TailorData {
     id: number;
@@ -33,6 +34,7 @@ interface ProductCard {
 export default function TailorProfile() {
     const { id }   = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { t }    = useTranslation();
 
     const [tailor,   setTailor]   = useState<TailorData | null>(null);
     const [products, setProducts] = useState<ProductCard[]>([]);
@@ -61,8 +63,8 @@ export default function TailorProfile() {
     if (!tailor) {
         return (
             <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
-                <p className="text-slate-500">Tailor not found.</p>
-                <Link to="/marketplace" className="text-slate-900 underline text-sm">Back to Marketplace</Link>
+                <p className="text-slate-500">{t('tailorProfile.notFound')}</p>
+                <Link to="/marketplace" className="text-slate-900 underline text-sm">{t('tailorProfile.backToMarketplace')}</Link>
             </div>
         );
     }
@@ -78,20 +80,17 @@ export default function TailorProfile() {
             <div className="h-16" />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {/* Back */}
                 <Link to="/marketplace" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors mb-8">
                     <ArrowLeft className="w-4 h-4" />
-                    Back to Marketplace
+                    {t('tailorProfile.backToMarketplace')}
                 </Link>
 
-                {/* Profile header */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                     className="flex flex-col sm:flex-row items-start gap-6 mb-12"
                 >
-                    {/* Avatar */}
                     <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-200 flex-shrink-0 overflow-hidden">
                         {tailor.profile_image ? (
                             <img src={tailor.profile_image} alt={tailor.name} className="w-full h-full object-cover" />
@@ -102,72 +101,64 @@ export default function TailorProfile() {
                         )}
                     </div>
 
-                    {/* Info */}
                     <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">{tailor.name}</h1>
                             {(tailor.reviews_count > 0 || (tailor.years_experience ?? 0) >= 2) && (
                                 <span className="inline-flex items-center gap-1 bg-slate-900 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
                                     <BadgeCheck className="w-3.5 h-3.5" />
-                                    Verified Tailor
+                                    {t('tailorProfile.verifiedTailor')}
                                 </span>
                             )}
                         </div>
-                        {tailor.specialty && (
-                            <p className="text-slate-500 mb-3">{tailor.specialty}</p>
-                        )}
+                        {tailor.specialty && <p className="text-slate-500 mb-3">{tailor.specialty}</p>}
 
-                        {/* Stats row */}
                         <div className="flex flex-wrap gap-4 text-sm mb-4">
                             {tailor.avg_rating !== null && (
                                 <div className="flex items-center gap-1.5">
                                     <Star className="w-4 h-4 fill-slate-700 text-slate-700" />
                                     <span className="font-semibold text-slate-900">{tailor.avg_rating}</span>
-                                    <span className="text-slate-400">({tailor.reviews_count} reviews)</span>
+                                    <span className="text-slate-400">({tailor.reviews_count} {t('tailorProfile.reviews')})</span>
                                 </div>
                             )}
                             <div className="flex items-center gap-1.5 text-slate-500">
                                 <Package className="w-4 h-4" />
-                                <span>{tailor.products_count} designs</span>
+                                <span>{tailor.products_count} {t('tailorProfile.designs')}</span>
                             </div>
                             {tailor.years_experience !== null && (
                                 <div className="flex items-center gap-1.5 text-slate-500">
                                     <Briefcase className="w-4 h-4" />
-                                    <span>{tailor.years_experience} years experience</span>
+                                    <span>{tailor.years_experience} {t('tailorProfile.yearsExp')}</span>
                                 </div>
                             )}
                         </div>
 
-                        {tailor.bio && (
-                            <p className="text-slate-600 leading-relaxed max-w-2xl mb-4">{tailor.bio}</p>
-                        )}
+                        {tailor.bio && <p className="text-slate-600 leading-relaxed max-w-2xl mb-4">{tailor.bio}</p>}
 
-                        {/* Guarantees */}
                         <div className="flex flex-wrap gap-2">
                             <span className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 text-slate-600 text-xs font-medium px-3 py-1.5 rounded-full">
                                 <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
-                                Fit Guarantee
+                                {t('tailorProfile.fitGuarantee')}
                             </span>
                             <span className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 text-slate-600 text-xs font-medium px-3 py-1.5 rounded-full">
                                 <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
-                                Kere-vetted
+                                {t('tailorProfile.kereVetted')}
                             </span>
                             <span className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 text-slate-600 text-xs font-medium px-3 py-1.5 rounded-full">
                                 <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
-                                Tbilisi-based
+                                {t('tailorProfile.tbilisiBased')}
                             </span>
                         </div>
                     </div>
                 </motion.div>
 
-                {/* Products grid */}
                 <div>
                     <h2 className="text-xl font-bold text-slate-900 mb-6">
-                        Designs by {tailor.name}
+                        {t('tailorProfile.designsBy', { name: tailor.name })}
                     </h2>
 
                     {products.length === 0 ? (
-                        <p className="text-slate-400">No designs listed yet.</p>
+                        <p className="text-slate-400">{t('tailorProfile.noDesigns')}</p>
                     ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                             {products.map((product, idx) => (
@@ -181,11 +172,7 @@ export default function TailorProfile() {
                                 >
                                     <div className="aspect-[3/4] overflow-hidden bg-slate-100">
                                         {product.images?.[0] ? (
-                                            <img
-                                                src={product.images[0]}
-                                                alt={product.name}
-                                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                                            />
+                                            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-slate-300 text-4xl">👗</div>
                                         )}
@@ -200,7 +187,7 @@ export default function TailorProfile() {
                                                 <span className="text-xs text-slate-400 ml-1">({product.reviews_count})</span>
                                             </div>
                                         ) : (
-                                            <p className="text-xs text-slate-400 mb-1">No reviews</p>
+                                            <p className="text-xs text-slate-400 mb-1">{t('tailorProfile.noReviews')}</p>
                                         )}
                                         <p className="text-sm font-bold text-slate-900">₾{product.price}</p>
                                     </div>

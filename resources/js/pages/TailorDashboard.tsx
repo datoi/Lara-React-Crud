@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { DashboardHeader } from '../components/tailor/DashboardHeader';
 import { StatsCards } from '../components/tailor/StatsCards';
 import { OrdersList, type TailorOrder } from '../components/tailor/OrdersList';
@@ -12,6 +13,7 @@ import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
 import { getAuthUser, getAuthToken } from '../hooks/useAuth';
 
 export default function TailorDashboard() {
+    const { t } = useTranslation();
     const user  = getAuthUser();
     const token = getAuthToken();
 
@@ -110,7 +112,7 @@ export default function TailorDashboard() {
     const scrollToProfile = () =>
         document.getElementById('profile-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    const greeting = user ? user.first_name : 'Tailor';
+    const greeting = user ? user.first_name : t('tailorDashboard.tailorFallback');
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -127,7 +129,7 @@ export default function TailorDashboard() {
                         className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-lg flex items-center gap-2.5 max-w-sm w-full mx-4"
                     >
                         <CheckCircle className="w-4 h-4 text-slate-300 shrink-0" />
-                        <span className="flex-1">Your product is now live. Customers can start ordering from you.</span>
+                        <span className="flex-1">{t('tailorDashboard.productLive')}</span>
                         <button onClick={() => setProductJustAdded(false)} className="text-slate-300 hover:text-white transition-colors ml-1">
                             <X className="w-4 h-4" />
                         </button>
@@ -142,8 +144,8 @@ export default function TailorDashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                 >
-                    <h1 className="text-2xl font-bold text-slate-900">Welcome back, {greeting} 👋</h1>
-                    <p className="text-slate-500 mt-1">Here's what's happening with your shop today.</p>
+                    <h1 className="text-2xl font-bold text-slate-900">{t('tailorDashboard.welcomeBack', { name: greeting })}</h1>
+                    <p className="text-slate-500 mt-1">{t('tailorDashboard.shopToday')}</p>
                 </motion.div>
 
                 {/* ── Onboarding panel — 0 products ── */}
@@ -181,7 +183,7 @@ export default function TailorDashboard() {
                         transition={{ duration: 0.4, delay: 0.2 }}
                         className="text-xs text-slate-400 text-center"
                     >
-                        Customers are actively searching for custom clothing — keep building your shop.
+                        {t('tailorDashboard.motivationNudge')}
                     </motion.p>
                 )}
 
@@ -230,8 +232,7 @@ export default function TailorDashboard() {
                                 <div className="mb-3 flex items-center gap-2 text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
                                     <span className="text-base">💡</span>
                                     <span>
-                                        <strong>Complete your profile</strong> — tailors with a bio and specialty get
-                                        significantly more visibility in search results.
+                                        <strong>{t('tailorDashboard.completeProfile')}</strong> — {t('tailorDashboard.completeProfileHint')}
                                     </span>
                                 </div>
                             )}

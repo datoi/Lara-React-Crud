@@ -6,16 +6,17 @@ import { ArrowLeft, ArrowRight, Loader2, Upload, X, FileText } from 'lucide-reac
 import { getAuthUser, getAuthToken, saveReturnTo } from '../hooks/useAuth';
 import { saveDraft } from '../hooks/useCustomOrderDraft';
 import { Button } from '../components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 // ─── Garment categories ───────────────────────────────────────────────────────
 
-const CATEGORIES = [
-    { key: 'shirt',      label: 'Shirt / Top',  emoji: '👔' },
-    { key: 'dress',      label: 'Dress',         emoji: '👗' },
-    { key: 'trousers',   label: 'Trousers',      emoji: '👖' },
-    { key: 'jacket',     label: 'Jacket',        emoji: '🧥' },
-    { key: 'skirt',      label: 'Skirt',         emoji: '🩱' },
-    { key: 'coat',       label: 'Coat',          emoji: '🧤' },
+const CATEGORY_KEYS = [
+    { key: 'shirt',    tKey: 'design.cat_shirt',    emoji: '👔' },
+    { key: 'dress',    tKey: 'design.cat_dress',    emoji: '👗' },
+    { key: 'trousers', tKey: 'design.cat_trousers', emoji: '👖' },
+    { key: 'jacket',   tKey: 'design.cat_jacket',   emoji: '🧥' },
+    { key: 'skirt',    tKey: 'design.cat_skirt',    emoji: '🩱' },
+    { key: 'coat',     tKey: 'design.cat_coat',     emoji: '🧤' },
 ];
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf', 'image/svg+xml'];
@@ -50,6 +51,7 @@ function CategoryStep({
     onSelectDesign: (key: string) => void;
     onSelectUpload: () => void;
 }) {
+    const { t } = useTranslation();
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -57,11 +59,11 @@ function CategoryStep({
             transition={{ duration: 0.5 }}
             className="max-w-2xl mx-auto"
         >
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">What do you want to design?</h1>
-            <p className="text-slate-500 mb-8">Choose a garment type to customise it, or upload your own design.</p>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">{t('design.categoryTitle')}</h1>
+            <p className="text-slate-500 mb-8">{t('design.categorySubtitle')}</p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {CATEGORIES.map((cat, i) => (
+                {CATEGORY_KEYS.map((cat, i) => (
                     <motion.button
                         key={cat.key}
                         onClick={() => onSelectDesign(cat.key)}
@@ -72,7 +74,7 @@ function CategoryStep({
                         className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-lg transition-all flex flex-col items-center gap-3 text-center"
                     >
                         <span className="text-4xl">{cat.emoji}</span>
-                        <span className="text-sm font-semibold text-slate-800">{cat.label}</span>
+                        <span className="text-sm font-semibold text-slate-800">{t(cat.tKey)}</span>
                         <ArrowRight className="w-4 h-4 text-slate-300" />
                     </motion.button>
                 ))}
@@ -82,14 +84,14 @@ function CategoryStep({
                     onClick={onSelectUpload}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: CATEGORIES.length * 0.07 }}
+                    transition={{ duration: 0.5, delay: CATEGORY_KEYS.length * 0.07 }}
                     whileHover={{ scale: 1.03 }}
                     className="bg-slate-900 text-white rounded-lg shadow-sm border border-slate-900 p-6 hover:bg-slate-800 hover:shadow-lg transition-all flex flex-col items-center gap-3 text-center"
                 >
                     <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
                         <Upload className="w-5 h-5 text-white" />
                     </div>
-                    <span className="text-sm font-semibold">Upload my design</span>
+                    <span className="text-sm font-semibold">{t('design.uploadMyDesign')}</span>
                     <ArrowRight className="w-4 h-4 text-white/40" />
                 </motion.button>
             </div>
@@ -106,6 +108,7 @@ function UploadTypeStep({
     onSelect: (key: string) => void;
     onBack: () => void;
 }) {
+    const { t } = useTranslation();
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -118,14 +121,14 @@ function UploadTypeStep({
                 className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors mb-6"
             >
                 <ArrowLeft className="w-4 h-4" />
-                Back
+                {t('design.back')}
             </button>
 
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">What type of garment is it?</h1>
-            <p className="text-slate-500 mb-8">This helps us match you with the right tailor.</p>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">{t('design.uploadTypeTitle')}</h1>
+            <p className="text-slate-500 mb-8">{t('design.uploadTypeSubtitle')}</p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {CATEGORIES.map((cat, i) => (
+                {CATEGORY_KEYS.map((cat, i) => (
                     <motion.button
                         key={cat.key}
                         onClick={() => onSelect(cat.key)}
@@ -136,7 +139,7 @@ function UploadTypeStep({
                         className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-lg transition-all flex flex-col items-center gap-3 text-center"
                     >
                         <span className="text-4xl">{cat.emoji}</span>
-                        <span className="text-sm font-semibold text-slate-800">{cat.label}</span>
+                        <span className="text-sm font-semibold text-slate-800">{t(cat.tKey)}</span>
                     </motion.button>
                 ))}
             </div>
@@ -155,6 +158,7 @@ function UploadPanel({
     onContinue: (fileUrl: string, notes: string) => void;
     onBack: () => void;
 }) {
+    const { t } = useTranslation();
     const [fileUrl,     setFileUrl]     = useState<string | null>(null);
     const [previewUrl,  setPreviewUrl]  = useState<string | null>(null);
     const [fileName,    setFileName]    = useState<string | null>(null);
@@ -163,17 +167,18 @@ function UploadPanel({
     const [uploadError, setUploadError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const catLabel = CATEGORIES.find(c => c.key === category)?.label ?? category;
+    const catEntry = CATEGORY_KEYS.find(c => c.key === category);
+    const catLabel = catEntry ? t(catEntry.tKey) : category;
 
     const handleFile = async (file: File) => {
         setUploadError(null);
 
         if (!ALLOWED_TYPES.includes(file.type)) {
-            setUploadError('Please upload a JPG, PNG, PDF, or SVG file.');
+            setUploadError(t('design.errorFileType'));
             return;
         }
         if (file.size > MAX_FILE_SIZE) {
-            setUploadError('File must be under 10 MB.');
+            setUploadError(t('design.errorFileSize'));
             return;
         }
 
@@ -186,7 +191,6 @@ function UploadPanel({
 
         const authToken = getAuthToken();
         if (!authToken) {
-            // Will upload after login — just hold the file reference visually
             return;
         }
 
@@ -201,12 +205,12 @@ function UploadPanel({
             });
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                throw new Error((err as { message?: string }).message ?? 'Upload failed.');
+                throw new Error((err as { message?: string }).message ?? t('design.errorUploadFailed'));
             }
             const data = await res.json() as { file_url: string };
             setFileUrl(data.file_url);
         } catch (err: unknown) {
-            setUploadError(err instanceof Error ? err.message : 'Upload failed.');
+            setUploadError(err instanceof Error ? err.message : t('design.errorUploadFailed'));
             setFileUrl(null);
         } finally {
             setUploading(false);
@@ -235,12 +239,12 @@ function UploadPanel({
                 className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors mb-6"
             >
                 <ArrowLeft className="w-4 h-4" />
-                Back
+                {t('design.back')}
             </button>
 
-            <h1 className="text-2xl font-bold text-slate-900 mb-1">Upload your design</h1>
+            <h1 className="text-2xl font-bold text-slate-900 mb-1">{t('design.uploadTitle')}</h1>
             <p className="text-slate-500 mb-8">
-                Garment type: <span className="font-medium text-slate-700">{catLabel}</span>
+                {t('design.uploadGarmentType')} <span className="font-medium text-slate-700">{catLabel}</span>
             </p>
 
             <div className="space-y-5">
@@ -269,7 +273,7 @@ function UploadPanel({
                     {uploading ? (
                         <div className="flex flex-col items-center gap-2">
                             <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
-                            <p className="text-sm text-slate-500">Uploading…</p>
+                            <p className="text-sm text-slate-500">{t('design.uploading')}</p>
                         </div>
                     ) : fileName ? (
                         <div className="flex flex-col items-center gap-3">
@@ -281,13 +285,13 @@ function UploadPanel({
                                 </div>
                             )}
                             <p className="text-sm font-medium text-slate-800 truncate max-w-xs">{fileName}</p>
-                            {fileUrl && <p className="text-xs text-slate-700">Uploaded successfully</p>}
+                            {fileUrl && <p className="text-xs text-slate-700">{t('design.uploadedSuccess')}</p>}
                             <button
                                 type="button"
                                 onClick={e => { e.stopPropagation(); clearFile(); }}
                                 className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700"
                             >
-                                <X className="w-3 h-3" /> Remove
+                                <X className="w-3 h-3" /> {t('design.remove')}
                             </button>
                         </div>
                     ) : (
@@ -296,8 +300,8 @@ function UploadPanel({
                                 <Upload className="w-6 h-6 text-slate-400" />
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-slate-700">Click to upload or drag and drop</p>
-                                <p className="text-xs text-slate-400 mt-1">JPG, PNG, PDF, SVG · Max 10 MB</p>
+                                <p className="text-sm font-medium text-slate-700">{t('design.dropZoneLabel')}</p>
+                                <p className="text-xs text-slate-400 mt-1">{t('design.dropZoneFormats')}</p>
                             </div>
                         </div>
                     )}
@@ -312,12 +316,12 @@ function UploadPanel({
                 {/* Notes */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Notes for your tailor <span className="text-slate-400 font-normal">(optional)</span>
+                        {t('design.notesLabel')} <span className="text-slate-400 font-normal">{t('design.notesOptional')}</span>
                     </label>
                     <textarea
                         value={notes}
                         onChange={e => setNotes(e.target.value.slice(0, 500))}
-                        placeholder="Describe any special requirements, style preferences, or modifications…"
+                        placeholder={t('design.notesPlaceholder')}
                         rows={4}
                         maxLength={500}
                         className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
@@ -326,7 +330,7 @@ function UploadPanel({
                 </div>
 
                 <Button variant="default" disabled={!canContinue} onClick={() => onContinue(fileUrl ?? '', notes)} className="w-full">
-                    Continue to Select Tailor
+                    {t('design.continueToTailor')}
                     <ArrowRight className="w-4 h-4 ml-1.5" />
                 </Button>
             </div>
@@ -344,11 +348,13 @@ function ProductStep({
     onBack: () => void;
 }) {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading,  setLoading]  = useState(true);
     const [error,    setError]    = useState<string | null>(null);
 
-    const catLabel = CATEGORIES.find(c => c.key === category)?.label ?? category;
+    const catEntry = CATEGORY_KEYS.find(c => c.key === category);
+    const catLabel = catEntry ? t(catEntry.tKey) : category;
 
     useEffect(() => {
         setLoading(true);
@@ -383,11 +389,11 @@ function ProductStep({
                 className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors mb-6"
             >
                 <ArrowLeft className="w-4 h-4" />
-                Back
+                {t('design.back')}
             </button>
 
             <h1 className="text-2xl font-bold text-slate-900 mb-2">{catLabel}</h1>
-            <p className="text-slate-500 mb-8">Choose a style to start customising.</p>
+            <p className="text-slate-500 mb-8">{t('design.chooseStyle')}</p>
 
             {loading && (
                 <div className="flex justify-center py-16">
@@ -399,8 +405,8 @@ function ProductStep({
 
             {!loading && !error && products.length === 0 && (
                 <div className="bg-white rounded-lg border border-slate-200 p-10 text-center">
-                    <p className="text-slate-400 text-sm">No styles available yet for this category.</p>
-                    <p className="text-slate-300 text-xs mt-1">Check back soon.</p>
+                    <p className="text-slate-400 text-sm">{t('design.noStyles')}</p>
+                    <p className="text-slate-300 text-xs mt-1">{t('design.checkBackSoon')}</p>
                 </div>
             )}
 
@@ -426,7 +432,7 @@ function ProductStep({
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center">
                                         <span className="text-4xl opacity-30">
-                                            {CATEGORIES.find(c => c.key === category)?.emoji ?? '👕'}
+                                            {CATEGORY_KEYS.find(c => c.key === category)?.emoji ?? '👕'}
                                         </span>
                                     </div>
                                 )}
@@ -442,7 +448,7 @@ function ProductStep({
                                     <ArrowRight className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" />
                                 </div>
                                 <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                                    <span className="text-xs text-slate-400">Starting from</span>
+                                    <span className="text-xs text-slate-400">{t('design.startingFrom')}</span>
                                     <span className="text-sm font-bold text-slate-900">₾{product.base_price}</span>
                                 </div>
                             </div>
@@ -458,6 +464,7 @@ function ProductStep({
 
 export default function DesignerApp() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [flow, setFlow] = useState<FlowState>({ step: 'category' });
 
     const handleUploadContinue = (fileUrl: string, notes: string) => {
@@ -492,7 +499,7 @@ export default function DesignerApp() {
                     <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">
                         Kere
                     </Link>
-                    <span className="text-xs text-slate-400 hidden sm:block">Custom Design Studio</span>
+                    <span className="text-xs text-slate-400 hidden sm:block">{t('design.studioLabel')}</span>
                 </div>
             </nav>
 

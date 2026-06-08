@@ -6,6 +6,7 @@ import {
     ShoppingBag, Package, Clock, CheckCircle, Truck, X,
     ChevronRight, User, Scissors
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getAuthToken, getAuthUser, clearAuth } from '../hooks/useAuth';
 import { NotificationBell } from '../components/NotificationBell';
 import { ReviewModal } from '../components/ReviewModal';
@@ -58,27 +59,29 @@ interface CustomerOrder {
     has_review: boolean;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Package }> = {
-    pending:    { label: 'Pending',     color: 'bg-slate-100 text-slate-600',  icon: Clock },
-    processing: { label: 'In Progress', color: 'bg-slate-100 text-slate-700',  icon: Scissors },
-    shipped:    { label: 'Shipped',     color: 'bg-slate-100 text-slate-700',  icon: Truck },
-    finished:   { label: 'Finished',    color: 'bg-slate-900 text-white',      icon: CheckCircle },
-    delivered:  { label: 'Delivered',   color: 'bg-slate-900 text-white',      icon: CheckCircle },
-    cancelled:  { label: 'Cancelled',   color: 'bg-slate-200 text-slate-600',  icon: X },
+const STATUS_CONFIG: Record<string, { labelKey: string; color: string; icon: typeof Package }> = {
+    pending:    { labelKey: 'customerDashboard.statusPending',    color: 'bg-slate-100 text-slate-600',  icon: Clock },
+    processing: { labelKey: 'customerDashboard.statusInProgress', color: 'bg-slate-100 text-slate-700',  icon: Scissors },
+    shipped:    { labelKey: 'customerDashboard.statusShipped',    color: 'bg-slate-100 text-slate-700',  icon: Truck },
+    finished:   { labelKey: 'customerDashboard.statusFinished',   color: 'bg-slate-900 text-white',      icon: CheckCircle },
+    delivered:  { labelKey: 'customerDashboard.statusDelivered',  color: 'bg-slate-900 text-white',      icon: CheckCircle },
+    cancelled:  { labelKey: 'customerDashboard.statusCancelled',  color: 'bg-slate-200 text-slate-600',  icon: X },
 };
 
 function StatusBadge({ status }: { status: string }) {
-    const cfg = STATUS_CONFIG[status] ?? { label: status, color: 'bg-slate-100 text-slate-600', icon: Package };
+    const { t } = useTranslation();
+    const cfg = STATUS_CONFIG[status] ?? { labelKey: status, color: 'bg-slate-100 text-slate-600', icon: Package };
     const Icon = cfg.icon;
     return (
         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.color}`}>
             <Icon className="w-3 h-3" />
-            {cfg.label}
+            {STATUS_CONFIG[status] ? t(cfg.labelKey) : status}
         </span>
     );
 }
 
 function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOrder; currentUserId: number; onClose: () => void }) {
+    const { t } = useTranslation();
     const isCustom = order.order_type === 'custom';
     const design = order.custom_design_data;
 
@@ -100,7 +103,7 @@ function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOr
             >
                 <div className="flex items-center justify-between p-5 border-b border-slate-100">
                     <div>
-                        <h3 className="font-semibold text-slate-900">Order #{order.id}</h3>
+                        <h3 className="font-semibold text-slate-900">{t('customerDashboard.orderHash', { id: order.id })}</h3>
                         <p className="text-xs text-slate-400 mt-0.5">
                             {new Date(order.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
                         </p>
@@ -114,26 +117,26 @@ function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOr
                     <div className="flex items-center justify-between">
                         <StatusBadge status={order.status} />
                         {order.tailor_name && (
-                            <span className="text-xs text-slate-500">by <span className="font-medium text-slate-700">{order.tailor_name}</span></span>
+                            <span className="text-xs text-slate-500">{t('customerDashboard.by')} <span className="font-medium text-slate-700">{order.tailor_name}</span></span>
                         )}
                     </div>
 
                     {isCustom && design ? (
                         <div className="space-y-4">
                             <div className="bg-slate-50 rounded-xl p-4">
-                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Custom Design</p>
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.customDesignLabel')}</p>
                                 <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
                                     {(design.garmentType ?? design.clothingType) && (
-                                        <><span className="text-slate-500">Type</span><span className="font-medium text-slate-900 capitalize">{design.garmentType ?? design.clothingType}</span></>
+                                        <><span className="text-slate-500">{t('customerDashboard.typeLabel')}</span><span className="font-medium text-slate-900 capitalize">{design.garmentType ?? design.clothingType}</span></>
                                     )}
                                     {(design.style ?? design.subcategory) && (
-                                        <><span className="text-slate-500">Style</span><span className="font-medium text-slate-900">{design.style ?? design.subcategory}</span></>
+                                        <><span className="text-slate-500">{t('customerDashboard.styleLabel')}</span><span className="font-medium text-slate-900">{design.style ?? design.subcategory}</span></>
                                     )}
                                     {design.fabric && (
-                                        <><span className="text-slate-500">Fabric</span><span className="font-medium text-slate-900">{design.fabric}</span></>
+                                        <><span className="text-slate-500">{t('customerDashboard.fabricLabel')}</span><span className="font-medium text-slate-900">{design.fabric}</span></>
                                     )}
                                     {design.sizeStandard && (
-                                        <><span className="text-slate-500">Size</span><span className="font-medium text-slate-900">{design.sizeStandard}</span></>
+                                        <><span className="text-slate-500">{t('customerDashboard.sizeLabel')}</span><span className="font-medium text-slate-900">{design.sizeStandard}</span></>
                                     )}
                                 </div>
                             </div>
@@ -141,13 +144,13 @@ function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOr
                             {/* Colors */}
                             {(design.baseColor || design.accentColor || design.lighterShade) && (
                                 <div className="bg-slate-50 rounded-xl p-4">
-                                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Color Palette</p>
+                                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.colorPalette')}</p>
                                     <div className="flex gap-2">
                                         {[
-                                            { label: 'Base',   color: design.baseColor },
-                                            { label: 'Accent', color: design.accentColor ?? design.additionalColor },
-                                            { label: 'Light',  color: design.lighterShade },
-                                            { label: 'Dark',   color: design.darkerShade },
+                                            { label: t('customerDashboard.colorBase'),   color: design.baseColor },
+                                            { label: t('customerDashboard.colorAccent'), color: design.accentColor ?? design.additionalColor },
+                                            { label: t('customerDashboard.colorLight'),  color: design.lighterShade },
+                                            { label: t('customerDashboard.colorDark'),   color: design.darkerShade },
                                         ].filter(c => c.color).map(c => (
                                             <div key={c.label} className="flex flex-col items-center gap-1">
                                                 <div className="w-10 h-10 rounded-lg border border-slate-200" style={{ backgroundColor: c.color }} />
@@ -161,7 +164,7 @@ function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOr
                             {/* Notes */}
                             {(design.notes ?? design.designElements?.customNotes) && (
                                 <div className="bg-slate-50 rounded-xl p-4">
-                                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tailor Notes</p>
+                                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('customerDashboard.tailorNotes')}</p>
                                     <p className="text-sm text-slate-600">{design.notes ?? design.designElements?.customNotes}</p>
                                 </div>
                             )}
@@ -180,7 +183,7 @@ function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOr
                                     <div className="flex-1">
                                         <p className="font-medium text-slate-900 text-sm">{item.product_name}</p>
                                         <p className="text-xs text-slate-400 mt-0.5">
-                                            {[item.color && `Color: ${item.color}`, item.size && `Size: ${item.size}`, `Qty: ${item.quantity}`].filter(Boolean).join(' · ')}
+                                            {[item.color && t('customerDashboard.colorLabel', { color: item.color }), item.size && t('customerDashboard.sizeShort', { size: item.size }), t('customerDashboard.qty', { qty: item.quantity })].filter(Boolean).join(' · ')}
                                         </p>
                                         {item.measurements && Object.keys(item.measurements).length > 0 && (
                                             <div className="mt-1.5 flex flex-wrap gap-1">
@@ -199,9 +202,9 @@ function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOr
                     )}
 
                     <div className="border-t border-slate-100 pt-4 flex justify-between items-center">
-                        <span className="text-sm text-slate-500">Total</span>
+                        <span className="text-sm text-slate-500">{t('customerDashboard.totalLabel')}</span>
                         <span className="text-lg font-bold text-slate-900">
-                            {order.total > 0 ? `₾${order.total}` : 'Quoted by tailor'}
+                            {order.total > 0 ? `₾${order.total}` : t('customerDashboard.quotedByTailor')}
                         </span>
                     </div>
 
@@ -213,6 +216,7 @@ function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOr
 }
 
 export default function CustomerDashboard() {
+    const { t } = useTranslation();
     const navigate  = useNavigate();
     const user      = getAuthUser();
     const token     = getAuthToken();
@@ -247,7 +251,7 @@ export default function CustomerDashboard() {
     return (
         <div className="min-h-screen bg-slate-50">
             <Helmet>
-                <title>My Orders | Kere</title>
+                <title>{t('customerDashboard.pageTitle')}</title>
                 <meta name="robots" content="noindex" />
             </Helmet>
             {/* Navbar */}
@@ -270,7 +274,7 @@ export default function CustomerDashboard() {
                             onClick={handleSignOut}
                             className="text-sm text-slate-500 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
                         >
-                            Sign Out
+                            {t('customerDashboard.signOut')}
                         </button>
                     </div>
                 </div>
@@ -285,7 +289,7 @@ export default function CustomerDashboard() {
                         </div>
                         <div>
                             <h1 className="text-xl font-bold text-slate-900">
-                                {user?.first_name ? `${user.first_name} ${user.last_name ?? ''}` : 'My Dashboard'}
+                                {user?.first_name ? `${user.first_name} ${user.last_name ?? ''}` : t('customerDashboard.myDashboard')}
                             </h1>
                             <p className="text-xs text-slate-400">{user?.email}</p>
                         </div>
@@ -295,10 +299,10 @@ export default function CustomerDashboard() {
                 {/* Stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
                     {[
-                        { label: 'Total Orders',  value: stats.total,      icon: ShoppingBag },
-                        { label: 'Pending',        value: stats.pending,    icon: Clock },
-                        { label: 'In Progress',    value: stats.inProgress, icon: Scissors },
-                        { label: 'Delivered',      value: stats.delivered,  icon: CheckCircle },
+                        { label: t('customerDashboard.statTotalOrders'), value: stats.total,      icon: ShoppingBag },
+                        { label: t('customerDashboard.statPending'),      value: stats.pending,    icon: Clock },
+                        { label: t('customerDashboard.statInProgress'),   value: stats.inProgress, icon: Scissors },
+                        { label: t('customerDashboard.statDelivered'),    value: stats.delivered,  icon: CheckCircle },
                     ].map(stat => {
                         const Icon = stat.icon;
                         return (
@@ -316,7 +320,7 @@ export default function CustomerDashboard() {
                 {/* Orders list */}
                 <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-50">
-                        <h2 className="font-semibold text-slate-900">My Orders</h2>
+                        <h2 className="font-semibold text-slate-900">{t('customerDashboard.myOrders')}</h2>
                     </div>
 
                     {loading ? (
@@ -325,33 +329,33 @@ export default function CustomerDashboard() {
                         </div>
                     ) : fetchError ? (
                         <div className="py-12 text-center px-5">
-                            <p className="text-slate-500 font-medium mb-2">Failed to load orders</p>
-                            <p className="text-slate-400 text-sm mb-4">Check your connection and try again.</p>
+                            <p className="text-slate-500 font-medium mb-2">{t('customerDashboard.failedToLoad')}</p>
+                            <p className="text-slate-400 text-sm mb-4">{t('customerDashboard.failedToLoadHint')}</p>
                             <button
                                 onClick={() => setRetryKey(k => k + 1)}
                                 className="text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
                             >
-                                Retry
+                                {t('customerDashboard.retry')}
                             </button>
                         </div>
                     ) : orders.length === 0 ? (
                         <div className="py-16 text-center">
                             <ShoppingBag className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                            <p className="text-slate-600 font-medium mb-1">You haven't placed any orders yet</p>
-                            <p className="text-slate-400 text-sm mb-4">Browse the marketplace or design your own clothing</p>
+                            <p className="text-slate-600 font-medium mb-1">{t('customerDashboard.noOrdersYet')}</p>
+                            <p className="text-slate-400 text-sm mb-4">{t('customerDashboard.noOrdersHint')}</p>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
                                 <Link
                                     to="/marketplace"
                                     className="inline-flex items-center gap-1.5 text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
                                 >
-                                    Browse Marketplace
+                                    {t('customerDashboard.browseMarketplace')}
                                     <ChevronRight className="w-4 h-4" />
                                 </Link>
                                 <Link
                                     to="/design"
                                     className="inline-flex items-center gap-1.5 text-sm border border-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"
                                 >
-                                    Design Your Own
+                                    {t('customerDashboard.designYourOwn')}
                                     <ChevronRight className="w-4 h-4" />
                                 </Link>
                             </div>
@@ -379,8 +383,8 @@ export default function CustomerDashboard() {
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium text-slate-900 text-sm truncate">
                                             {order.order_type === 'custom'
-                                                ? `Custom ${String((order.custom_design_data as Record<string, unknown>)?.garmentType ?? (order.custom_design_data as Record<string, unknown>)?.clothingType ?? 'Design')}`
-                                                : order.items[0]?.product_name ?? 'Order'
+                                                ? `${t('customerDashboard.customPrefix')} ${String((order.custom_design_data as Record<string, unknown>)?.garmentType ?? (order.custom_design_data as Record<string, unknown>)?.clothingType ?? t('customerDashboard.customDesignLabel'))}`
+                                                : order.items[0]?.product_name ?? t('customerDashboard.orderFallback')
                                             }
                                         </p>
                                         <p className="text-xs text-slate-400 mt-0.5">
@@ -406,18 +410,18 @@ export default function CustomerDashboard() {
                                     <div className="flex flex-col items-end gap-1.5">
                                         <StatusBadge status={order.status} />
                                         <span className="text-sm font-bold text-slate-900">
-                                            {order.total > 0 ? `₾${order.total}` : 'TBD'}
+                                            {order.total > 0 ? `₾${order.total}` : t('customerDashboard.tbd')}
                                         </span>
                                         {['finished', 'shipped'].includes(order.status) && !order.has_review && (
                                             <button
                                                 onClick={e => { e.stopPropagation(); setReviewOrder(order); }}
                                                 className="text-[10px] font-medium text-slate-500 border border-slate-200 rounded-full px-2 py-0.5 hover:bg-slate-50 transition-colors"
                                             >
-                                                ★ Review
+                                                {t('customerDashboard.review')}
                                             </button>
                                         )}
                                         {['finished', 'shipped'].includes(order.status) && order.has_review && (
-                                            <span className="text-[10px] text-slate-500 font-medium">✓ Reviewed</span>
+                                            <span className="text-[10px] text-slate-500 font-medium">{t('customerDashboard.reviewed')}</span>
                                         )}
                                     </div>
 
@@ -438,8 +442,8 @@ export default function CustomerDashboard() {
                             <ShoppingBag className="w-5 h-5 text-slate-600 group-hover:text-white transition-colors" />
                         </div>
                         <div>
-                            <p className="font-medium text-slate-900 text-sm">Browse Marketplace</p>
-                            <p className="text-xs text-slate-400">Find designs from local tailors</p>
+                            <p className="font-medium text-slate-900 text-sm">{t('customerDashboard.browseMarketplace')}</p>
+                            <p className="text-xs text-slate-400">{t('customerDashboard.findDesigns')}</p>
                         </div>
                         <ChevronRight className="w-4 h-4 text-slate-300 ml-auto" />
                     </Link>
@@ -451,8 +455,8 @@ export default function CustomerDashboard() {
                             <Scissors className="w-5 h-5 text-slate-600 group-hover:text-white transition-colors" />
                         </div>
                         <div>
-                            <p className="font-medium text-slate-900 text-sm">Create Custom Design</p>
-                            <p className="text-xs text-slate-400">Design your own garment</p>
+                            <p className="font-medium text-slate-900 text-sm">{t('customerDashboard.createCustomDesign')}</p>
+                            <p className="text-xs text-slate-400">{t('customerDashboard.designYourGarment')}</p>
                         </div>
                         <ChevronRight className="w-4 h-4 text-slate-300 ml-auto" />
                     </Link>
@@ -473,8 +477,8 @@ export default function CustomerDashboard() {
                     orderId={reviewOrder.id}
                     orderLabel={
                         reviewOrder.order_type === 'custom'
-                            ? `Custom ${String((reviewOrder.custom_design_data as Record<string, unknown>)?.garmentType ?? (reviewOrder.custom_design_data as Record<string, unknown>)?.clothingType ?? 'Design')}`
-                            : reviewOrder.items[0]?.product_name ?? 'Order'
+                            ? `${t('customerDashboard.customPrefix')} ${String((reviewOrder.custom_design_data as Record<string, unknown>)?.garmentType ?? (reviewOrder.custom_design_data as Record<string, unknown>)?.clothingType ?? t('customerDashboard.customDesignLabel'))}`
+                            : reviewOrder.items[0]?.product_name ?? t('customerDashboard.orderFallback')
                     }
                     onClose={() => setReviewOrder(null)}
                     onSubmitted={() => setOrders(prev =>
