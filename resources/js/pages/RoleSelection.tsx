@@ -1,9 +1,11 @@
 import { Link, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { User, Scissors, ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function RoleSelection() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -23,8 +25,8 @@ export default function RoleSelection() {
                     className="w-full max-w-2xl"
                 >
                     <div className="text-center mb-10">
-                        <h1 className="text-3xl font-bold text-slate-900 mb-3">Sign in to Kere</h1>
-                        <p className="text-slate-500">Choose your role to continue.</p>
+                        <h1 className="text-3xl font-bold text-slate-900 mb-3">{t('signIn.pageTitle')}</h1>
+                        <p className="text-slate-500">{t('signIn.pageSubtitle')}</p>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-5">
@@ -38,12 +40,12 @@ export default function RoleSelection() {
                             <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-slate-900 transition-colors">
                                 <User className="w-7 h-7 text-slate-600 group-hover:text-white transition-colors" />
                             </div>
-                            <h2 className="text-xl font-bold text-slate-900 mb-2">I'm a Customer</h2>
+                            <h2 className="text-xl font-bold text-slate-900 mb-2">{t('signIn.customerTitle')}</h2>
                             <p className="text-slate-500 text-sm leading-relaxed mb-5">
-                                I want to order custom clothing from local Georgian tailors.
+                                {t('signIn.customerDesc')}
                             </p>
                             <div className="flex items-center gap-2 text-sm font-medium text-slate-900 group-hover:gap-3 transition-all">
-                                Sign In <ArrowRight className="w-4 h-4" />
+                                {t('signIn.signIn')} <ArrowRight className="w-4 h-4" />
                             </div>
                         </motion.button>
 
@@ -57,21 +59,21 @@ export default function RoleSelection() {
                             <div className="w-14 h-14 bg-slate-700 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-slate-600 transition-colors">
                                 <Scissors className="w-7 h-7 text-white" />
                             </div>
-                            <h2 className="text-xl font-bold text-white mb-2">I'm a Tailor</h2>
+                            <h2 className="text-xl font-bold text-white mb-2">{t('signIn.tailorTitle')}</h2>
                             <p className="text-slate-400 text-sm leading-relaxed mb-5">
-                                I'm a skilled tailor and I want to join the Kere platform to grow my business.
+                                {t('signIn.tailorDesc')}
                             </p>
                             <div className="flex items-center gap-2 text-sm font-medium text-white group-hover:gap-3 transition-all">
-                                Sign In <ArrowRight className="w-4 h-4" />
+                                {t('signIn.signIn')} <ArrowRight className="w-4 h-4" />
                             </div>
                         </motion.button>
                     </div>
 
                     <p className="text-center text-sm text-slate-400 mt-8">
-                        By continuing, you agree to our{' '}
-                        <Link to="/" className="underline hover:text-slate-600">Terms of Service</Link>{' '}
-                        and{' '}
-                        <Link to="/" className="underline hover:text-slate-600">Privacy Policy</Link>.
+                        {t('signIn.agreePrefix')}{' '}
+                        <Link to="/terms-of-service" className="underline hover:text-slate-600">{t('signIn.termsOfService')}</Link>{' '}
+                        {t('signIn.and')}{' '}
+                        <Link to="/privacy-policy" className="underline hover:text-slate-600">{t('signIn.privacyPolicy')}</Link>.
                     </p>
                 </motion.div>
             </div>
