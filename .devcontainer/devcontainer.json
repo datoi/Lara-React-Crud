@@ -7,7 +7,7 @@
     "ghcr.io/devcontainers/features/node:1": { "version": "20" }
   },
   "forwardPorts": [8000, 5173],
-  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "bash .devcontainer/setup.sh",
   "customizations": {
     "vscode": {
       "extensions": ["Pinegrow.piny", "bradlc.vscode-tailwindcss", "esbenp.prettier-vscode"]
