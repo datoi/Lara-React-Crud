@@ -7,6 +7,10 @@
     "ghcr.io/devcontainers/features/node:1": { "version": "20" }
   },
   "forwardPorts": [8000, 5173],
+  "portsAttributes": {
+    "8000": { "label": "Laravel", "visibility": "public" },
+    "5173": { "label": "Vite", "visibility": "public" }
+  },
   "postStartCommand": "bash .devcontainer/setup.sh",
   "customizations": {
     "vscode": {
