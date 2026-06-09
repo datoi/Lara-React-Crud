@@ -1,7 +1,9 @@
-jsimport react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
 import tailwindcss from "@tailwindcss/vite";
+
+const inCodespace = !!process.env.CODESPACE_NAME;
 
 export default defineConfig({
     plugins: [
@@ -15,15 +17,15 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
-    server: {
+    server: inCodespace ? {
         host: '0.0.0.0',
         port: 5173,
         strictPort: true,
         cors: true,
-        hmr: process.env.CODESPACE_NAME ? {
+        hmr: {
             host: `${process.env.CODESPACE_NAME}-5173.${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`,
             protocol: 'wss',
             clientPort: 443,
-        } : undefined,
-    },
+        },
+    } : undefined,
 });
