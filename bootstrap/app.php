@@ -13,10 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->trustProxies(at: '*');
-        $middleware->web(append: [
-            \App\Http\Middleware\Prerender::class,
-        ]);
-        $middleware->alias([
+$middleware->alias([
             'auth.bearer' => \App\Http\Middleware\BearerTokenAuth::class,
             'auth.admin'  => \App\Http\Middleware\AdminMiddleware::class,
         ]);
