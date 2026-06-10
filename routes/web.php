@@ -10,16 +10,17 @@ Route::get('/robots.txt', function () {
         'Allow: /',
         'Disallow: /customer-dashboard',
         'Disallow: /tailor-dashboard',
+        'Disallow: /admin-dashboard',
         'Disallow: /api/',
         '',
-        'Sitemap: ' . config('app.url') . '/sitemap.xml',
+        'Sitemap: https://kereforyou.com/sitemap.xml',
     ]);
     return response($content, 200)->header('Content-Type', 'text/plain');
 });
 
 // ─── sitemap.xml ─────────────────────────────────────────────────────────────
 Route::get('/sitemap.xml', function () {
-    $base = config('app.url');
+    $base = 'https://kereforyou.com';
 
     $staticUrls = [
         ['loc' => $base . '/',            'changefreq' => 'weekly',  'priority' => '1.0'],

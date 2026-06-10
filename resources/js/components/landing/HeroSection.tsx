@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Link } from 'react-router';
-import { ArrowRight, Scissors, ShoppingBag, Upload } from 'lucide-react';
+import { ArrowRight, Scissors, Upload } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -64,17 +64,8 @@ export function HeroSection() {
                 >
                     {/* Primary — solid white */}
                     <Link
-                        to="/marketplace"
-                        className="inline-flex items-center gap-2 bg-white text-slate-900 font-semibold px-7 py-3.5 rounded-full hover:bg-slate-100 transition-all text-sm sm:text-base shadow-lg w-full sm:w-auto justify-center"
-                    >
-                        <ShoppingBag className="w-4 h-4" />
-                        {t('hero.browseMarketplace')}
-                    </Link>
-
-                    {/* Secondary — ghost */}
-                    <Link
                         to="/design"
-                        className="inline-flex items-center gap-2 bg-transparent border border-white/50 text-white font-semibold px-7 py-3.5 rounded-full hover:bg-white/10 transition-all text-sm sm:text-base w-full sm:w-auto justify-center"
+                        className="inline-flex items-center gap-2 bg-white text-slate-900 font-semibold px-7 py-3.5 rounded-full hover:bg-slate-100 transition-all text-sm sm:text-base shadow-lg w-full sm:w-auto justify-center"
                     >
                         <Scissors className="w-4 h-4" />
                         {t('hero.startYourDesign')}
