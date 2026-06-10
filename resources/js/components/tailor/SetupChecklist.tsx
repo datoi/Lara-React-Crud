@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { CheckCircle, Circle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
     profileComplete: boolean;
@@ -11,35 +12,38 @@ interface Props {
 const GOAL = 3;
 
 export function SetupChecklist({ profileComplete, productsCount, onAddProduct, onEditProfile }: Props) {
+    const { t } = useTranslation();
+
     const productsReady  = productsCount >= GOAL;
     const readyForOrders = profileComplete && productsReady;
     const progress       = Math.min(productsCount / GOAL, 1);
+    const doneCt         = [profileComplete, productsReady].filter(Boolean).length;
 
     const items = [
         {
             done:        profileComplete,
-            label:       'Complete your profile',
+            label:       t('tailorComponents.completeProfileItem'),
             sub:         profileComplete
-                             ? 'Bio and specialty added'
-                             : 'Add a bio and specialty — customers read this before ordering',
+                             ? t('tailorComponents.profileDone')
+                             : t('tailorComponents.profileTodo'),
             action:      profileComplete ? undefined : onEditProfile,
-            actionLabel: 'Edit profile →',
+            actionLabel: t('tailorComponents.editProfileLink'),
         },
         {
             done:        productsReady,
-            label:       `List ${GOAL} products`,
+            label:       t('tailorComponents.listProducts', { goal: GOAL }),
             sub:         productsReady
-                             ? `${productsCount} products live in the marketplace`
-                             : `${productsCount} of ${GOAL} — ${GOAL - productsCount} more to go`,
+                             ? t('tailorComponents.productsLiveDone', { count: productsCount })
+                             : t('tailorComponents.productsProgress', { count: productsCount, goal: GOAL, remaining: GOAL - productsCount }),
             action:      productsReady ? undefined : onAddProduct,
-            actionLabel: 'Add product →',
+            actionLabel: t('tailorComponents.addProductLink'),
         },
         {
             done:        readyForOrders,
-            label:       'Ready for orders',
+            label:       t('tailorComponents.readyForOrders'),
             sub:         readyForOrders
-                             ? 'Your shop is live and discoverable'
-                             : 'Complete the steps above to go fully live',
+                             ? t('tailorComponents.shopLiveDone')
+                             : t('tailorComponents.shopLiveTodo'),
         },
     ];
 
@@ -47,18 +51,18 @@ export function SetupChecklist({ profileComplete, productsCount, onAddProduct, o
         <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
+            transition={{ duration: 0.5 }}
             className="bg-white rounded-2xl border border-slate-200 p-6"
         >
             <div className="flex items-center justify-between mb-5">
-                <h3 className="font-bold text-slate-900 text-sm">Setup progress</h3>
+                <h3 className="font-bold text-slate-900 text-sm">{t('tailorComponents.setupProgress')}</h3>
                 {readyForOrders ? (
                     <span className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full">
-                        Shop live ✓
+                        {t('tailorComponents.shopLive')}
                     </span>
                 ) : (
                     <span className="text-xs text-slate-400">
-                        {[profileComplete, productsReady].filter(Boolean).length} / 2 done
+                        {t('tailorComponents.doneCount', { done: doneCt })}
                     </span>
                 )}
             </div>
@@ -66,7 +70,7 @@ export function SetupChecklist({ profileComplete, productsCount, onAddProduct, o
             {/* Products progress bar */}
             <div className="mb-5">
                 <div className="flex justify-between text-xs text-slate-500 mb-1.5">
-                    <span>Products listed</span>
+                    <span>{t('tailorComponents.productsListedProgress')}</span>
                     <span className="font-semibold text-slate-700">{productsCount} / {GOAL}</span>
                 </div>
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -80,8 +84,8 @@ export function SetupChecklist({ profileComplete, productsCount, onAddProduct, o
             </div>
 
             <div className="space-y-3.5">
-                {items.map(item => (
-                    <div key={item.label} className="flex items-start gap-3">
+                {items.map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-3">
                         {item.done
                             ? <CheckCircle className="w-5 h-5 text-slate-700 shrink-0 mt-0.5" />
                             : <Circle     className="w-5 h-5 text-slate-300 shrink-0 mt-0.5" />

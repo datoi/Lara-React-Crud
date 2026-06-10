@@ -1,32 +1,54 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Plus, Loader2, Check, ImagePlus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Button } from '../ui/button';
 import { getAuthToken } from '../../hooks/useAuth';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORIES = [
-    { id: 1, name: 'Dresses' },
-    { id: 2, name: 'Shirts' },
-    { id: 3, name: 'Pants' },
-    { id: 4, name: 'Jackets' },
-    { id: 5, name: 'Scarves' },
-    { id: 6, name: 'Hats' },
+const CATEGORY_KEYS = [
+    { id: 1, tKey: 'tailorComponents.catDresses' },
+    { id: 2, tKey: 'tailorComponents.catShirts' },
+    { id: 3, tKey: 'tailorComponents.catPants' },
+    { id: 4, tKey: 'tailorComponents.catJackets' },
+    { id: 5, tKey: 'tailorComponents.catScarves' },
+    { id: 6, tKey: 'tailorComponents.catHats' },
 ];
 
-const FABRICS = ['Cotton', 'Silk', 'Linen', 'Wool', 'Denim', 'Velvet', 'Chiffon', 'Satin', 'Polyester'];
-const TEXTURES = ['Smooth', 'Ribbed', 'Knit', 'Woven', 'Embroidered', 'Quilted', 'Pleated'];
-const SIZES    = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Custom'];
+const FABRIC_KEYS = [
+    { key: 'Cotton',    tKey: 'tailorComponents.fabricCotton' },
+    { key: 'Silk',      tKey: 'tailorComponents.fabricSilk' },
+    { key: 'Linen',     tKey: 'tailorComponents.fabricLinen' },
+    { key: 'Wool',      tKey: 'tailorComponents.fabricWool' },
+    { key: 'Denim',     tKey: 'tailorComponents.fabricDenim' },
+    { key: 'Velvet',    tKey: 'tailorComponents.fabricVelvet' },
+    { key: 'Chiffon',   tKey: 'tailorComponents.fabricChiffon' },
+    { key: 'Satin',     tKey: 'tailorComponents.fabricSatin' },
+    { key: 'Polyester', tKey: 'tailorComponents.fabricPolyester' },
+];
 
-const MEASUREMENTS = [
-    { key: 'chest',              label: 'Chest' },
-    { key: 'waist',              label: 'Waist' },
-    { key: 'hips',               label: 'Hips' },
-    { key: 'length',             label: 'Length' },
-    { key: 'inseam',             label: 'Inseam' },
-    { key: 'shoulder',           label: 'Shoulder' },
-    { key: 'head_circumference', label: 'Head Circumference' },
-    { key: 'sleeve',             label: 'Sleeve Length' },
+const TEXTURE_KEYS = [
+    { key: 'Smooth',      tKey: 'tailorComponents.texturSmooth' },
+    { key: 'Ribbed',      tKey: 'tailorComponents.texturRibbed' },
+    { key: 'Knit',        tKey: 'tailorComponents.texturKnit' },
+    { key: 'Woven',       tKey: 'tailorComponents.texturWoven' },
+    { key: 'Embroidered', tKey: 'tailorComponents.texturEmbroidered' },
+    { key: 'Quilted',     tKey: 'tailorComponents.texturQuilted' },
+    { key: 'Pleated',     tKey: 'tailorComponents.texturPleated' },
+];
+
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Custom'];
+
+const MEASUREMENT_KEYS = [
+    { key: 'chest',              tKey: 'tailorComponents.measureChest' },
+    { key: 'waist',              tKey: 'tailorComponents.measureWaist' },
+    { key: 'hips',               tKey: 'tailorComponents.measureHips' },
+    { key: 'length',             tKey: 'tailorComponents.measureLength' },
+    { key: 'inseam',             tKey: 'tailorComponents.measureInseam' },
+    { key: 'shoulder',           tKey: 'tailorComponents.measureShoulder' },
+    { key: 'head_circumference', tKey: 'tailorComponents.measureHead' },
+    { key: 'sleeve',             tKey: 'tailorComponents.measureSleeve' },
 ];
 
 const PRESET_COLORS = [
@@ -45,12 +67,7 @@ function inputCls(extra = '') {
     return `w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 transition ${extra}`;
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
-
-interface AddProductModalProps {
-    onClose: () => void;
-    onCreated: (product: TailorProductFull) => void;
-}
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface TailorProductFull {
     id: number;
@@ -86,7 +103,7 @@ interface FormState {
     is_customizable: boolean;
 }
 
-const INITIAL: FormState = {
+const BLANK: FormState = {
     name: '',
     description: '',
     price: '',
@@ -102,8 +119,37 @@ const INITIAL: FormState = {
     is_customizable: true,
 };
 
-export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
-    const [form, setForm]       = useState<FormState>(INITIAL);
+function productToForm(p: TailorProductFull): FormState {
+    return {
+        name: p.name,
+        description: p.description ?? '',
+        price: String(p.price),
+        category_id: p.category_id,
+        uploading: false,
+        images: [...p.images],
+        colors: [...p.colors],
+        customColor: '#475569',
+        sizes: [...p.sizes],
+        fabric: p.fabric ?? '',
+        texture: p.texture ?? '',
+        required_measurements: [...p.required_measurements],
+        is_customizable: p.is_customizable,
+    };
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+interface AddProductModalProps {
+    onClose: () => void;
+    onCreated: (product: TailorProductFull) => void;
+    editProduct?: TailorProductFull;
+    onUpdated?: (product: TailorProductFull) => void;
+}
+
+export function AddProductModal({ onClose, onCreated, editProduct, onUpdated }: AddProductModalProps) {
+    const { t } = useTranslation();
+    const isEdit = !!editProduct;
+    const [form, setForm]       = useState<FormState>(() => editProduct ? productToForm(editProduct) : BLANK);
     const [saving, setSaving]   = useState(false);
     const [error, setError]     = useState('');
     const [success, setSuccess] = useState(false);
@@ -118,7 +164,7 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
         const files = Array.from(e.target.files ?? []);
         if (!files.length) return;
         const token = getAuthToken();
-        if (!token) { setError('You must be signed in.'); return; }
+        if (!token) { setError(t('tailorComponents.mustBeSignedIn')); return; }
 
         set('uploading', true);
         setError('');
@@ -134,27 +180,28 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                 });
                 const json = await res.json();
                 if (res.ok && json.url) uploaded.push(json.url);
-                else setError(json.message ?? 'Upload failed for one file.');
+                else setError(json.message ?? t('tailorComponents.networkErrorUpload'));
             }
-            set('images', [...form.images, ...uploaded]);
+            // functional updater avoids stale closure on form.images
+            setForm(f => ({ ...f, images: [...f.images, ...uploaded] }));
         } catch {
-            setError('Network error during upload.');
+            setError(t('tailorComponents.networkErrorUpload'));
         } finally {
             set('uploading', false);
-            // Reset so same file can be re-selected
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
     const removeImage = (url: string) =>
-        set('images', form.images.filter((i: string) => i !== url));
+        setForm(f => ({ ...f, images: f.images.filter((i: string) => i !== url) }));
 
     // ─── Color helpers ─────────────────────────────────────────────────────
 
     const togglePresetColor = (hex: string) => {
-        set('colors', form.colors.includes(hex)
-            ? form.colors.filter(c => c !== hex)
-            : [...form.colors, hex]);
+        setForm(f => ({
+            ...f,
+            colors: f.colors.includes(hex) ? f.colors.filter(c => c !== hex) : [...f.colors, hex],
+        }));
     };
 
     const addCustomColor = () => {
@@ -165,39 +212,45 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
     };
 
     const removeColor = (hex: string) =>
-        set('colors', form.colors.filter(c => c !== hex));
+        setForm(f => ({ ...f, colors: f.colors.filter(c => c !== hex) }));
 
     // ─── Size helpers ──────────────────────────────────────────────────────
 
     const toggleSize = (s: string) => {
-        set('sizes', form.sizes.includes(s)
-            ? form.sizes.filter(x => x !== s)
-            : [...form.sizes, s]);
+        setForm(f => ({
+            ...f,
+            sizes: f.sizes.includes(s) ? f.sizes.filter(x => x !== s) : [...f.sizes, s],
+        }));
     };
 
     // ─── Measurement helpers ───────────────────────────────────────────────
 
     const toggleMeasurement = (key: string) => {
-        set('required_measurements', form.required_measurements.includes(key)
-            ? form.required_measurements.filter(m => m !== key)
-            : [...form.required_measurements, key]);
+        setForm(f => ({
+            ...f,
+            required_measurements: f.required_measurements.includes(key)
+                ? f.required_measurements.filter(m => m !== key)
+                : [...f.required_measurements, key],
+        }));
     };
 
     // ─── Submit ────────────────────────────────────────────────────────────
 
     const handleSubmit = async () => {
         if (!form.name.trim() || !form.price) {
-            setError('Product name and price are required.');
+            setError(t('tailorComponents.nameAndPriceRequired'));
             return;
         }
         const token = getAuthToken();
-        if (!token) { setError('You must be signed in.'); return; }
+        if (!token) { setError(t('tailorComponents.mustBeSignedIn')); return; }
 
         setSaving(true);
         setError('');
         try {
-            const res = await fetch('/api/tailor/products', {
-                method: 'POST',
+            const url    = isEdit ? `/api/tailor/products/${editProduct!.id}` : '/api/tailor/products';
+            const method = isEdit ? 'PATCH' : 'POST';
+            const res = await fetch(url, {
+                method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
@@ -220,16 +273,20 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
 
             const json = await res.json();
             if (!res.ok) {
-                setError(json.message ?? 'Something went wrong.');
+                setError(json.message ?? t('tailorComponents.networkError'));
                 return;
             }
             setSuccess(true);
             setTimeout(() => {
-                onCreated(json.product as TailorProductFull);
+                if (isEdit) {
+                    onUpdated?.(json.product as TailorProductFull);
+                } else {
+                    onCreated(json.product as TailorProductFull);
+                }
                 onClose();
             }, 1200);
         } catch {
-            setError('Network error. Please try again.');
+            setError(t('tailorComponents.networkError'));
         } finally {
             setSaving(false);
         }
@@ -251,14 +308,16 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                 initial={{ opacity: 0, y: 32, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 32, scale: 0.97 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
                 className="relative z-10 bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col"
             >
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 flex-shrink-0">
                     <div>
-                        <h2 className="font-bold text-slate-900 text-lg">Add New Product</h2>
-                        <p className="text-xs text-slate-500 mt-0.5">Fill in the details to list your item on the marketplace</p>
+                        <h2 className="font-bold text-slate-900 text-lg">
+                            {isEdit ? t('tailorComponents.editProduct') : t('tailorComponents.addNewProduct')}
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-0.5">{t('tailorComponents.addNewProductSubtitle')}</p>
                     </div>
                     <button
                         onClick={onClose}
@@ -279,13 +338,17 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                             <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                transition={{ type: 'spring', stiffness: 220, damping: 16 }}
+                                transition={{ duration: 0.5, ease: 'easeOut' }}
                                 className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center"
                             >
                                 <Check className="w-8 h-8 text-white" />
                             </motion.div>
-                            <p className="font-bold text-slate-900">Product Published!</p>
-                            <p className="text-sm text-slate-500">Your listing is now live on the marketplace.</p>
+                            <p className="font-bold text-slate-900">
+                                {isEdit ? t('tailorComponents.productUpdated') : t('tailorComponents.productPublished')}
+                            </p>
+                            <p className="text-sm text-slate-500">
+                                {isEdit ? t('tailorComponents.productUpdatedDesc') : t('tailorComponents.productPublishedDesc')}
+                            </p>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -295,13 +358,15 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
 
                     {/* ── Core Info ── */}
                     <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5 space-y-4">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Core Info</p>
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                            {t('tailorComponents.coreInfo')}
+                        </p>
 
                         <div>
-                            <Label>Product Name *</Label>
+                            <Label>{t('tailorComponents.productName')}</Label>
                             <input
                                 className={inputCls()}
-                                placeholder="e.g. Floral Wrap Dress"
+                                placeholder={t('tailorComponents.productNamePlaceholder')}
                                 value={form.name}
                                 onChange={e => set('name', e.target.value)}
                             />
@@ -309,7 +374,7 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <Label>Price (₾) *</Label>
+                                <Label>{t('tailorComponents.priceLabel')}</Label>
                                 <input
                                     type="number"
                                     min="1"
@@ -320,25 +385,25 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                                 />
                             </div>
                             <div>
-                                <Label>Category</Label>
+                                <Label>{t('tailorComponents.categoryLabel')}</Label>
                                 <select
                                     className={inputCls('bg-white')}
                                     value={form.category_id}
                                     onChange={e => set('category_id', Number(e.target.value))}
                                 >
-                                    {CATEGORIES.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    {CATEGORY_KEYS.map(c => (
+                                        <option key={c.id} value={c.id}>{t(c.tKey)}</option>
                                     ))}
                                 </select>
                             </div>
                         </div>
 
                         <div>
-                            <Label>Description</Label>
+                            <Label>{t('tailorComponents.descriptionLabel')}</Label>
                             <textarea
                                 rows={3}
                                 className={inputCls('resize-none')}
-                                placeholder="Describe the style, fit, and occasion…"
+                                placeholder={t('tailorComponents.descriptionPlaceholder')}
                                 value={form.description}
                                 onChange={e => set('description', e.target.value)}
                             />
@@ -347,9 +412,10 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
 
                     {/* ── Product Images ── */}
                     <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5 space-y-3">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Product Images</p>
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                            {t('tailorComponents.productImages')}
+                        </p>
 
-                        {/* Hidden file input — supports multiple */}
                         <input
                             ref={fileInputRef}
                             type="file"
@@ -359,7 +425,6 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                             onChange={handleFileChange}
                         />
 
-                        {/* Drop zone / click to browse */}
                         <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
@@ -372,12 +437,11 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                                 <ImagePlus className="w-6 h-6 text-slate-400 group-hover:text-slate-700 transition-colors" />
                             )}
                             <span className="text-sm text-slate-500 group-hover:text-slate-700 transition-colors font-medium">
-                                {form.uploading ? 'Uploading…' : 'Click to browse files'}
+                                {form.uploading ? t('tailorComponents.uploadingImages') : t('tailorComponents.clickToBrowse')}
                             </span>
-                            <span className="text-xs text-slate-400">JPG, PNG, WEBP — max 5 MB each</span>
+                            <span className="text-xs text-slate-400">{t('tailorComponents.imageUploadHint')}</span>
                         </button>
 
-                        {/* Uploaded previews */}
                         {form.images.length > 0 && (
                             <div className="flex flex-wrap gap-2">
                                 {(form.images as string[]).map(url => (
@@ -401,38 +465,43 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
 
                     {/* ── Technical Specs ── */}
                     <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5 space-y-5">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Technical Specs</p>
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                            {t('tailorComponents.technicalSpecs')}
+                        </p>
 
                         {/* Fabric + Texture */}
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <Label>Fabric Type</Label>
+                                <Label>{t('tailorComponents.fabricType')}</Label>
                                 <select
                                     className={inputCls('bg-white')}
                                     value={form.fabric}
                                     onChange={e => set('fabric', e.target.value)}
                                 >
-                                    <option value="">— Select —</option>
-                                    {FABRICS.map(f => <option key={f}>{f}</option>)}
+                                    <option value="">{t('tailorComponents.selectPlaceholder')}</option>
+                                    {FABRIC_KEYS.map(f => (
+                                        <option key={f.key} value={f.key}>{t(f.tKey)}</option>
+                                    ))}
                                 </select>
                             </div>
                             <div>
-                                <Label>Texture / Material</Label>
+                                <Label>{t('tailorComponents.textureMaterial')}</Label>
                                 <select
                                     className={inputCls('bg-white')}
                                     value={form.texture}
                                     onChange={e => set('texture', e.target.value)}
                                 >
-                                    <option value="">— Select —</option>
-                                    {TEXTURES.map(t => <option key={t}>{t}</option>)}
+                                    <option value="">{t('tailorComponents.selectPlaceholder')}</option>
+                                    {TEXTURE_KEYS.map(tx => (
+                                        <option key={tx.key} value={tx.key}>{t(tx.tKey)}</option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
 
                         {/* Available Colors */}
                         <div>
-                            <Label>Available Colors</Label>
-                            {/* Preset swatches */}
+                            <Label>{t('tailorComponents.availableColors')}</Label>
                             <div className="flex flex-wrap gap-2 mb-3">
                                 {PRESET_COLORS.map(hex => (
                                     <button
@@ -455,7 +524,6 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                                     </button>
                                 ))}
                             </div>
-                            {/* Custom color picker */}
                             <div className="flex items-center gap-2">
                                 <input
                                     type="color"
@@ -469,14 +537,16 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                                     onChange={e => set('customColor', e.target.value)}
                                     placeholder="#000000"
                                 />
-                                <button
+                                <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={addCustomColor}
-                                    className="flex items-center gap-1 border border-slate-200 text-slate-700 text-sm font-medium px-3 py-2 rounded-xl hover:bg-slate-100 transition-colors flex-shrink-0"
+                                    className="flex-shrink-0 flex items-center gap-1"
                                 >
-                                    <Plus className="w-3.5 h-3.5" /> Add
-                                </button>
+                                    <Plus className="w-3.5 h-3.5" />
+                                    {t('tailorComponents.addColorBtn')}
+                                </Button>
                             </div>
-                            {/* Selected colors */}
                             {form.colors.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mt-3">
                                     {form.colors.map(hex => (
@@ -494,7 +564,7 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
 
                         {/* Available Sizes */}
                         <div>
-                            <Label>Available Sizes</Label>
+                            <Label>{t('tailorComponents.availableSizes')}</Label>
                             <div className="flex flex-wrap gap-2">
                                 {SIZES.map(s => (
                                     <button
@@ -516,11 +586,13 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                     {/* ── Measurement Requirements ── */}
                     <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5 space-y-3">
                         <div>
-                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Measurement Requirements</p>
-                            <p className="text-xs text-slate-400 mt-1">Select which CM measurements customers must provide for this item</p>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                                {t('tailorComponents.measurementReqs')}
+                            </p>
+                            <p className="text-xs text-slate-400 mt-1">{t('tailorComponents.measurementReqsDesc')}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            {MEASUREMENTS.map(m => {
+                            {MEASUREMENT_KEYS.map(m => {
                                 const active = form.required_measurements.includes(m.key);
                                 return (
                                     <button
@@ -537,7 +609,7 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                                         }`}>
                                             {active && <Check className="w-2.5 h-2.5 text-slate-900" />}
                                         </div>
-                                        {m.label}
+                                        {t(m.tKey)}
                                     </button>
                                 );
                             })}
@@ -548,8 +620,8 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                     <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-semibold text-slate-700">Allow Customization</p>
-                                <p className="text-xs text-slate-400 mt-0.5">Customers can request style changes, not just size</p>
+                                <p className="text-sm font-semibold text-slate-700">{t('tailorComponents.allowCustomization')}</p>
+                                <p className="text-xs text-slate-400 mt-0.5">{t('tailorComponents.allowCustomizationDesc')}</p>
                             </div>
                             <button
                                 onClick={() => set('is_customizable', !form.is_customizable)}
@@ -558,8 +630,9 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                                 }`}
                             >
                                 <motion.div
+                                    initial={{ x: form.is_customizable ? 24 : 2 }}
                                     animate={{ x: form.is_customizable ? 24 : 2 }}
-                                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                                    transition={{ duration: 0.5, ease: 'easeOut' }}
                                     className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm"
                                 />
                             </button>
@@ -571,22 +644,27 @@ export function AddProductModal({ onClose, onCreated }: AddProductModalProps) {
                 <div className="px-6 py-4 border-t border-slate-100 flex-shrink-0">
                     {error && <p className="text-xs text-slate-600 mb-3">{error}</p>}
                     <div className="flex gap-3">
-                        <button
+                        <Button
+                            variant="outline"
+                            size="default"
                             onClick={onClose}
-                            className="flex-1 border border-slate-200 text-slate-700 text-sm font-medium py-3 rounded-xl hover:bg-slate-50 transition-colors"
+                            className="flex-1"
                         >
-                            Cancel
-                        </button>
-                        <button
+                            {t('tailorComponents.cancelBtn')}
+                        </Button>
+                        <Button
+                            variant="default"
+                            size="default"
                             onClick={handleSubmit}
                             disabled={saving}
-                            className="flex-1 bg-slate-900 text-white text-sm font-semibold py-3 rounded-xl hover:bg-slate-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 flex items-center justify-center gap-2"
                         >
                             {saving
-                                ? <><Loader2 className="w-4 h-4 animate-spin" /> Publishing…</>
-                                : 'Publish Product'
+                                ? <><Loader2 className="w-4 h-4 animate-spin" />
+                                    {isEdit ? t('tailorComponents.updatingProduct') : t('tailorComponents.publishingProduct')}</>
+                                : isEdit ? t('tailorComponents.updateProduct') : t('tailorComponents.publishProduct')
                             }
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </motion.div>

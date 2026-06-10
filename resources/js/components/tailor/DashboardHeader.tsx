@@ -1,5 +1,7 @@
 import { Link, useNavigate } from 'react-router';
 import { User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Button } from '../ui/button';
 import { getAuthUser, clearAuth } from '../../hooks/useAuth';
 import { NotificationBell } from '../NotificationBell';
 
@@ -8,9 +10,10 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ earnings }: DashboardHeaderProps) {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const user = getAuthUser();
-    const displayName = user ? `${user.first_name} ${user.last_name}` : 'My Profile';
+    const displayName = user ? `${user.first_name} ${user.last_name}` : t('tailorComponents.myProfile');
 
     function handleSignOut() {
         clearAuth();
@@ -25,9 +28,9 @@ export function DashboardHeader({ earnings }: DashboardHeaderProps) {
                 </Link>
 
                 <div className="flex items-center gap-3">
-                    <div className="hidden sm:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-4 py-2">
-                        <span className="text-xs text-slate-500">Total Earnings</span>
-                        <span className="font-bold text-slate-900">₾{earnings.toLocaleString()}</span>
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2">
+                        <span className="text-xs text-slate-500 hidden sm:inline">{t('tailorComponents.totalEarnings')}</span>
+                        <span className="font-bold text-slate-900 text-sm">₾{earnings.toLocaleString()}</span>
                     </div>
 
                     <NotificationBell />
@@ -37,12 +40,13 @@ export function DashboardHeader({ earnings }: DashboardHeaderProps) {
                         <span className="hidden sm:inline">{displayName}</span>
                     </div>
 
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={handleSignOut}
-                        className="px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors text-sm font-medium text-slate-500 hover:text-slate-900"
                     >
-                        Sign Out
-                    </button>
+                        {t('tailorComponents.signOut')}
+                    </Button>
                 </div>
             </div>
         </header>

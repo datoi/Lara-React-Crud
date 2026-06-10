@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Eye, Edit2, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Button } from '../ui/button';
 import { AddProductModal, type TailorProductFull } from './AddProductModal';
+import { getAuthToken } from '../../hooks/useAuth';
 
 export type { TailorProductFull };
 
@@ -13,39 +16,93 @@ interface ProductManagerProps {
 }
 
 export function ProductManager({ products: initialProducts, onProductAdded, externalOpen, onExternalClose }: ProductManagerProps) {
-    const [products, setProducts] = useState<TailorProductFull[]>(initialProducts);
-    const [showModal, setShowModal] = useState(false);
+    const { t } = useTranslation();
+    const [products, setProducts]           = useState<TailorProductFull[]>(initialProducts);
+    const [showModal, setShowModal]         = useState(false);
+    const [editTarget, setEditTarget]       = useState<TailorProductFull | undefined>(undefined);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
-    // Allow parent to programmatically open the modal
     useEffect(() => {
         if (externalOpen) setShowModal(true);
     }, [externalOpen]);
 
-    const toggleStatus = (id: number) =>
-        setProducts(prev => prev.map(p => p.id === id
-            ? { ...p, status: p.status === 'active' ? 'paused' : 'active' }
-            : p));
+    const toggleStatus = async (id: number) => {
+        const token = getAuthToken();
+        if (!token) return;
+        const product = products.find(p => p.id === id);
+        if (!product) return;
+        const newStatus = product.status === 'active' ? 'paused' : 'active';
+        // Optimistic update
+        setProducts(prev => prev.map(p => p.id === id ? { ...p, status: newStatus } : p));
+        try {
+            await fetch(`/api/tailor/products/${id}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ status: newStatus }),
+            });
+        } catch {
+            // Revert on failure
+            setProducts(prev => prev.map(p => p.id === id ? { ...p, status: product.status } : p));
+        }
+    };
 
-    const deleteProduct = (id: number) =>
-        setProducts(prev => prev.filter(p => p.id !== id));
+    const deleteProduct = async (id: number) => {
+        const token = getAuthToken();
+        if (!token) return;
+        try {
+            await fetch(`/api/tailor/products/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json',
+                },
+            });
+            setProducts(prev => prev.filter(p => p.id !== id));
+        } catch {
+            // ignore — product stays in list
+        } finally {
+            setConfirmDeleteId(null);
+        }
+    };
 
     const handleCreated = (product: TailorProductFull) => {
         setProducts(prev => [product, ...prev]);
         onProductAdded?.(product);
     };
 
+    const handleUpdated = (product: TailorProductFull) => {
+        setProducts(prev => prev.map(p => p.id === product.id ? product : p));
+    };
+
+    const openEdit = (product: TailorProductFull) => {
+        setEditTarget(product);
+        setShowModal(true);
+    };
+
+    const closeModal = () => {
+        setShowModal(false);
+        setEditTarget(undefined);
+        onExternalClose?.();
+    };
+
     return (
         <>
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                    <h2 className="font-bold text-slate-900">My Products</h2>
-                    <button
+                    <h2 className="font-bold text-slate-900">{t('tailorComponents.myProducts')}</h2>
+                    <Button
+                        variant="default"
+                        size="sm"
                         onClick={() => setShowModal(true)}
-                        className="flex items-center gap-1.5 bg-slate-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
+                        className="flex items-center gap-1.5"
                     >
                         <Plus className="w-4 h-4" />
-                        Add Product
-                    </button>
+                        {t('tailorComponents.addProductBtn')}
+                    </Button>
                 </div>
 
                 {products.length === 0 ? (
@@ -53,16 +110,17 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                         <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-4 text-2xl">
                             🧵
                         </div>
-                        <p className="font-semibold text-slate-900 text-sm mb-1">No products yet</p>
+                        <p className="font-semibold text-slate-900 text-sm mb-1">{t('tailorComponents.noProductsYet')}</p>
                         <p className="text-slate-400 text-xs max-w-xs mb-4 leading-relaxed">
-                            Customers browse products to place custom orders. Add your first listing to appear in the marketplace.
+                            {t('tailorComponents.noProductsDesc')}
                         </p>
-                        <button
+                        <Button
+                            variant="default"
+                            size="default"
                             onClick={() => setShowModal(true)}
-                            className="bg-slate-900 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-slate-700 transition-colors"
                         >
-                            Add your first product
-                        </button>
+                            {t('tailorComponents.addFirstProductCta')}
+                        </Button>
                     </div>
                 ) : (
                     <div className="divide-y divide-slate-100">
@@ -95,7 +153,7 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                                                 ? 'bg-slate-900 text-white border-slate-900'
                                                 : 'bg-slate-100 text-slate-500 border-slate-200'
                                         }`}>
-                                            {product.status === 'active' ? 'Active' : 'Paused'}
+                                            {product.status === 'active' ? t('tailorComponents.productActive') : t('tailorComponents.productPaused')}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-3 mt-1 text-xs text-slate-400 flex-wrap">
@@ -104,9 +162,8 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                                         <span className="font-medium text-slate-600">₾{product.price}</span>
                                         {product.fabric && <><span>·</span><span>{product.fabric}</span></>}
                                         <span>·</span>
-                                        <span>{product.orders} orders</span>
+                                        <span>{t('tailorComponents.ordersCount', { count: product.orders })}</span>
                                     </div>
-                                    {/* Spec pills */}
                                     {(product.colors?.length > 0 || product.required_measurements?.length > 0) && (
                                         <div className="flex flex-wrap gap-1.5 mt-1.5">
                                             {product.colors?.slice(0, 5).map(hex => (
@@ -122,7 +179,7 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                                             )}
                                             {product.required_measurements?.length > 0 && (
                                                 <span className="text-xs text-slate-400 ml-1">
-                                                    {product.required_measurements.length} measurement{product.required_measurements.length !== 1 ? 's' : ''} required
+                                                    {t('tailorComponents.measurementsRequired', { count: product.required_measurements.length })}
                                                 </span>
                                             )}
                                         </div>
@@ -130,22 +187,50 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                                 </div>
 
                                 <div className="flex items-center gap-1 ml-4 flex-shrink-0">
-                                    <button
-                                        onClick={() => toggleStatus(product.id)}
-                                        className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-                                        title={product.status === 'active' ? 'Pause' : 'Activate'}
-                                    >
-                                        <Eye className="w-4 h-4" />
-                                    </button>
-                                    <button className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors">
-                                        <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => deleteProduct(product.id)}
-                                        className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                    {/* Confirm-delete inline prompt */}
+                                    {confirmDeleteId === product.id ? (
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-xs text-slate-500">{t('tailorComponents.confirmDeleteDesc')}</span>
+                                            <Button
+                                                variant="default"
+                                                size="sm"
+                                                onClick={() => deleteProduct(product.id)}
+                                                className="h-7 px-2 text-xs"
+                                            >
+                                                {t('tailorComponents.confirmDeleteBtn')}
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setConfirmDeleteId(null)}
+                                                className="h-7 px-2 text-xs"
+                                            >
+                                                {t('tailorComponents.cancelBtn')}
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={() => toggleStatus(product.id)}
+                                                className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                                                title={product.status === 'active' ? t('tailorComponents.productPaused') : t('tailorComponents.productActive')}
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => openEdit(product)}
+                                                className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => setConfirmDeleteId(product.id)}
+                                                className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </motion.div>
                         ))}
@@ -156,8 +241,10 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
             <AnimatePresence>
                 {showModal && (
                     <AddProductModal
-                        onClose={() => { setShowModal(false); onExternalClose?.(); }}
+                        onClose={closeModal}
                         onCreated={handleCreated}
+                        editProduct={editTarget}
+                        onUpdated={handleUpdated}
                     />
                 )}
             </AnimatePresence>

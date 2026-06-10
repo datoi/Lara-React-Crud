@@ -1,9 +1,21 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, CheckCircle, Loader2, Phone } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { OrderChat } from '../OrderChat';
 import { getAuthUser } from '../../hooks/useAuth';
+
+// ─── Module-level status label map (shared by both components) ────────────────
+
+const STATUS_LABEL_KEYS: Record<string, string> = {
+    pending:    'tailorComponents.statusPending',
+    processing: 'tailorComponents.statusInProgress',
+    shipped:    'tailorComponents.statusShipped',
+    finished:   'tailorComponents.statusFinished',
+    delivered:  'tailorComponents.statusDelivered',
+    cancelled:  'tailorComponents.statusCancelled',
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,25 +75,16 @@ interface OrdersListProps {
     onStatusChange?: (orderId: number, status: string) => Promise<void>;
 }
 
-// ─── Status config ────────────────────────────────────────────────────────────
+// ─── Status config (classes only — labels come from t()) ──────────────────────
 
-const STATUS_CONFIG: Record<string, { label: string; classes: string }> = {
-    pending:    { label: 'Pending',     classes: 'bg-slate-100 text-slate-600 border-slate-200' },
-    processing: { label: 'In Progress', classes: 'bg-slate-100 text-slate-700 border-slate-200' },
-    shipped:    { label: 'Shipped',     classes: 'bg-slate-50 text-slate-600 border-slate-200' },
-    finished:   { label: 'Finished',    classes: 'bg-slate-50 text-slate-900 border-slate-200' },
-    delivered:  { label: 'Delivered',   classes: 'bg-slate-50 text-slate-900 border-slate-200' },
-    cancelled:  { label: 'Cancelled',   classes: 'bg-slate-100 text-slate-600 border-slate-200' },
+const STATUS_CLASSES: Record<string, string> = {
+    pending:    'bg-slate-100 text-slate-600 border-slate-200',
+    processing: 'bg-slate-100 text-slate-700 border-slate-200',
+    shipped:    'bg-slate-50 text-slate-600 border-slate-200',
+    finished:   'bg-slate-50 text-slate-900 border-slate-200',
+    delivered:  'bg-slate-50 text-slate-900 border-slate-200',
+    cancelled:  'bg-slate-100 text-slate-600 border-slate-200',
 };
-
-// Options shown in the dropdown (tailor can set these)
-const STATUS_OPTIONS = [
-    { value: 'pending',    label: 'Pending' },
-    { value: 'processing', label: 'In Progress' },
-    { value: 'shipped',    label: 'Shipped' },
-    { value: 'finished',   label: 'Finished' },
-    { value: 'cancelled',  label: 'Cancelled' },
-];
 
 // ─── Spec row ─────────────────────────────────────────────────────────────────
 
@@ -103,7 +106,18 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
     onStatusChange?: (id: number, status: string) => Promise<void>;
     currentUserId: number;
 }) {
-    const status  = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending;
+    const { t } = useTranslation();
+
+    const STATUS_OPTIONS = [
+        { value: 'pending',    labelKey: 'tailorComponents.statusPending' },
+        { value: 'processing', labelKey: 'tailorComponents.statusInProgress' },
+        { value: 'shipped',    labelKey: 'tailorComponents.statusShipped' },
+        { value: 'finished',   labelKey: 'tailorComponents.statusFinished' },
+        { value: 'cancelled',  labelKey: 'tailorComponents.statusCancelled' },
+    ];
+
+    const statusClasses = STATUS_CLASSES[order.status] ?? STATUS_CLASSES.pending;
+    const statusLabel   = t(STATUS_LABEL_KEYS[order.status] ?? STATUS_LABEL_KEYS.pending);
     const isCustom = order.order_type === 'custom';
     const cd = order.custom_design_data;
 
@@ -153,15 +167,15 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs font-mono text-slate-500">{order.order_number}</span>
-                            <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border ${status.classes}`}>
-                                {status.label}
+                            <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border ${statusClasses}`}>
+                                {statusLabel}
                             </span>
                             <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border ${
                                 isCustom
                                     ? 'bg-slate-800 text-white border-slate-700'
                                     : 'bg-slate-50 text-slate-600 border-slate-200'
                             }`}>
-                                {isCustom ? 'Custom Design' : 'Marketplace'}
+                                {isCustom ? t('tailorComponents.customDesignBadge') : t('tailorComponents.marketplaceBadge')}
                             </span>
                         </div>
                         <p className="font-bold text-slate-900">{order.customer.name}</p>
@@ -189,14 +203,14 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                     {!isCustom && order.items.map(item => (
                         <div key={item.id} className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                             <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                                Product Details
+                                {t('tailorComponents.productDetailsSection')}
                             </div>
-                            <SpecRow label="Product"  value={item.product_name} />
-                            <SpecRow label="Quantity" value={String(item.quantity)} />
-                            <SpecRow label="Size"     value={item.size} />
+                            <SpecRow label={t('tailorComponents.specProduct')}  value={item.product_name} />
+                            <SpecRow label={t('tailorComponents.specQuantity')} value={String(item.quantity)} />
+                            <SpecRow label={t('tailorComponents.specSize')}     value={item.size} />
                             {item.color && (
                                 <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                    <span className="text-xs text-slate-500">Color</span>
+                                    <span className="text-xs text-slate-500">{t('tailorComponents.specColor')}</span>
                                     <div className="flex items-center gap-2">
                                         <div className="w-4 h-4 rounded-full border border-slate-200" style={{ backgroundColor: item.color }} />
                                         <span className="text-xs font-mono text-slate-700">{item.color}</span>
@@ -206,7 +220,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                             {item.cm_measurements && Object.keys(item.cm_measurements).length > 0 && (
                                 <>
                                     <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-3 mb-2">
-                                        Measurements (cm)
+                                        {t('tailorComponents.measurementsCm')}
                                     </div>
                                     {Object.entries(item.cm_measurements).map(([k, v]) => (
                                         <SpecRow key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={`${v} cm`} />
@@ -220,47 +234,55 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                     {isCustom && cd && (
                         <>
                             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Garment Specs</div>
-                                <SpecRow label="Type"     value={(cd.garmentType ?? cd.clothingType) ?? undefined} />
-                                <SpecRow label="Style"    value={(cd.style ?? cd.subcategory) ?? undefined} />
-                                <SpecRow label="Fabric"   value={cd.fabric} />
-                                <SpecRow label="Neckline" value={cd.components?.neckline ?? cd.neckline} />
-                                <SpecRow label="Sleeves"  value={cd.components?.sleeves  ?? cd.sleeves} />
-                                <SpecRow label="Length"   value={cd.components?.length   ?? cd.length} />
+                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                                    {t('tailorComponents.garmentSpecs')}
+                                </div>
+                                <SpecRow label={t('tailorComponents.specType')}     value={(cd.garmentType ?? cd.clothingType) ?? undefined} />
+                                <SpecRow label={t('tailorComponents.specStyle')}    value={(cd.style ?? cd.subcategory) ?? undefined} />
+                                <SpecRow label={t('tailorComponents.specFabric')}   value={cd.fabric} />
+                                <SpecRow label={t('tailorComponents.specNeckline')} value={cd.components?.neckline ?? cd.neckline} />
+                                <SpecRow label={t('tailorComponents.specSleeves')}  value={cd.components?.sleeves  ?? cd.sleeves} />
+                                <SpecRow label={t('tailorComponents.specLength')}   value={cd.components?.length   ?? cd.length} />
                             </div>
 
                             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Colors</div>
+                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                                    {t('tailorComponents.colorsSection')}
+                                </div>
                                 <div className="flex gap-3 flex-wrap">
                                     {[
-                                        { label: 'Base',   color: cd.baseColor },
-                                        { label: 'Accent', color: cd.accentColor ?? cd.additionalColor },
-                                        { label: 'Light',  color: cd.lighterShade },
-                                        { label: 'Dark',   color: cd.darkerShade },
+                                        { labelKey: 'tailorComponents.colorBase',   color: cd.baseColor },
+                                        { labelKey: 'tailorComponents.colorAccent', color: cd.accentColor ?? cd.additionalColor },
+                                        { labelKey: 'tailorComponents.colorLight',  color: cd.lighterShade },
+                                        { labelKey: 'tailorComponents.colorDark',   color: cd.darkerShade },
                                     ].filter(c => c.color).map(c => (
-                                        <div key={c.label} className="flex flex-col items-center gap-1">
+                                        <div key={c.labelKey} className="flex flex-col items-center gap-1">
                                             <div className="w-10 h-10 rounded-xl border border-slate-200" style={{ backgroundColor: c.color }} />
-                                            <span className="text-xs text-slate-400">{c.label}</span>
+                                            <span className="text-xs text-slate-400">{t(c.labelKey)}</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
                             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Size & Measurements</div>
-                                <SpecRow label="Standard Size" value={cd.sizeStandard} />
+                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                                    {t('tailorComponents.sizeAndMeasurements')}
+                                </div>
+                                <SpecRow label={t('tailorComponents.specStandardSize')} value={cd.sizeStandard} />
                                 {Object.entries(cd.sizeCm ?? {}).map(([k, v]) => v
                                     ? <SpecRow key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={`${v} cm`} />
                                     : null
                                 )}
                                 {(cd.height ?? cd.designElements?.height) && (
-                                    <SpecRow label="Height" value={`${cd.height ?? cd.designElements?.height} cm`} />
+                                    <SpecRow label={t('tailorComponents.specHeight')} value={`${cd.height ?? cd.designElements?.height} cm`} />
                                 )}
                             </div>
 
                             {(cd.details ?? cd.designElements?.cuts ?? []).length > 0 && (
                                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Design Details</div>
+                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                        {t('tailorComponents.designDetailsSection')}
+                                    </div>
                                     <div className="flex flex-wrap gap-2">
                                         {(cd.details ?? cd.designElements?.cuts ?? []).map(d => (
                                             <span key={d} className="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full">{d}</span>
@@ -271,7 +293,9 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
 
                             {(cd.notes ?? cd.designElements?.customNotes) && (
                                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Custom Notes</div>
+                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                        {t('tailorComponents.customNotesSection')}
+                                    </div>
                                     <p className="text-sm text-slate-700 leading-relaxed">{cd.notes ?? cd.designElements?.customNotes}</p>
                                 </div>
                             )}
@@ -282,13 +306,13 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                     <div className="bg-slate-900 rounded-xl p-4 text-white">
                         <div className="space-y-1.5 text-sm">
                             <div className="flex justify-between text-slate-400">
-                                <span>Subtotal</span><span>₾{order.subtotal}</span>
+                                <span>{t('tailorComponents.subtotal')}</span><span>₾{order.subtotal}</span>
                             </div>
                             <div className="flex justify-between text-slate-400">
-                                <span>Shipping</span><span>₾{order.shipping}</span>
+                                <span>{t('tailorComponents.shipping')}</span><span>₾{order.shipping}</span>
                             </div>
                             <div className="flex justify-between font-bold text-white pt-2 border-t border-slate-700">
-                                <span>Total</span><span>₾{order.total}</span>
+                                <span>{t('tailorComponents.total')}</span><span>₾{order.total}</span>
                             </div>
                         </div>
                     </div>
@@ -297,7 +321,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                     {onStatusChange && (
                         <div className="space-y-3">
                             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block">
-                                Update Status
+                                {t('tailorComponents.updateStatus')}
                             </label>
                             <select
                                 value={localStatus}
@@ -307,8 +331,8 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                                 }}
                                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900"
                             >
-                                {STATUS_OPTIONS.map(({ value, label }) => (
-                                    <option key={value} value={value}>{label}</option>
+                                {STATUS_OPTIONS.map(({ value, labelKey }) => (
+                                    <option key={value} value={value}>{t(labelKey)}</option>
                                 ))}
                             </select>
 
@@ -321,9 +345,9 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                                     className="flex items-center gap-2"
                                 >
                                     {saving ? (
-                                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
+                                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('tailorComponents.savingStatus')}</>
                                     ) : (
-                                        'Save Status'
+                                        t('tailorComponents.saveStatus')
                                     )}
                                 </Button>
 
@@ -334,11 +358,11 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                                             initial={{ opacity: 0, y: 6 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.3 }}
+                                            transition={{ duration: 0.5, ease: 'easeOut' }}
                                             className="flex items-center gap-1.5 text-xs font-medium text-slate-900"
                                         >
                                             <CheckCircle className="w-3.5 h-3.5" />
-                                            Status saved — customer notified
+                                            {t('tailorComponents.statusSaved')}
                                         </motion.div>
                                     )}
                                     {saveError && (
@@ -347,11 +371,11 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                                             initial={{ opacity: 0, y: 6 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.3 }}
+                                            transition={{ duration: 0.5, ease: 'easeOut' }}
                                             className="flex items-center gap-1.5 text-xs font-medium text-slate-600"
                                         >
                                             <X className="w-3.5 h-3.5" />
-                                            Failed to save — please try again
+                                            {t('tailorComponents.saveFailed')}
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
@@ -369,6 +393,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
+    const { t, i18n } = useTranslation();
     const [viewing, setViewing] = useState<TailorOrder | null>(null);
     const currentUserId = getAuthUser()?.id ?? 0;
 
@@ -376,7 +401,7 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
         <>
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-100">
-                    <h2 className="font-bold text-slate-900">Active Orders</h2>
+                    <h2 className="font-bold text-slate-900">{t('tailorComponents.ordersListTitle')}</h2>
                 </div>
 
                 {orders.length === 0 ? (
@@ -384,9 +409,9 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                         <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-4 text-2xl">
                             📦
                         </div>
-                        <p className="font-semibold text-slate-900 text-sm mb-1">No orders yet</p>
+                        <p className="font-semibold text-slate-900 text-sm mb-1">{t('tailorComponents.noOrdersYet')}</p>
                         <p className="text-slate-400 text-xs max-w-xs leading-relaxed">
-                            Once customers discover your products and place orders, they'll show up here.
+                            {t('tailorComponents.noOrdersDesc')}
                         </p>
                     </div>
                 ) : (
@@ -394,21 +419,25 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                         <table className="w-full">
                             <thead>
                                 <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
-                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold">Order</th>
-                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold hidden sm:table-cell">Customer</th>
-                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold hidden md:table-cell">Type / Product</th>
-                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold">Status</th>
-                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold">Amount</th>
-                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold hidden lg:table-cell">Date</th>
+                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold">{t('tailorComponents.orderCol')}</th>
+                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold hidden sm:table-cell">{t('tailorComponents.customerCol')}</th>
+                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold hidden md:table-cell">{t('tailorComponents.typeProductCol')}</th>
+                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold">{t('tailorComponents.statusCol')}</th>
+                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold">{t('tailorComponents.amountCol')}</th>
+                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold hidden lg:table-cell">{t('tailorComponents.dateCol')}</th>
                                     <th className="px-4 sm:px-6 py-3" />
                                 </tr>
                             </thead>
                             <tbody>
                                 {orders.map((order, i) => {
-                                    const status = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending;
+                                    const statusClasses = STATUS_CLASSES[order.status] ?? STATUS_CLASSES.pending;
+                                    const statusLabel   = t(STATUS_LABEL_KEYS[order.status] ?? STATUS_LABEL_KEYS.pending);
                                     const productLabel = order.order_type === 'custom'
-                                        ? `Custom: ${order.custom_design_data?.clothingType ?? '—'}`
+                                        ? `${t('tailorComponents.customPrefix')}: ${order.custom_design_data?.garmentType ?? order.custom_design_data?.clothingType ?? '—'}`
                                         : (order.items[0]?.product_name ?? '—');
+                                    const dateLabel = order.created_at
+                                        ? new Date(order.created_at).toLocaleDateString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB')
+                                        : '—';
 
                                     return (
                                         <motion.tr
@@ -422,19 +451,21 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                                             <td className="px-4 sm:px-6 py-4 text-sm font-medium text-slate-900 hidden sm:table-cell">{order.customer.name}</td>
                                             <td className="px-4 sm:px-6 py-4 text-sm text-slate-600 max-w-[180px] truncate hidden md:table-cell">{productLabel}</td>
                                             <td className="px-4 sm:px-6 py-4">
-                                                <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border ${status.classes}`}>
-                                                    {status.label}
+                                                <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border ${statusClasses}`}>
+                                                    {statusLabel}
                                                 </span>
                                             </td>
                                             <td className="px-4 sm:px-6 py-4 text-sm font-bold text-slate-900">₾{order.total}</td>
-                                            <td className="px-4 sm:px-6 py-4 text-sm text-slate-500 hidden lg:table-cell">{order.created_at}</td>
+                                            <td className="px-4 sm:px-6 py-4 text-sm text-slate-500 hidden lg:table-cell">{dateLabel}</td>
                                             <td className="px-4 sm:px-6 py-4">
-                                                <button
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
                                                     onClick={() => setViewing(order)}
-                                                    className="text-xs font-medium text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors"
+                                                    className="text-xs"
                                                 >
-                                                    View
-                                                </button>
+                                                    {t('tailorComponents.viewBtn')}
+                                                </Button>
                                             </td>
                                         </motion.tr>
                                     );

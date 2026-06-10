@@ -1,30 +1,34 @@
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Button } from '../ui/button';
 
 interface Props {
     onAddProduct: () => void;
 }
 
-const STEPS = [
-    { num: '1', label: 'Add your first product', desc: 'Describe what you make and upload a photo' },
-    { num: '2', label: 'Set your price',          desc: 'Name your price in Georgian Lari'           },
-    { num: '3', label: 'Publish',                 desc: 'Your listing goes live in the marketplace'  },
-];
-
 export function OnboardingPanel({ onAddProduct }: Props) {
+    const { t } = useTranslation();
+
+    const STEPS = [
+        { num: '1', label: t('tailorComponents.step1Label'), desc: t('tailorComponents.step1Desc') },
+        { num: '2', label: t('tailorComponents.step2Label'), desc: t('tailorComponents.step2Desc') },
+        { num: '3', label: t('tailorComponents.step3Label'), desc: t('tailorComponents.step3Desc') },
+    ];
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.5 }}
             className="bg-slate-900 rounded-2xl p-6 sm:p-8 text-white"
         >
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">
-                Getting started
+                {t('tailorComponents.gettingStarted')}
             </p>
-            <h2 className="text-xl sm:text-2xl font-bold mb-1.5">Let's get your first order</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-1.5">{t('tailorComponents.onboardingHeading')}</h2>
             <p className="text-slate-400 text-sm mb-7 max-w-lg">
-                Customers are already searching for custom clothing. Add a product to get discovered in the marketplace.
+                {t('tailorComponents.onboardingDesc')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-5 mb-8">
@@ -45,13 +49,15 @@ export function OnboardingPanel({ onAddProduct }: Props) {
                 ))}
             </div>
 
-            <button
+            <Button
+                variant="default"
+                size="default"
                 onClick={onAddProduct}
-                className="inline-flex items-center gap-2 bg-white text-slate-900 font-semibold px-6 py-3 rounded-xl hover:bg-slate-100 active:scale-[0.98] transition-all text-sm"
+                className="bg-white text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2"
             >
-                Add First Product
+                {t('tailorComponents.addFirstProductBtn')}
                 <ArrowRight className="w-4 h-4" />
-            </button>
+            </Button>
         </motion.div>
     );
 }

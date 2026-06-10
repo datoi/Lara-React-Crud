@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { Users, Package, ShieldAlert, LogOut, CheckCircle, Scissors } from 'lucide-react';
 import { getAuthUser, getAuthToken, clearAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,7 +37,7 @@ interface AssignSlot {
     saved:    boolean;
 }
 
-// ─── Status badge (matches existing palette) ─────────────────────────────────
+// ─── Status badge ─────────────────────────────────────────────────────────────
 
 const STATUS_CLASSES: Record<string, string> = {
     pending:    'bg-slate-100 text-slate-600 border-slate-200',
@@ -47,11 +48,22 @@ const STATUS_CLASSES: Record<string, string> = {
     cancelled:  'bg-slate-200 text-slate-600 border-slate-300',
 };
 
+const STATUS_LABEL_KEYS: Record<string, string> = {
+    pending:    'adminDashboard.statusPending',
+    processing: 'adminDashboard.statusProcessing',
+    shipped:    'adminDashboard.statusShipped',
+    finished:   'adminDashboard.statusFinished',
+    delivered:  'adminDashboard.statusDelivered',
+    cancelled:  'adminDashboard.statusCancelled',
+};
+
 function StatusBadge({ status }: { status: string }) {
+    const { t } = useTranslation();
     const cls = STATUS_CLASSES[status] ?? 'bg-slate-50 text-slate-600 border-slate-200';
+    const labelKey = STATUS_LABEL_KEYS[status];
     return (
         <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border ${cls}`}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+            {labelKey ? t(labelKey) : status.charAt(0).toUpperCase() + status.slice(1)}
         </span>
     );
 }
@@ -59,6 +71,7 @@ function StatusBadge({ status }: { status: string }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
+    const { t }  = useTranslation();
     const navigate = useNavigate();
     const user     = getAuthUser();
     const token    = getAuthToken();
@@ -69,19 +82,15 @@ export default function AdminDashboard() {
     const [loadingOrders, setLoadingOrders] = useState(true);
     const [loadingUsers,  setLoadingUsers]  = useState(true);
 
-    // Per-row tailor assignment state
     const [assignMap, setAssignMap] = useState<Record<number, AssignSlot>>({});
-    // The user ID currently being suspended/reinstated
     const [suspendingId, setSuspendingId] = useState<number | null>(null);
 
     const tailors = users.filter(u => u.role === 'tailor');
 
-    // ── Auth guard ───────────────────────────────────────────────────────────
     useEffect(() => {
         if (!token || user?.role !== 'admin') navigate('/admin/login', { replace: true });
     }, [token, user, navigate]);
 
-    // ── Fetch orders ─────────────────────────────────────────────────────────
     const fetchOrders = useCallback(async () => {
         if (!token) return;
         try {
@@ -92,7 +101,6 @@ export default function AdminDashboard() {
             const data = await res.json();
             const list: AdminOrder[] = data.orders ?? [];
             setOrders(list);
-            // Seed the assign map once from server state
             setAssignMap(prev => {
                 const next = { ...prev };
                 list.forEach(o => {
@@ -107,7 +115,6 @@ export default function AdminDashboard() {
         }
     }, [token]);
 
-    // ── Fetch users ──────────────────────────────────────────────────────────
     const fetchUsers = useCallback(async () => {
         if (!token) return;
         try {
@@ -125,7 +132,6 @@ export default function AdminDashboard() {
         fetchUsers();
     }, [fetchOrders, fetchUsers]);
 
-    // ── Assign tailor ────────────────────────────────────────────────────────
     const handleAssign = async (orderId: number) => {
         const slot = assignMap[orderId];
         if (!slot?.tailorId || !token) return;
@@ -158,7 +164,6 @@ export default function AdminDashboard() {
         }
     };
 
-    // ── Suspend / reinstate ──────────────────────────────────────────────────
     const handleSuspend = async (userId: number) => {
         if (!token) return;
         setSuspendingId(userId);
@@ -180,18 +185,23 @@ export default function AdminDashboard() {
     const unassignedOrders = orders.filter(o => o.status === 'pending_assignment');
 
     const stats = [
-        { label: 'Total Orders', value: orders.length,                         icon: Package },
-        { label: 'Unassigned',   value: unassignedOrders.length,               icon: Package },
-        { label: 'Tailors',      value: tailors.length,                        icon: Users },
-        { label: 'Suspended',    value: users.filter(u => u.is_suspended).length, icon: ShieldAlert },
+        { labelKey: 'adminDashboard.statTotalOrders', value: orders.length,                            icon: Package },
+        { labelKey: 'adminDashboard.statUnassigned',  value: unassignedOrders.length,                  icon: Package },
+        { labelKey: 'adminDashboard.statTailors',     value: tailors.length,                           icon: Users },
+        { labelKey: 'adminDashboard.statSuspended',   value: users.filter(u => u.is_suspended).length, icon: ShieldAlert },
     ];
 
-    // ─────────────────────────────────────────────────────────────────────────
+    const tabs = (['orders', 'unassigned', 'users'] as const);
+    const tabLabels: Record<string, string> = {
+        orders:     t('adminDashboard.tabOrders'),
+        unassigned: t('adminDashboard.tabUnassigned'),
+        users:      t('adminDashboard.tabUsers'),
+    };
 
     return (
         <div className="min-h-screen bg-slate-50">
             <Helmet>
-                <title>Admin Dashboard | Kere</title>
+                <title>{t('adminDashboard.pageTitle')}</title>
                 <meta name="robots" content="noindex" />
             </Helmet>
 
@@ -203,7 +213,7 @@ export default function AdminDashboard() {
                             Kere
                         </Link>
                         <span className="text-[10px] font-bold bg-slate-900 text-white px-2 py-0.5 rounded-full tracking-wide uppercase">
-                            Admin
+                            {t('adminDashboard.adminBadge')}
                         </span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -212,7 +222,7 @@ export default function AdminDashboard() {
                             className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
                         >
                             <Scissors className="w-4 h-4" />
-                            <span className="hidden sm:inline">Design Studio</span>
+                            <span className="hidden sm:inline">{t('adminDashboard.designStudio')}</span>
                         </Link>
                         <div className="flex items-center gap-2 text-sm text-slate-700">
                             <ShieldAlert className="w-4 h-4 text-slate-400" />
@@ -225,7 +235,7 @@ export default function AdminDashboard() {
                             className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
                         >
                             <LogOut className="w-4 h-4" />
-                            <span className="hidden sm:inline">Sign Out</span>
+                            <span className="hidden sm:inline">{t('adminDashboard.signOut')}</span>
                         </button>
                     </div>
                 </div>
@@ -235,8 +245,8 @@ export default function AdminDashboard() {
 
                 {/* ── Header ── */}
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Platform Control</h1>
-                    <p className="text-slate-500 mt-1 text-sm">Manage orders, users, and tailor assignments.</p>
+                    <h1 className="text-2xl font-bold text-slate-900">{t('adminDashboard.platformControl')}</h1>
+                    <p className="text-slate-500 mt-1 text-sm">{t('adminDashboard.manageDesc')}</p>
                 </div>
 
                 {/* ── Stats ── */}
@@ -245,14 +255,14 @@ export default function AdminDashboard() {
                         const Icon = stat.icon;
                         return (
                             <motion.div
-                                key={stat.label}
+                                key={stat.labelKey}
                                 initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 className="bg-white rounded-2xl border border-slate-100 p-4"
                             >
                                 <div className="flex items-center gap-2 mb-2">
                                     <Icon className="w-4 h-4 text-slate-400" />
-                                    <span className="text-xs text-slate-500">{stat.label}</span>
+                                    <span className="text-xs text-slate-500">{t(stat.labelKey)}</span>
                                 </div>
                                 <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
                             </motion.div>
@@ -262,18 +272,18 @@ export default function AdminDashboard() {
 
                 {/* ── Tabs ── */}
                 <div className="flex gap-2">
-                    {(['orders', 'unassigned', 'users'] as const).map(t => (
+                    {tabs.map(tabKey => (
                         <button
-                            key={t}
-                            onClick={() => setTab(t)}
-                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors capitalize ${
-                                tab === t
+                            key={tabKey}
+                            onClick={() => setTab(tabKey)}
+                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                                tab === tabKey
                                     ? 'bg-slate-900 text-white'
                                     : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                             }`}
                         >
-                            {t}
-                            {t === 'unassigned' && unassignedOrders.length > 0 && (
+                            {tabLabels[tabKey]}
+                            {tabKey === 'unassigned' && unassignedOrders.length > 0 && (
                                 <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === 'unassigned' ? 'bg-white text-slate-900' : 'bg-slate-200 text-slate-700'}`}>
                                     {unassignedOrders.length}
                                 </span>
@@ -291,24 +301,24 @@ export default function AdminDashboard() {
                         className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
                     >
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                            <h2 className="font-bold text-slate-900">All Orders</h2>
-                            <span className="text-xs text-slate-400">{orders.length} total</span>
+                            <h2 className="font-bold text-slate-900">{t('adminDashboard.allOrders')}</h2>
+                            <span className="text-xs text-slate-400">{t('adminDashboard.total', { n: orders.length })}</span>
                         </div>
 
                         {loadingOrders ? (
-                            <div className="px-6 py-14 text-center text-sm text-slate-400">Loading…</div>
+                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.loading')}</div>
                         ) : orders.length === 0 ? (
-                            <div className="px-6 py-14 text-center text-sm text-slate-400">No orders yet.</div>
+                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.noOrders')}</div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
                                         <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
-                                            <th className="text-left px-6 py-3 font-semibold">Order #</th>
-                                            <th className="text-left px-6 py-3 font-semibold hidden sm:table-cell">Customer</th>
-                                            <th className="text-left px-6 py-3 font-semibold hidden md:table-cell">Items</th>
-                                            <th className="text-left px-6 py-3 font-semibold">Status</th>
-                                            <th className="text-left px-6 py-3 font-semibold">Assign Tailor</th>
+                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colOrderNum')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold hidden sm:table-cell">{t('adminDashboard.colCustomer')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold hidden md:table-cell">{t('adminDashboard.colItems')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colStatus')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colAssignTailor')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -336,7 +346,7 @@ export default function AdminDashboard() {
                                                         <p className="text-xs text-slate-600 max-w-[200px] truncate">
                                                             {order.items.length > 0
                                                                 ? order.items.map(it => `${it.product_name} ×${it.quantity}`).join(', ')
-                                                                : order.order_type === 'custom' ? 'Custom design' : '—'
+                                                                : order.order_type === 'custom' ? t('adminDashboard.customDesign') : '—'
                                                             }
                                                         </p>
                                                     </td>
@@ -354,9 +364,9 @@ export default function AdminDashboard() {
                                                                 disabled={slot.saving || tailors.length === 0}
                                                                 className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:opacity-50"
                                                             >
-                                                                <option value="">— Select tailor —</option>
-                                                                {tailors.map(t => (
-                                                                    <option key={t.id} value={String(t.id)}>{t.name}</option>
+                                                                <option value="">{t('adminDashboard.selectTailor')}</option>
+                                                                {tailors.map(tl => (
+                                                                    <option key={tl.id} value={String(tl.id)}>{tl.name}</option>
                                                                 ))}
                                                             </select>
 
@@ -367,19 +377,19 @@ export default function AdminDashboard() {
                                                                 disabled={!changed || !slot.tailorId || slot.saving}
                                                                 className="h-7 px-3 text-xs"
                                                             >
-                                                                {slot.saving ? 'Saving…' : 'Assign'}
+                                                                {slot.saving ? t('adminDashboard.saving') : t('adminDashboard.assign')}
                                                             </Button>
 
                                                             {slot.saved && (
                                                                 <span className="flex items-center gap-1 text-xs text-slate-900 font-medium">
                                                                     <CheckCircle className="w-3.5 h-3.5" />
-                                                                    Saved
+                                                                    {t('adminDashboard.saved')}
                                                                 </span>
                                                             )}
                                                         </div>
                                                         {order.tailor && (
                                                             <p className="text-xs text-slate-400 mt-1">
-                                                                Current: {order.tailor.name}
+                                                                {t('adminDashboard.current', { name: order.tailor.name })}
                                                             </p>
                                                         )}
                                                     </td>
@@ -403,29 +413,25 @@ export default function AdminDashboard() {
                     >
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                             <div>
-                                <h2 className="font-bold text-slate-900">Unassigned Orders</h2>
-                                <p className="text-xs text-slate-400 mt-0.5">
-                                    Orders awaiting a tailor — assign one to move them to pending.
-                                </p>
+                                <h2 className="font-bold text-slate-900">{t('adminDashboard.unassignedOrders')}</h2>
+                                <p className="text-xs text-slate-400 mt-0.5">{t('adminDashboard.unassignedDesc')}</p>
                             </div>
-                            <span className="text-xs text-slate-400">{unassignedOrders.length} total</span>
+                            <span className="text-xs text-slate-400">{t('adminDashboard.total', { n: unassignedOrders.length })}</span>
                         </div>
 
                         {loadingOrders ? (
-                            <div className="px-6 py-14 text-center text-sm text-slate-400">Loading…</div>
+                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.loading')}</div>
                         ) : unassignedOrders.length === 0 ? (
-                            <div className="px-6 py-14 text-center text-sm text-slate-400">
-                                No unassigned orders.
-                            </div>
+                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.noUnassigned')}</div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
                                         <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
-                                            <th className="text-left px-6 py-3 font-semibold">Order #</th>
-                                            <th className="text-left px-6 py-3 font-semibold hidden sm:table-cell">Customer</th>
-                                            <th className="text-left px-6 py-3 font-semibold hidden md:table-cell">Design</th>
-                                            <th className="text-left px-6 py-3 font-semibold">Assign Tailor</th>
+                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colOrderNum')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold hidden sm:table-cell">{t('adminDashboard.colCustomer')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold hidden md:table-cell">{t('adminDashboard.colDesign')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colAssignTailor')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -451,7 +457,7 @@ export default function AdminDashboard() {
                                                     </td>
                                                     <td className="px-6 py-4 hidden md:table-cell">
                                                         <p className="text-xs text-slate-600 max-w-[200px] truncate">
-                                                            Custom design
+                                                            {t('adminDashboard.customDesign')}
                                                         </p>
                                                     </td>
                                                     <td className="px-6 py-4">
@@ -465,9 +471,9 @@ export default function AdminDashboard() {
                                                                 disabled={slot.saving || tailors.length === 0}
                                                                 className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:opacity-50"
                                                             >
-                                                                <option value="">— Select tailor —</option>
-                                                                {tailors.map(t => (
-                                                                    <option key={t.id} value={String(t.id)}>{t.name}</option>
+                                                                <option value="">{t('adminDashboard.selectTailor')}</option>
+                                                                {tailors.map(tl => (
+                                                                    <option key={tl.id} value={String(tl.id)}>{tl.name}</option>
                                                                 ))}
                                                             </select>
 
@@ -478,13 +484,13 @@ export default function AdminDashboard() {
                                                                 disabled={!changed || !slot.tailorId || slot.saving}
                                                                 className="h-7 px-3 text-xs"
                                                             >
-                                                                {slot.saving ? 'Saving…' : 'Assign'}
+                                                                {slot.saving ? t('adminDashboard.saving') : t('adminDashboard.assign')}
                                                             </Button>
 
                                                             {slot.saved && (
                                                                 <span className="flex items-center gap-1 text-xs text-slate-900 font-medium">
                                                                     <CheckCircle className="w-3.5 h-3.5" />
-                                                                    Saved
+                                                                    {t('adminDashboard.saved')}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -508,25 +514,25 @@ export default function AdminDashboard() {
                         className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
                     >
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                            <h2 className="font-bold text-slate-900">All Users</h2>
-                            <span className="text-xs text-slate-400">{users.length} total</span>
+                            <h2 className="font-bold text-slate-900">{t('adminDashboard.allUsers')}</h2>
+                            <span className="text-xs text-slate-400">{t('adminDashboard.total', { n: users.length })}</span>
                         </div>
 
                         {loadingUsers ? (
-                            <div className="px-6 py-14 text-center text-sm text-slate-400">Loading…</div>
+                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.loading')}</div>
                         ) : users.length === 0 ? (
-                            <div className="px-6 py-14 text-center text-sm text-slate-400">No users yet.</div>
+                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.noUsers')}</div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
                                         <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
-                                            <th className="text-left px-6 py-3 font-semibold">Name</th>
-                                            <th className="text-left px-6 py-3 font-semibold hidden sm:table-cell">Email</th>
-                                            <th className="text-left px-6 py-3 font-semibold hidden md:table-cell">Joined</th>
-                                            <th className="text-left px-6 py-3 font-semibold">Role</th>
-                                            <th className="text-left px-6 py-3 font-semibold">Status</th>
-                                            <th className="text-left px-6 py-3 font-semibold">Action</th>
+                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colName')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold hidden sm:table-cell">{t('adminDashboard.colEmail')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold hidden md:table-cell">{t('adminDashboard.colJoined')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colRole')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colUserStatus')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colAction')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -547,17 +553,17 @@ export default function AdminDashboard() {
                                                         u.role === 'admin'   ? 'bg-slate-900 text-white border-slate-900' :
                                                                                'bg-slate-50 text-slate-600 border-slate-200'
                                                     }`}>
-                                                        {u.role}
+                                                        {t(`adminDashboard.role${u.role.charAt(0).toUpperCase()}${u.role.slice(1)}`) || u.role}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {u.is_suspended ? (
                                                         <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border bg-slate-200 text-slate-700 border-slate-300">
-                                                            Suspended
+                                                            {t('adminDashboard.suspended')}
                                                         </span>
                                                     ) : (
                                                         <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border bg-slate-50 text-slate-900 border-slate-200">
-                                                            Active
+                                                            {t('adminDashboard.active')}
                                                         </span>
                                                     )}
                                                 </td>
@@ -571,8 +577,8 @@ export default function AdminDashboard() {
                                                             className="text-xs h-7"
                                                         >
                                                             {suspendingId === u.id
-                                                                ? '…'
-                                                                : u.is_suspended ? 'Reinstate' : 'Suspend'}
+                                                                ? t('adminDashboard.saving')
+                                                                : u.is_suspended ? t('adminDashboard.reinstate') : t('adminDashboard.suspend')}
                                                         </Button>
                                                     )}
                                                 </td>
