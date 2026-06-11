@@ -138,7 +138,7 @@ export function NotificationBell() {
                         exit={{ opacity: 0, y: 8, scale: 0.96 }}
                         transition={{ duration: 0.15 }}
                         role="menu"
-                        className="absolute right-0 top-full mt-2 w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden"
+                        className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden"
                     >
                         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                             <span className="font-semibold text-slate-900 text-sm">Notifications</span>
