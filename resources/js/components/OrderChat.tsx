@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Send, Loader2, MessageCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getAuthToken } from '../hooks/useAuth';
+import { Button } from './ui/button';
 
-interface Message {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ChatMessage {
     id: number;
     sender_id: number;
     sender_name: string;
@@ -13,61 +18,90 @@ interface Message {
 interface Props {
     orderId: number;
     currentUserId: number;
+    isVisible?: boolean;
+    onUnreadCountChange?: (count: number) => void;
 }
 
-const POLL_MS = 5000;
+// ─── localStorage helpers ─────────────────────────────────────────────────────
 
-export function OrderChat({ orderId, currentUserId }: Props) {
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [text, setText]         = useState('');
-    const [sending, setSending]   = useState(false);
-    const bottomRef               = useRef<HTMLDivElement>(null);
-    const prevCountRef            = useRef(0);
-    const token = getAuthToken();
+function getSeenCount(orderId: number): number {
+    return parseInt(localStorage.getItem(`kere_chat_others_seen_${orderId}`) ?? '0', 10);
+}
+
+function saveSeenCount(orderId: number, n: number): void {
+    localStorage.setItem(`kere_chat_others_seen_${orderId}`, String(n));
+}
+
+export function countOthersMessages(orderId: number, totalFromOthers: number): number {
+    return Math.max(0, totalFromOthers - getSeenCount(orderId));
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function OrderChat({ orderId, currentUserId, isVisible = true, onUnreadCountChange }: Props) {
+    const { t } = useTranslation();
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [loading,  setLoading]  = useState(true);
+    const [text,     setText]     = useState('');
+    const [sending,  setSending]  = useState(false);
+    const bottomRef  = useRef<HTMLDivElement>(null);
+    const prevLen    = useRef(0);
+    const token      = getAuthToken();
+
+    const notifyUnread = useCallback((msgs: ChatMessage[]) => {
+        const fromOthers = msgs.filter(m => m.sender_id !== currentUserId).length;
+        onUnreadCountChange?.(countOthersMessages(orderId, fromOthers));
+    }, [orderId, currentUserId, onUnreadCountChange]);
 
     const fetchMessages = useCallback(async () => {
         if (!token) return;
         try {
-            const res = await fetch(`/api/orders/${orderId}/messages`, {
+            const r = await fetch(`/api/orders/${orderId}/messages`, {
                 headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
             });
-            if (!res.ok) return;
-            const data = await res.json();
-            const incoming: Message[] = data.messages ?? [];
-            // Only update state when the list actually changed
+            if (!r.ok) return;
+            const data = await r.json();
+            const incoming: ChatMessage[] = data.messages ?? [];
             setMessages(prev => {
                 if (prev.length === incoming.length && prev.at(-1)?.id === incoming.at(-1)?.id) {
                     return prev;
                 }
                 return incoming;
             });
-        } catch {
-            // Silently ignore network errors during poll
-        }
-    }, [orderId, token]);
+            setLoading(false);
+            notifyUnread(incoming);
+        } catch { /* silent */ }
+    }, [orderId, token, notifyUnread]);
 
-    // Mount fetch + 5-second poll
+    // Initial fetch + 4-second poll (always active — tracks unread even when tab hidden)
     useEffect(() => {
         fetchMessages();
-        const id = setInterval(fetchMessages, POLL_MS);
+        const id = setInterval(fetchMessages, 4000);
         return () => clearInterval(id);
     }, [fetchMessages]);
 
-    // Scroll to bottom only when message count grows
+    // Mark messages as seen when chat becomes visible
     useEffect(() => {
-        if (messages.length > prevCountRef.current) {
+        if (!isVisible) return;
+        const fromOthers = messages.filter(m => m.sender_id !== currentUserId).length;
+        saveSeenCount(orderId, fromOthers);
+        onUnreadCountChange?.(0);
+    }, [isVisible, messages, orderId, currentUserId, onUnreadCountChange]);
+
+    // Scroll to bottom on new messages (only when visible)
+    useEffect(() => {
+        if (isVisible && messages.length > prevLen.current) {
             bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
-        prevCountRef.current = messages.length;
-    }, [messages.length]);
+        prevLen.current = messages.length;
+    }, [isVisible, messages.length]);
 
     const handleSend = async () => {
         const trimmed = text.trim();
         if (!trimmed || sending || !token) return;
-
         setSending(true);
         try {
-            const res = await fetch(`/api/orders/${orderId}/messages`, {
+            const r = await fetch(`/api/orders/${orderId}/messages`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -76,8 +110,8 @@ export function OrderChat({ orderId, currentUserId }: Props) {
                 },
                 body: JSON.stringify({ message: trimmed }),
             });
-            if (res.ok) {
-                const data = await res.json();
+            if (r.ok) {
+                const data = await r.json();
                 setMessages(prev => [...prev, data.message]);
                 setText('');
             }
@@ -86,47 +120,44 @@ export function OrderChat({ orderId, currentUserId }: Props) {
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-    };
-
     return (
-        <div className="border-t border-slate-100 pt-5 space-y-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Messages</p>
-
-            {/* Message list */}
-            <div className="bg-slate-50 rounded-xl h-56 overflow-y-auto flex flex-col gap-2 p-3">
-                {messages.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center">
-                        <p className="text-xs text-slate-400">No messages yet. Start the conversation.</p>
+        <div className="flex flex-col border border-slate-200 rounded-xl overflow-hidden">
+            {/* Messages list */}
+            <div className="overflow-y-auto p-4 space-y-3 bg-slate-50" style={{ minHeight: '200px', maxHeight: '300px' }}>
+                {loading ? (
+                    <div className="flex items-center justify-center" style={{ height: '168px' }}>
+                        <Loader2 className="w-5 h-5 animate-spin text-slate-300" />
+                    </div>
+                ) : messages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-2" style={{ height: '168px' }}>
+                        <MessageCircle className="w-8 h-8 text-slate-200" />
+                        <p className="text-sm text-slate-400">{t('chat.noMessages')}</p>
                     </div>
                 ) : (
                     messages.map(msg => {
-                        const isMine = msg.sender_id === currentUserId;
+                        const isOwn = msg.sender_id === currentUserId;
                         return (
-                            <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 ${
-                                    isMine
-                                        ? 'bg-slate-900 text-white'
-                                        : 'bg-white border border-slate-200 text-slate-900'
+                            <motion.div
+                                key={msg.id}
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5 }}
+                                className={`flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}
+                            >
+                                {!isOwn && (
+                                    <span className="text-[10px] text-slate-400 px-1">{msg.sender_name}</span>
+                                )}
+                                <div className={`max-w-[78%] px-3.5 py-2 rounded-2xl text-sm leading-snug break-words ${
+                                    isOwn
+                                        ? 'bg-slate-900 text-white rounded-br-sm'
+                                        : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'
                                 }`}>
-                                    {!isMine && (
-                                        <p className="text-[10px] font-semibold text-slate-400 mb-0.5">
-                                            {msg.sender_name}
-                                        </p>
-                                    )}
-                                    <p className="text-sm leading-snug break-words">{msg.message}</p>
-                                    <p className={`text-[10px] mt-1 ${isMine ? 'text-slate-400' : 'text-slate-400'}`}>
-                                        {new Date(msg.created_at).toLocaleTimeString('en-GB', {
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        })}
-                                    </p>
+                                    {msg.message}
                                 </div>
-                            </div>
+                                <span className="text-[10px] text-slate-400 px-1">
+                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                            </motion.div>
                         );
                     })
                 )}
@@ -134,27 +165,34 @@ export function OrderChat({ orderId, currentUserId }: Props) {
             </div>
 
             {/* Input row */}
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2 p-3 border-t border-slate-200 bg-white">
                 <input
                     type="text"
                     value={text}
                     onChange={e => setText(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Type a message…"
+                    onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+                    }}
+                    placeholder={t('chat.placeholder')}
                     maxLength={2000}
+                    disabled={sending}
                     className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
                 />
-                <button
+                <Button
+                    variant="default"
+                    size="sm"
                     onClick={handleSend}
                     disabled={!text.trim() || sending}
-                    className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center hover:bg-slate-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
-                    aria-label="Send message"
+                    className="flex items-center gap-1.5 flex-shrink-0"
                 >
                     {sending
-                        ? <Loader2 className="w-4 h-4 animate-spin" />
-                        : <Send className="w-4 h-4" />
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : <Send className="w-3.5 h-3.5" />
                     }
-                </button>
+                    <span className="hidden sm:inline">
+                        {sending ? t('chat.sending') : t('chat.send')}
+                    </span>
+                </Button>
             </div>
         </div>
     );

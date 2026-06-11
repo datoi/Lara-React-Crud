@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, CheckCircle, Loader2, Phone } from 'lucide-react';
+import { X, CheckCircle, Loader2, Phone, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { OrderChat } from '../OrderChat';
-import { getAuthUser } from '../../hooks/useAuth';
+import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
 
 // ─── Module-level status label map (shared by both components) ────────────────
 
@@ -100,11 +100,12 @@ function SpecRow({ label, value }: { label: string; value?: string | null }) {
 
 // ─── Order detail modal ───────────────────────────────────────────────────────
 
-function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
+function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initialTab = 'details' }: {
     order: TailorOrder;
     onClose: () => void;
     onStatusChange?: (id: number, status: string) => Promise<void>;
     currentUserId: number;
+    initialTab?: 'details' | 'messages';
 }) {
     const { t } = useTranslation();
 
@@ -121,11 +122,12 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
     const isCustom = order.order_type === 'custom';
     const cd = order.custom_design_data;
 
-    // Local status state — only syncs to DB when "Save Status" is clicked
     const [localStatus, setLocalStatus] = useState(order.status);
     const [saving,    setSaving]    = useState(false);
     const [saved,     setSaved]     = useState(false);
     const [saveError, setSaveError] = useState(false);
+    const [activeTab, setActiveTab] = useState<'details' | 'messages'>(initialTab);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     const handleSave = async () => {
         if (!onStatusChange || saving) return;
@@ -198,192 +200,234 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
                     </button>
                 </div>
 
-                <div className="p-6 space-y-5">
-                    {/* Marketplace order details */}
-                    {!isCustom && order.items.map(item => (
-                        <div key={item.id} className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                                {t('tailorComponents.productDetailsSection')}
-                            </div>
-                            <SpecRow label={t('tailorComponents.specProduct')}  value={item.product_name} />
-                            <SpecRow label={t('tailorComponents.specQuantity')} value={String(item.quantity)} />
-                            <SpecRow label={t('tailorComponents.specSize')}     value={item.size} />
-                            {item.color && (
-                                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                    <span className="text-xs text-slate-500">{t('tailorComponents.specColor')}</span>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-4 h-4 rounded-full border border-slate-200" style={{ backgroundColor: item.color }} />
-                                        <span className="text-xs font-mono text-slate-700">{item.color}</span>
-                                    </div>
-                                </div>
-                            )}
-                            {item.cm_measurements && Object.keys(item.cm_measurements).length > 0 && (
-                                <>
-                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-3 mb-2">
-                                        {t('tailorComponents.measurementsCm')}
-                                    </div>
-                                    {Object.entries(item.cm_measurements).map(([k, v]) => (
-                                        <SpecRow key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={`${v} cm`} />
-                                    ))}
-                                </>
-                            )}
-                        </div>
-                    ))}
+                {/* Tabs */}
+                <div className="flex border-b border-slate-100">
+                    <button
+                        onClick={() => setActiveTab('details')}
+                        className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                            activeTab === 'details'
+                                ? 'text-slate-900 border-b-2 border-slate-900'
+                                : 'text-slate-400 hover:text-slate-600'
+                        }`}
+                    >
+                        {t('chat.tabDetails')}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('messages')}
+                        className={`relative flex-1 py-3 text-sm font-medium transition-colors ${
+                            activeTab === 'messages'
+                                ? 'text-slate-900 border-b-2 border-slate-900'
+                                : 'text-slate-400 hover:text-slate-600'
+                        }`}
+                    >
+                        {t('chat.tabMessages')}
+                        {unreadCount > 0 && (
+                            <span className="absolute top-2.5 right-6 min-w-[18px] h-[18px] bg-slate-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                                {unreadCount}
+                            </span>
+                        )}
+                    </button>
+                </div>
 
-                    {/* Custom design details */}
-                    {isCustom && cd && (
-                        <>
-                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                {/* Details tab */}
+                <div className={activeTab === 'details' ? 'block' : 'hidden'}>
+                    <div className="p-6 space-y-5">
+                        {/* Marketplace order details */}
+                        {!isCustom && order.items.map(item => (
+                            <div key={item.id} className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                                    {t('tailorComponents.garmentSpecs')}
+                                    {t('tailorComponents.productDetailsSection')}
                                 </div>
-                                <SpecRow label={t('tailorComponents.specType')}     value={(cd.garmentType ?? cd.clothingType) ?? undefined} />
-                                <SpecRow label={t('tailorComponents.specStyle')}    value={(cd.style ?? cd.subcategory) ?? undefined} />
-                                <SpecRow label={t('tailorComponents.specFabric')}   value={cd.fabric} />
-                                <SpecRow label={t('tailorComponents.specNeckline')} value={cd.components?.neckline ?? cd.neckline} />
-                                <SpecRow label={t('tailorComponents.specSleeves')}  value={cd.components?.sleeves  ?? cd.sleeves} />
-                                <SpecRow label={t('tailorComponents.specLength')}   value={cd.components?.length   ?? cd.length} />
-                            </div>
-
-                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                                    {t('tailorComponents.colorsSection')}
-                                </div>
-                                <div className="flex gap-3 flex-wrap">
-                                    {[
-                                        { labelKey: 'tailorComponents.colorBase',   color: cd.baseColor },
-                                        { labelKey: 'tailorComponents.colorAccent', color: cd.accentColor ?? cd.additionalColor },
-                                        { labelKey: 'tailorComponents.colorLight',  color: cd.lighterShade },
-                                        { labelKey: 'tailorComponents.colorDark',   color: cd.darkerShade },
-                                    ].filter(c => c.color).map(c => (
-                                        <div key={c.labelKey} className="flex flex-col items-center gap-1">
-                                            <div className="w-10 h-10 rounded-xl border border-slate-200" style={{ backgroundColor: c.color }} />
-                                            <span className="text-xs text-slate-400">{t(c.labelKey)}</span>
+                                <SpecRow label={t('tailorComponents.specProduct')}  value={item.product_name} />
+                                <SpecRow label={t('tailorComponents.specQuantity')} value={String(item.quantity)} />
+                                <SpecRow label={t('tailorComponents.specSize')}     value={item.size} />
+                                {item.color && (
+                                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                                        <span className="text-xs text-slate-500">{t('tailorComponents.specColor')}</span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-4 h-4 rounded-full border border-slate-200" style={{ backgroundColor: item.color }} />
+                                            <span className="text-xs font-mono text-slate-700">{item.color}</span>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                                    {t('tailorComponents.sizeAndMeasurements')}
-                                </div>
-                                <SpecRow label={t('tailorComponents.specStandardSize')} value={cd.sizeStandard} />
-                                {Object.entries(cd.sizeCm ?? {}).map(([k, v]) => v
-                                    ? <SpecRow key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={`${v} cm`} />
-                                    : null
-                                )}
-                                {(cd.height ?? cd.designElements?.height) && (
-                                    <SpecRow label={t('tailorComponents.specHeight')} value={`${cd.height ?? cd.designElements?.height} cm`} />
-                                )}
-                            </div>
-
-                            {(cd.details ?? cd.designElements?.cuts ?? []).length > 0 && (
-                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                                        {t('tailorComponents.designDetailsSection')}
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {(cd.details ?? cd.designElements?.cuts ?? []).map(d => (
-                                            <span key={d} className="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full">{d}</span>
+                                )}
+                                {item.cm_measurements && Object.keys(item.cm_measurements).length > 0 && (
+                                    <>
+                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-3 mb-2">
+                                            {t('tailorComponents.measurementsCm')}
+                                        </div>
+                                        {Object.entries(item.cm_measurements).map(([k, v]) => (
+                                            <SpecRow key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={`${v} cm`} />
+                                        ))}
+                                    </>
+                                )}
+                            </div>
+                        ))}
+
+                        {/* Custom design details */}
+                        {isCustom && cd && (
+                            <>
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                                        {t('tailorComponents.garmentSpecs')}
+                                    </div>
+                                    <SpecRow label={t('tailorComponents.specType')}     value={(cd.garmentType ?? cd.clothingType) ?? undefined} />
+                                    <SpecRow label={t('tailorComponents.specStyle')}    value={(cd.style ?? cd.subcategory) ?? undefined} />
+                                    <SpecRow label={t('tailorComponents.specFabric')}   value={cd.fabric} />
+                                    <SpecRow label={t('tailorComponents.specNeckline')} value={cd.components?.neckline ?? cd.neckline} />
+                                    <SpecRow label={t('tailorComponents.specSleeves')}  value={cd.components?.sleeves  ?? cd.sleeves} />
+                                    <SpecRow label={t('tailorComponents.specLength')}   value={cd.components?.length   ?? cd.length} />
+                                </div>
+
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                                        {t('tailorComponents.colorsSection')}
+                                    </div>
+                                    <div className="flex gap-3 flex-wrap">
+                                        {[
+                                            { labelKey: 'tailorComponents.colorBase',   color: cd.baseColor },
+                                            { labelKey: 'tailorComponents.colorAccent', color: cd.accentColor ?? cd.additionalColor },
+                                            { labelKey: 'tailorComponents.colorLight',  color: cd.lighterShade },
+                                            { labelKey: 'tailorComponents.colorDark',   color: cd.darkerShade },
+                                        ].filter(c => c.color).map(c => (
+                                            <div key={c.labelKey} className="flex flex-col items-center gap-1">
+                                                <div className="w-10 h-10 rounded-xl border border-slate-200" style={{ backgroundColor: c.color }} />
+                                                <span className="text-xs text-slate-400">{t(c.labelKey)}</span>
+                                            </div>
                                         ))}
                                     </div>
                                 </div>
-                            )}
 
-                            {(cd.notes ?? cd.designElements?.customNotes) && (
                                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                                        {t('tailorComponents.customNotesSection')}
+                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                                        {t('tailorComponents.sizeAndMeasurements')}
                                     </div>
-                                    <p className="text-sm text-slate-700 leading-relaxed">{cd.notes ?? cd.designElements?.customNotes}</p>
+                                    <SpecRow label={t('tailorComponents.specStandardSize')} value={cd.sizeStandard} />
+                                    {Object.entries(cd.sizeCm ?? {}).map(([k, v]) => v
+                                        ? <SpecRow key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={`${v} cm`} />
+                                        : null
+                                    )}
+                                    {(cd.height ?? cd.designElements?.height) && (
+                                        <SpecRow label={t('tailorComponents.specHeight')} value={`${cd.height ?? cd.designElements?.height} cm`} />
+                                    )}
                                 </div>
-                            )}
-                        </>
-                    )}
 
-                    {/* Pricing */}
-                    <div className="bg-slate-900 rounded-xl p-4 text-white">
-                        <div className="space-y-1.5 text-sm">
-                            <div className="flex justify-between text-slate-400">
-                                <span>{t('tailorComponents.subtotal')}</span><span>₾{order.subtotal}</span>
-                            </div>
-                            <div className="flex justify-between text-slate-400">
-                                <span>{t('tailorComponents.shipping')}</span><span>₾{order.shipping}</span>
-                            </div>
-                            <div className="flex justify-between font-bold text-white pt-2 border-t border-slate-700">
-                                <span>{t('tailorComponents.total')}</span><span>₾{order.total}</span>
+                                {(cd.details ?? cd.designElements?.cuts ?? []).length > 0 && (
+                                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                            {t('tailorComponents.designDetailsSection')}
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {(cd.details ?? cd.designElements?.cuts ?? []).map(d => (
+                                                <span key={d} className="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full">{d}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {(cd.notes ?? cd.designElements?.customNotes) && (
+                                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                            {t('tailorComponents.customNotesSection')}
+                                        </div>
+                                        <p className="text-sm text-slate-700 leading-relaxed">{cd.notes ?? cd.designElements?.customNotes}</p>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Pricing */}
+                        <div className="bg-slate-900 rounded-xl p-4 text-white">
+                            <div className="space-y-1.5 text-sm">
+                                <div className="flex justify-between text-slate-400">
+                                    <span>{t('tailorComponents.subtotal')}</span><span>₾{order.subtotal}</span>
+                                </div>
+                                <div className="flex justify-between text-slate-400">
+                                    <span>{t('tailorComponents.shipping')}</span><span>₾{order.shipping}</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-white pt-2 border-t border-slate-700">
+                                    <span>{t('tailorComponents.total')}</span><span>₾{order.total}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Status update — manual save */}
-                    {onStatusChange && (
-                        <div className="space-y-3">
-                            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block">
-                                {t('tailorComponents.updateStatus')}
-                            </label>
-                            <select
-                                value={localStatus}
-                                onChange={e => {
-                                    setLocalStatus(e.target.value as TailorOrder['status']);
-                                    setSaved(false);
-                                }}
-                                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900"
-                            >
-                                {STATUS_OPTIONS.map(({ value, labelKey }) => (
-                                    <option key={value} value={value}>{t(labelKey)}</option>
-                                ))}
-                            </select>
-
-                            <div className="flex items-center gap-3">
-                                <Button
-                                    variant="default"
-                                    size="sm"
-                                    onClick={handleSave}
-                                    disabled={saving || localStatus === order.status}
-                                    className="flex items-center gap-2"
+                        {/* Status update */}
+                        {onStatusChange && (
+                            <div className="space-y-3">
+                                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block">
+                                    {t('tailorComponents.updateStatus')}
+                                </label>
+                                <select
+                                    value={localStatus}
+                                    onChange={e => {
+                                        setLocalStatus(e.target.value as TailorOrder['status']);
+                                        setSaved(false);
+                                    }}
+                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900"
                                 >
-                                    {saving ? (
-                                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('tailorComponents.savingStatus')}</>
-                                    ) : (
-                                        t('tailorComponents.saveStatus')
-                                    )}
-                                </Button>
+                                    {STATUS_OPTIONS.map(({ value, labelKey }) => (
+                                        <option key={value} value={value}>{t(labelKey)}</option>
+                                    ))}
+                                </select>
 
-                                <AnimatePresence>
-                                    {saved && (
-                                        <motion.div
-                                            key="saved"
-                                            initial={{ opacity: 0, y: 6 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.5, ease: 'easeOut' }}
-                                            className="flex items-center gap-1.5 text-xs font-medium text-slate-900"
-                                        >
-                                            <CheckCircle className="w-3.5 h-3.5" />
-                                            {t('tailorComponents.statusSaved')}
-                                        </motion.div>
-                                    )}
-                                    {saveError && (
-                                        <motion.div
-                                            key="error"
-                                            initial={{ opacity: 0, y: 6 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.5, ease: 'easeOut' }}
-                                            className="flex items-center gap-1.5 text-xs font-medium text-slate-600"
-                                        >
-                                            <X className="w-3.5 h-3.5" />
-                                            {t('tailorComponents.saveFailed')}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        variant="default"
+                                        size="sm"
+                                        onClick={handleSave}
+                                        disabled={saving || localStatus === order.status}
+                                        className="flex items-center gap-2"
+                                    >
+                                        {saving ? (
+                                            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('tailorComponents.savingStatus')}</>
+                                        ) : (
+                                            t('tailorComponents.saveStatus')
+                                        )}
+                                    </Button>
+
+                                    <AnimatePresence>
+                                        {saved && (
+                                            <motion.div
+                                                key="saved"
+                                                initial={{ opacity: 0, y: 6 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.5, ease: 'easeOut' }}
+                                                className="flex items-center gap-1.5 text-xs font-medium text-slate-900"
+                                            >
+                                                <CheckCircle className="w-3.5 h-3.5" />
+                                                {t('tailorComponents.statusSaved')}
+                                            </motion.div>
+                                        )}
+                                        {saveError && (
+                                            <motion.div
+                                                key="error"
+                                                initial={{ opacity: 0, y: 6 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.5, ease: 'easeOut' }}
+                                                className="flex items-center gap-1.5 text-xs font-medium text-slate-600"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                                {t('tailorComponents.saveFailed')}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
+                </div>
 
-                    <OrderChat orderId={order.id} currentUserId={currentUserId} />
+                {/* Messages tab — always mounted so polling keeps running */}
+                <div className={activeTab === 'messages' ? 'block' : 'hidden'}>
+                    <div className="p-6">
+                        <OrderChat
+                            orderId={order.id}
+                            currentUserId={currentUserId}
+                            isVisible={activeTab === 'messages'}
+                            onUnreadCountChange={setUnreadCount}
+                        />
+                    </div>
                 </div>
             </motion.div>
         </div>
@@ -394,8 +438,35 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId }: {
 
 export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
     const { t, i18n } = useTranslation();
-    const [viewing, setViewing] = useState<TailorOrder | null>(null);
+    const [viewing,  setViewing]  = useState<TailorOrder | null>(null);
+    const [openTab,  setOpenTab]  = useState<'details' | 'messages'>('details');
+    const [msgCounts, setMsgCounts] = useState<Record<number, number>>({});
     const currentUserId = getAuthUser()?.id ?? 0;
+    const token = getAuthToken();
+
+    // Fetch per-order message counts (from others) for unread badges on View buttons
+    useEffect(() => {
+        if (!token) return;
+        fetch('/api/messages/counts', {
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        })
+            .then(r => r.json())
+            .then(d => setMsgCounts(d.counts ?? {}))
+            .catch(() => {});
+    }, [token]);
+
+    // Re-read counts after modal closes (localStorage may have been updated)
+    const handleClose = () => {
+        setViewing(null);
+        // Trigger re-render to pick up updated localStorage seen counts
+        setMsgCounts(c => ({ ...c }));
+    };
+
+    const hasUnread = (orderId: number) => {
+        const total = msgCounts[orderId] ?? 0;
+        const seen  = parseInt(localStorage.getItem(`kere_chat_others_seen_${orderId}`) ?? '0', 10);
+        return total > seen;
+    };
 
     return (
         <>
@@ -458,14 +529,26 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                                             <td className="px-4 sm:px-6 py-4 text-sm font-bold text-slate-900">₾{order.total}</td>
                                             <td className="px-4 sm:px-6 py-4 text-sm text-slate-500 hidden lg:table-cell">{dateLabel}</td>
                                             <td className="px-4 sm:px-6 py-4">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => setViewing(order)}
-                                                    className="text-xs"
-                                                >
-                                                    {t('tailorComponents.viewBtn')}
-                                                </Button>
+                                                <div className="flex items-center gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => { setOpenTab('details'); setViewing(order); }}
+                                                        className="text-xs"
+                                                    >
+                                                        {t('tailorComponents.viewBtn')}
+                                                    </Button>
+                                                    <button
+                                                        onClick={() => { setOpenTab('messages'); setViewing(order); }}
+                                                        className={`relative flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors flex-shrink-0 ${
+                                                            hasUnread(order.id)
+                                                                ? 'bg-slate-900 text-white border-slate-900'
+                                                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
+                                                        }`}
+                                                    >
+                                                        <MessageCircle className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </motion.tr>
                                     );
@@ -482,11 +565,11 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                         key={viewing.id}
                         order={viewing}
                         currentUserId={currentUserId}
-                        onClose={() => setViewing(null)}
+                        initialTab={openTab}
+                        onClose={handleClose}
                         onStatusChange={onStatusChange
                             ? async (id, status) => {
                                 await onStatusChange(id, status);
-                                // Update the modal's order header badge after save
                                 setViewing(v => v ? { ...v, status: status as TailorOrder['status'] } : null);
                               }
                             : undefined

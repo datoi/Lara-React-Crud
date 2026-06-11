@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import {
     ShoppingBag, Package, Clock, CheckCircle, Truck, X,
-    ChevronRight, User, Scissors
+    ChevronRight, User, Scissors, MessageCircle
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getAuthToken, getAuthUser, clearAuth } from '../hooks/useAuth';
@@ -80,10 +80,12 @@ function StatusBadge({ status }: { status: string }) {
     );
 }
 
-function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOrder; currentUserId: number; onClose: () => void }) {
+function OrderDetailModal({ order, currentUserId, onClose, initialTab = 'details' }: { order: CustomerOrder; currentUserId: number; onClose: () => void; initialTab?: 'details' | 'messages' }) {
     const { t } = useTranslation();
     const isCustom = order.order_type === 'custom';
     const design = order.custom_design_data;
+    const [activeTab, setActiveTab] = useState<'details' | 'messages'>(initialTab);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     return (
         <motion.div
@@ -97,10 +99,11 @@ function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOr
                 initial={{ scale: 0.95, y: 16 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 16 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+                transition={{ duration: 0.5 }}
                 className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
                 onClick={e => e.stopPropagation()}
             >
+                {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-slate-100">
                     <div>
                         <h3 className="font-semibold text-slate-900">{t('customerDashboard.orderHash', { id: order.id })}</h3>
@@ -113,102 +116,142 @@ function OrderDetailModal({ order, currentUserId, onClose }: { order: CustomerOr
                     </button>
                 </div>
 
-                <div className="p-5 space-y-5">
-                    <div className="flex items-center justify-between">
-                        <StatusBadge status={order.status} />
-                        {order.tailor_name && (
-                            <span className="text-xs text-slate-500">{t('customerDashboard.by')} <span className="font-medium text-slate-700">{order.tailor_name}</span></span>
+                {/* Tabs */}
+                <div className="flex border-b border-slate-100">
+                    <button
+                        onClick={() => setActiveTab('details')}
+                        className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                            activeTab === 'details'
+                                ? 'text-slate-900 border-b-2 border-slate-900'
+                                : 'text-slate-400 hover:text-slate-600'
+                        }`}
+                    >
+                        {t('chat.tabDetails')}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('messages')}
+                        className={`relative flex-1 py-3 text-sm font-medium transition-colors ${
+                            activeTab === 'messages'
+                                ? 'text-slate-900 border-b-2 border-slate-900'
+                                : 'text-slate-400 hover:text-slate-600'
+                        }`}
+                    >
+                        {t('chat.tabMessages')}
+                        {unreadCount > 0 && (
+                            <span className="absolute top-2.5 right-6 min-w-[18px] h-[18px] bg-slate-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                                {unreadCount}
+                            </span>
                         )}
-                    </div>
+                    </button>
+                </div>
 
-                    {isCustom && design ? (
-                        <div className="space-y-4">
-                            <div className="bg-slate-50 rounded-xl p-4">
-                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.customDesignLabel')}</p>
-                                <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                                    {(design.garmentType ?? design.clothingType) && (
-                                        <><span className="text-slate-500">{t('customerDashboard.typeLabel')}</span><span className="font-medium text-slate-900 capitalize">{design.garmentType ?? design.clothingType}</span></>
-                                    )}
-                                    {(design.style ?? design.subcategory) && (
-                                        <><span className="text-slate-500">{t('customerDashboard.styleLabel')}</span><span className="font-medium text-slate-900">{design.style ?? design.subcategory}</span></>
-                                    )}
-                                    {design.fabric && (
-                                        <><span className="text-slate-500">{t('customerDashboard.fabricLabel')}</span><span className="font-medium text-slate-900">{design.fabric}</span></>
-                                    )}
-                                    {design.sizeStandard && (
-                                        <><span className="text-slate-500">{t('customerDashboard.sizeLabel')}</span><span className="font-medium text-slate-900">{design.sizeStandard}</span></>
-                                    )}
+                {/* Details tab */}
+                <div className={activeTab === 'details' ? 'block' : 'hidden'}>
+                    <div className="p-5 space-y-5">
+                        <div className="flex items-center justify-between">
+                            <StatusBadge status={order.status} />
+                            {order.tailor_name && (
+                                <span className="text-xs text-slate-500">{t('customerDashboard.by')} <span className="font-medium text-slate-700">{order.tailor_name}</span></span>
+                            )}
+                        </div>
+
+                        {isCustom && design ? (
+                            <div className="space-y-4">
+                                <div className="bg-slate-50 rounded-xl p-4">
+                                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.customDesignLabel')}</p>
+                                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
+                                        {(design.garmentType ?? design.clothingType) && (
+                                            <><span className="text-slate-500">{t('customerDashboard.typeLabel')}</span><span className="font-medium text-slate-900 capitalize">{design.garmentType ?? design.clothingType}</span></>
+                                        )}
+                                        {(design.style ?? design.subcategory) && (
+                                            <><span className="text-slate-500">{t('customerDashboard.styleLabel')}</span><span className="font-medium text-slate-900">{design.style ?? design.subcategory}</span></>
+                                        )}
+                                        {design.fabric && (
+                                            <><span className="text-slate-500">{t('customerDashboard.fabricLabel')}</span><span className="font-medium text-slate-900">{design.fabric}</span></>
+                                        )}
+                                        {design.sizeStandard && (
+                                            <><span className="text-slate-500">{t('customerDashboard.sizeLabel')}</span><span className="font-medium text-slate-900">{design.sizeStandard}</span></>
+                                        )}
+                                    </div>
                                 </div>
+
+                                {(design.baseColor || design.accentColor || design.lighterShade) && (
+                                    <div className="bg-slate-50 rounded-xl p-4">
+                                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.colorPalette')}</p>
+                                        <div className="flex gap-2">
+                                            {[
+                                                { label: t('customerDashboard.colorBase'),   color: design.baseColor },
+                                                { label: t('customerDashboard.colorAccent'), color: design.accentColor ?? design.additionalColor },
+                                                { label: t('customerDashboard.colorLight'),  color: design.lighterShade },
+                                                { label: t('customerDashboard.colorDark'),   color: design.darkerShade },
+                                            ].filter(c => c.color).map(c => (
+                                                <div key={c.label} className="flex flex-col items-center gap-1">
+                                                    <div className="w-10 h-10 rounded-lg border border-slate-200" style={{ backgroundColor: c.color }} />
+                                                    <span className="text-xs text-slate-400">{c.label}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {(design.notes ?? design.designElements?.customNotes) && (
+                                    <div className="bg-slate-50 rounded-xl p-4">
+                                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('customerDashboard.tailorNotes')}</p>
+                                        <p className="text-sm text-slate-600">{design.notes ?? design.designElements?.customNotes}</p>
+                                    </div>
+                                )}
                             </div>
-
-                            {/* Colors */}
-                            {(design.baseColor || design.accentColor || design.lighterShade) && (
-                                <div className="bg-slate-50 rounded-xl p-4">
-                                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.colorPalette')}</p>
-                                    <div className="flex gap-2">
-                                        {[
-                                            { label: t('customerDashboard.colorBase'),   color: design.baseColor },
-                                            { label: t('customerDashboard.colorAccent'), color: design.accentColor ?? design.additionalColor },
-                                            { label: t('customerDashboard.colorLight'),  color: design.lighterShade },
-                                            { label: t('customerDashboard.colorDark'),   color: design.darkerShade },
-                                        ].filter(c => c.color).map(c => (
-                                            <div key={c.label} className="flex flex-col items-center gap-1">
-                                                <div className="w-10 h-10 rounded-lg border border-slate-200" style={{ backgroundColor: c.color }} />
-                                                <span className="text-xs text-slate-400">{c.label}</span>
-                                            </div>
-                                        ))}
+                        ) : (
+                            <div className="space-y-3">
+                                {order.items.map(item => (
+                                    <div key={item.id} className="flex gap-3 bg-slate-50 rounded-xl p-3">
+                                        <div className="w-14 h-16 rounded-lg overflow-hidden bg-slate-200 flex-shrink-0">
+                                            {item.image ? (
+                                                <img src={item.image} alt={item.product_name} className="w-full h-full object-cover" loading="lazy" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-2xl">👗</div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-medium text-slate-900 text-sm">{item.product_name}</p>
+                                            <p className="text-xs text-slate-400 mt-0.5">
+                                                {[item.color && t('customerDashboard.colorLabel', { color: item.color }), item.size && t('customerDashboard.sizeShort', { size: item.size }), t('customerDashboard.qty', { qty: item.quantity })].filter(Boolean).join(' · ')}
+                                            </p>
+                                            {item.measurements && Object.keys(item.measurements).length > 0 && (
+                                                <div className="mt-1.5 flex flex-wrap gap-1">
+                                                    {Object.entries(item.measurements).map(([k, v]) => (
+                                                        <span key={k} className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded">
+                                                            {k}: {v}cm
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span className="font-bold text-slate-900 text-sm">₾{item.price}</span>
                                     </div>
-                                </div>
-                            )}
+                                ))}
+                            </div>
+                        )}
 
-                            {/* Notes */}
-                            {(design.notes ?? design.designElements?.customNotes) && (
-                                <div className="bg-slate-50 rounded-xl p-4">
-                                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('customerDashboard.tailorNotes')}</p>
-                                    <p className="text-sm text-slate-600">{design.notes ?? design.designElements?.customNotes}</p>
-                                </div>
-                            )}
+                        <div className="border-t border-slate-100 pt-4 flex justify-between items-center">
+                            <span className="text-sm text-slate-500">{t('customerDashboard.totalLabel')}</span>
+                            <span className="text-lg font-bold text-slate-900">
+                                {order.total > 0 ? `₾${order.total}` : t('customerDashboard.quotedByTailor')}
+                            </span>
                         </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {order.items.map(item => (
-                                <div key={item.id} className="flex gap-3 bg-slate-50 rounded-xl p-3">
-                                    <div className="w-14 h-16 rounded-lg overflow-hidden bg-slate-200 flex-shrink-0">
-                                        {item.image ? (
-                                            <img src={item.image} alt={item.product_name} className="w-full h-full object-cover" loading="lazy" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-2xl">👗</div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-medium text-slate-900 text-sm">{item.product_name}</p>
-                                        <p className="text-xs text-slate-400 mt-0.5">
-                                            {[item.color && t('customerDashboard.colorLabel', { color: item.color }), item.size && t('customerDashboard.sizeShort', { size: item.size }), t('customerDashboard.qty', { qty: item.quantity })].filter(Boolean).join(' · ')}
-                                        </p>
-                                        {item.measurements && Object.keys(item.measurements).length > 0 && (
-                                            <div className="mt-1.5 flex flex-wrap gap-1">
-                                                {Object.entries(item.measurements).map(([k, v]) => (
-                                                    <span key={k} className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded">
-                                                        {k}: {v}cm
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <span className="font-bold text-slate-900 text-sm">₾{item.price}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    <div className="border-t border-slate-100 pt-4 flex justify-between items-center">
-                        <span className="text-sm text-slate-500">{t('customerDashboard.totalLabel')}</span>
-                        <span className="text-lg font-bold text-slate-900">
-                            {order.total > 0 ? `₾${order.total}` : t('customerDashboard.quotedByTailor')}
-                        </span>
                     </div>
+                </div>
 
-                    <OrderChat orderId={order.id} currentUserId={currentUserId} />
+                {/* Messages tab — always mounted so polling keeps running */}
+                <div className={activeTab === 'messages' ? 'block' : 'hidden'}>
+                    <div className="p-5">
+                        <OrderChat
+                            orderId={order.id}
+                            currentUserId={currentUserId}
+                            isVisible={activeTab === 'messages'}
+                            onUnreadCountChange={setUnreadCount}
+                        />
+                    </div>
                 </div>
             </motion.div>
         </motion.div>
@@ -225,7 +268,9 @@ export default function CustomerDashboard() {
     const [fetchError, setFetchError]   = useState(false);
     const [retryKey, setRetryKey]       = useState(0);
     const [selectedOrder, setSelected]  = useState<CustomerOrder | null>(null);
+    const [openTab, setOpenTab]         = useState<'details' | 'messages'>('details');
     const [reviewOrder, setReviewOrder] = useState<CustomerOrder | null>(null);
+    const [msgCounts, setMsgCounts]     = useState<Record<number, number>>({});
 
     useEffect(() => {
         if (!token) { navigate('/login/customer'); return; }
@@ -238,6 +283,27 @@ export default function CustomerDashboard() {
             .then(d => { setOrders(d.orders ?? []); setLoading(false); })
             .catch(() => { setFetchError(true); setLoading(false); });
     }, [token, navigate, retryKey]);
+
+    useEffect(() => {
+        if (!token) return;
+        fetch('/api/messages/counts', {
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        })
+            .then(r => r.json())
+            .then(d => setMsgCounts(d.counts ?? {}))
+            .catch(() => {});
+    }, [token]);
+
+    const hasUnread = (orderId: number) => {
+        const total = msgCounts[orderId] ?? 0;
+        const seen  = parseInt(localStorage.getItem(`kere_chat_others_seen_${orderId}`) ?? '0', 10);
+        return total > seen;
+    };
+
+    const handleCloseOrder = () => {
+        setSelected(null);
+        setMsgCounts(c => ({ ...c }));
+    };
 
     const handleSignOut = () => { clearAuth(); navigate('/'); };
 
@@ -369,7 +435,7 @@ export default function CustomerDashboard() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: i * 0.04 }}
                                     className="px-5 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors cursor-pointer"
-                                    onClick={() => setSelected(order)}
+                                    onClick={() => { setOpenTab('details'); setSelected(order); }}
                                 >
                                     {/* Icon */}
                                     <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -405,6 +471,22 @@ export default function CustomerDashboard() {
                                             )}
                                         </p>
                                     </div>
+
+                                    {/* Message button */}
+                                    <button
+                                        onClick={e => { e.stopPropagation(); setOpenTab('messages'); setSelected(order); }}
+                                        className={`relative flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors flex-shrink-0 ${
+                                            hasUnread(order.id)
+                                                ? 'bg-slate-900 text-white border-slate-900'
+                                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
+                                        }`}
+                                    >
+                                        <MessageCircle className="w-3.5 h-3.5" />
+                                        <span className="hidden sm:inline">{t('customerDashboard.messageBtn')}</span>
+                                        {hasUnread(order.id) && (
+                                            <span className="w-1.5 h-1.5 bg-white rounded-full sm:hidden" />
+                                        )}
+                                    </button>
 
                                     {/* Status + price + review */}
                                     <div className="flex flex-col items-end gap-1.5">
@@ -466,7 +548,12 @@ export default function CustomerDashboard() {
             {/* Order detail modal */}
             <AnimatePresence>
                 {selectedOrder && (
-                    <OrderDetailModal order={selectedOrder} currentUserId={user?.id ?? 0} onClose={() => setSelected(null)} />
+                    <OrderDetailModal
+                        order={selectedOrder}
+                        currentUserId={user?.id ?? 0}
+                        initialTab={openTab}
+                        onClose={handleCloseOrder}
+                    />
                 )}
             </AnimatePresence>
 

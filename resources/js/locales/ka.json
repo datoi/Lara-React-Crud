@@ -610,7 +610,8 @@
     "createCustomDesign": "ინდივიდუალური დიზაინი",
     "designYourGarment": "შეიქმენი საკუთარი ჩაცმულობა",
     "findDesigns": "ადგილობრივი მკერავების ნამუშევრები",
-    "quickActions": "სწრაფი მოქმედებები"
+    "quickActions": "სწრაფი მოქმედებები",
+    "messageBtn": "შეტყობინება"
   },
   "tailorDashboard": {
     "productLive": "შენი პროდუქტი ახლა ხელმისაწვდომია. მომხმარებლებს შეუძლიათ შეკვეთა.",
@@ -952,6 +953,7 @@
     "addFirstProductCta": "პირველი პროდუქტის დამატება",
     "productActive": "აქტიური",
     "productPaused": "დაჩერებული",
+    "ordersCount": "{{count}} შეკვეთა",
     "ordersCount_one": "{{count}} შეკვეთა",
     "ordersCount_other": "{{count}} შეკვეთა",
     "measurementsRequired_one": "{{count}} გაზომვა საჭიროა",
@@ -1104,5 +1106,13 @@
     "colWaist": "წელი",
     "colHips": "თეძო",
     "colLength": "სიგრძე"
+  },
+  "chat": {
+    "tabDetails": "დეტალები",
+    "tabMessages": "შეტყობინებები",
+    "placeholder": "დაწერეთ შეტყობინება…",
+    "send": "გაგზავნა",
+    "sending": "იგზავნება…",
+    "noMessages": "შეტყობინება ჯერ არ არის. დაიწყეთ საუბარი."
   }
 }

@@ -56,6 +56,7 @@ Route::middleware(['auth.bearer', 'throttle:60,1'])->group(function () {
 
     // Chat reads
     Route::get('/orders/{orderId}/messages', [MessageController::class, 'index']);
+    Route::get('/messages/counts',           [MessageController::class, 'counts']);
 });
 
 // ─── Authenticated writes (10 req/min) ────────────────────────────────────────

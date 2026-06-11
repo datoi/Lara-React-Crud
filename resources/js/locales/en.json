@@ -610,7 +610,8 @@
     "createCustomDesign": "Create Custom Design",
     "designYourGarment": "Design your own garment",
     "findDesigns": "Find designs from local tailors",
-    "quickActions": "Quick Actions"
+    "quickActions": "Quick Actions",
+    "messageBtn": "Message"
   },
   "tailorDashboard": {
     "productLive": "Your product is now live. Customers can start ordering from you.",
@@ -952,6 +953,7 @@
     "addFirstProductCta": "Add your first product",
     "productActive": "Active",
     "productPaused": "Paused",
+    "ordersCount": "{{count}} orders",
     "ordersCount_one": "{{count}} order",
     "ordersCount_other": "{{count}} orders",
     "measurementsRequired_one": "{{count}} measurement required",
@@ -1104,5 +1106,13 @@
     "colWaist": "Waist",
     "colHips": "Hips",
     "colLength": "Length"
+  },
+  "chat": {
+    "tabDetails": "Details",
+    "tabMessages": "Messages",
+    "placeholder": "Type a message…",
+    "send": "Send",
+    "sending": "Sending…",
+    "noMessages": "No messages yet. Start the conversation."
   }
 }
