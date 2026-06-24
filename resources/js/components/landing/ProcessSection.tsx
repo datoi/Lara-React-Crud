@@ -36,7 +36,7 @@ export function ProcessSection() {
                     transition={{ duration: 0.5 }}
                     className="text-center mb-16"
                 >
-                    <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{t('process.sectionTitle')}</h2>
+                    <h2 className="font-serif text-3xl md:text-4xl font-semibold text-slate-900 mb-4 tracking-tight">{t('process.sectionTitle')}</h2>
                     <p className="text-slate-500 text-lg max-w-xl mx-auto">
                         {t('process.sectionSubtitle')}
                     </p>
@@ -62,7 +62,7 @@ export function ProcessSection() {
                                     <step.icon className="w-8 h-8 text-slate-700" />
                                 </div>
                                 {/* Number badge */}
-                                <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center">
+                                <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center">
                                     {step.number}
                                 </div>
                             </div>

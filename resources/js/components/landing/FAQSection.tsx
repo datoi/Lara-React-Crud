@@ -191,7 +191,7 @@ export function FAQSection() {
                     <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center mx-auto mb-5 text-2xl">
                         ❓
                     </div>
-                    <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{t('faq.sectionTitle')}</h2>
+                    <h2 className="font-serif text-3xl md:text-4xl font-semibold text-slate-900 mb-4 tracking-tight">{t('faq.sectionTitle')}</h2>
                     <p className="text-slate-500">{t('faq.sectionSubtitle')}</p>
                 </motion.div>
 
@@ -251,7 +251,7 @@ export function FAQSection() {
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
                         <button
                             onClick={handleEmailSupport}
-                            className="bg-slate-900 text-white text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-700 transition-colors"
+                            className="bg-brand text-white text-sm font-medium px-6 py-3 rounded-lg hover:bg-brand-dark transition-colors"
                         >
                             {t('faq.emailSupport')}
                         </button>

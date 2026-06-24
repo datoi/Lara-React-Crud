@@ -106,7 +106,7 @@ export function Navigation() {
                                 </Link>
                                 <Link
                                     to="/design"
-                                    className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${scrolled ? 'bg-slate-900 text-white hover:bg-slate-700' : 'bg-white text-slate-900 hover:bg-white/90'}`}
+                                    className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${scrolled ? 'bg-brand text-white hover:bg-brand-dark' : 'bg-white text-slate-900 hover:bg-white/90'}`}
                                 >
                                     {t('nav.startDesigning')}
                                 </Link>

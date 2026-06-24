@@ -512,7 +512,9 @@
     "checkProduct": "Check the product",
     "loadMore": "Load more ({{n}} remaining)",
     "loading": "Loading…",
-    "errorLoad": "Failed to load products."
+    "errorLoad": "Failed to load products.",
+    "kereTailor": "Kere Tailor",
+    "pageTitle": "Browse Custom Clothing | Kere Marketplace"
   },
   "ourTailors": {
     "eyebrow": "The Makers",
@@ -1060,7 +1062,8 @@
     "productUpdated": "Product Updated!",
     "productUpdatedDesc": "Your changes have been saved.",
     "confirmDeleteDesc": "This will permanently remove the product from the marketplace.",
-    "confirmDeleteBtn": "Delete"
+    "confirmDeleteBtn": "Delete",
+    "statsFetchError": "Stats unavailable — check your connection"
   },
   "measurementGuide": {
     "title": "Measurement Guide",
@@ -1114,5 +1117,21 @@
     "send": "Send",
     "sending": "Sending…",
     "noMessages": "No messages yet. Start the conversation."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "clearAll": "Clear all",
+    "noNotificationsYet": "No notifications yet",
+    "justNow": "Just now",
+    "mAgo": "{{count}}m ago",
+    "hAgo": "{{count}}h ago",
+    "bellLabel": "Notifications",
+    "bellLabelUnread": "Notifications, {{count}} unread",
+    "dismissNotification": "Dismiss notification"
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "desc": "An unexpected error occurred. Please try reloading the page.",
+    "retry": "Try Again"
   }
 }

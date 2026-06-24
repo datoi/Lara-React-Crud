@@ -37,7 +37,7 @@ export function SizeFitSection() {
                         viewport={{ once: true }}
                         transition={{ duration: 0.6 }}
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                        <h2 className="font-serif text-3xl md:text-4xl font-semibold text-slate-900 mb-4 tracking-tight">
                             {t('sizeFit.title')}
                         </h2>
                         <p className="text-slate-500 text-base mb-8 leading-relaxed">

@@ -512,7 +512,9 @@
     "checkProduct": "პროდუქტის ნახვა",
     "loadMore": "კიდევ {{n}} ნამუშევარი",
     "loading": "იტვირთება…",
-    "errorLoad": "პროდუქტების ჩამოტვირთვა ვერ მოხერხდა."
+    "errorLoad": "პროდუქტების ჩამოტვირთვა ვერ მოხერხდა.",
+    "kereTailor": "Kere მკერავი",
+    "pageTitle": "ინდივიდუალური ტანსაცმელი | Kere"
   },
   "ourTailors": {
     "eyebrow": "ოსტატები",
@@ -873,7 +875,7 @@
     "totalEarnings": "მთლიანი შემოსავალი",
     "myProfile": "ჩემი პროფილი",
     "signOut": "გამოსვლა",
-    "totalRevenue": "მთლიანი შემოსავალი",
+    "totalRevenue": "შემოსავლის ჯამი",
     "activeOrders": "აქტიური შეკვეთები",
     "productsListed": "დამატებული პროდუქტები",
     "avgRating": "საშუალო შეფასება",
@@ -1060,7 +1062,8 @@
     "productUpdated": "პროდუქტი განახლდა!",
     "productUpdatedDesc": "თქვენი ცვლილებები შენახულია.",
     "confirmDeleteDesc": "ეს სამუდამოდ წაშლის პროდუქტს მარკეტპლეისიდან.",
-    "confirmDeleteBtn": "წაშლა"
+    "confirmDeleteBtn": "წაშლა",
+    "statsFetchError": "სტატისტიკა მიუწვდომელია — შეამოწმეთ კავშირი"
   },
   "measurementGuide": {
     "title": "გაზომვების სახელმძღვანელო",
@@ -1114,5 +1117,21 @@
     "send": "გაგზავნა",
     "sending": "იგზავნება…",
     "noMessages": "შეტყობინება ჯერ არ არის. დაიწყეთ საუბარი."
+  },
+  "notifications": {
+    "title": "შეტყობინებები",
+    "clearAll": "ყველის წაშლა",
+    "noNotificationsYet": "შეტყობინება არ არის",
+    "justNow": "ახლახანს",
+    "mAgo": "{{count}} წთ წინ",
+    "hAgo": "{{count}} სთ წინ",
+    "bellLabel": "შეტყობინებები",
+    "bellLabelUnread": "შეტყობინებები, {{count}} წაუკითხავი",
+    "dismissNotification": "შეტყობინების წაშლა"
+  },
+  "errorBoundary": {
+    "title": "შეცდომა მოხდა",
+    "desc": "დაფიქსირდა მოულოდნელი შეცდომა. გთხოვთ, განაახლოთ გვერდი.",
+    "retry": "თავიდან ცდა"
   }
 }

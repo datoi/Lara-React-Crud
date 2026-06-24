@@ -206,7 +206,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                         onClick={() => setActiveTab('details')}
                         className={`flex-1 py-3 text-sm font-medium transition-colors ${
                             activeTab === 'details'
-                                ? 'text-slate-900 border-b-2 border-slate-900'
+                                ? 'text-brand border-b-2 border-brand'
                                 : 'text-slate-400 hover:text-slate-600'
                         }`}
                     >
@@ -216,13 +216,13 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                         onClick={() => setActiveTab('messages')}
                         className={`relative flex-1 py-3 text-sm font-medium transition-colors ${
                             activeTab === 'messages'
-                                ? 'text-slate-900 border-b-2 border-slate-900'
+                                ? 'text-brand border-b-2 border-brand'
                                 : 'text-slate-400 hover:text-slate-600'
                         }`}
                     >
                         {t('chat.tabMessages')}
                         {unreadCount > 0 && (
-                            <span className="absolute top-2.5 right-6 min-w-[18px] h-[18px] bg-slate-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                            <span className="absolute top-2.5 right-6 min-w-[18px] h-[18px] bg-brand text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
                                 {unreadCount}
                             </span>
                         )}
@@ -486,12 +486,75 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                         </p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <>
+                    {/* ── Mobile card list ── */}
+                    <div className="sm:hidden divide-y divide-slate-100">
+                        {orders.map((order, i) => {
+                            const statusClasses = STATUS_CLASSES[order.status] ?? STATUS_CLASSES.pending;
+                            const statusLabel   = t(STATUS_LABEL_KEYS[order.status] ?? STATUS_LABEL_KEYS.pending);
+                            const productLabel = order.order_type === 'custom'
+                                ? `${t('tailorComponents.customPrefix')}: ${order.custom_design_data?.garmentType ?? order.custom_design_data?.clothingType ?? '—'}`
+                                : (order.items[0]?.product_name ?? '—');
+                            const dateLabel = order.created_at
+                                ? new Date(order.created_at).toLocaleDateString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB')
+                                : '—';
+
+                            return (
+                                <motion.div
+                                    key={order.id}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: i * 0.06 }}
+                                    className="p-4 hover:bg-slate-50 transition-colors"
+                                >
+                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                        <div>
+                                            <span className="text-xs font-mono text-slate-400">{order.order_number}</span>
+                                            <p className="font-semibold text-slate-900 text-sm mt-0.5">{order.customer.name}</p>
+                                        </div>
+                                        <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border flex-shrink-0 ${statusClasses}`}>
+                                            {statusLabel}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 truncate mb-3">{productLabel}</p>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <span className="text-sm font-bold text-slate-900">₾{order.total}</span>
+                                            <span className="text-xs text-slate-400 ml-2">{dateLabel}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => { setOpenTab('details'); setViewing(order); }}
+                                                className="text-xs"
+                                            >
+                                                {t('tailorComponents.viewBtn')}
+                                            </Button>
+                                            <button
+                                                onClick={() => { setOpenTab('messages'); setViewing(order); }}
+                                                className={`relative flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors flex-shrink-0 ${
+                                                    hasUnread(order.id)
+                                                        ? 'bg-slate-900 text-white border-slate-900'
+                                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
+                                                }`}
+                                            >
+                                                <MessageCircle className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+
+                    {/* ── Desktop table ── */}
+                    <div className="hidden sm:block overflow-x-auto">
                         <table className="w-full">
                             <thead>
                                 <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
                                     <th className="text-left px-4 sm:px-6 py-3 font-semibold">{t('tailorComponents.orderCol')}</th>
-                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold hidden sm:table-cell">{t('tailorComponents.customerCol')}</th>
+                                    <th className="text-left px-4 sm:px-6 py-3 font-semibold table-cell">{t('tailorComponents.customerCol')}</th>
                                     <th className="text-left px-4 sm:px-6 py-3 font-semibold hidden md:table-cell">{t('tailorComponents.typeProductCol')}</th>
                                     <th className="text-left px-4 sm:px-6 py-3 font-semibold">{t('tailorComponents.statusCol')}</th>
                                     <th className="text-left px-4 sm:px-6 py-3 font-semibold">{t('tailorComponents.amountCol')}</th>
@@ -519,7 +582,7 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                                             className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
                                         >
                                             <td className="px-4 sm:px-6 py-4 text-sm font-mono text-slate-500">{order.order_number}</td>
-                                            <td className="px-4 sm:px-6 py-4 text-sm font-medium text-slate-900 hidden sm:table-cell">{order.customer.name}</td>
+                                            <td className="px-4 sm:px-6 py-4 text-sm font-medium text-slate-900 table-cell">{order.customer.name}</td>
                                             <td className="px-4 sm:px-6 py-4 text-sm text-slate-600 max-w-[180px] truncate hidden md:table-cell">{productLabel}</td>
                                             <td className="px-4 sm:px-6 py-4">
                                                 <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border ${statusClasses}`}>
@@ -556,6 +619,7 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                             </tbody>
                         </table>
                     </div>
+                    </>
                 )}
             </div>
 

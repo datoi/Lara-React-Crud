@@ -27,7 +27,7 @@ export function CTASection() {
                     transition={{ duration: 0.6 }}
                 >
                     <p className="text-slate-300 text-sm font-medium mb-3">{t('cta.tagline')}</p>
-                    <h2 className="text-3xl md:text-5xl font-bold text-white mb-5 leading-tight">
+                    <h2 className="font-serif text-3xl md:text-5xl font-semibold text-white mb-5 leading-tight tracking-tight">
                         {t('cta.title')}<br className="hidden sm:block" /> {t('cta.titleLine2')}
                     </h2>
                     <p className="text-slate-300 text-base md:text-lg mb-10 max-w-xl mx-auto leading-relaxed">
@@ -36,14 +36,14 @@ export function CTASection() {
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Link
                             to="/marketplace"
-                            className="inline-flex items-center gap-2 bg-white text-slate-900 text-base font-semibold px-8 py-4 rounded-full hover:bg-white/90 transition-all active:scale-[0.98] w-full sm:w-auto justify-center shadow-lg"
+                            className="inline-flex items-center gap-2 bg-white text-slate-900 text-base font-semibold px-8 py-4 rounded-lg hover:bg-white/90 transition-all active:scale-[0.98] w-full sm:w-auto justify-center shadow-lg"
                         >
                             <ShoppingBag className="w-5 h-5" />
                             {t('cta.browseMarketplace')}
                         </Link>
                         <Link
                             to="/design"
-                            className="inline-flex items-center gap-2 border border-white/40 bg-white/10 backdrop-blur-sm text-white text-base font-semibold px-8 py-4 rounded-full hover:bg-white/20 transition-all active:scale-[0.98] w-full sm:w-auto justify-center"
+                            className="inline-flex items-center gap-2 border border-white/40 bg-white/10 backdrop-blur-sm text-white text-base font-semibold px-8 py-4 rounded-lg hover:bg-white/20 transition-all active:scale-[0.98] w-full sm:w-auto justify-center"
                         >
                             <Scissors className="w-5 h-5" />
                             {t('cta.designYourOwn')}

@@ -37,10 +37,10 @@ export function HeroSection() {
 
                 {/* Headline */}
                 <motion.h1
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.6, delay: 0.05 }}
-                    className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight tracking-tight mb-5 max-w-5xl mx-auto"
+                    className="font-serif text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-semibold text-white leading-tight tracking-tight mb-5 max-w-5xl mx-auto"
                 >
                     {t('hero.headline')}
                 </motion.h1>
@@ -65,7 +65,7 @@ export function HeroSection() {
                     {/* Primary — solid white */}
                     <Link
                         to="/design"
-                        className="inline-flex items-center gap-2 bg-white text-slate-900 font-semibold px-7 py-3.5 rounded-full hover:bg-slate-100 transition-all text-sm sm:text-base shadow-lg w-full sm:w-auto justify-center"
+                        className="inline-flex items-center gap-2 bg-white text-slate-900 font-semibold px-7 py-3.5 rounded-lg hover:bg-slate-100 transition-all text-sm sm:text-base shadow-lg w-full sm:w-auto justify-center"
                     >
                         <Scissors className="w-4 h-4" />
                         {t('hero.startYourDesign')}
@@ -83,7 +83,7 @@ export function HeroSection() {
                     <div className="w-12 h-px bg-white/20" />
                     <Link
                         to="/design"
-                        className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white/80 hover:text-white hover:bg-white/15 font-medium px-5 py-2.5 rounded-full transition-all text-sm"
+                        className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white/80 hover:text-white hover:bg-white/15 font-medium px-5 py-2.5 rounded-lg transition-all text-sm"
                     >
                         <Upload className="w-3.5 h-3.5" />
                         {t('hero.uploadYourDesign')}

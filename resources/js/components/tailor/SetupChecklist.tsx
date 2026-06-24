@@ -75,7 +75,7 @@ export function SetupChecklist({ profileComplete, productsCount, onAddProduct, o
                 </div>
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <motion.div
-                        className="h-full bg-slate-900 rounded-full"
+                        className="h-full bg-brand rounded-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${progress * 100}%` }}
                         transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
@@ -87,7 +87,7 @@ export function SetupChecklist({ profileComplete, productsCount, onAddProduct, o
                 {items.map((item, idx) => (
                     <div key={idx} className="flex items-start gap-3">
                         {item.done
-                            ? <CheckCircle className="w-5 h-5 text-slate-700 shrink-0 mt-0.5" />
+                            ? <CheckCircle className="w-5 h-5 text-brand shrink-0 mt-0.5" />
                             : <Circle     className="w-5 h-5 text-slate-300 shrink-0 mt-0.5" />
                         }
                         <div className="flex-1 min-w-0">
@@ -98,7 +98,7 @@ export function SetupChecklist({ profileComplete, productsCount, onAddProduct, o
                             {item.action && (
                                 <button
                                     onClick={item.action}
-                                    className="text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors mt-1"
+                                    className="text-xs font-semibold text-brand hover:text-brand-dark transition-colors mt-1"
                                 >
                                     {item.actionLabel}
                                 </button>

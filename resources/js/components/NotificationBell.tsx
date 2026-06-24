@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell, X, Package, Scissors, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { getAuthToken } from '../hooks/useAuth';
+import { Button } from './ui/button';
 
 interface Notification {
     id: number;
@@ -14,6 +16,7 @@ interface Notification {
 }
 
 export function NotificationBell() {
+    const { t, i18n } = useTranslation();
     const [open, setOpen]                   = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount]     = useState(0);
@@ -91,10 +94,10 @@ export function NotificationBell() {
         const date = new Date(iso);
         const now  = new Date();
         const diff = Math.floor((now.getTime() - date.getTime()) / 60000);
-        if (diff < 1)  return 'Just now';
-        if (diff < 60) return `${diff}m ago`;
-        if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
-        return date.toLocaleDateString();
+        if (diff < 1)  return t('notifications.justNow');
+        if (diff < 60) return t('notifications.mAgo', { count: diff });
+        if (diff < 1440) return t('notifications.hAgo', { count: Math.floor(diff / 60) });
+        return date.toLocaleDateString(i18n.language);
     };
 
     // Fix #9: mark all read when the dropdown is opened
@@ -119,42 +122,48 @@ export function NotificationBell() {
 
     return (
         <div ref={ref} className="relative">
-            <button
+            <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleOpen}
-                className="relative p-2 rounded-lg transition-colors text-slate-500 hover:text-slate-900 hover:bg-slate-100"
-                aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+                className="relative"
+                aria-label={unreadCount > 0 ? t('notifications.bellLabelUnread', { count: unreadCount }) : t('notifications.bellLabel')}
             >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-slate-500 rounded-full" />
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-brand text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
                 )}
-            </button>
+            </Button>
 
             <AnimatePresence>
                 {open && (
                     <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                        transition={{ duration: 0.15 }}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.6 }}
                         role="menu"
-                        className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden"
+                        className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden"
                     >
                         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-                            <span className="font-semibold text-slate-900 text-sm">Notifications</span>
+                            <span className="font-semibold text-slate-900 text-sm">{t('notifications.title')}</span>
                             <div className="flex items-center gap-1">
                                 {notifications.length > 0 && (
-                                    <button
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
                                         onClick={clearAll}
-                                        className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700 transition-colors px-2 py-1 rounded-lg hover:bg-slate-100"
+                                        className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700 h-auto px-2 py-1"
                                     >
                                         <Trash2 className="w-3.5 h-3.5" />
-                                        Clear all
-                                    </button>
+                                        {t('notifications.clearAll')}
+                                    </Button>
                                 )}
-                                <button onClick={() => setOpen(false)} className="p-1 text-slate-400 hover:text-slate-700">
+                                <Button variant="ghost" size="icon" onClick={() => setOpen(false)} className="h-7 w-7 text-slate-400 hover:text-slate-700">
                                     <X className="w-4 h-4" />
-                                </button>
+                                </Button>
                             </div>
                         </div>
 
@@ -162,14 +171,17 @@ export function NotificationBell() {
                             {notifications.length === 0 ? (
                                 <div className="py-10 text-center">
                                     <Bell className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-                                    <p className="text-sm text-slate-400">No notifications yet</p>
+                                    <p className="text-sm text-slate-400">{t('notifications.noNotificationsYet')}</p>
                                 </div>
                             ) : (
                                 notifications.map(n => (
                                     <div
                                         key={n.id}
-                                        className={`px-4 py-3 border-b border-slate-50 last:border-0 ${!n.is_read ? 'bg-slate-50' : ''}`}
+                                        className={`px-4 py-3 border-b border-slate-50 last:border-0 transition-colors relative ${!n.is_read ? 'bg-slate-50 pl-[18px]' : 'bg-white'}`}
                                     >
+                                        {!n.is_read && (
+                                            <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-brand rounded-r-full" />
+                                        )}
                                         <div className="flex gap-3">
                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
                                                 n.type === 'new_order' ? 'bg-slate-900' : 'bg-slate-100'
@@ -184,13 +196,15 @@ export function NotificationBell() {
                                                 <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{n.body}</p>
                                                 <p className="text-xs text-slate-400 mt-1">{formatTime(n.created_at)}</p>
                                             </div>
-                                            <button
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
                                                 onClick={() => dismissOne(n.id)}
-                                                aria-label="Dismiss notification"
-                                                className="p-1 text-slate-300 hover:text-slate-600 transition-colors flex-shrink-0 mt-0.5"
+                                                aria-label={t('notifications.dismissNotification')}
+                                                className="h-7 w-7 text-slate-300 hover:text-slate-600 flex-shrink-0 mt-0.5"
                                             >
                                                 <X className="w-3.5 h-3.5" />
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 ))

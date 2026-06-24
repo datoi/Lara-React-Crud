@@ -24,6 +24,7 @@ export default function TailorDashboard() {
     const [avgRating,       setAvgRating]       = useState<number | null>(null);
     const [reviewsCount,    setReviewsCount]    = useState(0);
     const [profileComplete, setProfileComplete] = useState(false);
+    const [statsError,      setStatsError]      = useState(false);
 
     // Lifted modal state — lets OnboardingPanel / SetupChecklist open the add-product modal
     const [openAddModal, setOpenAddModal] = useState(false);
@@ -65,12 +66,17 @@ export default function TailorDashboard() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
             })
                 .then(r => r.json())
+                .then(r => {
+                    if (!r.ok) { setStatsError(true); return; }
+                    return r.json();
+                })
                 .then(d => {
+                    if (!d) return;
                     setAvgRating(d.avg_rating ?? null);
                     setReviewsCount(d.reviews_count ?? 0);
                     setProfileComplete(d.profile_complete ?? false);
                 })
-                .catch(() => {});
+                .catch(() => { setStatsError(true); });
         }
     }, [fetchOrders, fetchProducts, token]);
 
@@ -156,7 +162,7 @@ export default function TailorDashboard() {
                 {/* ── Stats + checklist side-by-side once there's data ── */}
                 {!showOnboarding && (
                     <>
-                        <StatsCards stats={stats} />
+                        <StatsCards stats={stats} statsError={statsError} />
 
                         {showChecklist && (
                             <motion.div

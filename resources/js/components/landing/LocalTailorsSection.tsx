@@ -79,7 +79,7 @@ export function LocalTailorsSection() {
                         viewport={{ once: true }}
                         transition={{ duration: 0.6 }}
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                        <h2 className="font-serif text-3xl md:text-4xl font-semibold text-slate-900 mb-4 tracking-tight">
                             {t('localTailors.title')}
                         </h2>
                         <p className="text-slate-500 text-base leading-relaxed mb-8">
@@ -116,7 +116,7 @@ export function LocalTailorsSection() {
 
                         <Link
                             to="/design"
-                            className="inline-block border border-slate-900 text-slate-900 text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-50 transition-colors"
+                            className="inline-block border border-brand text-brand text-sm font-medium px-6 py-3 rounded-lg hover:bg-brand/5 transition-colors"
                         >
                             {t('localTailors.startDesign')}
                         </Link>

@@ -12,9 +12,10 @@ interface Stats {
 
 interface StatsCardsProps {
     stats: Stats;
+    statsError?: boolean;
 }
 
-export function StatsCards({ stats }: StatsCardsProps) {
+export function StatsCards({ stats, statsError }: StatsCardsProps) {
     const { t } = useTranslation();
 
     const cards = [
@@ -58,6 +59,11 @@ export function StatsCards({ stats }: StatsCardsProps) {
 
     return (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {statsError && (
+                <div className="col-span-2 sm:col-span-4 text-xs text-slate-400 text-center py-1">
+                    {t('tailorComponents.statsFetchError', 'Stats unavailable — check your connection')}
+                </div>
+            )}
             {cards.map((card, i) => (
                 <motion.div
                     key={card.label}

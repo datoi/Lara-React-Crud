@@ -10,6 +10,12 @@
     --font-sans:
         'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
+    --font-serif:
+        'Newsreader', Georgia, 'Times New Roman', serif;
+
+    --color-brand:      oklch(0.42 0.13 25);
+    --color-brand-dark: oklch(0.36 0.11 25);
+
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
@@ -83,7 +89,7 @@
     --card-foreground: hsl(0, 0%, 3.9%);
     --popover: hsl(0, 0%, 100%);
     --popover-foreground: hsl(0, 0%, 3.9%);
-    --primary: hsl(0, 0%, 9%);
+    --primary: oklch(0.42 0.13 25);
     --primary-foreground: hsl(0, 0%, 98%);
     --secondary: hsl(0, 0%, 96.1%);
     --secondary-foreground: hsl(0, 0%, 9%);

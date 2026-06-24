@@ -33,7 +33,7 @@ export function FeaturesSection() {
                     transition={{ duration: 0.5 }}
                     className="text-center mb-14"
                 >
-                    <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                    <h2 className="font-serif text-3xl md:text-4xl font-semibold text-slate-900 mb-4 tracking-tight">
                         {t('features.sectionTitle')}
                     </h2>
                     <p className="text-slate-500 text-lg max-w-xl mx-auto">
@@ -51,7 +51,7 @@ export function FeaturesSection() {
                             transition={{ duration: 0.5, delay: i * 0.1 }}
                             className="flex flex-col items-center text-center"
                         >
-                            <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mb-5">
+                            <div className="w-16 h-16 bg-brand rounded-full flex items-center justify-center mb-5">
                                 <item.icon className="w-7 h-7 text-white" />
                             </div>
                             <h3 className="text-lg font-bold text-slate-900 mb-3">{item.title}</h3>

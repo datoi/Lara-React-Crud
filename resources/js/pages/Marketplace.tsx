@@ -178,7 +178,7 @@ export default function Marketplace() {
     return (
         <div className="min-h-screen bg-white">
             <Helmet>
-                <title>Browse Custom Clothing | Kere Marketplace</title>
+                <title>{t('marketplace.pageTitle')}</title>
                 <meta name="description" content="Browse handcrafted designs from local Georgian tailors. Find the perfect garment or customize one to your exact measurements." />
             </Helmet>
             <nav className="sticky top-0 z-50 bg-white border-b border-slate-100">
@@ -438,10 +438,10 @@ export default function Marketplace() {
                                         <span>{t('marketplace.by')}{' '}
                                         {product.tailor_id ? (
                                             <Link to={`/tailor/${product.tailor_id}`} onClick={e => e.stopPropagation()} className="hover:text-slate-700 hover:underline transition-colors">
-                                                {product.tailor_name ?? 'Kere Tailor'}
+                                                {product.tailor_name ?? t('marketplace.kereTailor')}
                                             </Link>
                                         ) : (
-                                            product.tailor_name ?? 'Kere Tailor'
+                                            product.tailor_name ?? t('marketplace.kereTailor')
                                         )}</span>
                                         {product.reviews_count > 0 && (
                                             <span className="inline-flex items-center gap-0.5 text-slate-500">
