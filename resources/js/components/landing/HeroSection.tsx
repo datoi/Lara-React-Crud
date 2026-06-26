@@ -82,7 +82,7 @@ export function HeroSection() {
                 >
                     <div className="w-12 h-px bg-white/20" />
                     <Link
-                        to="/design"
+                        to="/design?upload=1"
                         className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white/80 hover:text-white hover:bg-white/15 font-medium px-5 py-2.5 rounded-lg transition-all text-sm"
                     >
                         <Upload className="w-3.5 h-3.5" />

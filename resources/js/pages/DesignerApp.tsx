@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, ArrowRight, Loader2, Upload, X, FileText } from 'lucide-react';
 import { getAuthUser, getAuthToken, saveReturnTo } from '../hooks/useAuth';
@@ -465,7 +465,12 @@ function ProductStep({
 export default function DesignerApp() {
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const [flow, setFlow] = useState<FlowState>({ step: 'category' });
+    const [searchParams] = useSearchParams();
+    const [flow, setFlow] = useState<FlowState>(
+        searchParams.get('upload') === '1'
+            ? { step: 'upload-type' }
+            : { step: 'category' }
+    );
 
     const handleUploadContinue = (fileUrl: string, notes: string) => {
         if (flow.step !== 'upload-file') return;
