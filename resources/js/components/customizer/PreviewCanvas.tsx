@@ -133,7 +133,7 @@ export default function PreviewCanvas({
                             src={src}
                             alt={`${category.name}: ${option.name}`}
                             draggable={false}
-                            className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+                            className="absolute inset-0 w-full h-full object-contain object-center pointer-events-none select-none"
                             style={{
                                 zIndex: category.z_index,
                                 filter: category.is_colorable
