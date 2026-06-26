@@ -57,7 +57,7 @@ export default function Customizer({
             className="grid lg:grid-cols-[1fr_420px] gap-8 items-start"
         >
             {/* ── Preview column ─────────────────────────────────────────────── */}
-            <div className="sticky top-24">
+            <div className="lg:sticky lg:top-24">
                 <PreviewCanvas
                     layerCategories={layerCategories}
                     selections={selections}
@@ -73,7 +73,7 @@ export default function Customizer({
             </div>
 
             {/* ── Options column ─────────────────────────────────────────────── */}
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-5 pb-24 lg:pb-0">
                 {/* Product header */}
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">{product.name}</h1>
@@ -98,15 +98,17 @@ export default function Customizer({
                     />
                 </div>
 
-                {/* Price summary */}
-                <PriceSummary
-                    basePrice={product.base_price}
-                    layerCategories={layerCategories}
-                    fabrics={fabrics}
-                    selections={selections}
-                    fabricId={fabricId}
-                    totalPrice={totalPrice}
-                />
+                {/* Price summary — hidden on mobile (shown in sticky bar below) */}
+                <div className="hidden lg:block">
+                    <PriceSummary
+                        basePrice={product.base_price}
+                        layerCategories={layerCategories}
+                        fabrics={fabrics}
+                        selections={selections}
+                        fabricId={fabricId}
+                        totalPrice={totalPrice}
+                    />
+                </div>
 
                 {/* Success toast */}
                 {savedName && (
@@ -115,8 +117,8 @@ export default function Customizer({
                     </p>
                 )}
 
-                {/* CTAs */}
-                <div className="flex gap-2">
+                {/* CTAs — desktop only (mobile uses sticky bar) */}
+                <div className="hidden lg:flex gap-2">
                     <Button
                         variant="outline"
                         size="default"
@@ -146,6 +148,40 @@ export default function Customizer({
                         Order — ₾{totalPrice.toFixed(2)}
                     </Button>
                 </div>
+            </div>
+
+            {/* ── Mobile sticky bottom bar ───────────────────────────────────── */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-4 py-3 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                    <p className="text-xs text-slate-400">Total</p>
+                    <p className="text-lg font-bold text-slate-900 leading-tight">₾{totalPrice.toFixed(2)}</p>
+                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={reset}
+                    aria-label="Reset"
+                    className="gap-1 shrink-0"
+                >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSaveOpen(true)}
+                    className="gap-1 shrink-0"
+                >
+                    <Bookmark className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                    variant="default"
+                    size="default"
+                    onClick={() => onOrder?.(getConfiguration())}
+                    className="gap-1.5 shrink-0 bg-slate-900 hover:bg-slate-700 text-white"
+                >
+                    <ShoppingBag className="w-4 h-4" />
+                    Order
+                </Button>
             </div>
 
             <SaveDesignModal
