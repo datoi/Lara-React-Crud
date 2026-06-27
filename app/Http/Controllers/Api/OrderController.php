@@ -337,7 +337,7 @@ class OrderController extends Controller
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
-        if ($user->approval_status !== 'approved') {
+        if ($user->approval_status === 'pending' || $user->approval_status === 'rejected') {
             return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
         }
 
@@ -359,7 +359,7 @@ class OrderController extends Controller
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
-        if ($user->approval_status !== 'approved') {
+        if ($user->approval_status === 'pending' || $user->approval_status === 'rejected') {
             return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
         }
 
