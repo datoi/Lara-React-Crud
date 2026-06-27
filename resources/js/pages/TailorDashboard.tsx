@@ -30,6 +30,9 @@ export default function TailorDashboard() {
     // Lifted modal state — lets OnboardingPanel / SetupChecklist open the add-product modal
     const [openAddModal, setOpenAddModal] = useState(false);
 
+    // Lifted profile editor expanded state — lets SetupChecklist open it
+    const [profileEditorOpen, setProfileEditorOpen] = useState(false);
+
     // Post-add success toast
     const [productJustAdded, setProductJustAdded] = useState(false);
 
@@ -116,8 +119,10 @@ export default function TailorDashboard() {
     const showOnboarding = !loadingProducts && products.length === 0;
     const showChecklist  = !loadingProducts && products.length > 0 && !setupComplete;
 
-    const scrollToProfile = () =>
-        document.getElementById('profile-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const scrollToProfile = () => {
+        setProfileEditorOpen(true);
+        setTimeout(() => document.getElementById('profile-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    };
 
     const greeting = user ? user.first_name : t('tailorDashboard.tailorFallback');
     const navigate = useNavigate();
@@ -297,7 +302,13 @@ export default function TailorDashboard() {
                                     </span>
                                 </div>
                             )}
-                            <TailorProfileEditor token={token} tailorId={user.id} />
+                            <TailorProfileEditor
+                                token={token}
+                                tailorId={user.id}
+                                expanded={profileEditorOpen}
+                                onExpandedChange={setProfileEditorOpen}
+                                onSaved={(complete) => setProfileComplete(complete)}
+                            />
                         </>
                     )}
                 </motion.div>

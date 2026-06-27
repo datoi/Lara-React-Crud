@@ -13,9 +13,12 @@ interface Profile {
 interface Props {
     token: string;
     tailorId: number;
+    expanded: boolean;
+    onExpandedChange: (v: boolean) => void;
+    onSaved?: (complete: boolean) => void;
 }
 
-export function TailorProfileEditor({ token, tailorId }: Props) {
+export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChange, onSaved }: Props) {
     const { t } = useTranslation();
     const [profile, setProfile] = useState<Profile>({
         bio: '', specialty: '', years_experience: '', profile_image: '',
@@ -23,7 +26,6 @@ export function TailorProfileEditor({ token, tailorId }: Props) {
     const [saving,        setSaving]        = useState(false);
     const [saved,         setSaved]         = useState(false);
     const [saveError,     setSaveError]     = useState(false);
-    const [expanded,      setExpanded]      = useState(false);
     const [uploading,     setUploading]     = useState(false);
     const [uploadError,   setUploadError]   = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -104,6 +106,8 @@ export function TailorProfileEditor({ token, tailorId }: Props) {
                 return;
             }
             setSaved(true);
+            onExpandedChange(false);
+            onSaved?.(!!profile.bio.trim() && !!profile.specialty.trim());
             setTimeout(() => setSaved(false), 3000);
         } catch {
             setSaveError(true);
@@ -117,7 +121,7 @@ export function TailorProfileEditor({ token, tailorId }: Props) {
             {/* Header row */}
             <button
                 type="button"
-                onClick={() => setExpanded(p => !p)}
+                onClick={() => onExpandedChange(!expanded)}
                 className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-slate-50 transition-colors"
             >
                 <div className="flex items-center gap-3">
