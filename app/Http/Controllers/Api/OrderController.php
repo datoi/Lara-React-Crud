@@ -369,7 +369,7 @@ class OrderController extends Controller
             ->firstOrFail();
 
         $data = $request->validate([
-            'status' => 'required|in:pending,processing,shipped,delivered,finished,cancelled',
+            'status' => 'required|in:pending,processing,finished,cancelled',
         ]);
 
         $oldStatus = $order->status;
@@ -378,10 +378,8 @@ class OrderController extends Controller
         // Define valid forward-only transitions
         $validTransitions = [
             'pending'    => ['processing', 'cancelled'],
-            'processing' => ['shipped', 'cancelled'],
-            'shipped'    => ['finished', 'delivered', 'cancelled'],
-            'finished'   => ['delivered'],
-            'delivered'  => [],
+            'processing' => ['finished', 'cancelled'],
+            'finished'   => [],
             'cancelled'  => [],
         ];
 
@@ -392,15 +390,13 @@ class OrderController extends Controller
 
         $order->update(['status' => $newStatus]);
 
-        $notifyStatuses = ['processing', 'shipped', 'delivered', 'finished', 'cancelled'];
+        $notifyStatuses = ['processing', 'finished', 'cancelled'];
         $shouldNotify   = in_array($data['status'], $notifyStatuses) && $data['status'] !== $oldStatus;
 
         if ($shouldNotify) {
             $statusLabel = match ($data['status']) {
-                'processing' => 'In Progress',
-                'shipped'    => 'Shipped',
-                'finished'   => 'Finished',
-                'delivered'  => 'Delivered',
+                'processing' => 'Accepted — In Progress',
+                'finished'   => 'Completed',
                 'cancelled'  => 'Cancelled',
                 default      => ucfirst($data['status']),
             };
@@ -439,13 +435,14 @@ class OrderController extends Controller
             'created_at'         => $order->created_at?->toDateString(),
             'custom_design_data' => $order->custom_design_data,
             'customer' => [
-                'name'  => $order->user->getFullName(),
-                'email' => $order->user->email,
-                'phone' => $order->user->phone ?? '',
+                'name' => $order->user->getFullName(),
             ],
             'items' => $order->items->map(fn($item) => [
                 'id'              => $item->id,
                 'product_name'    => $item->product_name,
+                'product_image'   => (is_array($item->product?->images) && count($item->product->images))
+                                        ? $item->product->images[0]
+                                        : null,
                 'color'           => $item->color,
                 'size'            => $item->size,
                 'quantity'        => $item->quantity,
