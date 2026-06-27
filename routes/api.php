@@ -67,7 +67,8 @@ Route::middleware(['auth.bearer', 'throttle:10,1'])->group(function () {
 
     // Tailor
     Route::patch('/tailor/profile',    [TailorController::class, 'updateProfile']);
-    Route::post('/tailor/products',    [ProductController::class, 'store']);
+    Route::post('/tailor/products',         [ProductController::class, 'store']);
+    Route::patch('/tailor/products/{id}',   [ProductController::class, 'update']);
 
     // Reviews
     Route::post('/reviews', [ReviewController::class, 'store']);

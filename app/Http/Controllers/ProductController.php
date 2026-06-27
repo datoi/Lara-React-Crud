@@ -223,6 +223,42 @@ class ProductController extends Controller
         ], 201);
     }
 
+    // ─── PATCH /api/tailor/products/{id} ─────────────────────────────────────
+
+    public function update(Request $request, int $id)
+    {
+        $user    = $request->user();
+        $product = Product::where('id', $id)->where('tailor_id', $user->id)->firstOrFail();
+
+        $data = $request->validate([
+            'name'                    => 'sometimes|required|string|max:200',
+            'description'             => 'nullable|string',
+            'price'                   => 'sometimes|required|numeric|min:1',
+            'category_id'             => 'sometimes|required|exists:categories,id',
+            'images'                  => 'nullable|array',
+            'images.*'                => 'nullable|string|url',
+            'colors'                  => 'nullable|array',
+            'colors.*'                => 'nullable|string',
+            'sizes'                   => 'nullable|array',
+            'sizes.*'                 => 'nullable|string',
+            'fabric'                  => 'nullable|string|max:100',
+            'texture'                 => 'nullable|string|max:100',
+            'required_measurements'   => 'nullable|array',
+            'required_measurements.*' => 'string',
+            'is_customizable'         => 'boolean',
+            'stock'                   => 'nullable|integer|min:0|max:9999',
+        ]);
+
+        if (isset($data['images']))  $data['images']  = array_filter($data['images']);
+        if (isset($data['colors']))  $data['colors']  = array_values($data['colors']);
+        if (isset($data['sizes']))   $data['sizes']   = array_values($data['sizes']);
+
+        $product->update($data);
+        $product->load('category');
+
+        return response()->json(['product' => $this->formatProduct($product)]);
+    }
+
     // ─── Formatter ────────────────────────────────────────────────────────────
 
     private function formatProduct(Product $p): array
