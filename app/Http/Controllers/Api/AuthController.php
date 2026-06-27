@@ -107,14 +107,15 @@ class AuthController extends Controller
         $token = Str::random(60);
 
         $user = User::create([
-            'first_name' => $reg['first_name'],
-            'last_name'  => $reg['last_name'],
-            'name'       => $reg['first_name'] . ' ' . $reg['last_name'],
-            'email'      => $reg['email'],
-            'phone'      => $reg['phone'],
-            'role'       => $reg['role'],
-            'password'   => $reg['password'], // already hashed
-            'api_token'  => hash('sha256', $token),
+            'first_name'      => $reg['first_name'],
+            'last_name'       => $reg['last_name'],
+            'name'            => $reg['first_name'] . ' ' . $reg['last_name'],
+            'email'           => $reg['email'],
+            'phone'           => $reg['phone'],
+            'role'            => $reg['role'],
+            'password'        => $reg['password'], // already hashed
+            'api_token'       => hash('sha256', $token),
+            'approval_status' => $reg['role'] === 'tailor' ? 'pending' : null,
         ]);
 
         $record->delete();
@@ -122,13 +123,14 @@ class AuthController extends Controller
         return response()->json([
             'token' => $token,
             'user'  => [
-                'id'         => $user->id,
-                'first_name' => $user->first_name,
-                'last_name'  => $user->last_name,
-                'name'       => $user->name,
-                'email'      => $user->email,
-                'phone'      => $user->phone,
-                'role'       => $user->role,
+                'id'              => $user->id,
+                'first_name'      => $user->first_name,
+                'last_name'       => $user->last_name,
+                'name'            => $user->name,
+                'email'           => $user->email,
+                'phone'           => $user->phone,
+                'role'            => $user->role,
+                'approval_status' => $user->approval_status,
             ],
         ], 200);
     }
@@ -164,14 +166,15 @@ class AuthController extends Controller
         $token = Str::random(60);
 
         $user = User::create([
-            'first_name' => $reg['first_name'],
-            'last_name'  => $reg['last_name'],
-            'name'       => $reg['first_name'] . ' ' . $reg['last_name'],
-            'email'      => $reg['email'],
-            'phone'      => $reg['phone'],
-            'role'       => $reg['role'],
-            'password'   => $reg['password'], // already hashed
-            'api_token'  => hash('sha256', $token),
+            'first_name'      => $reg['first_name'],
+            'last_name'       => $reg['last_name'],
+            'name'            => $reg['first_name'] . ' ' . $reg['last_name'],
+            'email'           => $reg['email'],
+            'phone'           => $reg['phone'],
+            'role'            => $reg['role'],
+            'password'        => $reg['password'], // already hashed
+            'api_token'       => hash('sha256', $token),
+            'approval_status' => $reg['role'] === 'tailor' ? 'pending' : null,
         ]);
 
         $record->delete();
@@ -179,13 +182,14 @@ class AuthController extends Controller
         return response()->json([
             'token' => $token,
             'user'  => [
-                'id'         => $user->id,
-                'first_name' => $user->first_name,
-                'last_name'  => $user->last_name,
-                'name'       => $user->name,
-                'email'      => $user->email,
-                'phone'      => $user->phone,
-                'role'       => $user->role,
+                'id'              => $user->id,
+                'first_name'      => $user->first_name,
+                'last_name'       => $user->last_name,
+                'name'            => $user->name,
+                'email'           => $user->email,
+                'phone'           => $user->phone,
+                'role'            => $user->role,
+                'approval_status' => $user->approval_status,
             ],
         ], 201);
     }
@@ -266,26 +270,28 @@ class AuthController extends Controller
         $token = Str::random(60);
 
         $user = User::create([
-            'first_name' => $data['first_name'],
-            'last_name'  => $data['last_name'],
-            'name'       => $data['first_name'] . ' ' . $data['last_name'],
-            'email'      => $data['email'],
-            'phone'      => $data['phone'],
-            'role'       => $data['role'],
-            'password'   => Hash::make($data['password']),
-            'api_token'  => hash('sha256', $token),
+            'first_name'      => $data['first_name'],
+            'last_name'       => $data['last_name'],
+            'name'            => $data['first_name'] . ' ' . $data['last_name'],
+            'email'           => $data['email'],
+            'phone'           => $data['phone'],
+            'role'            => $data['role'],
+            'password'        => Hash::make($data['password']),
+            'api_token'       => hash('sha256', $token),
+            'approval_status' => $data['role'] === 'tailor' ? 'pending' : null,
         ]);
 
         return response()->json([
             'token' => $token,
             'user'  => [
-                'id'         => $user->id,
-                'first_name' => $user->first_name,
-                'last_name'  => $user->last_name,
-                'name'       => $user->name,
-                'email'      => $user->email,
-                'phone'      => $user->phone,
-                'role'       => $user->role,
+                'id'              => $user->id,
+                'first_name'      => $user->first_name,
+                'last_name'       => $user->last_name,
+                'name'            => $user->name,
+                'email'           => $user->email,
+                'phone'           => $user->phone,
+                'role'            => $user->role,
+                'approval_status' => $user->approval_status,
             ],
         ], 201);
     }
@@ -367,13 +373,14 @@ class AuthController extends Controller
         return response()->json([
             'token' => $token,
             'user'  => [
-                'id'         => $user->id,
-                'first_name' => $user->first_name,
-                'last_name'  => $user->last_name,
-                'name'       => $user->name,
-                'email'      => $user->email,
-                'phone'      => $user->phone,
-                'role'       => $user->role,
+                'id'              => $user->id,
+                'first_name'      => $user->first_name,
+                'last_name'       => $user->last_name,
+                'name'            => $user->name,
+                'email'           => $user->email,
+                'phone'           => $user->phone,
+                'role'            => $user->role,
+                'approval_status' => $user->approval_status,
             ],
         ]);
     }

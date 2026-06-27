@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Clock } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { saveAuth, type AuthUser } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +32,7 @@ export default function RegisterTailor() {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [pendingApproval, setPendingApproval] = useState(false);
 
     const set = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm(f => ({ ...f, [field]: e.target.value }));
@@ -79,13 +80,52 @@ export default function RegisterTailor() {
                 return;
             }
 
-            saveAuth(data.user as AuthUser, data.token as string);
-            navigate('/tailor-dashboard');
+            const user = data.user as AuthUser;
+            saveAuth(user, data.token as string);
+            if (user.approval_status === 'pending') {
+                setPendingApproval(true);
+            } else {
+                navigate('/tailor-dashboard');
+            }
         } catch {
             setErrors({ general: t('register.errorNetwork') });
         } finally {
             setLoading(false);
         }
+    }
+
+    if (pendingApproval) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col">
+                <nav className="bg-white border-b border-slate-200">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
+                        <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">
+                            Kere
+                        </Link>
+                    </div>
+                </nav>
+                <div className="flex-1 flex items-center justify-center py-16 px-4">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="max-w-md w-full text-center"
+                    >
+                        <div className="w-16 h-16 bg-brand/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Clock className="w-8 h-8 text-brand" />
+                        </div>
+                        <h1 className="text-2xl font-bold text-slate-900 mb-3">{t('register.tailorPendingTitle')}</h1>
+                        <p className="text-slate-500 leading-relaxed mb-8">{t('register.tailorPendingDesc')}</p>
+                        <Link
+                            to="/"
+                            className="inline-flex items-center justify-center bg-slate-900 hover:bg-slate-700 text-white text-sm font-medium px-6 py-3 rounded-lg transition-colors"
+                        >
+                            {t('register.tailorPendingBack')}
+                        </Link>
+                    </motion.div>
+                </div>
+            </div>
+        );
     }
 
     return (

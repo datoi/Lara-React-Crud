@@ -141,6 +141,10 @@ class TailorController extends Controller
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
+        if ($user->approval_status !== 'approved') {
+            return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
+        }
+
         // Minor #16: max years_experience is dynamic (current year − 1960)
         $maxExperience = (int) date('Y') - 1960;
 

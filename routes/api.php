@@ -105,7 +105,10 @@ Route::middleware(['auth.bearer', 'auth.admin', 'throttle:30,1'])->prefix('admin
     Route::get('/orders',               [AdminController::class, 'orders']);
     Route::get('/users',                [AdminController::class, 'users']);
     Route::patch('/orders/{id}/assign', [AdminController::class, 'assignTailor']);
-    Route::patch('/users/{id}/suspend', [AdminController::class, 'suspendUser']);
+    Route::patch('/users/{id}/suspend',        [AdminController::class, 'suspendUser']);
+    Route::get('/tailors/pending',             [AdminController::class, 'pendingTailors']);
+    Route::post('/tailors/{id}/approve',       [AdminController::class, 'approveTailor']);
+    Route::post('/tailors/{id}/reject',        [AdminController::class, 'rejectTailor']);
 
     // Customizer admin CRUD
     Route::prefix('customizer')->group(function () {

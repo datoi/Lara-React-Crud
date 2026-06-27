@@ -530,7 +530,7 @@ export default function DesignerApp() {
                         <UploadTypeStep
                             key="upload-type"
                             onSelect={key => setFlow({ step: 'upload-file', category: key })}
-                            onBack={() => setFlow({ step: 'category' })}
+                            onBack={() => searchParams.get('upload') === '1' ? navigate(-1) : setFlow({ step: 'category' })}
                         />
                     )}
 

@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import { Bookmark, RotateCcw, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import PreviewCanvas from './PreviewCanvas';
 import OptionPanel from './OptionPanel';
@@ -43,6 +44,7 @@ export default function Customizer({
         totalPrice,
         resolveOption,
     } = useCustomizer({ basePrice: product.base_price, layerCategories, fabrics });
+    const { t } = useTranslation();
 
     const [saveOpen, setSaveOpen]   = useState(false);
     const [savedName, setSavedName] = useState<string | null>(null);
@@ -123,11 +125,11 @@ export default function Customizer({
                         variant="outline"
                         size="default"
                         onClick={reset}
-                        aria-label="Reset all selections to default"
+                        aria-label={t('customizer.reset')}
                         className="gap-1.5"
                     >
                         <RotateCcw className="w-4 h-4" />
-                        Reset
+                        {t('customizer.reset')}
                     </Button>
                     <Button
                         variant="outline"
@@ -136,16 +138,16 @@ export default function Customizer({
                         className="gap-1.5 flex-1"
                     >
                         <Bookmark className="w-4 h-4" />
-                        Save Design
+                        {t('customizer.saveDesign')}
                     </Button>
                     <Button
                         variant="default"
                         size="default"
                         onClick={() => onOrder?.(getConfiguration())}
-                        className="gap-1.5 flex-1 bg-slate-900 hover:bg-slate-700 text-white"
+                        className="gap-1.5 flex-1"
                     >
                         <ShoppingBag className="w-4 h-4" />
-                        Order — ₾{totalPrice.toFixed(2)}
+                        {t('customizer.orderPrice', { price: totalPrice.toFixed(2) })}
                     </Button>
                 </div>
             </div>
@@ -153,14 +155,14 @@ export default function Customizer({
             {/* ── Mobile sticky bottom bar ───────────────────────────────────── */}
             <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-4 py-3 flex items-center gap-3">
                 <div className="flex-1 min-w-0">
-                    <p className="text-xs text-slate-400">Total</p>
+                    <p className="text-xs text-slate-400">{t('customizer.total')}</p>
                     <p className="text-lg font-bold text-slate-900 leading-tight">₾{totalPrice.toFixed(2)}</p>
                 </div>
                 <Button
                     variant="outline"
                     size="sm"
                     onClick={reset}
-                    aria-label="Reset"
+                    aria-label={t('customizer.reset')}
                     className="gap-1 shrink-0"
                 >
                     <RotateCcw className="w-3.5 h-3.5" />
@@ -177,10 +179,10 @@ export default function Customizer({
                     variant="default"
                     size="default"
                     onClick={() => onOrder?.(getConfiguration())}
-                    className="gap-1.5 shrink-0 bg-slate-900 hover:bg-slate-700 text-white"
+                    className="gap-1.5 shrink-0"
                 >
                     <ShoppingBag className="w-4 h-4" />
-                    Order
+                    {t('customizer.order')}
                 </Button>
             </div>
 

@@ -172,13 +172,13 @@ class OrderController extends Controller
 
         try {
             $order->load('items');
-            Mail::to($user->email)->queue(new OrderConfirmation($order));
+            Mail::to($user->email)->send(new OrderConfirmation($order));
         } catch (\Throwable $e) {
             Log::error('OrderConfirmation email failed: ' . $e->getMessage());
         }
 
         try {
-            Mail::to($tailor->email)->queue(new NewOrderAlert($order, $user));
+            Mail::to($tailor->email)->send(new NewOrderAlert($order, $user));
         } catch (\Throwable $e) {
             Log::error('NewOrderAlert email failed: ' . $e->getMessage());
         }
@@ -307,14 +307,14 @@ class OrderController extends Controller
         });
 
         try {
-            Mail::to($user->email)->queue(new OrderConfirmation($order));
+            Mail::to($user->email)->send(new OrderConfirmation($order));
         } catch (\Throwable $e) {
             Log::error('OrderConfirmation email failed (custom): ' . $e->getMessage());
         }
 
         if ($tailor) {
             try {
-                Mail::to($tailor->email)->queue(new NewOrderAlert($order, $user));
+                Mail::to($tailor->email)->send(new NewOrderAlert($order, $user));
             } catch (\Throwable $e) {
                 Log::error('NewOrderAlert email failed (custom): ' . $e->getMessage());
             }
@@ -337,6 +337,10 @@ class OrderController extends Controller
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
+        if ($user->approval_status !== 'approved') {
+            return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
+        }
+
         $orders = Order::with(['user', 'items.product'])
             ->where('tailor_id', $user->id)
             ->latest()
@@ -353,6 +357,10 @@ class OrderController extends Controller
         $user = $request->user();
         if ($user->role !== 'tailor') {
             return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        if ($user->approval_status !== 'approved') {
+            return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
         }
 
         $order = Order::with(['user', 'items.product'])
@@ -407,7 +415,7 @@ class OrderController extends Controller
             );
 
             try {
-                Mail::to($order->user->email)->queue(new OrderStatusUpdated($order, $data['status']));
+                Mail::to($order->user->email)->send(new OrderStatusUpdated($order, $data['status']));
             } catch (\Throwable $e) {
                 Log::error('OrderStatusUpdated email failed: ' . $e->getMessage());
             }

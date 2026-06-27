@@ -6,6 +6,7 @@ export interface AuthUser {
     email: string;
     phone: string;
     role: 'customer' | 'tailor' | 'admin';
+    approval_status?: 'pending' | 'approved' | 'rejected' | null;
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────

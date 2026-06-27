@@ -51,18 +51,30 @@ Kere connects customers with local Georgian tailors for bespoke clothing. Custom
 ```
 app/
 ├── Http/Controllers/Api/
-│   ├── AuthController.php          # Register, login, token issuance
+│   ├── AuthController.php          # Register, login, token issuance; sets approval_status for tailors
 │   ├── OrderController.php         # Order creation, tailor order mgmt, status updates
 │   ├── CustomerOrderController.php # Customer fetches own orders
 │   ├── NotificationController.php  # Fetch, mark-read, mark-all-read
-│   └── UploadController.php        # Product image uploads
+│   ├── UploadController.php        # Product image uploads
+│   ├── AdminController.php         # Admin orders, users, tailor approval (pendingTailors/approveTailor/rejectTailor)
+│   ├── MessageController.php       # Order-scoped chat: index, store, counts
+│   ├── TailorController.php        # Tailor public profiles + updateProfile (with approval guard)
+│   ├── ReviewController.php        # Product reviews + landing carousel
+│   └── SupportEmailController.php  # FAQ email support form
+├── Mail/
+│   ├── OrderConfirmation.php
+│   ├── NewOrderAlert.php
+│   ├── OrderStatusUpdated.php
+│   ├── TailorApproved.php          # Sent when admin approves a tailor
+│   └── TailorRejected.php          # Sent when admin rejects a tailor (with optional reason)
 ├── Models/
-│   ├── User.php                    # Customer & Tailor unified model (role field)
+│   ├── User.php                    # Customer & Tailor unified model (role + approval_status fields)
 │   ├── Product.php                 # Marketplace products, tailor-owned
 │   ├── Order.php                   # Both marketplace & custom orders
 │   ├── OrderItem.php               # Line items inside an Order
 │   ├── CartItem.php                # Persisted cart items per user
 │   ├── Category.php                # Product categories
+│   ├── Message.php                 # Order-scoped chat messages
 │   └── KereNotification.php        # In-app notifications
 
 database/migrations/
@@ -136,8 +148,14 @@ resources/js/
 ├── context/
 │   └── CartContext.tsx             # Global cart state + drawer open/close
 │
-└── hooks/
-    └── useAuth.ts                  # Token storage, pending order preservation, sign out
+├── hooks/
+│   ├── useAuth.ts                  # Token storage, AuthUser interface (incl. approval_status), sign out
+│   ├── useCustomizer.ts            # Customizer state: selections, fabric, price
+│   ├── useProductData.ts           # Fetch + shape customizer product data
+│   └── useCustomOrderDraft.ts      # sessionStorage draft for custom order flow
+└── locales/
+    ├── en.json                     # English translations (fallback)
+    └── ka.json                     # Georgian translations (default)
 ```
 
 ---
@@ -170,6 +188,7 @@ orders ──< order_items
 | password | string | bcrypt hashed |
 | phone | string nullable | |
 | role | enum | `'customer'` \| `'tailor'` — default: `'customer'` |
+| approval_status | enum nullable | `'pending'` \| `'approved'` \| `'rejected'` — set to `'pending'` on tailor registration, `null` for customers |
 | api_token | string unique nullable | SHA256 hash of raw token |
 | remember_token | string nullable | |
 | email_verified_at | timestamp nullable | |
@@ -312,6 +331,22 @@ Auth: `Authorization: Bearer {raw_token}` (backend hashes with SHA256 for lookup
 |---|---|---|
 | POST | `/upload/image` | Upload image, returns URL |
 
+**Chat (order-scoped messages)**
+
+| Method | Path | Who | Description |
+|---|---|---|---|
+| GET | `/orders/{orderId}/messages` | Customer or Tailor on that order | Fetch all messages for an order, oldest first |
+| POST | `/orders/{orderId}/messages` | Customer or Tailor on that order | Send a message. Body: `{message}`. Notifies the other party via KereNotification |
+| GET | `/messages/counts` | Any auth | Returns per-order message count from the other party (used for unread badges) |
+
+**Admin — Tailor Approval**
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/admin/tailors/pending` | List all tailors with `approval_status = pending` |
+| POST | `/admin/tailors/{id}/approve` | Set `approval_status = approved`, send `TailorApproved` email, create in-app notification |
+| POST | `/admin/tailors/{id}/reject` | Set `approval_status = rejected`, send `TailorRejected` email. Body: `{reason?}` |
+
 ---
 
 ## 5. User Roles & Flows
@@ -351,6 +386,8 @@ Auth: `Authorization: Bearer {raw_token}` (backend hashes with SHA256 for lookup
 ### Role: Tailor
 
 **Registration/Login path:** `/signin` → `/register/tailor` or `/login/tailor`
+
+**Approval gate:** New tailor registrations are set to `approval_status = 'pending'`. After registration, the tailor sees a "pending review" screen — they cannot access the dashboard. Admin must approve via the "pending tailors" tab in AdminDashboard. On approval/rejection the tailor receives an email and an in-app notification. The dashboard renders a gate screen for `pending` or `rejected` status — only `approved` (or `null`, for legacy accounts) reaches the real dashboard.
 
 **Primary flows:**
 
@@ -493,7 +530,7 @@ closeCart(): void
 | `DATABASE_URL` | PostgreSQL connection string (auto-set by Railway Postgres addon) |
 | `TRUSTED_PROXIES` | `*` — Railway terminates HTTPS at proxy layer |
 | `MAIL_MAILER` | `resend` |
-| `RESEND_API_KEY` | Resend API key (get from resend.com/api-keys) |
+| `RESEND_API_KEY` | `re_MsfQBBRQ_4dwmJE3uDgnvXEEJ2p8S2HkU` |
 | `MAIL_FROM_ADDRESS` | `noreply@kereforyou.com` |
 | `MAIL_FROM_NAME` | `Kere` |
 | `ADMIN_PASSWORD` | Admin panel password (synced on every deploy) |
@@ -507,8 +544,25 @@ closeCart(): void
 **These rules are non-negotiable. Do not deviate without explicit user instruction.**
 
 ### Colors
-Slate palette only: `slate-900 / 700 / 600 / 500 / 400 / 200 / 100 / 50`
+Slate palette: `slate-900 / 700 / 600 / 500 / 400 / 200 / 100 / 50`
+Brand accent: wine/oxblood — `--color-brand: oklch(0.42 0.13 25)` → Tailwind: `bg-brand` / `text-brand` / `border-brand`
+Brand hover: `--color-brand-dark: oklch(0.36 0.11 25)` → Tailwind: `bg-brand-dark`
+`--primary` is aliased to `--color-brand` so `<Button variant="default">` auto-uses wine color.
+
+**Use `bg-brand` for:** CTAs, active tab indicators, progress bars, icon accent circles, notification count badge, unread stripe.
+**Keep `bg-slate-900` for:** large dark panels (OnboardingPanel, pricing summaries), image overlays, informational badges, navbar.
 Never use: blue, purple, indigo, or any other color family.
+
+### Typography
+- Serif font: `Newsreader` (Google Fonts, loaded in `app.blade.php`) — CSS var: `--font-serif`
+- All landing page `h2` headings: `font-serif font-semibold tracking-tight`
+- Hero `h1`: `font-serif font-semibold` with scale-in animation
+- Body text: Instrument Sans (also loaded in `app.blade.php`)
+
+### Buttons
+- Corner radius: `rounded-lg` (not `rounded-full`)
+- Always use `<Button variant="default|outline|ghost|destructive" size="sm|default|lg">` from `components/ui/button.tsx`
+- Never write custom button classes
 
 ### Class Patterns
 
@@ -519,9 +573,6 @@ Section:   className="py-16 md:py-24"
 Grid:      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
 ```
 
-### Buttons
-Always use `<Button variant="default|outline|ghost" size="sm|default|lg">` from `components/ui/button.tsx`.
-Never write custom button classes.
 
 ### Animations (5 patterns only)
 
@@ -555,6 +606,83 @@ Duration: only `0.5` or `0.6`. Delays: increments of `0.1` or `0.2`. No spring o
 ## 9. Project Evolution & Logic Log
 
 All features and fixes are logged here in reverse chronological order.
+
+---
+
+### [2026-06-27] Tailor Approval Flow
+
+**What was done:** New tailors cannot access the platform until manually approved by an admin.
+
+**Registration:** `AuthController::register()` sets `approval_status = 'pending'` for all tailor registrations. After successful registration, `RegisterTailor.tsx` shows an in-page "Application Submitted" screen (no navigation to dashboard). `useAuth.ts` `AuthUser` interface includes `approval_status`.
+
+**Dashboard gate:** `TailorDashboard.tsx` checks `user.approval_status` before rendering. `pending` → shows a "Under Review" screen. `rejected` → shows a "Not Approved" screen. `approved` (or `null` for legacy accounts) → normal dashboard.
+
+**Admin UI:** `AdminDashboard.tsx` has a new "pending tailors" tab with a brand-colored count badge. Each pending tailor row has Approve and Reject buttons. Reject opens an optional reason textarea — the reason is included in the rejection email.
+
+**Backend guards:** `TailorController::updateProfile()`, `OrderController::tailorOrders()`, and `OrderController::updateStatus()` all return `403 {code: 'pending_approval'}` if the tailor is not approved.
+
+**Emails:** `TailorApproved` and `TailorRejected` mailables with blade views. Sent synchronously via `Mail::send()`. On approval, an in-app `KereNotification` is also created (`type: 'account_approved'`).
+
+**Migration:** `database/migrations/2026_06_27_000001_add_approval_status_to_users_table.php`
+
+**Where the logic is:**
+- `app/Http/Controllers/Api/AdminController.php` — `pendingTailors()`, `approveTailor()`, `rejectTailor()`
+- `app/Http/Controllers/Api/AuthController.php` — sets `approval_status` on register
+- `app/Http/Controllers/Api/TailorController.php` — approval guard in `updateProfile`
+- `app/Http/Controllers/Api/OrderController.php` — approval guard in `tailorOrders`, `updateStatus`
+- `app/Mail/TailorApproved.php`, `app/Mail/TailorRejected.php`
+- `resources/views/emails/tailor-approved.blade.php`, `tailor-rejected.blade.php`
+- `resources/js/pages/RegisterTailor.tsx` — pending screen after registration
+- `resources/js/pages/TailorDashboard.tsx` — approval gate
+- `resources/js/pages/AdminDashboard.tsx` — pending tailors tab
+
+---
+
+### [2026-06-27] Brand Design System Overhaul
+
+**What was done:** Replaced the all-slate visual identity with a wine/oxblood brand accent and Newsreader editorial serif typeface across the entire platform.
+
+**Brand color:** `--color-brand: oklch(0.42 0.13 25)` (wine/oxblood), `--color-brand-dark: oklch(0.36 0.11 25)` (hover). Both defined in `resources/css/app.css` `@theme` block. `--primary` aliased to `--color-brand` so `<Button variant="default">` auto-applies the brand color.
+
+**Typography:** Newsreader serif loaded via Google Fonts in `app.blade.php`. `--font-serif: 'Newsreader', Georgia, serif` in `@theme`. All landing `h2` headings use `font-serif font-semibold tracking-tight`. Hero `h1` uses a scale-in animation (`initial={{ opacity: 0, scale: 0.95 }}`) distinct from all other sections.
+
+**Buttons:** Corner radius changed from `rounded-full` to `rounded-lg` sitewide.
+
+**Notification bell:** Replaced dot with a count badge (`bg-brand`). Unread items get a 3px left border stripe (`bg-brand`). Fully i18n'd `formatTime`.
+
+**Components updated:** Navigation.tsx, HeroSection.tsx, FeaturesSection.tsx, ProcessSection.tsx, CTASection.tsx, SizeFitSection.tsx, LocalTailorsSection.tsx, GuaranteeSection.tsx, FAQSection.tsx, NotificationBell.tsx, OrdersList.tsx (modal tab indicator), SetupChecklist.tsx (progress bar, icons, links).
+
+---
+
+### [2026-06-27] Live Chat Between Customers and Tailors
+
+**What was done:** Order-scoped real-time-style messaging between customer and tailor, accessible from within the order detail modal on both dashboards.
+
+**How it works:** Each order has a message thread. Either party (customer or tailor on that order) can send messages. Sending a message creates a `KereNotification` for the other party (`type: 'new_message'`). `GET /api/messages/counts` returns per-order message counts from the other party, used to render unread badges on order rows.
+
+**Where the logic is:**
+- `app/Http/Controllers/Api/MessageController.php` — `index`, `store`, `counts`
+- `app/Models/Message.php`
+- Routes: `GET/POST /api/orders/{orderId}/messages`, `GET /api/messages/counts` (all in `auth.bearer` middleware group)
+- Frontend: chat UI wired into the order detail modal in `OrdersList.tsx` (tailor) and `CustomerDashboard.tsx` (customer)
+
+---
+
+### [2026-06-27] Layer-Based Customizer — Mobile Layout + i18n
+
+**What was done:** Fixed `Customizer.tsx` for mobile viewports. Added full i18n to all customizer strings.
+
+**Mobile sticky bar:** On `< lg` viewports a fixed bottom bar shows the running total, a Reset button, a Save Design button, and an Order button. Desktop CTAs remain in the sidebar. `pb-24 lg:pb-0` prevents content from hiding behind the bar.
+
+**i18n:** `useTranslation` added to `Customizer.tsx`. All hardcoded strings (Total, Reset, Save Design, Order — ₾X, aria-labels) moved to `customizer.*` keys in `en.json` / `ka.json`. Desktop CTAs also converted for consistency.
+
+**DesignerApp back-button fix:** When entering `/design?upload=1`, the back button on `UploadTypeStep` now calls `navigate(-1)` instead of going to `CategoryStep` (which the user never visited).
+
+---
+
+### [2026-06-27] i18n — Legal Pages (Privacy, Terms, Refund Policy)
+
+**What was done:** Replaced placeholder text in `privacy`, `terms`, and `refund` sections of `en.json` and `ka.json` with proper Georgian-market legal content. `lastUpdated` set to June 2026.
 
 ---
 

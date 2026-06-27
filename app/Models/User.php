@@ -33,6 +33,7 @@ class User extends Authenticatable
         'is_suspended',
         'is_available',
         'turnaround_days',
+        'approval_status',
     ];
 
     /**
@@ -56,8 +57,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
-            'is_suspended'  => 'boolean',
-            'is_available'  => 'boolean',
+            'is_suspended'    => 'boolean',
+            'is_available'    => 'boolean',
+            'approval_status' => 'string',
         ];
     }
 

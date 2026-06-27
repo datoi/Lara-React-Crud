@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle, X } from 'lucide-react';
+import { CheckCircle, X, Clock, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DashboardHeader } from '../components/tailor/DashboardHeader';
 import { StatsCards } from '../components/tailor/StatsCards';
@@ -10,7 +10,8 @@ import { TailorProfileEditor } from '../components/tailor/TailorProfileEditor';
 import { OnboardingPanel } from '../components/tailor/OnboardingPanel';
 import { SetupChecklist } from '../components/tailor/SetupChecklist';
 import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
-import { getAuthUser, getAuthToken } from '../hooks/useAuth';
+import { getAuthUser, getAuthToken, clearAuth } from '../hooks/useAuth';
+import { Link, useNavigate } from 'react-router';
 
 export default function TailorDashboard() {
     const { t } = useTranslation();
@@ -119,6 +120,60 @@ export default function TailorDashboard() {
         document.getElementById('profile-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     const greeting = user ? user.first_name : t('tailorDashboard.tailorFallback');
+    const navigate = useNavigate();
+
+    // ─── Approval gate ────────────────────────────────────────────────────────
+    if (user?.approval_status === 'pending') {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col">
+                <nav className="bg-white border-b border-slate-200">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                        <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
+                        <button onClick={() => { clearAuth(); navigate('/'); }} className="text-sm text-slate-500 hover:text-slate-900 transition-colors">
+                            {t('tailorComponents.signOut')}
+                        </button>
+                    </div>
+                </nav>
+                <div className="flex-1 flex items-center justify-center py-16 px-4">
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="max-w-md w-full text-center">
+                        <div className="w-16 h-16 bg-brand/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Clock className="w-8 h-8 text-brand" />
+                        </div>
+                        <h1 className="text-2xl font-bold text-slate-900 mb-3">{t('tailorDashboard.pendingTitle')}</h1>
+                        <p className="text-slate-500 leading-relaxed mb-8">{t('tailorDashboard.pendingDesc')}</p>
+                        <p className="text-xs text-slate-400">{t('tailorDashboard.pendingContact')}</p>
+                    </motion.div>
+                </div>
+            </div>
+        );
+    }
+
+    if (user?.approval_status === 'rejected') {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col">
+                <nav className="bg-white border-b border-slate-200">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                        <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
+                        <button onClick={() => { clearAuth(); navigate('/'); }} className="text-sm text-slate-500 hover:text-slate-900 transition-colors">
+                            {t('tailorComponents.signOut')}
+                        </button>
+                    </div>
+                </nav>
+                <div className="flex-1 flex items-center justify-center py-16 px-4">
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="max-w-md w-full text-center">
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <XCircle className="w-8 h-8 text-slate-500" />
+                        </div>
+                        <h1 className="text-2xl font-bold text-slate-900 mb-3">{t('tailorDashboard.rejectedTitle')}</h1>
+                        <p className="text-slate-500 leading-relaxed mb-8">{t('tailorDashboard.rejectedDesc')}</p>
+                        <Link to="/" className="inline-flex items-center justify-center bg-slate-900 hover:bg-slate-700 text-white text-sm font-medium px-6 py-3 rounded-lg transition-colors">
+                            {t('register.tailorPendingBack')}
+                        </Link>
+                    </motion.div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-50">

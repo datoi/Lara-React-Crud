@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Users, Package, ShieldAlert, LogOut, CheckCircle, Scissors } from 'lucide-react';
+import { Users, Package, ShieldAlert, LogOut, CheckCircle, Scissors, Clock, X } from 'lucide-react';
 import { getAuthUser, getAuthToken, clearAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
 import { useTranslation } from 'react-i18next';
@@ -35,6 +35,13 @@ interface AssignSlot {
     tailorId: string;
     saving:   boolean;
     saved:    boolean;
+}
+
+interface PendingTailor {
+    id: number;
+    name: string;
+    email: string;
+    created_at: string;
 }
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
@@ -76,7 +83,7 @@ export default function AdminDashboard() {
     const user     = getAuthUser();
     const token    = getAuthToken();
 
-    const [tab,     setTab]     = useState<'orders' | 'users' | 'unassigned'>('orders');
+    const [tab,     setTab]     = useState<'orders' | 'users' | 'unassigned' | 'pending_tailors'>('orders');
     const [orders,  setOrders]  = useState<AdminOrder[]>([]);
     const [users,   setUsers]   = useState<AdminUser[]>([]);
     const [loadingOrders, setLoadingOrders] = useState(true);
@@ -84,6 +91,13 @@ export default function AdminDashboard() {
 
     const [assignMap, setAssignMap] = useState<Record<number, AssignSlot>>({});
     const [suspendingId, setSuspendingId] = useState<number | null>(null);
+
+    const [pendingTailors,   setPendingTailors]   = useState<PendingTailor[]>([]);
+    const [loadingPending,   setLoadingPending]   = useState(true);
+    const [approvingId,      setApprovingId]      = useState<number | null>(null);
+    const [rejectingId,      setRejectingId]      = useState<number | null>(null);
+    const [rejectReasons,    setRejectReasons]    = useState<Record<number, string>>({});
+    const [rejectOpen,       setRejectOpen]       = useState<number | null>(null);
 
     const tailors = users.filter(u => u.role === 'tailor');
 
@@ -127,10 +141,55 @@ export default function AdminDashboard() {
         }
     }, [token]);
 
+    const fetchPendingTailors = useCallback(async () => {
+        if (!token) return;
+        try {
+            const res = await fetch('/api/admin/tailors/pending', {
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+            });
+            if (res.ok) setPendingTailors((await res.json()).tailors ?? []);
+        } finally {
+            setLoadingPending(false);
+        }
+    }, [token]);
+
     useEffect(() => {
         fetchOrders();
         fetchUsers();
-    }, [fetchOrders, fetchUsers]);
+        fetchPendingTailors();
+    }, [fetchOrders, fetchUsers, fetchPendingTailors]);
+
+    const handleApprove = async (id: number) => {
+        if (!token) return;
+        setApprovingId(id);
+        try {
+            const res = await fetch(`/api/admin/tailors/${id}/approve`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+            });
+            if (res.ok) setPendingTailors(prev => prev.filter(t => t.id !== id));
+        } finally {
+            setApprovingId(null);
+        }
+    };
+
+    const handleReject = async (id: number) => {
+        if (!token) return;
+        setRejectingId(id);
+        try {
+            const res = await fetch(`/api/admin/tailors/${id}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                body: JSON.stringify({ reason: rejectReasons[id] ?? '' }),
+            });
+            if (res.ok) {
+                setPendingTailors(prev => prev.filter(t => t.id !== id));
+                setRejectOpen(null);
+            }
+        } finally {
+            setRejectingId(null);
+        }
+    };
 
     const handleAssign = async (orderId: number) => {
         const slot = assignMap[orderId];
@@ -191,11 +250,12 @@ export default function AdminDashboard() {
         { labelKey: 'adminDashboard.statSuspended',   value: users.filter(u => u.is_suspended).length, icon: ShieldAlert },
     ];
 
-    const tabs = (['orders', 'unassigned', 'users'] as const);
+    const tabs = (['orders', 'unassigned', 'pending_tailors', 'users'] as const);
     const tabLabels: Record<string, string> = {
-        orders:     t('adminDashboard.tabOrders'),
-        unassigned: t('adminDashboard.tabUnassigned'),
-        users:      t('adminDashboard.tabUsers'),
+        orders:          t('adminDashboard.tabOrders'),
+        unassigned:      t('adminDashboard.tabUnassigned'),
+        pending_tailors: t('adminDashboard.tabPendingTailors'),
+        users:           t('adminDashboard.tabUsers'),
     };
 
     return (
@@ -286,6 +346,11 @@ export default function AdminDashboard() {
                             {tabKey === 'unassigned' && unassignedOrders.length > 0 && (
                                 <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === 'unassigned' ? 'bg-white text-slate-900' : 'bg-slate-200 text-slate-700'}`}>
                                     {unassignedOrders.length}
+                                </span>
+                            )}
+                            {tabKey === 'pending_tailors' && pendingTailors.length > 0 && (
+                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === 'pending_tailors' ? 'bg-white text-slate-900' : 'bg-brand text-white'}`}>
+                                    {pendingTailors.length}
                                 </span>
                             )}
                         </button>
@@ -500,6 +565,106 @@ export default function AdminDashboard() {
                                         })}
                                     </tbody>
                                 </table>
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+
+                {/* ── Pending tailors ── */}
+                {tab === 'pending_tailors' && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
+                    >
+                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                            <div>
+                                <h2 className="font-bold text-slate-900">{t('adminDashboard.pendingTailors')}</h2>
+                                <p className="text-xs text-slate-400 mt-0.5">{t('adminDashboard.pendingTailorsDesc')}</p>
+                            </div>
+                            <span className="text-xs text-slate-400">{t('adminDashboard.total', { n: pendingTailors.length })}</span>
+                        </div>
+
+                        {loadingPending ? (
+                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.loading')}</div>
+                        ) : pendingTailors.length === 0 ? (
+                            <div className="px-6 py-14 text-center">
+                                <Clock className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+                                <p className="text-sm text-slate-400">{t('adminDashboard.noPendingTailors')}</p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-slate-50">
+                                {pendingTailors.map((tailor, i) => (
+                                    <motion.div
+                                        key={tailor.id}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: i * 0.04 }}
+                                        className="px-6 py-4"
+                                    >
+                                        <div className="flex items-start justify-between gap-4 flex-wrap">
+                                            <div>
+                                                <p className="text-sm font-medium text-slate-900">{tailor.name}</p>
+                                                <p className="text-xs text-slate-400 mt-0.5">{tailor.email}</p>
+                                                <p className="text-xs text-slate-400 mt-0.5">{t('adminDashboard.colApplied')}: {tailor.created_at}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                {rejectOpen !== tailor.id ? (
+                                                    <>
+                                                        <Button
+                                                            variant="default"
+                                                            size="sm"
+                                                            onClick={() => handleApprove(tailor.id)}
+                                                            disabled={approvingId === tailor.id || rejectingId === tailor.id}
+                                                            className="h-8 px-4 text-xs"
+                                                        >
+                                                            {approvingId === tailor.id ? t('adminDashboard.approving') : t('adminDashboard.approve')}
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => setRejectOpen(tailor.id)}
+                                                            disabled={approvingId === tailor.id}
+                                                            className="h-8 px-4 text-xs text-slate-600"
+                                                        >
+                                                            {t('adminDashboard.reject')}
+                                                        </Button>
+                                                    </>
+                                                ) : (
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => setRejectOpen(null)}
+                                                            className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {rejectOpen === tailor.id && (
+                                            <div className="mt-3 space-y-2">
+                                                <textarea
+                                                    rows={2}
+                                                    placeholder={t('adminDashboard.rejectReasonPlaceholder')}
+                                                    value={rejectReasons[tailor.id] ?? ''}
+                                                    onChange={e => setRejectReasons(prev => ({ ...prev, [tailor.id]: e.target.value }))}
+                                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
+                                                />
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => handleReject(tailor.id)}
+                                                    disabled={rejectingId === tailor.id}
+                                                    className="h-8 px-4 text-xs"
+                                                >
+                                                    {rejectingId === tailor.id ? t('adminDashboard.rejecting') : t('adminDashboard.confirmReject')}
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                ))}
                             </div>
                         )}
                     </motion.div>
