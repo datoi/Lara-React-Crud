@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import type { LayerCategory, LayerOption, Fabric } from '../../types/customizer';
+import type { LayerCategory, Fabric } from '../../types/customizer';
 import CategoryTabs from './CategoryTabs';
 import OptionSwatch from './OptionSwatch';
 import FabricPicker from './FabricPicker';
@@ -45,10 +45,6 @@ export default function OptionPanel({
 
     const renderCategory = (category: LayerCategory, i: number) => {
         const selectedParentId = selections[category.id];
-        const selectedParent   = category.options.find(o => o.id === selectedParentId)
-            ?? category.options.find(o => o.is_default)
-            ?? category.options[0]
-            ?? null;
         const hasChildren = categoryHasChildren(category);
 
         return (

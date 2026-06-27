@@ -14,7 +14,6 @@ export default function Login() {
     const { t } = useTranslation();
 
     const isCustomer = role !== 'tailor';
-    const redirect = isCustomer ? '/customer-dashboard' : '/tailor-dashboard';
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

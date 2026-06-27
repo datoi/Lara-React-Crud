@@ -27,9 +27,6 @@ interface UseCustomizerReturn {
     selectFabric: (id: number | null) => void;
 }
 
-function firstChild(option: LayerOption): LayerOption | null {
-    return option.children?.[0] ?? null;
-}
 
 export function useCustomizer({
     basePrice,
@@ -48,7 +45,7 @@ export function useCustomizer({
         return defaults;
     }, [layerCategories]);
 
-    const buildSubDefaults = useCallback((selections: Record<number, number>): Record<number, number> => {
+    const buildSubDefaults = useCallback((): Record<number, number> => {
         const subDefaults: Record<number, number> = {};
         for (const category of layerCategories) {
             for (const option of category.options) {
@@ -63,7 +60,7 @@ export function useCustomizer({
 
     const [selections, setSelections] = useState<Record<number, number>>(buildDefaults);
     const [subSelections, setSubSelections] = useState<Record<number, number>>(
-        () => buildSubDefaults(buildDefaults())
+        () => buildSubDefaults()
     );
     const [fabricId, setFabricId] = useState<number | null>(
         () => fabrics[0]?.id ?? null
@@ -95,7 +92,7 @@ export function useCustomizer({
     const reset = useCallback(() => {
         const defaults = buildDefaults();
         setSelections(defaults);
-        setSubSelections(buildSubDefaults(defaults));
+        setSubSelections(buildSubDefaults());
         setFabricId(fabrics[0]?.id ?? null);
     }, [buildDefaults, buildSubDefaults, fabrics]);
 

@@ -521,7 +521,7 @@ function StyleCard({
     const [saving, setSaving]                 = useState(false);
     const subFileRef = useRef<HTMLInputElement>(null);
 
-    const children: LayerOption[] = (option as any).children ?? [];
+    const children: LayerOption[] = option.children ?? [];
 
     const handleAddSubStyle = async () => {
         if (!subName.trim() || !subFile) return;
@@ -670,7 +670,7 @@ function OptionGroupCard({
     const [styleName, setStyleName]           = useState('');
     const [styleFile, setStyleFile]           = useState<File | null>(null);
     const [saving, setSaving]                 = useState(false);
-    const [childrenLabel, setChildrenLabel]   = useState((group as any).children_label ?? '');
+    const [childrenLabel, setChildrenLabel]   = useState(group.children_label ?? '');
     const [savingLabel, setSavingLabel]       = useState(false);
     const [editingGroupName, setEditingGroupName] = useState(false);
     const [groupNameValue, setGroupNameValue]     = useState(group.name);

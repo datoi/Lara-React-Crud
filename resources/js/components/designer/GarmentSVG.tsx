@@ -295,7 +295,6 @@ export function GarmentSVG({ config, size = 'full' }: GarmentSVGProps) {
     // Clip path so garment never bleeds outside canvas
     const clipId = `clip-${uid}`;
 
-    const aspectRatio = size === 'compact' ? '3/4' : '9/16';
     const clampHeight = size === 'compact' ? 420   : 560;
 
     // Show empty state when no garment type selected
