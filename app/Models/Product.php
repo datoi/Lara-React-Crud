@@ -12,7 +12,7 @@ class Product extends Model
     protected $fillable = [
         'category_id', 'tailor_id', 'name', 'slug', 'description', 'price',
         'colors', 'sizes', 'images', 'is_customizable', 'is_featured', 'stock',
-        'fabric', 'texture', 'required_measurements',
+        'fabric', 'texture', 'required_measurements', 'status',
     ];
 
     protected $casts = [

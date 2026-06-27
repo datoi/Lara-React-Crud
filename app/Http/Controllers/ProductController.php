@@ -259,6 +259,33 @@ class ProductController extends Controller
         return response()->json(['product' => $this->formatProduct($product)]);
     }
 
+    // ─── PATCH /api/tailor/products/{id}/status ──────────────────────────────
+
+    public function updateStatus(Request $request, int $id)
+    {
+        $user    = $request->user();
+        $product = Product::where('id', $id)->where('tailor_id', $user->id)->firstOrFail();
+
+        $data = $request->validate([
+            'status' => 'required|in:active,paused',
+        ]);
+
+        $product->update(['status' => $data['status']]);
+
+        return response()->json(['status' => $product->status]);
+    }
+
+    // ─── DELETE /api/tailor/products/{id} ────────────────────────────────────
+
+    public function destroy(Request $request, int $id)
+    {
+        $user    = $request->user();
+        $product = Product::where('id', $id)->where('tailor_id', $user->id)->firstOrFail();
+        $product->delete();
+
+        return response()->json(null, 204);
+    }
+
     // ─── Formatter ────────────────────────────────────────────────────────────
 
     private function formatProduct(Product $p): array
@@ -278,6 +305,7 @@ class ProductController extends Controller
             'required_measurements' => $p->required_measurements ?? [],
             'is_customizable'       => $p->is_customizable,
             'stock'                 => $p->stock,
+            'status'                => $p->status ?? 'active',
         ];
     }
 }
