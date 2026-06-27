@@ -255,9 +255,6 @@ export function FAQSection() {
                         >
                             {t('faq.emailSupport')}
                         </button>
-                        <button className="border border-slate-300 text-slate-700 text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-50 transition-colors">
-                            {t('faq.liveChat')}
-                        </button>
                     </div>
                 </motion.div>
             </div>
