@@ -88,9 +88,9 @@ class AdminController extends Controller
         if ($wasUnassigned && $order->user_id) {
             KereNotification::create([
                 'user_id' => $order->user_id,
-                'type'    => 'order_assigned',
-                'title'   => 'Tailor Assigned!',
-                'body'    => "A tailor has been assigned to your order #{$order->order_number}.",
+                'type'    => 'order_status',
+                'title'   => 'შეკვეთაზე მკერავი დაინიშნა',
+                'body'    => "თქვენს შეკვეთაზე #{$order->order_number} მკერავი დაინიშნა.",
                 'data'    => ['order_id' => $order->id],
                 'is_read' => false,
             ]);
@@ -143,8 +143,8 @@ class AdminController extends Controller
         KereNotification::create([
             'user_id' => $tailor->id,
             'type'    => 'account_approved',
-            'title'   => 'Your account has been approved!',
-            'body'    => 'You can now log in, list your products, and start receiving orders.',
+            'title'   => 'თქვენი ანგარიში დაადასტურეს',
+            'body'    => 'შეგიძლიათ შეხვიდეთ, დაამატოთ პროდუქტები და მიიღოთ შეკვეთები.',
             'data'    => [],
             'is_read' => false,
         ]);

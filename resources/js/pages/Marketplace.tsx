@@ -427,10 +427,10 @@ export default function Marketplace() {
                                         <span>{t('marketplace.by')}{' '}
                                         {product.tailor_id ? (
                                             <Link to={`/tailor/${product.tailor_id}`} onClick={e => e.stopPropagation()} className="hover:text-slate-700 hover:underline transition-colors">
-                                                {product.tailor_name ?? t('marketplace.kereTailor')}
+                                                {product.tailor_name ?? ''}
                                             </Link>
                                         ) : (
-                                            product.tailor_name ?? t('marketplace.kereTailor')
+                                            product.tailor_name ?? ''
                                         )}</span>
                                         {product.reviews_count > 0 && (
                                             <span className="inline-flex items-center gap-0.5 text-slate-500">

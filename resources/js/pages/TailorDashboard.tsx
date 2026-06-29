@@ -69,13 +69,8 @@ export default function TailorDashboard() {
             fetch('/api/tailor/stats', {
                 headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
             })
-                .then(r => r.json())
-                .then(r => {
-                    if (!r.ok) { setStatsError(true); return; }
-                    return r.json();
-                })
+                .then(r => { if (!r.ok) throw new Error('stats'); return r.json(); })
                 .then(d => {
-                    if (!d) return;
                     setAvgRating(d.avg_rating ?? null);
                     setReviewsCount(d.reviews_count ?? 0);
                     setProfileComplete(d.profile_complete ?? false);
