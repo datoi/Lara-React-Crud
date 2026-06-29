@@ -29,8 +29,8 @@ class ReviewController extends Controller
             return response()->json(['message' => 'Order not found.'], 404);
         }
 
-        if ($order->status !== 'delivered') {
-            return response()->json(['message' => 'You can only review a delivered order.'], 422);
+        if (!in_array($order->status, ['finished', 'delivered', 'shipped'])) {
+            return response()->json(['message' => 'You can only review a completed order.'], 422);
         }
 
         if (Review::where('order_id', $order->id)->where('user_id', $user->id)->exists()) {
