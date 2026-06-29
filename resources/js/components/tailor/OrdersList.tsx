@@ -215,7 +215,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                     <img
                                         src={item.product_image}
                                         alt={item.product_name}
-                                        className="w-full h-40 object-cover rounded-lg mb-4 border border-slate-100"
+                                        className="w-full max-h-64 object-contain rounded-lg mb-4 border border-slate-100 bg-slate-50"
                                     />
                                 ) : (
                                     <div className="w-full h-28 bg-slate-100 rounded-lg mb-4 flex items-center justify-center">
