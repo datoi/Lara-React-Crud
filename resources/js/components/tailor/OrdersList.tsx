@@ -119,8 +119,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
         setActionErr(false);
         try {
             await onStatusChange(order.id, newStatus);
-            setActionDone(true);
-            setTimeout(() => setActionDone(false), 3000);
+            onClose();
         } catch {
             setActionErr(true);
             setTimeout(() => setActionErr(false), 4000);
