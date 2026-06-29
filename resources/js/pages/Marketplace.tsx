@@ -216,18 +216,7 @@ export default function Marketplace() {
                     <p className="text-slate-500 mt-1">{t('marketplace.subtitle')}</p>
                 </div>
 
-                <Link
-                    to="/design"
-                    className="flex items-center justify-between gap-4 bg-slate-900 text-white rounded-xl px-6 py-4 mb-6 hover:bg-slate-800 transition-colors group"
-                >
-                    <div>
-                        <p className="font-semibold text-sm sm:text-base">{t('marketplace.uploadBannerTitle')}</p>
-                        <p className="text-slate-400 text-xs sm:text-sm mt-0.5">{t('marketplace.uploadBannerDesc')}</p>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors shrink-0" />
-                </Link>
-
-                <div className="flex gap-3 mb-3">
+<div className="flex gap-3 mb-3">
                     <div className="relative flex-1">
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
