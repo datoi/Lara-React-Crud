@@ -445,7 +445,7 @@ export default function CustomerDashboard() {
                                         }
                                     </div>
 
-                                    {/* Info */}
+                                    {/* Info — name, date/tailor, status badge */}
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium text-slate-900 text-sm truncate">
                                             {order.order_type === 'custom'
@@ -453,7 +453,7 @@ export default function CustomerDashboard() {
                                                 : order.items[0]?.product_name ?? t('customerDashboard.orderFallback')
                                             }
                                         </p>
-                                        <p className="text-xs text-slate-400 mt-0.5">
+                                        <p className="text-xs text-slate-400 mt-0.5 truncate">
                                             {new Date(order.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                                             {order.tailor_name && (
                                                 <>
@@ -470,44 +470,43 @@ export default function CustomerDashboard() {
                                                 </>
                                             )}
                                         </p>
+                                        <div className="mt-1.5">
+                                            <StatusBadge status={order.status} />
+                                        </div>
                                     </div>
 
-                                    {/* Message button */}
-                                    <button
-                                        onClick={e => { e.stopPropagation(); setOpenTab('messages'); setSelected(order); }}
-                                        className={`relative flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors flex-shrink-0 ${
-                                            hasUnread(order.id)
-                                                ? 'bg-slate-900 text-white border-slate-900'
-                                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
-                                        }`}
-                                    >
-                                        <MessageCircle className="w-3.5 h-3.5" />
-                                        <span className="hidden sm:inline">{t('customerDashboard.messageBtn')}</span>
-                                        {hasUnread(order.id) && (
-                                            <span className="w-1.5 h-1.5 bg-white rounded-full sm:hidden" />
-                                        )}
-                                    </button>
+                                    {/* Right side: message + price + review + chevron */}
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                        <button
+                                            onClick={e => { e.stopPropagation(); setOpenTab('messages'); setSelected(order); }}
+                                            className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
+                                                hasUnread(order.id)
+                                                    ? 'bg-slate-900 text-white border-slate-900'
+                                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
+                                            }`}
+                                        >
+                                            <MessageCircle className="w-3.5 h-3.5" />
+                                        </button>
 
-                                    {/* Status + price + review */}
-                                    <div className="flex flex-col items-end gap-1.5">
-                                        <StatusBadge status={order.status} />
-                                        <span className="text-sm font-bold text-slate-900">
-                                            {order.total > 0 ? `₾${order.total}` : t('customerDashboard.tbd')}
-                                        </span>
-                                        {['finished', 'shipped'].includes(order.status) && !order.has_review && (
-                                            <button
-                                                onClick={e => { e.stopPropagation(); setReviewOrder(order); }}
-                                                className="text-[10px] font-medium text-slate-500 border border-slate-200 rounded-full px-2 py-0.5 hover:bg-slate-50 transition-colors"
-                                            >
-                                                {t('customerDashboard.review')}
-                                            </button>
-                                        )}
-                                        {['finished', 'shipped'].includes(order.status) && order.has_review && (
-                                            <span className="text-[10px] text-slate-500 font-medium">{t('customerDashboard.reviewed')}</span>
-                                        )}
+                                        <div className="flex flex-col items-end gap-1 min-w-[56px]">
+                                            <span className="text-sm font-bold text-slate-900">
+                                                {order.total > 0 ? `₾${order.total}` : t('customerDashboard.tbd')}
+                                            </span>
+                                            {['finished', 'shipped'].includes(order.status) && !order.has_review && (
+                                                <button
+                                                    onClick={e => { e.stopPropagation(); setReviewOrder(order); }}
+                                                    className="text-[10px] font-medium text-slate-500 border border-slate-200 rounded-full px-2 py-0.5 hover:bg-slate-50 transition-colors whitespace-nowrap"
+                                                >
+                                                    {t('customerDashboard.review')}
+                                                </button>
+                                            )}
+                                            {['finished', 'shipped'].includes(order.status) && order.has_review && (
+                                                <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">{t('customerDashboard.reviewed')}</span>
+                                            )}
+                                        </div>
+
+                                        <ChevronRight className="w-4 h-4 text-slate-300" />
                                     </div>
-
-                                    <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
                                 </motion.div>
                             ))}
                         </div>
