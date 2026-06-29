@@ -438,14 +438,14 @@ export default function CustomerDashboard() {
                                     onClick={() => { setOpenTab('details'); setSelected(order); }}
                                 >
                                     {/* Icon */}
-                                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
                                         {order.order_type === 'custom'
-                                            ? <Scissors className="w-5 h-5 text-slate-600" />
-                                            : <Package className="w-5 h-5 text-slate-600" />
+                                            ? <Scissors className="w-4 h-4 text-slate-600" />
+                                            : <Package className="w-4 h-4 text-slate-600" />
                                         }
                                     </div>
 
-                                    {/* Info — name, date/tailor, status badge */}
+                                    {/* Info — name, date/tailor, status, review */}
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium text-slate-900 text-sm truncate">
                                             {order.order_type === 'custom'
@@ -462,7 +462,7 @@ export default function CustomerDashboard() {
                                                         <Link
                                                             to={`/tailor/${order.tailor_id}`}
                                                             onClick={e => e.stopPropagation()}
-                                                            className="hover:text-slate-700 hover:underline transition-colors"
+                                                            className="hover:text-slate-700 hover:underline transition-colors cursor-pointer"
                                                         >
                                                             {order.tailor_name}
                                                         </Link>
@@ -470,41 +470,38 @@ export default function CustomerDashboard() {
                                                 </>
                                             )}
                                         </p>
-                                        <div className="mt-1.5">
+                                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                             <StatusBadge status={order.status} />
-                                        </div>
-                                    </div>
-
-                                    {/* Right side: message + price + review + chevron */}
-                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                        <button
-                                            onClick={e => { e.stopPropagation(); setOpenTab('messages'); setSelected(order); }}
-                                            className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
-                                                hasUnread(order.id)
-                                                    ? 'bg-slate-900 text-white border-slate-900'
-                                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
-                                            }`}
-                                        >
-                                            <MessageCircle className="w-3.5 h-3.5" />
-                                        </button>
-
-                                        <div className="flex flex-col items-end gap-1 min-w-[56px]">
-                                            <span className="text-sm font-bold text-slate-900">
-                                                {order.total > 0 ? `₾${order.total}` : t('customerDashboard.tbd')}
-                                            </span>
                                             {['finished', 'shipped'].includes(order.status) && !order.has_review && (
                                                 <button
                                                     onClick={e => { e.stopPropagation(); setReviewOrder(order); }}
-                                                    className="text-[10px] font-medium text-slate-500 border border-slate-200 rounded-full px-2 py-0.5 hover:bg-slate-50 transition-colors whitespace-nowrap"
+                                                    className="text-[10px] font-medium text-slate-500 border border-slate-200 rounded-full px-2 py-0.5 hover:bg-slate-50 transition-colors cursor-pointer"
                                                 >
                                                     {t('customerDashboard.review')}
                                                 </button>
                                             )}
                                             {['finished', 'shipped'].includes(order.status) && order.has_review && (
-                                                <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">{t('customerDashboard.reviewed')}</span>
+                                                <span className="text-[10px] text-slate-400">{t('customerDashboard.reviewed')}</span>
                                             )}
                                         </div>
+                                    </div>
 
+                                    {/* Right — message icon · price · chevron */}
+                                    <div className="flex items-center gap-3 flex-shrink-0">
+                                        <button
+                                            onClick={e => { e.stopPropagation(); setOpenTab('messages'); setSelected(order); }}
+                                            title={t('customerDashboard.messageBtn')}
+                                            className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-colors cursor-pointer ${
+                                                hasUnread(order.id)
+                                                    ? 'bg-slate-900 text-white border-slate-900'
+                                                    : 'bg-white text-slate-400 border-slate-200 hover:text-slate-700 hover:bg-slate-50'
+                                            }`}
+                                        >
+                                            <MessageCircle className="w-3.5 h-3.5" />
+                                        </button>
+                                        <span className="text-sm font-bold text-slate-900 tabular-nums">
+                                            {order.total > 0 ? `₾${order.total}` : t('customerDashboard.tbd')}
+                                        </span>
                                         <ChevronRight className="w-4 h-4 text-slate-300" />
                                     </div>
                                 </motion.div>
