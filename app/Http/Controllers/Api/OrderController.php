@@ -401,14 +401,18 @@ class OrderController extends Controller
                 default      => ucfirst($data['status']),
             };
 
-            $this->notify(
-                $order->user_id,
-                'order_status',
-                'Order #' . $order->id . ' Status Updated',
-                "Your order #{$order->id} status has been updated to: {$statusLabel}.",
-                $order->id,
-                ['status' => $data['status']]
-            );
+            try {
+                $this->notify(
+                    $order->user_id,
+                    'order_status',
+                    'Order #' . $order->id . ' Status Updated',
+                    "Your order #{$order->id} status has been updated to: {$statusLabel}.",
+                    $order->id,
+                    ['status' => $data['status']]
+                );
+            } catch (\Throwable $e) {
+                Log::error('OrderStatusNotification failed: ' . $e->getMessage());
+            }
 
             try {
                 Mail::to($order->user->email)->send(new OrderStatusUpdated($order, $data['status']));
