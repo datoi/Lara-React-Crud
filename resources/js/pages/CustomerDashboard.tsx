@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import {
     ShoppingBag, Package, Clock, CheckCircle, Truck, X,
-    ChevronRight, User, Scissors, MessageCircle
+    ChevronRight, User, Scissors, MessageCircle, Star
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getAuthToken, getAuthUser, clearAuth } from '../hooks/useAuth';
@@ -475,8 +475,9 @@ export default function CustomerDashboard() {
                                             {['finished', 'shipped'].includes(order.status) && !order.has_review && (
                                                 <button
                                                     onClick={e => { e.stopPropagation(); setReviewOrder(order); }}
-                                                    className="text-[10px] font-medium text-slate-500 border border-slate-200 rounded-full px-2 py-0.5 hover:bg-slate-50 transition-colors cursor-pointer"
+                                                    className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 border border-slate-200 rounded-full px-2 py-0.5 hover:bg-yellow-50 hover:border-yellow-300 hover:text-yellow-700 transition-colors cursor-pointer"
                                                 >
+                                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                                                     {t('customerDashboard.review')}
                                                 </button>
                                             )}
