@@ -62,9 +62,6 @@ export function Navigation() {
                         <a href="#how-it-works" className={`text-sm transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
                             {t('nav.howItWorks')}
                         </a>
-                        <Link to="/marketplace" className={`text-sm transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
-                            {t('nav.categories')}
-                        </Link>
                         <a href="#faq" className={`text-sm transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
                             {t('nav.faq')}
                         </a>
@@ -138,7 +135,6 @@ export function Navigation() {
                         <div className="px-4 py-4 space-y-2">
                             {[
                                 { to: '#how-it-works', label: t('nav.howItWorks'), isAnchor: true },
-                                { to: '/marketplace',  label: t('nav.categories'), isAnchor: false },
                                 { to: '#faq',          label: t('nav.faq'), isAnchor: true },
                             ].map(link => (
                                 link.isAnchor ? (
