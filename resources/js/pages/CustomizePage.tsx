@@ -40,7 +40,7 @@ export default function CustomizePage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="min-h-screen bg-white flex items-center justify-center">
                 <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
             </div>
         );
@@ -48,7 +48,7 @@ export default function CustomizePage() {
 
     if (error || !product) {
         return (
-            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
+            <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
                 <p className="text-slate-500">{error ?? t('productCustomization.productNotFound')}</p>
                 <Link to="/marketplace" className="text-slate-900 underline text-sm">
                     {t('productCustomization.backToMarketplace')}
@@ -58,7 +58,7 @@ export default function CustomizePage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-white">
             <Helmet>
                 <title>Design Your {product.name} | Kere</title>
                 <meta
