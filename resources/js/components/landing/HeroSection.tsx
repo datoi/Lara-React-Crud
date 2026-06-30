@@ -28,7 +28,7 @@ export function HeroSection() {
             <div
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat"
                 style={{
-                    backgroundImage: 'url(https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1800&q=85)',
+                    backgroundImage: 'url(/assets/garments/fashionShow.jpg)',
                 }}
             />
             <div className="absolute inset-0 bg-black/50" />
