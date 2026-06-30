@@ -90,11 +90,11 @@ export default function PreviewCanvas({
     // The container background colour IS the fabric tint source.
     // Greyscaled + brightened PNGs multiply against it to produce the
     // final fabric colour while preserving fold shadows.
-    const canvasBackground = selectedFabric?.color_hex ?? '#F5F0EB';
+    const canvasBackground = selectedFabric?.color_hex ?? 'transparent';
 
     return (
         <div
-            className="relative w-full h-56 sm:h-72 lg:h-auto lg:aspect-[3/4] rounded-2xl overflow-hidden border border-slate-200 shadow-sm"
+            className="relative w-full h-56 sm:h-72 lg:h-auto lg:aspect-[3/4] overflow-hidden"
             style={{ backgroundColor: canvasBackground }}
             role="img"
             aria-label={`Shirt preview${selectedFabric ? ` in ${selectedFabric.name}` : ''}`}
