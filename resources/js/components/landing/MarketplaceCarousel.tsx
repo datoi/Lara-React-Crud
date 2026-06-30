@@ -222,12 +222,12 @@ export function MarketplaceCarousel() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
                 {/* Header row */}
-                <div className="flex items-end justify-between mb-10">
+                <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
                     <div>
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
+                        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2">
                             {t('carousel.title')}
                         </h2>
-                        <p className="text-slate-500">{t('carousel.subtitle')}</p>
+                        <p className="text-slate-500 text-sm sm:text-base">{t('carousel.subtitle')}</p>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
                         <Button
@@ -258,7 +258,7 @@ export function MarketplaceCarousel() {
                             {extended.map((p, i) => (
                                 <div
                                     key={`${p.id}-${i}`}
-                                    style={{ width: cardW, flexShrink: 0, paddingLeft: 8, paddingRight: 8 }}
+                                    style={{ width: cardW, flexShrink: 0, paddingLeft: vcRef.current === 1 ? 4 : 8, paddingRight: vcRef.current === 1 ? 4 : 8 }}
                                 >
                                     <ProductCard product={p} />
                                 </div>

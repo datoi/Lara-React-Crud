@@ -363,7 +363,7 @@ export default function CustomerDashboard() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-8">
                     {[
                         { label: t('customerDashboard.statTotalOrders'), value: stats.total,      icon: ShoppingBag },
                         { label: t('customerDashboard.statPending'),      value: stats.pending,    icon: Clock },
@@ -434,7 +434,7 @@ export default function CustomerDashboard() {
                                     initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: i * 0.04 }}
-                                    className="px-5 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors cursor-pointer"
+                                    className="px-3 sm:px-5 py-4 flex items-center gap-2 sm:gap-4 hover:bg-slate-50 transition-colors cursor-pointer"
                                     onClick={() => { setOpenTab('details'); setSelected(order); }}
                                 >
                                     {/* Icon */}
@@ -488,7 +488,7 @@ export default function CustomerDashboard() {
                                     </div>
 
                                     {/* Right — message icon · price · chevron */}
-                                    <div className="flex items-center gap-3 flex-shrink-0">
+                                    <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
                                         <button
                                             onClick={e => { e.stopPropagation(); setOpenTab('messages'); setSelected(order); }}
                                             title={t('customerDashboard.messageBtn')}

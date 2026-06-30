@@ -64,9 +64,9 @@ export function Footer() {
             <footer className="bg-slate-900 text-slate-400">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
                     {/* Top row */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 sm:gap-10 pb-12">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 sm:gap-8 md:gap-10 pb-12">
                         {/* Brand column */}
-                        <div className="md:col-span-1">
+                        <div className="col-span-2 sm:col-span-3 md:col-span-1">
                             <Link to="/" className="text-2xl font-bold text-white">Kere</Link>
                             <p className="mt-3 text-sm leading-relaxed mb-6">
                                 {t('footer.tagline')}
