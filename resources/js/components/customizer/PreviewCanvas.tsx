@@ -94,7 +94,7 @@ export default function PreviewCanvas({
 
     return (
         <div
-            className="relative w-full h-56 sm:h-72 lg:h-auto lg:aspect-[3/4] overflow-hidden"
+            className="relative w-full h-56 sm:h-72 lg:h-auto lg:aspect-[3/4]"
             style={{ backgroundColor: canvasBackground }}
             role="img"
             aria-label={`Shirt preview${selectedFabric ? ` in ${selectedFabric.name}` : ''}`}

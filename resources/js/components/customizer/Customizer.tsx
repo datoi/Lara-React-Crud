@@ -87,7 +87,7 @@ export default function Customizer({
                 </div>
 
                 {/* Option panel */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-4">
+                <div className="bg-white rounded-2xl border border-slate-100 p-4">
                     <OptionPanel
                         layerCategories={layerCategories}
                         fabrics={fabrics}
