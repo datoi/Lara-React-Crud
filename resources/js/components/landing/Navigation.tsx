@@ -62,9 +62,9 @@ export function Navigation() {
                         <a href="#how-it-works" className={`text-sm transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
                             {t('nav.howItWorks')}
                         </a>
-                        <a href="#categories" className={`text-sm transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
+                        <Link to="/marketplace" className={`text-sm transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
                             {t('nav.categories')}
-                        </a>
+                        </Link>
                         <a href="#faq" className={`text-sm transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
                             {t('nav.faq')}
                         </a>
@@ -137,18 +137,29 @@ export function Navigation() {
                     >
                         <div className="px-4 py-4 space-y-2">
                             {[
-                                { to: '#how-it-works', label: t('nav.howItWorks') },
-                                { to: '#categories',   label: t('nav.categories') },
-                                { to: '#faq',          label: t('nav.faq') },
+                                { to: '#how-it-works', label: t('nav.howItWorks'), isAnchor: true },
+                                { to: '/marketplace',  label: t('nav.categories'), isAnchor: false },
+                                { to: '#faq',          label: t('nav.faq'), isAnchor: true },
                             ].map(link => (
-                                <a
-                                    key={link.to}
-                                    href={link.to}
-                                    onClick={() => setMobileOpen(false)}
-                                    className="block px-3 py-2 rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-colors"
-                                >
-                                    {link.label}
-                                </a>
+                                link.isAnchor ? (
+                                    <a
+                                        key={link.to}
+                                        href={link.to}
+                                        onClick={() => setMobileOpen(false)}
+                                        className="block px-3 py-2 rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                                    >
+                                        {link.label}
+                                    </a>
+                                ) : (
+                                    <Link
+                                        key={link.to}
+                                        to={link.to}
+                                        onClick={() => setMobileOpen(false)}
+                                        className="block px-3 py-2 rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                                    >
+                                        {link.label}
+                                    </Link>
+                                )
                             ))}
                             <Link
                                 to="/partners"
