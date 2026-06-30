@@ -1,5 +1,7 @@
 import { motion } from 'motion/react';
 import { ArrowLeft, Download, Send, Check, Loader2, Info } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Button } from './ui/button';
 import { GarmentPreview } from './GarmentPreview';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -22,6 +24,7 @@ function SpecRow({ label, value }: { label: string; value: string }) {
 }
 
 export function FinalPreview({ config, onBack }: FinalPreviewProps) {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { base, fabric: fabricAddon, details: detailsAddon, total } = calcPrice(config);
 
@@ -127,16 +130,17 @@ export function FinalPreview({ config, onBack }: FinalPreviewProps) {
 
     return (
         <div>
-            <button
+            <Button
+                variant="outline"
                 onClick={onBack}
-                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors mb-8"
+                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 mb-8"
             >
-                <ArrowLeft className="w-4 h-4" /> Back
-            </button>
+                <ArrowLeft className="w-4 h-4" /> {t('customizer.back')}
+            </Button>
 
             <div className="text-center mb-10">
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Your Design Summary</h2>
-                <p className="text-slate-500 mb-3">Review everything before submitting to a tailor.</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('customizer.designSummary')}</h2>
+                <p className="text-slate-500 mb-3">{t('customizer.reviewBeforeSubmit')}</p>
                 <div className="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600">
                     <Info className="w-4 h-4 text-slate-400 shrink-0" />
                     Your design will be sent to a tailor who will confirm details with you before starting
@@ -153,7 +157,7 @@ export function FinalPreview({ config, onBack }: FinalPreviewProps) {
                     >
                         <Check className="w-10 h-10 text-slate-700" />
                     </motion.div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">Design submitted successfully!</h3>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">{t('customizer.submitted')}</h3>
                     <p className="text-slate-500">A tailor will review your design and contact you to confirm details before starting.</p>
                     <p className="text-sm text-slate-400 mt-4">Taking you to your dashboard…</p>
                 </div>
@@ -171,7 +175,7 @@ export function FinalPreview({ config, onBack }: FinalPreviewProps) {
                         </div>
 
                         <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Color Palette</div>
+                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">{t('customizer.colorPalette')}</div>
                             <div className="flex gap-3">
                                 {[
                                     { label: 'Base',   color: config.baseColor },
@@ -217,7 +221,7 @@ export function FinalPreview({ config, onBack }: FinalPreviewProps) {
                         className="space-y-4"
                     >
                         <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">Garment Specs</div>
+                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-4">{t('customizer.garmentSpecs')}</div>
                             <SpecRow label="Type"     value={garment?.label ?? (config.garmentType ?? '')} />
                             <SpecRow label="Style"    value={config.style} />
                             <SpecRow label="Fabric"   value={fabricLabel} />
@@ -240,7 +244,7 @@ export function FinalPreview({ config, onBack }: FinalPreviewProps) {
                         {/* Price estimate */}
                         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
                             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                                <span>Estimated Price</span>
+                                <span>{t('customizer.estimatedPrice')}</span>
                                 <Info className="w-3.5 h-3.5 text-slate-400" title="Final price confirmed by tailor" />
                             </div>
                             <div className="space-y-1.5 text-sm text-slate-600">
@@ -276,21 +280,23 @@ export function FinalPreview({ config, onBack }: FinalPreviewProps) {
                             {submitError && (
                                 <p className="text-xs text-slate-600 text-center">{submitError}</p>
                             )}
-                            <button
+                            <Button
+                                variant="default"
                                 onClick={handleSubmit}
                                 disabled={submitting}
-                                className="flex items-center justify-center gap-2 bg-slate-900 text-white font-semibold py-4 rounded-xl hover:bg-slate-700 transition-colors active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="flex items-center justify-center gap-2 font-semibold py-4 rounded-xl active:scale-[0.98] w-full"
                             >
                                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                {submitting ? 'Submitting…' : 'Submit to Tailor'}
-                            </button>
-                            <button
+                                {submitting ? t('customizer.submitting') : t('customizer.submitToTailor')}
+                            </Button>
+                            <Button
+                                variant="outline"
                                 onClick={handleDownload}
-                                className="flex items-center justify-center gap-2 border border-slate-200 text-slate-700 font-medium py-3.5 rounded-xl hover:bg-slate-50 transition-colors"
+                                className="flex items-center justify-center gap-2 font-medium py-3.5 rounded-xl w-full"
                             >
                                 <Download className="w-4 h-4" />
-                                Download Design Specs
-                            </button>
+                                {t('customizer.downloadSpecs')}
+                            </Button>
                         </div>
                     </motion.div>
                 </div>

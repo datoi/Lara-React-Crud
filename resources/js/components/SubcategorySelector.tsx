@@ -1,5 +1,7 @@
 import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Button } from './ui/button';
 import { getGarment, type GarmentType } from '../designer/config';
 
 interface SubcategorySelectorProps {
@@ -9,24 +11,26 @@ interface SubcategorySelectorProps {
 }
 
 export function SubcategorySelector({ garmentType, onSelect, onBack }: SubcategorySelectorProps) {
+    const { t } = useTranslation();
     const garment = getGarment(garmentType);
     const styles  = garment?.styles ?? [];
 
     return (
         <div>
-            <button
+            <Button
+                variant="outline"
                 onClick={onBack}
-                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors mb-8"
+                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 mb-8"
             >
-                <ArrowLeft className="w-4 h-4" /> Back
-            </button>
+                <ArrowLeft className="w-4 h-4" /> {t('customizer.back')}
+            </Button>
 
             <div className="text-center mb-10">
                 <div className="text-3xl mb-2">{garment?.emoji}</div>
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">
-                    What style of {garment?.label.toLowerCase()}?
+                    {t('customizer.whatStyle', { garment: garment?.label.toLowerCase() ?? '' })}
                 </h2>
-                <p className="text-slate-500">Pick the specific style you want to design.</p>
+                <p className="text-slate-500">{t('customizer.pickStyle')}</p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

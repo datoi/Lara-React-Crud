@@ -218,7 +218,7 @@ export function MeasurementGuideModal({ open, onClose, initialStep = 'chest' }: 
                                 <button
                                     key={s.key}
                                     onClick={() => setActiveStep(s.key)}
-                                    className={`flex-shrink-0 text-xs font-medium px-3 py-3 border-b-2 transition-colors ${
+                                    className={`flex-shrink-0 text-xs font-medium px-3 py-3 border-b-2 transition-colors cursor-pointer ${
                                         activeStep === s.key
                                             ? 'border-slate-900 text-slate-900'
                                             : 'border-transparent text-slate-400 hover:text-slate-700'

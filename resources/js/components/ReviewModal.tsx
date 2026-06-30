@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { X, Star, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from 'react-i18next';
+import { Button } from './ui/button';
 import { getAuthToken } from '../hooks/useAuth';
 
 interface Props {
@@ -12,6 +14,7 @@ interface Props {
 }
 
 export function ReviewModal({ open, orderId, orderLabel, onClose, onSubmitted }: Props) {
+    const { t } = useTranslation();
     const [rating, setRating]     = useState(0);
     const [hover, setHover]       = useState(0);
     const [comment, setComment]   = useState('');
@@ -74,18 +77,18 @@ export function ReviewModal({ open, orderId, orderLabel, onClose, onSubmitted }:
                         {/* Header */}
                         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                             <div>
-                                <h3 className="font-bold text-slate-900">Leave a Review</h3>
+                                <h3 className="font-bold text-slate-900">{t('reviewModal.title')}</h3>
                                 <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[260px]">{orderLabel}</p>
                             </div>
-                            <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors">
+                            <Button variant="ghost" size="icon" onClick={onClose} className="text-slate-400 hover:text-slate-700">
                                 <X className="w-5 h-5" />
-                            </button>
+                            </Button>
                         </div>
 
                         <div className="p-5 space-y-5">
                             {/* Star selector */}
                             <div>
-                                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-3">Your Rating</label>
+                                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-3">{t('reviewModal.ratingLabel')}</label>
                                 <div className="flex gap-1">
                                     {[1, 2, 3, 4, 5].map(n => (
                                         <button
@@ -94,7 +97,7 @@ export function ReviewModal({ open, orderId, orderLabel, onClose, onSubmitted }:
                                             onClick={() => setRating(n)}
                                             onMouseEnter={() => setHover(n)}
                                             onMouseLeave={() => setHover(0)}
-                                            className="transition-transform hover:scale-110"
+                                            className="transition-transform hover:scale-110 cursor-pointer"
                                         >
                                             <Star
                                                 className="w-8 h-8 transition-colors"
@@ -109,7 +112,7 @@ export function ReviewModal({ open, orderId, orderLabel, onClose, onSubmitted }:
 
                             {/* Comment */}
                             <div>
-                                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-2">Your Comment</label>
+                                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-2">{t('reviewModal.commentLabel')}</label>
                                 <textarea
                                     rows={4}
                                     placeholder="Tell us about your experience with the tailor and the garment quality…"
@@ -123,14 +126,15 @@ export function ReviewModal({ open, orderId, orderLabel, onClose, onSubmitted }:
 
                             {error && <p className="text-xs text-slate-600">{error}</p>}
 
-                            <button
+                            <Button
+                                variant="default"
                                 onClick={handleSubmit}
                                 disabled={submitting}
-                                className="w-full bg-slate-900 text-white font-semibold py-3 rounded-xl hover:bg-slate-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                className="w-full font-semibold py-3 rounded-xl flex items-center justify-center gap-2"
                             >
                                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                                {submitting ? 'Submitting…' : 'Submit Review'}
-                            </button>
+                                {submitting ? t('reviewModal.submitting') : t('reviewModal.submit')}
+                            </Button>
                         </div>
                     </motion.div>
                 </motion.div>

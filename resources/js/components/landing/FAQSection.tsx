@@ -66,12 +66,14 @@ function SupportModal({ onClose }: { onClose: () => void }) {
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                     <h3 className="font-bold text-slate-900">{t('faq.emailSupport')}</h3>
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={onClose}
-                        className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+                        className="text-slate-400 hover:text-slate-700"
                     >
                         <X className="w-5 h-5" />
-                    </button>
+                    </Button>
                 </div>
 
                 {sent ? (
@@ -249,12 +251,13 @@ export function FAQSection() {
                         {t('faq.stillHaveQuestionsDesc')}
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-                        <button
+                        <Button
+                            variant="default"
                             onClick={handleEmailSupport}
-                            className="bg-brand text-white text-sm font-medium px-6 py-3 rounded-lg hover:bg-brand-dark transition-colors"
+                            className="bg-brand hover:bg-brand-dark text-sm font-medium px-6 py-3"
                         >
                             {t('faq.emailSupport')}
-                        </button>
+                        </Button>
                     </div>
                 </motion.div>
             </div>

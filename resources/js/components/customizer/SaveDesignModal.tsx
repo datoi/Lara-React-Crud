@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import type { DesignConfiguration } from '../../types/customizer';
 import { getAuthToken } from '../../hooks/useAuth';
@@ -20,6 +21,7 @@ export default function SaveDesignModal({
     configuration,
     onSaved,
 }: SaveDesignModalProps) {
+    const { t } = useTranslation();
     const [name, setName]     = useState('');
     const [saving, setSaving] = useState(false);
     const [error, setError]   = useState('');
@@ -88,21 +90,23 @@ export default function SaveDesignModal({
                         className="relative z-10 bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-sm p-6"
                     >
                         {/* Close button */}
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={onClose}
                             aria-label="Close"
-                            className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition-colors"
+                            className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"
                         >
                             <X className="w-5 h-5" />
-                        </button>
+                        </Button>
 
-                        <h2 className="text-lg font-bold text-slate-900 mb-1">Save Design</h2>
+                        <h2 className="text-lg font-bold text-slate-900 mb-1">{t('saveDesignModal.title')}</h2>
                         <p className="text-sm text-slate-500 mb-5">
-                            Give your configuration a name so you can find it later.
+                            {t('saveDesignModal.hint')}
                         </p>
 
                         <label htmlFor="design-name" className="block text-sm font-medium text-slate-700 mb-1.5">
-                            Design name
+                            {t('saveDesignModal.label')}
                         </label>
                         <input
                             id="design-name"
@@ -127,7 +131,7 @@ export default function SaveDesignModal({
                                 onClick={onClose}
                                 className="flex-1"
                             >
-                                Cancel
+                                {t('saveDesignModal.cancel')}
                             </Button>
                             <Button
                                 variant="default"
@@ -137,7 +141,7 @@ export default function SaveDesignModal({
                                 className="flex-1"
                             >
                                 {saving && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
-                                {saving ? 'Saving…' : 'Save'}
+                                {saving ? t('saveDesignModal.saving') : t('saveDesignModal.save')}
                             </Button>
                         </div>
                     </motion.div>

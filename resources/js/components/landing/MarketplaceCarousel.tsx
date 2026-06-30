@@ -3,6 +3,7 @@ import { animate, motion, useMotionValue } from 'motion/react';
 import { ChevronLeft, ChevronRight, ShoppingBag, Star } from 'lucide-react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { Button } from '../ui/button';
 
 interface Product {
     id: number;
@@ -161,7 +162,7 @@ export function MarketplaceCarousel() {
         const stripIdx = curr + vcRef.current;
         const toX      = -(stripIdx + 1) * cardWRef.current;
 
-        await animate(x, toX, { duration: 0.45, ease: [0.25, 0.1, 0.25, 1] });
+        await animate(x, toX, { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] });
 
         const next = (curr + 1) % N;
         idxRef.current = next;
@@ -188,7 +189,7 @@ export function MarketplaceCarousel() {
             toX = -(curr - 1 + vcRef.current) * cardWRef.current;
         }
 
-        await animate(x, toX, { duration: 0.45, ease: [0.25, 0.1, 0.25, 1] });
+        await animate(x, toX, { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] });
 
         const next = (curr - 1 + N) % N;
         idxRef.current = next;
@@ -229,20 +230,24 @@ export function MarketplaceCarousel() {
                         <p className="text-slate-500">{t('carousel.subtitle')}</p>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={handlePrev}
                             aria-label="Previous"
-                            className="w-10 h-10 rounded-full border border-slate-300 flex items-center justify-center hover:bg-slate-50 transition-colors"
+                            className="w-10 h-10 rounded-full border border-slate-300 hover:bg-slate-50"
                         >
                             <ChevronLeft className="w-5 h-5 text-slate-600" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={handleNext}
                             aria-label="Next"
-                            className="w-10 h-10 rounded-full border border-slate-300 flex items-center justify-center hover:bg-slate-50 transition-colors"
+                            className="w-10 h-10 rounded-full border border-slate-300 hover:bg-slate-50"
                         >
                             <ChevronRight className="w-5 h-5 text-slate-600" />
-                        </button>
+                        </Button>
                     </div>
                 </div>
 

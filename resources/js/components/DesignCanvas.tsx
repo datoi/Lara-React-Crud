@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ArrowLeft, HelpCircle } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
+import { Button } from './ui/button';
 import { getGarment, COMPONENTS, DESIGN_DETAILS, SIZE_OPTIONS, type DesignConfig } from '../designer/config';
 import { GarmentPreview } from './GarmentPreview';
 import { MeasurementGuideModal, type MeasurementKey } from './MeasurementGuideModal';
@@ -14,6 +16,7 @@ interface DesignCanvasProps {
 }
 
 export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCanvasProps) {
+    const { t } = useTranslation();
     const [guideStep, setGuideStep] = useState<MeasurementKey | null>(null);
 
     const garment          = getGarment(config.garmentType);
@@ -51,7 +54,7 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                                 key={opt.value}
                                 onClick={() => updateComponent(componentKey, active ? '' : opt.value)}
                                 title={opt.hint}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
                                     active
                                         ? 'bg-slate-900 text-white border-slate-900'
                                         : 'border-slate-200 text-slate-600 hover:border-slate-400'
@@ -69,16 +72,17 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
     return (
         <>
         <div>
-            <button
+            <Button
+                variant="outline"
                 onClick={onBack}
-                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors mb-8"
+                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 mb-8"
             >
-                <ArrowLeft className="w-4 h-4" /> Back
-            </button>
+                <ArrowLeft className="w-4 h-4" /> {t('customizer.back')}
+            </Button>
 
             <div className="text-center mb-10">
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">
-                    Customize your {garment?.label.toLowerCase()}
+                    {t('customizer.customizeGarment', { garment: garment?.label.toLowerCase() ?? '' })}
                 </h2>
                 <p className="text-slate-500">Add design elements, style details, and your measurements.</p>
             </div>
@@ -90,7 +94,7 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                     animate={{ opacity: 1, scale: 1 }}
                     className="md:sticky md:top-6 bg-white rounded-2xl border border-slate-200 p-4 space-y-3"
                 >
-                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Live Preview</div>
+                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('customizer.livePreview')}</div>
                     <GarmentPreview config={config} size="compact" />
                     {[config.components.length, config.components.sleeves, config.components.neckline].filter(Boolean).length > 0 && (
                         <div className="flex flex-wrap gap-1 pt-1">
@@ -114,7 +118,7 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                             animate={{ opacity: 1, y: 0 }}
                             className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5"
                         >
-                            <h3 className="font-bold text-slate-900">Style Components</h3>
+                            <h3 className="font-bold text-slate-900">{t('customizer.styleComponents')}</h3>
                             {allowedComponents.includes('neckline') && (
                                 <ComponentSelector label="Neckline" componentKey="neckline" />
                             )}
@@ -134,7 +138,7 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                         transition={{ delay: 0.04 }}
                         className="bg-white rounded-2xl border border-slate-200 p-6"
                     >
-                        <h3 className="font-bold text-slate-900 mb-4">Design Details</h3>
+                        <h3 className="font-bold text-slate-900 mb-4">{t('customizer.designDetails')}</h3>
                         <div className="grid grid-cols-2 gap-2">
                             {DESIGN_DETAILS.map(detail => {
                                 const active = config.details.includes(detail.value);
@@ -142,7 +146,7 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                                     <button
                                         key={detail.value}
                                         onClick={() => toggleDetail(detail.value)}
-                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm border transition-all text-left ${
+                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm border transition-all text-left cursor-pointer ${
                                             active
                                                 ? 'bg-slate-900 text-white border-slate-900'
                                                 : 'border-slate-200 text-slate-600 hover:border-slate-400'
@@ -180,7 +184,7 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                                     <button
                                         key={s}
                                         onClick={() => setConfig({ ...config, sizeStandard: s })}
-                                        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer ${
                                             config.sizeStandard === s
                                                 ? 'bg-slate-900 text-white border-slate-900'
                                                 : 'border-slate-200 text-slate-600 hover:border-slate-400'
@@ -273,12 +277,13 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                         </div>
                     </motion.section>
 
-                    <button
+                    <Button
+                        variant="default"
                         onClick={onContinue}
-                        className="w-full bg-slate-900 text-white font-semibold py-4 rounded-xl hover:bg-slate-700 transition-colors active:scale-[0.98]"
+                        className="w-full font-semibold py-4 rounded-xl active:scale-[0.98]"
                     >
-                        Review Design →
-                    </button>
+                        {t('customizer.reviewDesign')}
+                    </Button>
                 </div>
             </div>
         </div>

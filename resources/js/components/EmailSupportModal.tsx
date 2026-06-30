@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { X, Send, CheckCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Button } from './ui/button';
 import { getAuthUser, getAuthToken } from '../hooks/useAuth';
 
 interface Props {
@@ -9,6 +11,7 @@ interface Props {
 }
 
 export function EmailSupportModal({ open, onClose }: Props) {
+    const { t } = useTranslation();
     const navigate  = useNavigate();
     const user      = getAuthUser();
     const token     = getAuthToken();
@@ -26,20 +29,22 @@ export function EmailSupportModal({ open, onClose }: Props) {
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
                 <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-xl">
-                    <p className="text-slate-700 mb-4">Please sign in to contact support.</p>
+                    <p className="text-slate-700 mb-4">{t('emailSupport.signInPrompt')}</p>
                     <div className="flex gap-3 justify-center">
-                        <button
+                        <Button
+                            variant="outline"
                             onClick={onClose}
-                            className="px-4 py-2 text-sm border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors"
+                            className="px-4 py-2 text-sm"
                         >
-                            Cancel
-                        </button>
-                        <button
+                            {t('emailSupport.cancel')}
+                        </Button>
+                        <Button
+                            variant="default"
                             onClick={() => { onClose(); navigate('/login/customer'); }}
-                            className="px-4 py-2 text-sm bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                            className="px-4 py-2 text-sm"
                         >
-                            Sign In
-                        </button>
+                            {t('emailSupport.signIn')}
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -88,32 +93,35 @@ export function EmailSupportModal({ open, onClose }: Props) {
             <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100">
-                    <h2 className="text-lg font-bold text-slate-900">Email Support</h2>
-                    <button
+                    <h2 className="text-lg font-bold text-slate-900">{t('emailSupport.title')}</h2>
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={handleClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
+                        className="w-8 h-8 text-slate-500 hover:text-slate-700"
                     >
-                        <X className="w-4 h-4 text-slate-500" />
-                    </button>
+                        <X className="w-4 h-4" />
+                    </Button>
                 </div>
 
                 {sent ? (
                     <div className="px-6 py-10 text-center">
                         <CheckCircle className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-                        <p className="font-semibold text-slate-900 mb-1">Message Sent!</p>
-                        <p className="text-sm text-slate-500">We'll respond within 24 hours to <strong>{user.email}</strong>.</p>
-                        <button
+                        <p className="font-semibold text-slate-900 mb-1">{t('emailSupport.sent')}</p>
+                        <p className="text-sm text-slate-500">{t('emailSupport.sentHint')} <strong>{user.email}</strong>.</p>
+                        <Button
+                            variant="default"
                             onClick={handleClose}
-                            className="mt-6 px-5 py-2 bg-slate-900 text-white text-sm rounded-lg hover:bg-slate-700 transition-colors"
+                            className="mt-6 px-5 py-2 text-sm"
                         >
-                            Close
-                        </button>
+                            {t('emailSupport.close')}
+                        </Button>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
                         {/* From (read-only) */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">From</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('emailSupport.from')}</label>
                             <input
                                 type="text"
                                 readOnly
@@ -123,7 +131,7 @@ export function EmailSupportModal({ open, onClose }: Props) {
                         </div>
                         {/* Subject */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Subject</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('emailSupport.subject')}</label>
                             <input
                                 type="text"
                                 required
@@ -136,7 +144,7 @@ export function EmailSupportModal({ open, onClose }: Props) {
                         </div>
                         {/* Message */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">Message</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('emailSupport.message')}</label>
                             <textarea
                                 required
                                 rows={5}
@@ -151,20 +159,22 @@ export function EmailSupportModal({ open, onClose }: Props) {
                         {error && <p className="text-sm text-slate-600">{error}</p>}
 
                         <div className="flex gap-3 pt-1">
-                            <button
+                            <Button
                                 type="button"
+                                variant="outline"
                                 onClick={handleClose}
-                                className="flex-1 border border-slate-300 text-slate-700 text-sm font-medium py-2.5 rounded-lg hover:bg-slate-50 transition-colors"
+                                className="flex-1 text-sm font-medium py-2.5"
                             >
-                                Cancel
-                            </button>
-                            <button
+                                {t('emailSupport.cancel')}
+                            </Button>
+                            <Button
                                 type="submit"
+                                variant="default"
                                 disabled={submitting}
-                                className="flex-1 flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-60"
+                                className="flex-1 flex items-center justify-center gap-2 text-sm font-medium py-2.5"
                             >
-                                {submitting ? 'Sending…' : <><Send className="w-4 h-4" /> Send Message</>}
-                            </button>
+                                {submitting ? t('emailSupport.sending') : <><Send className="w-4 h-4" /> {t('emailSupport.sendMessage')}</>}
+                            </Button>
                         </div>
                     </form>
                 )}

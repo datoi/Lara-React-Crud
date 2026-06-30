@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { MapPin, Phone, Mail, Facebook, Instagram, Twitter, CreditCard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '../ui/button';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
 import { EmailSupportModal } from '../EmailSupportModal';
 
@@ -91,13 +92,15 @@ export function Footer() {
                                     { Icon: Instagram, label: 'Instagram' },
                                     { Icon: Twitter, label: 'Twitter' },
                                 ].map(({ Icon, label }) => (
-                                    <button
+                                    <Button
                                         key={label}
+                                        variant="ghost"
+                                        size="icon"
                                         aria-label={label}
-                                        className="w-9 h-9 rounded-full border border-slate-700 flex items-center justify-center hover:border-slate-500 hover:text-white transition-colors"
+                                        className="w-9 h-9 rounded-full border border-slate-700 hover:border-slate-500 hover:text-white text-slate-400"
                                     >
                                         <Icon className="w-4 h-4" />
-                                    </button>
+                                    </Button>
                                 ))}
                             </div>
                         </div>
@@ -118,15 +121,16 @@ export function Footer() {
                                                 <a href={l.href} className={linkClass}>{l.label}</a>
                                             )}
                                             {l.type === 'modal' && (
-                                                <button
+                                                <Button
+                                                    variant="ghost"
                                                     onClick={() => {
                                                         if (l.modal === 'size-guide') setSizeGuideOpen(true);
                                                         if (l.modal === 'email-support') setEmailSupportOpen(true);
                                                     }}
-                                                    className={linkClass}
+                                                    className={`${linkClass} h-auto p-0`}
                                                 >
                                                     {l.label}
-                                                </button>
+                                                </Button>
                                             )}
                                         </li>
                                     ))}
@@ -153,12 +157,13 @@ export function Footer() {
                                 placeholder={t('footer.emailPlaceholder')}
                                 className="flex-1 bg-slate-800 border border-slate-700 text-white text-sm px-4 py-2.5 rounded-lg placeholder:text-slate-500 focus:outline-none focus:border-slate-500"
                             />
-                            <button
+                            <Button
                                 type="submit"
-                                className="bg-white text-slate-900 text-sm font-medium px-5 py-2.5 rounded-lg hover:bg-slate-100 transition-colors flex-shrink-0"
+                                variant="default"
+                                className="bg-white text-slate-900 text-sm font-medium px-5 py-2.5 hover:bg-slate-100 flex-shrink-0"
                             >
                                 {t('footer.subscribe')}
-                            </button>
+                            </Button>
                         </form>
                     </div>
 

@@ -19,7 +19,7 @@ function LanguageToggle({ scrolled }: { scrolled: boolean }) {
     return (
         <button
             onClick={toggle}
-            className={`text-xs font-semibold px-2.5 py-1 rounded-md border transition-colors ${
+            className={`text-xs font-semibold px-2.5 py-1 rounded-md border transition-colors cursor-pointer ${
                 scrolled
                     ? 'border-slate-300 text-slate-600 hover:bg-slate-100'
                     : 'border-white/30 text-white/80 hover:bg-white/10'
@@ -119,7 +119,7 @@ export function Navigation() {
                     {/* Mobile toggle */}
                     <button
                         onClick={() => setMobileOpen(!mobileOpen)}
-                        className={`md:hidden p-2 rounded-lg transition-colors ${scrolled ? 'text-slate-600 hover:bg-slate-100' : 'text-white/80 hover:bg-white/10'}`}
+                        className={`md:hidden p-2 rounded-lg transition-colors cursor-pointer ${scrolled ? 'text-slate-600 hover:bg-slate-100' : 'text-white/80 hover:bg-white/10'}`}
                     >
                         {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>

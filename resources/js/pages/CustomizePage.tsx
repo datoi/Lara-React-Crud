@@ -2,6 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { Link, useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Button } from '../components/ui/button';
 import Customizer from '../components/customizer/Customizer';
 import { useProductData } from '../hooks/useProductData';
 import { getAuthUser, saveReturnTo } from '../hooks/useAuth';
@@ -72,13 +73,14 @@ export default function CustomizePage() {
                     <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">
                         Kere
                     </Link>
-                    <button
+                    <Button
+                        variant="ghost"
                         onClick={goBack}
-                        className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 transition-colors"
+                        className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900"
                     >
                         <ArrowLeft className="w-4 h-4" />
                         {t('tailorSelect.back')}
-                    </button>
+                    </Button>
                 </div>
             </nav>
 

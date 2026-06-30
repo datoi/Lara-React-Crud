@@ -179,7 +179,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                 <div className="flex border-b border-slate-100">
                     <button
                         onClick={() => setActiveTab('details')}
-                        className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                        className={`flex-1 py-3 text-sm font-medium transition-colors cursor-pointer ${
                             activeTab === 'details'
                                 ? 'text-brand border-b-2 border-brand'
                                 : 'text-slate-400 hover:text-slate-600'
@@ -189,7 +189,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                     </button>
                     <button
                         onClick={() => setActiveTab('messages')}
-                        className={`relative flex-1 py-3 text-sm font-medium transition-colors ${
+                        className={`relative flex-1 py-3 text-sm font-medium transition-colors cursor-pointer ${
                             activeTab === 'messages'
                                 ? 'text-brand border-b-2 border-brand'
                                 : 'text-slate-400 hover:text-slate-600'

@@ -24,7 +24,7 @@ export default function CategoryTabs({ categories, activeId, onSelect }: Categor
                         aria-controls={`panel-${cat.id}`}
                         onClick={() => onSelect(cat.id)}
                         className={[
-                            'relative shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                            'relative shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer',
                             isActive
                                 ? 'bg-slate-900 text-white'
                                 : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100',

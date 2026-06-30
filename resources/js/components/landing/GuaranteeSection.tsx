@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, ChevronRight, Quote } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '../ui/button';
 
 interface Review {
     id: number;
@@ -88,7 +89,7 @@ export function GuaranteeSection() {
                                 initial={{ opacity: 0, x: 40 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -40 }}
-                                transition={{ duration: 0.35 }}
+                                transition={{ duration: 0.5 }}
                                 className="bg-slate-50 rounded-2xl p-8 md:p-10"
                             >
                                 <Quote className="w-10 h-10 text-slate-300 mb-4" />
@@ -128,29 +129,33 @@ export function GuaranteeSection() {
 
                     {/* Navigation */}
                     <div className="flex items-center justify-center gap-4 mt-8">
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={prev}
-                            className="w-9 h-9 rounded-full border border-slate-300 flex items-center justify-center hover:bg-slate-50 transition-colors"
+                            className="w-9 h-9 rounded-full border border-slate-300 hover:bg-slate-50"
                         >
                             <ChevronLeft className="w-4 h-4 text-slate-600" />
-                        </button>
+                        </Button>
 
                         <div className="flex gap-2">
                             {reviews.map((_, i) => (
                                 <button
                                     key={i}
                                     onClick={() => setActive(i)}
-                                    className={`h-2 rounded-full transition-all ${i === active ? 'w-8 bg-slate-900' : 'w-2 bg-slate-300'}`}
+                                    className={`h-2 rounded-full transition-all cursor-pointer ${i === active ? 'w-8 bg-slate-900' : 'w-2 bg-slate-300'}`}
                                 />
                             ))}
                         </div>
 
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={next}
-                            className="w-9 h-9 rounded-full border border-slate-300 flex items-center justify-center hover:bg-slate-50 transition-colors"
+                            className="w-9 h-9 rounded-full border border-slate-300 hover:bg-slate-50"
                         >
                             <ChevronRight className="w-4 h-4 text-slate-600" />
-                        </button>
+                        </Button>
                     </div>
 
                     {/* #MyKereStyle */}

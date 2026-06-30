@@ -1,5 +1,7 @@
 import { motion } from 'motion/react';
 import { ArrowLeft, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Button } from './ui/button';
 import { FABRICS, type DesignConfig } from '../designer/config';
 import { GarmentPreview } from './GarmentPreview';
 
@@ -11,6 +13,7 @@ interface CustomizationPanelProps {
 }
 
 export function CustomizationPanel({ config, setConfig, onContinue, onBack }: CustomizationPanelProps) {
+    const { t } = useTranslation();
     const update = <K extends keyof DesignConfig>(key: K, value: DesignConfig[K]) =>
         setConfig({ ...config, [key]: value });
 
@@ -18,16 +21,17 @@ export function CustomizationPanel({ config, setConfig, onContinue, onBack }: Cu
 
     return (
         <div>
-            <button
+            <Button
+                variant="outline"
                 onClick={onBack}
-                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors mb-8"
+                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 mb-8"
             >
-                <ArrowLeft className="w-4 h-4" /> Back
-            </button>
+                <ArrowLeft className="w-4 h-4" /> {t('customizer.back')}
+            </Button>
 
             <div className="text-center mb-10">
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Fabric & Colors</h2>
-                <p className="text-slate-500">Choose your material and color palette.</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('customizer.fabricAndColors')}</h2>
+                <p className="text-slate-500">{t('customizer.chooseMaterial')}</p>
             </div>
 
             <div className="grid md:grid-cols-[240px_1fr] gap-8 max-w-4xl mx-auto items-start">
@@ -37,7 +41,7 @@ export function CustomizationPanel({ config, setConfig, onContinue, onBack }: Cu
                     animate={{ opacity: 1, scale: 1 }}
                     className="md:sticky md:top-6 bg-white rounded-2xl border border-slate-200 p-4 space-y-3"
                 >
-                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Live Preview</div>
+                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('customizer.livePreview')}</div>
                     <GarmentPreview config={config} size="compact" />
                     {config.fabric && (
                         <div className="pt-1 text-center">
@@ -56,7 +60,7 @@ export function CustomizationPanel({ config, setConfig, onContinue, onBack }: Cu
                         animate={{ opacity: 1, y: 0 }}
                         className="bg-white rounded-2xl border border-slate-200 p-6"
                     >
-                        <h3 className="font-bold text-slate-900 mb-4">Fabric</h3>
+                        <h3 className="font-bold text-slate-900 mb-4">{t('customizer.fabric')}</h3>
                         <div className="grid grid-cols-2 gap-3">
                             {FABRICS.map(fabric => {
                                 const selected = config.fabric === fabric.value;
@@ -98,11 +102,11 @@ export function CustomizationPanel({ config, setConfig, onContinue, onBack }: Cu
                         transition={{ delay: 0.05 }}
                         className="bg-white rounded-2xl border border-slate-200 p-6"
                     >
-                        <h3 className="font-bold text-slate-900 mb-4">Colors</h3>
+                        <h3 className="font-bold text-slate-900 mb-4">{t('customizer.colors')}</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             {([
-                                { label: 'Base Color',   key: 'baseColor'   as const, hint: 'Main fabric color' },
-                                { label: 'Accent Color', key: 'accentColor' as const, hint: 'Collar, trim, details' },
+                                { label: t('customizer.baseColor'),   key: 'baseColor'   as const, hint: 'Main fabric color' },
+                                { label: t('customizer.accentColor'), key: 'accentColor' as const, hint: 'Collar, trim, details' },
                             ] as const).map(({ label, key, hint }) => (
                                 <div key={key}>
                                     <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
@@ -139,13 +143,14 @@ export function CustomizationPanel({ config, setConfig, onContinue, onBack }: Cu
                         </div>
                     </motion.section>
 
-                    <button
+                    <Button
+                        variant="default"
                         onClick={onContinue}
                         disabled={!canContinue}
-                        className="w-full bg-slate-900 text-white font-semibold py-4 rounded-xl hover:bg-slate-700 transition-colors active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="w-full font-semibold py-4 rounded-xl active:scale-[0.98]"
                     >
-                        {canContinue ? 'Continue to Customize →' : 'Select a fabric to continue'}
-                    </button>
+                        {canContinue ? t('customizer.continueToCustomize') : t('customizer.selectFabricFirst')}
+                    </Button>
                 </div>
             </div>
         </div>
