@@ -385,6 +385,31 @@ class AuthController extends Controller
         ]);
     }
 
+    // ─── Current user ─────────────────────────────────────────────────────────
+
+    /**
+     * GET /api/me
+     * Returns the authenticated user's fresh data — used to detect changes
+     * (e.g. tailor approval status) without requiring a re-login.
+     */
+    public function me(Request $request)
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'user' => [
+                'id'              => $user->id,
+                'first_name'      => $user->first_name,
+                'last_name'       => $user->last_name,
+                'name'            => $user->name,
+                'email'           => $user->email,
+                'phone'           => $user->phone,
+                'role'            => $user->role,
+                'approval_status' => $user->approval_status,
+            ],
+        ]);
+    }
+
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     private function maskPhone(string $phone): string

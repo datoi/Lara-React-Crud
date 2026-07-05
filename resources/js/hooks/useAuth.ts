@@ -33,6 +33,10 @@ export function saveAuth(user: AuthUser, token: string): void {
     sessionStorage.setItem(TOKEN_KEY, token);
 }
 
+export function updateAuthUser(user: AuthUser): void {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
 export function clearAuth(): void {
     localStorage.removeItem(USER_KEY);
     sessionStorage.removeItem(TOKEN_KEY);

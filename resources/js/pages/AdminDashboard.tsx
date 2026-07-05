@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Users, Package, ShieldAlert, LogOut, CheckCircle, Scissors, Clock, X } from 'lucide-react';
+import { Users, Package, ShieldAlert, LogOut, CheckCircle, Scissors, Clock, X, MessageCircle } from 'lucide-react';
 import { getAuthUser, getAuthToken, clearAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
+import { OrderChat } from '../components/OrderChat';
 import { useTranslation } from 'react-i18next';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -20,6 +21,7 @@ interface AdminOrder {
     customer: { id: number; name: string; email: string } | null;
     tailor:   { id: number; name: string } | null;
     items:    { id: number; product_name: string; quantity: number; price: number }[];
+    message_count: number;
 }
 
 interface AdminUser {
@@ -91,6 +93,7 @@ export default function AdminDashboard() {
 
     const [assignMap, setAssignMap] = useState<Record<number, AssignSlot>>({});
     const [suspendingId, setSuspendingId] = useState<number | null>(null);
+    const [openChatOrderId, setOpenChatOrderId] = useState<number | null>(null);
 
     const [pendingTailors,   setPendingTailors]   = useState<PendingTailor[]>([]);
     const [loadingPending,   setLoadingPending]   = useState(true);
@@ -384,16 +387,19 @@ export default function AdminDashboard() {
                                             <th className="text-left px-6 py-3 font-semibold hidden md:table-cell">{t('adminDashboard.colItems')}</th>
                                             <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colStatus')}</th>
                                             <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colAssignTailor')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colChat')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {orders.map((order, i) => {
                                             const slot    = assignMap[order.id] ?? { tailorId: '', saving: false, saved: false };
                                             const changed = slot.tailorId !== String(order.tailor?.id ?? '');
+                                            const chatOpen = openChatOrderId === order.id;
+                                            const canViewChat = !!order.tailor && order.message_count > 0;
 
                                             return (
+                                                <Fragment key={order.id}>
                                                 <motion.tr
-                                                    key={order.id}
                                                     initial={{ opacity: 0 }}
                                                     animate={{ opacity: 1 }}
                                                     transition={{ delay: i * 0.025 }}
@@ -458,7 +464,33 @@ export default function AdminDashboard() {
                                                             </p>
                                                         )}
                                                     </td>
+                                                    <td className="px-6 py-4">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => setOpenChatOrderId(chatOpen ? null : order.id)}
+                                                            disabled={!canViewChat}
+                                                            className="h-7 px-2 text-xs text-slate-600 hover:text-slate-900"
+                                                        >
+                                                            <MessageCircle className="w-3.5 h-3.5" />
+                                                            {order.message_count > 0 ? t('adminDashboard.viewChat', { n: order.message_count }) : t('adminDashboard.noChat')}
+                                                        </Button>
+                                                    </td>
                                                 </motion.tr>
+                                                {chatOpen && order.tailor && (
+                                                    <tr className="border-b border-slate-50 bg-slate-50/60">
+                                                        <td colSpan={6} className="px-6 py-4">
+                                                            <OrderChat
+                                                                orderId={order.id}
+                                                                currentUserId={order.tailor.id}
+                                                                endpoint={`/api/admin/orders/${order.id}/messages`}
+                                                                readOnly
+                                                                showSenderLabels
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                                </Fragment>
                                             );
                                         })}
                                     </tbody>

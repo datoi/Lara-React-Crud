@@ -12,8 +12,12 @@ use Illuminate\Support\Str;
 class MessageController extends Controller
 {
     // GET /api/orders/{orderId}/messages
-    public function index(Request $request, int $orderId)
+    public function index(Request $request, string $orderId)
     {
+        if (!ctype_digit($orderId)) {
+            return response()->json(['message' => 'Order not found.'], 404);
+        }
+
         $user  = $request->user();
         $order = Order::findOrFail($orderId);
 
@@ -37,8 +41,12 @@ class MessageController extends Controller
     }
 
     // POST /api/orders/{orderId}/messages
-    public function store(Request $request, int $orderId)
+    public function store(Request $request, string $orderId)
     {
+        if (!ctype_digit($orderId)) {
+            return response()->json(['message' => 'Order not found.'], 404);
+        }
+
         $user  = $request->user();
         $order = Order::findOrFail($orderId);
 

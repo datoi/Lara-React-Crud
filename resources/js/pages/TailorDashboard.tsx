@@ -10,12 +10,12 @@ import { TailorProfileEditor } from '../components/tailor/TailorProfileEditor';
 import { OnboardingPanel } from '../components/tailor/OnboardingPanel';
 import { SetupChecklist } from '../components/tailor/SetupChecklist';
 import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
-import { getAuthUser, getAuthToken, clearAuth } from '../hooks/useAuth';
+import { getAuthUser, getAuthToken, clearAuth, updateAuthUser } from '../hooks/useAuth';
 import { Link, useNavigate } from 'react-router';
 
 export default function TailorDashboard() {
     const { t } = useTranslation();
-    const user  = getAuthUser();
+    const [user, setUser] = useState(getAuthUser());
     const token = getAuthToken();
 
     const [orders,   setOrders]   = useState<TailorOrder[]>([]);
@@ -121,6 +121,38 @@ export default function TailorDashboard() {
 
     const greeting = user ? user.first_name : t('tailorDashboard.tailorFallback');
     const navigate = useNavigate();
+
+    // ─── Approval status polling ─────────────────────────────────────────────
+    // Tailors sitting on the pending/rejected gate have no other way to learn
+    // their status changed — there's no re-login trigger, so poll /api/me.
+    const approvalStatus = user?.approval_status;
+    useEffect(() => {
+        if (!token || (approvalStatus !== 'pending' && approvalStatus !== 'rejected')) return;
+
+        const controller = new AbortController();
+        const checkStatus = async () => {
+            try {
+                const res = await fetch('/api/me', {
+                    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                    signal: controller.signal,
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.user && data.user.approval_status !== approvalStatus) {
+                    updateAuthUser(data.user);
+                    setUser(data.user);
+                }
+            } catch (e) {
+                if (e instanceof DOMException && e.name === 'AbortError') return;
+            }
+        };
+
+        const id = setInterval(checkStatus, 15_000);
+        return () => {
+            clearInterval(id);
+            controller.abort();
+        };
+    }, [token, approvalStatus]);
 
     // ─── Approval gate ────────────────────────────────────────────────────────
     if (user?.approval_status === 'pending') {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\TailorApproved;
 use App\Mail\TailorRejected;
 use App\Models\KereNotification;
+use App\Models\Message;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ class AdminController extends Controller
     public function orders()
     {
         $orders = Order::with(['user', 'tailor', 'items'])
+            ->withCount('messages')
             ->latest()
             ->get()
             ->map(fn($o) => [
@@ -43,9 +45,37 @@ class AdminController extends Controller
                     'quantity'     => $i->quantity,
                     'price'        => $i->price,
                 ])->values()->all(),
+                'message_count' => $o->messages_count,
             ]);
 
         return response()->json(['orders' => $orders]);
+    }
+
+    // GET /api/admin/orders/{orderId}/messages
+    public function orderMessages(string $orderId)
+    {
+        if (!ctype_digit($orderId)) {
+            return response()->json(['message' => 'Order not found.'], 404);
+        }
+
+        $order = Order::find($orderId);
+        if (!$order) {
+            return response()->json(['message' => 'Order not found.'], 404);
+        }
+
+        $messages = Message::with('sender')
+            ->where('order_id', $orderId)
+            ->orderBy('created_at')
+            ->get()
+            ->map(fn($m) => [
+                'id'          => $m->id,
+                'sender_id'   => $m->sender_id,
+                'sender_name' => $m->sender->getFullName(),
+                'message'     => $m->message,
+                'created_at'  => $m->created_at->toISOString(),
+            ]);
+
+        return response()->json(['messages' => $messages]);
     }
 
     // GET /api/admin/users

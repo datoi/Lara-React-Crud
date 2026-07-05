@@ -913,6 +913,9 @@
     "colItems": "Items",
     "colStatus": "Status",
     "colAssignTailor": "Assign Tailor",
+    "colChat": "Chat",
+    "viewChat": "View chat ({{n}})",
+    "noChat": "No chat yet",
     "selectTailor": "— Select tailor —",
     "saving": "Saving…",
     "assign": "Assign",
@@ -1206,7 +1209,8 @@
     "placeholder": "Type a message…",
     "send": "Send",
     "sending": "Sending…",
-    "noMessages": "No messages yet. Start the conversation."
+    "noMessages": "No messages yet. Start the conversation.",
+    "loadError": "Couldn't load messages."
   },
   "notifications": {
     "title": "Notifications",

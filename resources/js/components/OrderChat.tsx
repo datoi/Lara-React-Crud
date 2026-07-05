@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { Send, Loader2, MessageCircle } from 'lucide-react';
+import { Send, Loader2, MessageCircle, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getAuthToken } from '../hooks/useAuth';
 import { Button } from './ui/button';
@@ -20,6 +20,12 @@ interface Props {
     currentUserId: number;
     isVisible?: boolean;
     onUnreadCountChange?: (count: number) => void;
+    /** Overrides the messages fetch URL — e.g. the admin read-only endpoint. */
+    endpoint?: string;
+    /** Hides the input/send row — for viewers who aren't a participant in the chat. */
+    readOnly?: boolean;
+    /** Always show the sender's name on every bubble, instead of only on "other" messages. */
+    showSenderLabels?: boolean;
 }
 
 // ─── localStorage helpers ─────────────────────────────────────────────────────
@@ -38,15 +44,20 @@ export function countOthersMessages(orderId: number, totalFromOthers: number): n
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function OrderChat({ orderId, currentUserId, isVisible = true, onUnreadCountChange }: Props) {
+export function OrderChat({
+    orderId, currentUserId, isVisible = true, onUnreadCountChange,
+    endpoint, readOnly = false, showSenderLabels = false,
+}: Props) {
     const { t } = useTranslation();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loading,  setLoading]  = useState(true);
+    const [error,    setError]    = useState(false);
     const [text,     setText]     = useState('');
     const [sending,  setSending]  = useState(false);
     const bottomRef  = useRef<HTMLDivElement>(null);
     const prevLen    = useRef(0);
     const token      = getAuthToken();
+    const messagesUrl = endpoint ?? `/api/orders/${orderId}/messages`;
 
     const notifyUnread = useCallback((msgs: ChatMessage[]) => {
         const fromOthers = msgs.filter(m => m.sender_id !== currentUserId).length;
@@ -56,10 +67,14 @@ export function OrderChat({ orderId, currentUserId, isVisible = true, onUnreadCo
     const fetchMessages = useCallback(async () => {
         if (!token) return;
         try {
-            const r = await fetch(`/api/orders/${orderId}/messages`, {
+            const r = await fetch(messagesUrl, {
                 headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
             });
-            if (!r.ok) return;
+            if (!r.ok) {
+                setLoading(false);
+                setError(true);
+                return;
+            }
             const data = await r.json();
             const incoming: ChatMessage[] = data.messages ?? [];
             setMessages(prev => {
@@ -69,9 +84,13 @@ export function OrderChat({ orderId, currentUserId, isVisible = true, onUnreadCo
                 return incoming;
             });
             setLoading(false);
+            setError(false);
             notifyUnread(incoming);
-        } catch { /* silent */ }
-    }, [orderId, token, notifyUnread]);
+        } catch {
+            setLoading(false);
+            setError(true);
+        }
+    }, [messagesUrl, token, notifyUnread]);
 
     // Initial fetch + 4-second poll (always active — tracks unread even when tab hidden)
     useEffect(() => {
@@ -82,11 +101,11 @@ export function OrderChat({ orderId, currentUserId, isVisible = true, onUnreadCo
 
     // Mark messages as seen when chat becomes visible
     useEffect(() => {
-        if (!isVisible) return;
+        if (!isVisible || readOnly) return;
         const fromOthers = messages.filter(m => m.sender_id !== currentUserId).length;
         saveSeenCount(orderId, fromOthers);
         onUnreadCountChange?.(0);
-    }, [isVisible, messages, orderId, currentUserId, onUnreadCountChange]);
+    }, [isVisible, readOnly, messages, orderId, currentUserId, onUnreadCountChange]);
 
     // Scroll to bottom on new messages (only when visible)
     useEffect(() => {
@@ -128,6 +147,11 @@ export function OrderChat({ orderId, currentUserId, isVisible = true, onUnreadCo
                     <div className="flex items-center justify-center" style={{ height: '168px' }}>
                         <Loader2 className="w-5 h-5 animate-spin text-slate-300" />
                     </div>
+                ) : error ? (
+                    <div className="flex flex-col items-center justify-center gap-2" style={{ height: '168px' }}>
+                        <AlertCircle className="w-8 h-8 text-slate-200" />
+                        <p className="text-sm text-slate-400">{t('chat.loadError')}</p>
+                    </div>
                 ) : messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center gap-2" style={{ height: '168px' }}>
                         <MessageCircle className="w-8 h-8 text-slate-200" />
@@ -144,7 +168,7 @@ export function OrderChat({ orderId, currentUserId, isVisible = true, onUnreadCo
                                 transition={{ duration: 0.5 }}
                                 className={`flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}
                             >
-                                {!isOwn && (
+                                {(showSenderLabels || !isOwn) && (
                                     <span className="text-[10px] text-slate-400 px-1">{msg.sender_name}</span>
                                 )}
                                 <div className={`max-w-[78%] px-3.5 py-2 rounded-2xl text-sm leading-snug break-words ${
@@ -165,6 +189,7 @@ export function OrderChat({ orderId, currentUserId, isVisible = true, onUnreadCo
             </div>
 
             {/* Input row */}
+            {!readOnly && (
             <div className="flex items-center gap-2 p-3 border-t border-slate-200 bg-white">
                 <input
                     type="text"
@@ -194,6 +219,7 @@ export function OrderChat({ orderId, currentUserId, isVisible = true, onUnreadCo
                     </span>
                 </Button>
             </div>
+            )}
         </div>
     );
 }

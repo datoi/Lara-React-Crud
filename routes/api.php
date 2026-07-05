@@ -38,6 +38,9 @@ Route::get('/platform/stats',               [ProductController::class, 'platform
 
 // ─── Authenticated reads (60 req/min) ─────────────────────────────────────────
 Route::middleware(['auth.bearer', 'throttle:60,1'])->group(function () {
+    // Current user
+    Route::get('/me', [AuthController::class, 'me']);
+
     // Customer
     Route::get('/customer/orders',                             [CustomerOrderController::class, 'index']);
     Route::get('/customer/orders/{orderId}/review-status',     [ReviewController::class, 'orderReviewStatus']);
@@ -105,7 +108,8 @@ Route::middleware(['auth.bearer', 'throttle:30,1'])->prefix('customizer')->group
 
 // ─── Admin (bearer + admin role, 30 req/min) ──────────────────────────────────
 Route::middleware(['auth.bearer', 'auth.admin', 'throttle:30,1'])->prefix('admin')->group(function () {
-    Route::get('/orders',               [AdminController::class, 'orders']);
+    Route::get('/orders',                       [AdminController::class, 'orders']);
+    Route::get('/orders/{orderId}/messages',    [AdminController::class, 'orderMessages']);
     Route::get('/users',                [AdminController::class, 'users']);
     Route::patch('/orders/{id}/assign', [AdminController::class, 'assignTailor']);
     Route::patch('/users/{id}/suspend',        [AdminController::class, 'suspendUser']);
