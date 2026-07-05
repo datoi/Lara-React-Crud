@@ -23,8 +23,8 @@ Route::post('/register/initiate',       [AuthController::class, 'registerInitiat
 Route::post('/register/verify-email',   [AuthController::class, 'registerVerifyEmail'])->middleware('throttle:20,1');
 Route::post('/register/verify-phone',   [AuthController::class, 'registerVerifyPhone'])->middleware('throttle:20,1');
 Route::post('/register/resend',         [AuthController::class, 'registerResend'])->middleware('throttle:10,1');
-Route::post('/login',                   [AuthController::class, 'login'])->middleware('throttle:10,1');
-Route::post('/admin/auth',              [AuthController::class, 'adminLogin'])->middleware('throttle:5,60');
+Route::post('/login',                   [AuthController::class, 'login'])->middleware('throttle:login');
+Route::post('/admin/auth',              [AuthController::class, 'adminLogin'])->middleware('throttle:admin-login');
 
 Route::get('/products',                     [ProductController::class, 'index']);
 Route::get('/products/{product}',           [ProductController::class, 'show']);
