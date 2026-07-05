@@ -111,7 +111,8 @@ Route::middleware(['auth.bearer', 'auth.admin', 'throttle:30,1'])->prefix('admin
     Route::get('/orders',                       [AdminController::class, 'orders']);
     Route::get('/orders/{orderId}/messages',    [AdminController::class, 'orderMessages']);
     Route::get('/users',                [AdminController::class, 'users']);
-    Route::patch('/orders/{id}/assign', [AdminController::class, 'assignTailor']);
+    Route::patch('/orders/{id}/assign',  [AdminController::class, 'assignTailor']);
+    Route::patch('/orders/{id}/deliver', [AdminController::class, 'deliverOrder']);
     Route::patch('/users/{id}/suspend',        [AdminController::class, 'suspendUser']);
     Route::get('/tailors/pending',             [AdminController::class, 'pendingTailors']);
     Route::post('/tailors/{id}/approve',       [AdminController::class, 'approveTailor']);

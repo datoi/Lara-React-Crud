@@ -12,6 +12,7 @@ const STATUS_LABEL_KEYS: Record<string, string> = {
     pending:    'tailorComponents.statusPending',
     processing: 'tailorComponents.statusInProgress',
     finished:   'tailorComponents.statusFinished',
+    delivered:  'tailorComponents.statusDelivered',
     cancelled:  'tailorComponents.statusCancelled',
 };
 
@@ -56,7 +57,7 @@ export interface TailorOrder {
     id: number;
     order_number: string;
     order_type: 'marketplace' | 'custom';
-    status: 'pending' | 'processing' | 'finished' | 'cancelled';
+    status: 'pending' | 'processing' | 'finished' | 'delivered' | 'cancelled';
     subtotal: number;
     total: number;
     created_at: string;
@@ -76,6 +77,7 @@ const STATUS_CLASSES: Record<string, string> = {
     pending:    'bg-slate-100 text-slate-600 border-slate-200',
     processing: 'bg-slate-100 text-slate-700 border-slate-200',
     finished:   'bg-slate-50 text-slate-900 border-slate-200',
+    delivered:  'bg-slate-900 text-white border-slate-900',
     cancelled:  'bg-slate-100 text-slate-500 border-slate-200',
 };
 
@@ -128,7 +130,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
         }
     };
 
-    const isFinal = order.status === 'finished' || order.status === 'cancelled';
+    const isFinal = order.status === 'finished' || order.status === 'delivered' || order.status === 'cancelled';
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

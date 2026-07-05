@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback, Fragment } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Users, Package, ShieldAlert, LogOut, CheckCircle, Scissors, Clock, X, MessageCircle } from 'lucide-react';
+import { Users, Package, ShieldAlert, LogOut, CheckCircle, Scissors, Clock, X, MessageCircle, Truck } from 'lucide-react';
 import { getAuthUser, getAuthToken, clearAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
 import { OrderChat } from '../components/OrderChat';
+import { NotificationBell } from '../components/NotificationBell';
 import { useTranslation } from 'react-i18next';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -22,6 +23,7 @@ interface AdminOrder {
     tailor:   { id: number; name: string } | null;
     items:    { id: number; product_name: string; quantity: number; price: number }[];
     message_count: number;
+    delivered_at: string | null;
 }
 
 interface AdminUser {
@@ -94,6 +96,7 @@ export default function AdminDashboard() {
     const [assignMap, setAssignMap] = useState<Record<number, AssignSlot>>({});
     const [suspendingId, setSuspendingId] = useState<number | null>(null);
     const [openChatOrderId, setOpenChatOrderId] = useState<number | null>(null);
+    const [deliveringId, setDeliveringId] = useState<number | null>(null);
 
     const [pendingTailors,   setPendingTailors]   = useState<PendingTailor[]>([]);
     const [loadingPending,   setLoadingPending]   = useState(true);
@@ -226,6 +229,26 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleDeliver = async (orderId: number) => {
+        if (!token) return;
+        setDeliveringId(orderId);
+        try {
+            const res = await fetch(`/api/admin/orders/${orderId}/deliver`, {
+                method: 'PATCH',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            setOrders(prev => prev.map(o => o.id === orderId ? {
+                ...o,
+                status:       data.status ?? o.status,
+                delivered_at: data.delivered_at ?? o.delivered_at,
+            } : o));
+        } finally {
+            setDeliveringId(null);
+        }
+    };
+
     const handleSuspend = async (userId: number) => {
         if (!token) return;
         setSuspendingId(userId);
@@ -287,6 +310,7 @@ export default function AdminDashboard() {
                             <Scissors className="w-4 h-4" />
                             <span className="hidden sm:inline">{t('adminDashboard.designStudio')}</span>
                         </Link>
+                        <NotificationBell />
                         <div className="flex items-center gap-2 text-sm text-slate-700">
                             <ShieldAlert className="w-4 h-4 text-slate-400" />
                             <span className="hidden sm:inline font-medium">
@@ -423,6 +447,23 @@ export default function AdminDashboard() {
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <StatusBadge status={order.status} />
+                                                        {order.status === 'finished' && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => handleDeliver(order.id)}
+                                                                disabled={deliveringId === order.id}
+                                                                className="h-7 px-2.5 text-xs mt-1.5 flex items-center gap-1"
+                                                            >
+                                                                <Truck className="w-3.5 h-3.5" />
+                                                                {deliveringId === order.id ? t('adminDashboard.delivering') : t('adminDashboard.markDelivered')}
+                                                            </Button>
+                                                        )}
+                                                        {order.status === 'delivered' && order.delivered_at && (
+                                                            <p className="text-[11px] text-slate-400 mt-1">
+                                                                {t('adminDashboard.deliveredOn', { date: order.delivered_at })}
+                                                            </p>
+                                                        )}
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center gap-2 flex-wrap">

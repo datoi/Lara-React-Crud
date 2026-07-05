@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\OrderStatusUpdated;
 use App\Mail\TailorApproved;
 use App\Mail\TailorRejected;
 use App\Models\KereNotification;
@@ -46,9 +47,46 @@ class AdminController extends Controller
                     'price'        => $i->price,
                 ])->values()->all(),
                 'message_count' => $o->messages_count,
+                'delivered_at'  => $o->delivered_at?->toDateString(),
             ]);
 
         return response()->json(['orders' => $orders]);
+    }
+
+    // PATCH /api/admin/orders/{id}/deliver
+    public function deliverOrder(int $id)
+    {
+        $order = Order::with('user')->findOrFail($id);
+
+        if ($order->status !== 'finished') {
+            return response()->json(['message' => 'Order must be finished before it can be delivered.'], 422);
+        }
+
+        $order->update(['status' => 'delivered', 'delivered_at' => now()]);
+
+        if ($order->user_id) {
+            KereNotification::create([
+                'user_id' => $order->user_id,
+                'type'    => 'order_status',
+                'title'   => 'თქვენი შეკვეთა ჩაბარდა',
+                'body'    => "თქვენი შეკვეთა #{$order->order_number} ჩაბარებულია. შეგიძლიათ დატოვოთ შეფასება.",
+                'data'    => ['order_id' => $order->id, 'status' => 'delivered'],
+                'is_read' => false,
+            ]);
+        }
+
+        try {
+            if ($order->user) {
+                Mail::to($order->user->email)->send(new OrderStatusUpdated($order, 'delivered'));
+            }
+        } catch (\Throwable $e) {
+            Log::error('OrderStatusUpdated (delivered) email failed: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'status'       => 'delivered',
+            'delivered_at' => $order->fresh()->delivered_at?->toDateString(),
+        ]);
     }
 
     // GET /api/admin/orders/{orderId}/messages

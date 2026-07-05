@@ -419,6 +419,22 @@ class OrderController extends Controller
             } catch (\Throwable $e) {
                 Log::error('OrderStatusUpdated email failed: ' . $e->getMessage());
             }
+
+            if ($data['status'] === 'finished') {
+                try {
+                    User::where('role', 'admin')->pluck('id')->each(
+                        fn ($adminId) => $this->notify(
+                            $adminId,
+                            'order_finished',
+                            'Order #' . $order->id . ' Ready for Delivery',
+                            "{$user->getFullName()} finished order #{$order->id} — it's ready to be delivered to the customer.",
+                            $order->id
+                        )
+                    );
+                } catch (\Throwable $e) {
+                    Log::error('Admin order_finished notification failed: ' . $e->getMessage());
+                }
+            }
         }
 
         return response()->json(['order' => $this->formatOrder($order->fresh(['user', 'items.product']))]);

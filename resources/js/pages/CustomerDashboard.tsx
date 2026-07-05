@@ -311,7 +311,7 @@ export default function CustomerDashboard() {
         total:      orders.length,
         pending:    orders.filter(o => o.status === 'pending').length,
         inProgress: orders.filter(o => o.status === 'processing').length,
-        delivered:  orders.filter(o => ['shipped', 'finished', 'delivered'].includes(o.status)).length,
+        delivered:  orders.filter(o => o.status === 'delivered').length,
     };
 
     return (
@@ -472,7 +472,7 @@ export default function CustomerDashboard() {
                                         </p>
                                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                             <StatusBadge status={order.status} />
-                                            {['finished', 'shipped'].includes(order.status) && !order.has_review && (
+                                            {order.status === 'delivered' && !order.has_review && (
                                                 <button
                                                     onClick={e => { e.stopPropagation(); setReviewOrder(order); }}
                                                     className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 border border-slate-200 rounded-full px-2 py-0.5 hover:bg-yellow-50 hover:border-yellow-300 hover:text-yellow-700 transition-colors cursor-pointer"
@@ -481,7 +481,7 @@ export default function CustomerDashboard() {
                                                     {t('customerDashboard.review')}
                                                 </button>
                                             )}
-                                            {['finished', 'shipped'].includes(order.status) && order.has_review && (
+                                            {order.status === 'delivered' && order.has_review && (
                                                 <span className="text-[10px] text-slate-400">{t('customerDashboard.reviewed')}</span>
                                             )}
                                         </div>

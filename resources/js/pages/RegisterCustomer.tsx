@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, Loader2, Mail, CheckCircle2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { PhoneInput } from '../components/PhoneInput';
 import { saveAuth, type AuthUser } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
@@ -178,12 +179,13 @@ export default function RegisterCustomer() {
 
                                         <div>
                                             <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.phone')}</label>
-                                            <input
-                                                type="tel"
+                                            <PhoneInput
                                                 value={form.phone}
-                                                onChange={setField('phone')}
-                                                placeholder={t('register.phonePlaceholder')}
-                                                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.phone ? 'border-slate-400' : 'border-slate-200'}`}
+                                                onChange={phone => {
+                                                    setForm(f => ({ ...f, phone }));
+                                                    setFormErrors(er => ({ ...er, phone: undefined, general: undefined }));
+                                                }}
+                                                error={!!formErrors.phone}
                                             />
                                             {formErrors.phone && <p className="text-xs text-slate-600 mt-1">{formErrors.phone}</p>}
                                         </div>
