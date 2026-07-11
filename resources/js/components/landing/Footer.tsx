@@ -82,7 +82,7 @@ export function Footer() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Mail className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                                    <span>hello@kere.com</span>
+                                    <span>Kereforyou@gmail.com</span>
                                 </div>
                             </div>
                             {/* Social icons */}
