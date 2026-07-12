@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, SlidersHorizontal, X, Palette, Star, ChevronDown, BadgeCheck, ArrowRight } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Palette, Star, ChevronDown, BadgeCheck } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { ProductCardSkeleton } from '../components/skeletons/ProductCardSkeleton';
 import { ErrorFallback } from '../components/ErrorFallback';
