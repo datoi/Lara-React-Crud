@@ -86,7 +86,7 @@ export default function TailorSelectStep() {
                     {loading ? (
                         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 text-slate-400 animate-spin" /></div>
                     ) : error ? (
-                        <p className="text-slate-500 text-sm">{error}</p>
+                        <p className="text-destructive text-sm">{error}</p>
                     ) : (
                         <div className="space-y-4">
                             <LetKereChooseCard selected={selected === null} onSelect={() => setSelected(null)} />

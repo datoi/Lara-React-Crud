@@ -95,8 +95,8 @@ export default function Login() {
 
                         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
                             {errors.general && (
-                                <div className="mb-5 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
-                                    <p className="text-sm text-slate-600">{errors.general}</p>
+                                <div className="mb-5 bg-destructive/10 border border-destructive/30 rounded-lg px-4 py-3">
+                                    <p className="text-sm text-destructive">{errors.general}</p>
                                 </div>
                             )}
 
@@ -111,9 +111,9 @@ export default function Login() {
                                         value={email}
                                         onChange={e => { setEmail(e.target.value); setErrors(er => ({ ...er, email: undefined, general: undefined })); }}
                                         placeholder={t('signIn.emailPlaceholder')}
-                                        className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.email ? 'border-slate-400' : 'border-slate-200'}`}
+                                        className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.email ? 'border-destructive' : 'border-slate-200'}`}
                                     />
-                                    {errors.email && <p className="text-xs text-slate-600 mt-1">{errors.email}</p>}
+                                    {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
                                 </div>
 
                                 {/* Password */}
@@ -127,7 +127,7 @@ export default function Login() {
                                             value={password}
                                             onChange={e => { setPassword(e.target.value); setErrors(er => ({ ...er, password: undefined, general: undefined })); }}
                                             placeholder={t('signIn.passwordPlaceholder')}
-                                            className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.password ? 'border-slate-400' : 'border-slate-200'}`}
+                                            className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${errors.password ? 'border-destructive' : 'border-slate-200'}`}
                                         />
                                         <button
                                             type="button"
@@ -137,7 +137,7 @@ export default function Login() {
                                             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                         </button>
                                     </div>
-                                    {errors.password && <p className="text-xs text-slate-600 mt-1">{errors.password}</p>}
+                                    {errors.password && <p className="text-xs text-destructive mt-1">{errors.password}</p>}
                                 </div>
 
                                 <Button

@@ -127,7 +127,7 @@ function SupportModal({ onClose }: { onClose: () => void }) {
                             <p className="text-xs text-slate-400 text-right mt-0.5">{message.length}/5000</p>
                         </div>
 
-                        {error && <p className="text-xs text-slate-600">{error}</p>}
+                        {error && <p className="text-xs text-destructive">{error}</p>}
 
                         <div className="flex gap-3 pt-1">
                             <Button

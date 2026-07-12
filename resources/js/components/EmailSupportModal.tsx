@@ -156,7 +156,7 @@ export function EmailSupportModal({ open, onClose }: Props) {
                             />
                         </div>
 
-                        {error && <p className="text-sm text-slate-600">{error}</p>}
+                        {error && <p className="text-sm text-destructive">{error}</p>}
 
                         <div className="flex gap-3 pt-1">
                             <Button

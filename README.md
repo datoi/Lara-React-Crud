@@ -1201,4 +1201,27 @@ php artisan migrate:fresh --seed   # creates all tables + Classic Shirt data
 php artisan storage:link           # serves SVG assets from /storage/layers/
 ```
 
+### 2026-07-12 — Auth Form Error Messages Now Red
+
+Error messages on login and registration rendered in grey (`text-slate-600` / `border-slate-400` / slate banners) and were barely distinguishable from helper text. All auth-flow error states now use the theme's `--color-destructive` red token (first consumer of it): `text-destructive` for messages, `border-destructive` for invalid inputs, `bg-destructive/10 border-destructive/30` for general-error banners.
+
+- `Login.tsx` — general banner + email/password field errors and borders.
+- `RegisterCustomer.tsx` — general banner (form + OTP verify step), all field errors, OTP digit boxes' error state.
+- `RegisterTailor.tsx` — general banner + all field errors and borders.
+- `AdminLogin.tsx` — error banner (red on dark background).
+- `PhoneInput.tsx` — error border on both the country selector and the number input.
+
+Verified in the browser (headless Chrome): empty-submit field errors and wrong-credential banners render `rgb(239, 68, 68)` on both login and register pages; Georgian i18n strings intact.
+
+**Follow-up (same day): full-app sweep.** Every remaining grey error message was converted to the same destructive treatment:
+
+- `ErrorFallback.tsx` — shared fetch-error component (used by Marketplace and others).
+- `DesignerApp.tsx` — upload-error banner + products fetch error.
+- `CustomizePage.tsx` — load-error / product-not-found message.
+- `TailorSelectStep.tsx`, `MyDesignsPage.tsx`, `OrderReview.tsx`, `ProductCustomization.tsx` — fetch/submit/order errors.
+- Modals: `AddProductModal`, `EmailSupportModal`, `ReviewModal`, `SaveDesignModal`, FAQ newsletter error.
+- `TailorProfileEditor.tsx` (upload + save errors), `StatsCards.tsx` (stats fetch), `OrderChat.tsx` (load error, icon at `text-destructive/40`).
+
+Deliberately left grey: the measurement out-of-range *warnings* in `DesignCanvas.tsx` / `ProductCustomization.tsx` — they are non-blocking hints, not errors. Verified in browser: `/customize/<bogus-slug>` not-found and Marketplace fetch-failure (API route aborted) both render red.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

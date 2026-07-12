@@ -60,7 +60,7 @@ export function StatsCards({ stats, statsError }: StatsCardsProps) {
     return (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {statsError && (
-                <div className="col-span-2 sm:col-span-4 text-xs text-slate-400 text-center py-1">
+                <div className="col-span-2 sm:col-span-4 text-xs text-destructive text-center py-1">
                     {t('tailorComponents.statsFetchError', 'Stats unavailable — check your connection')}
                 </div>
             )}

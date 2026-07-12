@@ -512,7 +512,7 @@ export default function ProductCustomization() {
                                     </div>
                                 </div>
                                 {orderError && (
-                                    <p className="text-xs text-slate-400 text-center mb-2">{orderError}</p>
+                                    <p className="text-xs text-destructive text-center mb-2">{orderError}</p>
                                 )}
                                 <button
                                     onClick={handleOrder}

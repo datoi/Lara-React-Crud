@@ -644,7 +644,7 @@ export function AddProductModal({ onClose, onCreated, editProduct, onUpdated }: 
 
                 {/* Footer */}
                 <div className="px-6 py-4 border-t border-slate-100 flex-shrink-0">
-                    {error && <p className="text-xs text-slate-600 mb-3">{error}</p>}
+                    {error && <p className="text-xs text-destructive mb-3">{error}</p>}
                     <div className="flex gap-3">
                         <Button
                             variant="outline"

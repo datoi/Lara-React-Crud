@@ -134,7 +134,7 @@ export default function RegisterCustomer() {
 
                                 <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
                                     {formErrors.general && (
-                                        <div className="mb-5 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-4 py-3">
+                                        <div className="mb-5 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg px-4 py-3">
                                             {formErrors.general}
                                         </div>
                                     )}
@@ -148,9 +148,9 @@ export default function RegisterCustomer() {
                                                     value={form.first_name}
                                                     onChange={setField('first_name')}
                                                     placeholder={t('register.firstNamePlaceholder')}
-                                                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.first_name ? 'border-slate-400' : 'border-slate-200'}`}
+                                                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.first_name ? 'border-destructive' : 'border-slate-200'}`}
                                                 />
-                                                {formErrors.first_name && <p className="text-xs text-slate-600 mt-1">{formErrors.first_name}</p>}
+                                                {formErrors.first_name && <p className="text-xs text-destructive mt-1">{formErrors.first_name}</p>}
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.lastName')}</label>
@@ -159,9 +159,9 @@ export default function RegisterCustomer() {
                                                     value={form.last_name}
                                                     onChange={setField('last_name')}
                                                     placeholder={t('register.lastNamePlaceholder')}
-                                                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.last_name ? 'border-slate-400' : 'border-slate-200'}`}
+                                                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.last_name ? 'border-destructive' : 'border-slate-200'}`}
                                                 />
-                                                {formErrors.last_name && <p className="text-xs text-slate-600 mt-1">{formErrors.last_name}</p>}
+                                                {formErrors.last_name && <p className="text-xs text-destructive mt-1">{formErrors.last_name}</p>}
                                             </div>
                                         </div>
 
@@ -172,9 +172,9 @@ export default function RegisterCustomer() {
                                                 value={form.email}
                                                 onChange={setField('email')}
                                                 placeholder={t('register.emailPlaceholder')}
-                                                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.email ? 'border-slate-400' : 'border-slate-200'}`}
+                                                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.email ? 'border-destructive' : 'border-slate-200'}`}
                                             />
-                                            {formErrors.email && <p className="text-xs text-slate-600 mt-1">{formErrors.email}</p>}
+                                            {formErrors.email && <p className="text-xs text-destructive mt-1">{formErrors.email}</p>}
                                         </div>
 
                                         <div>
@@ -187,7 +187,7 @@ export default function RegisterCustomer() {
                                                 }}
                                                 error={!!formErrors.phone}
                                             />
-                                            {formErrors.phone && <p className="text-xs text-slate-600 mt-1">{formErrors.phone}</p>}
+                                            {formErrors.phone && <p className="text-xs text-destructive mt-1">{formErrors.phone}</p>}
                                         </div>
 
                                         <div>
@@ -198,13 +198,13 @@ export default function RegisterCustomer() {
                                                     value={form.password}
                                                     onChange={setField('password')}
                                                     placeholder={t('register.passwordPlaceholder')}
-                                                    className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.password ? 'border-slate-400' : 'border-slate-200'}`}
+                                                    className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.password ? 'border-destructive' : 'border-slate-200'}`}
                                                 />
                                                 <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                                                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                                 </button>
                                             </div>
-                                            {formErrors.password && <p className="text-xs text-slate-600 mt-1">{formErrors.password}</p>}
+                                            {formErrors.password && <p className="text-xs text-destructive mt-1">{formErrors.password}</p>}
                                         </div>
 
                                         <div>
@@ -215,13 +215,13 @@ export default function RegisterCustomer() {
                                                     value={form.password_confirmation}
                                                     onChange={setField('password_confirmation')}
                                                     placeholder={t('register.confirmPasswordPlaceholder')}
-                                                    className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.password_confirmation ? 'border-slate-400' : 'border-slate-200'}`}
+                                                    className={`w-full border rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${formErrors.password_confirmation ? 'border-destructive' : 'border-slate-200'}`}
                                                 />
                                                 <button type="button" onClick={() => setShowConfirm(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                                                     {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                                 </button>
                                             </div>
-                                            {formErrors.password_confirmation && <p className="text-xs text-slate-600 mt-1">{formErrors.password_confirmation}</p>}
+                                            {formErrors.password_confirmation && <p className="text-xs text-destructive mt-1">{formErrors.password_confirmation}</p>}
                                         </div>
 
                                         <Button type="submit" disabled={submitting} className="w-full bg-slate-900 hover:bg-slate-700 text-white h-11 mt-2">
@@ -441,7 +441,7 @@ function OtpStep({ icon, title, description, verificationId, otpType, endpoint, 
 
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
                 {error && (
-                    <div className="mb-4 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-4 py-3">
+                    <div className="mb-4 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg px-4 py-3">
                         {error}
                     </div>
                 )}
@@ -459,7 +459,7 @@ function OtpStep({ icon, title, description, verificationId, otpType, endpoint, 
                             onKeyDown={e => handleKeyDown(i, e)}
                             disabled={loading}
                             className={`w-11 h-14 text-center text-xl font-semibold border rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${
-                                error ? 'border-slate-400 bg-slate-50' : d ? 'border-slate-900 bg-slate-50' : 'border-slate-200'
+                                error ? 'border-destructive bg-destructive/10' : d ? 'border-slate-900 bg-slate-50' : 'border-slate-200'
                             } disabled:opacity-50`}
                         />
                     ))}

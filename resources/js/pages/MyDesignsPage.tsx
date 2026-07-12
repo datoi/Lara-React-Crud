@@ -82,7 +82,7 @@ export default function MyDesignsPage() {
                 </div>
 
                 {error && (
-                    <div className="mb-4 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-4 py-3">{error}</div>
+                    <div className="mb-4 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg px-4 py-3">{error}</div>
                 )}
 
                 {loading ? (

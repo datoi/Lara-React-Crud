@@ -149,8 +149,8 @@ export function OrderChat({
                     </div>
                 ) : error ? (
                     <div className="flex flex-col items-center justify-center gap-2" style={{ height: '168px' }}>
-                        <AlertCircle className="w-8 h-8 text-slate-200" />
-                        <p className="text-sm text-slate-400">{t('chat.loadError')}</p>
+                        <AlertCircle className="w-8 h-8 text-destructive/40" />
+                        <p className="text-sm text-destructive">{t('chat.loadError')}</p>
                     </div>
                 ) : messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center gap-2" style={{ height: '168px' }}>
