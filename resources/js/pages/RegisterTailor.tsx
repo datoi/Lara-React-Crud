@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { motion } from 'motion/react';
-import { Eye, EyeOff, Loader2, Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Eye, EyeOff, Loader2, Clock, Mail, Smartphone } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { PhoneInput } from '../components/PhoneInput';
+import { OtpStep } from '../components/OtpStep';
 import { saveAuth, type AuthUser } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
@@ -25,15 +26,21 @@ const EMPTY: FormState = {
     password_confirmation: '',
 };
 
+type Step = 'form' | 'email-otp' | 'phone-otp';
+
 export default function RegisterTailor() {
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const [step, setStep] = useState<Step>('form');
     const [form, setForm] = useState<FormState>(EMPTY);
     const [errors, setErrors] = useState<Partial<FormState & { general: string }>>({});
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [pendingApproval, setPendingApproval] = useState(false);
+
+    const [verificationId, setVerificationId] = useState('');
+    const [contactHint, setContactHint] = useState('');
 
     const set = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm(f => ({ ...f, [field]: e.target.value }));
@@ -44,8 +51,7 @@ export default function RegisterTailor() {
         const e: Partial<FormState & { general: string }> = {};
         if (!form.first_name.trim()) e.first_name = t('register.errorRequired');
         if (!form.last_name.trim()) e.last_name = t('register.errorRequired');
-        if (!form.email.trim()) e.email = t('register.errorRequired');
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = t('register.errorInvalidEmail');
+        if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = t('register.errorInvalidEmail');
         if (!form.phone.trim()) e.phone = t('register.errorRequired');
         if (!form.password) e.password = t('register.errorRequired');
         else if (form.password.length < 8) e.password = t('register.errorMinPassword');
@@ -60,10 +66,10 @@ export default function RegisterTailor() {
 
         setLoading(true);
         try {
-            const res = await fetch('/api/register', {
+            const res = await fetch('/api/register/initiate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ ...form, role: 'tailor' }),
+                body: JSON.stringify({ ...form, email: form.email.trim() || null, role: 'tailor' }),
             });
 
             const data = await res.json();
@@ -81,17 +87,28 @@ export default function RegisterTailor() {
                 return;
             }
 
-            const user = data.user as AuthUser;
-            saveAuth(user, data.token as string);
-            if (user.approval_status === 'pending') {
-                setPendingApproval(true);
+            setVerificationId(data.verification_id);
+            if (data.channel === 'phone') {
+                setContactHint(data.phone ?? form.phone);
+                setStep('phone-otp');
             } else {
-                navigate('/tailor-dashboard');
+                setContactHint(data.email ?? form.email);
+                setStep('email-otp');
             }
         } catch {
             setErrors({ general: t('register.errorNetwork') });
         } finally {
             setLoading(false);
+        }
+    }
+
+    function handleVerified(data: Record<string, unknown>) {
+        const user = data.user as AuthUser;
+        saveAuth(user, data.token as string);
+        if (user.approval_status === 'pending') {
+            setPendingApproval(true);
+        } else {
+            navigate('/tailor-dashboard');
         }
     }
 
@@ -141,10 +158,13 @@ export default function RegisterTailor() {
 
             <div className="py-16 md:py-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <AnimatePresence mode="wait">
+                    {step === 'form' && (
                     <motion.div
+                        key="form"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
+                        exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.5 }}
                         className="max-w-lg mx-auto"
                     >
@@ -187,7 +207,9 @@ export default function RegisterTailor() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('register.email')}</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        {t('register.email')} <span className="font-normal text-slate-400">({t('register.optional')})</span>
+                                    </label>
                                     <input
                                         type="email"
                                         value={form.email}
@@ -247,7 +269,7 @@ export default function RegisterTailor() {
 
                                 <Button type="submit" disabled={loading} className="w-full bg-slate-900 hover:bg-slate-700 text-white h-11 mt-2">
                                     {loading
-                                        ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('register.creatingAccount')}</>
+                                        ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('register.sendingCode')}</>
                                         : t('register.joinAsTailor')}
                                 </Button>
                             </form>
@@ -262,6 +284,54 @@ export default function RegisterTailor() {
                             <Link to="/register/customer" className="text-slate-900 font-medium hover:underline">{t('register.registerAsCustomer')}</Link>
                         </p>
                     </motion.div>
+                    )}
+
+                    {step === 'phone-otp' && (
+                    <motion.div
+                        key="phone-otp"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.5 }}
+                        className="max-w-md mx-auto"
+                    >
+                        <OtpStep
+                            icon={<Smartphone className="w-6 h-6 text-slate-600" />}
+                            title={t('register.verifyPhoneTitle')}
+                            description={t('register.verifyPhoneDesc', { phone: contactHint })}
+                            verificationId={verificationId}
+                            otpType="phone"
+                            endpoint="/api/register/verify-phone"
+                            onSuccess={handleVerified}
+                            onBack={() => setStep('form')}
+                            isLastStep
+                        />
+                    </motion.div>
+                    )}
+
+                    {step === 'email-otp' && (
+                    <motion.div
+                        key="email-otp"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.5 }}
+                        className="max-w-md mx-auto"
+                    >
+                        <OtpStep
+                            icon={<Mail className="w-6 h-6 text-slate-600" />}
+                            title={t('register.verifyEmailTitle')}
+                            description={t('register.verifyEmailDesc', { email: contactHint })}
+                            verificationId={verificationId}
+                            otpType="email"
+                            endpoint="/api/register/verify-email"
+                            onSuccess={handleVerified}
+                            onBack={() => setStep('form')}
+                            isLastStep
+                        />
+                    </motion.div>
+                    )}
+                    </AnimatePresence>
                 </div>
             </div>
         </div>

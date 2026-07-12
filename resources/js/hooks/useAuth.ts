@@ -3,8 +3,8 @@ export interface AuthUser {
     first_name: string;
     last_name: string;
     name: string;
-    email: string;
-    phone: string;
+    email: string | null;
+    phone: string | null;
     role: 'customer' | 'tailor' | 'admin';
     approval_status?: 'pending' | 'approved' | 'rejected' | null;
 }

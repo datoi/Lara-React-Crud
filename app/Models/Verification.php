@@ -8,7 +8,8 @@ use Illuminate\Support\Str;
 class Verification extends Model
 {
     public $incrementing = false;
-    protected $keyType   = 'string';
+
+    protected $keyType = 'string';
 
     protected $fillable = [
         'id',
@@ -22,14 +23,15 @@ class Verification extends Model
         'email_resend_count',
         'phone_resend_count',
         'email_attempts',
+        'phone_attempts',
         'expires_at',
     ];
 
     protected $casts = [
-        'registration_data'  => 'array',
-        'email_verified_at'  => 'datetime',
-        'phone_verified_at'  => 'datetime',
-        'expires_at'         => 'datetime',
+        'registration_data' => 'array',
+        'email_verified_at' => 'datetime',
+        'phone_verified_at' => 'datetime',
+        'expires_at' => 'datetime',
     ];
 
     protected static function booted(): void

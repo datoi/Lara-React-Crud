@@ -490,7 +490,10 @@
     "errorNetwork": "Network error. Please try again.",
     "tailorPendingTitle": "Application Submitted",
     "tailorPendingDesc": "Your application is under review. We'll email you once it's been approved — usually within 1–2 business days.",
-    "tailorPendingBack": "Back to Home"
+    "tailorPendingBack": "Back to Home",
+    "optional": "optional",
+    "verifyPhoneTitle": "Verify your phone",
+    "verifyPhoneDesc": "We sent a 6-digit code via SMS to {{phone}}"
   },
   "marketplace": {
     "title": "Marketplace",
@@ -774,7 +777,10 @@
     "errorRequired": "Required",
     "errorInvalidEmail": "Invalid email",
     "errorLoginFailed": "Login failed. Please try again.",
-    "errorNetwork": "Network error. Please try again."
+    "errorNetwork": "Network error. Please try again.",
+    "emailOrPhoneLabel": "Email or phone number",
+    "emailOrPhonePlaceholder": "you@example.com or 555 123 456",
+    "errorInvalidCredentials": "Incorrect login or password."
   },
   "terms": {
     "eyebrow": "Legal",
