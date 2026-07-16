@@ -268,12 +268,6 @@ export default function BecomePartner() {
         { icon: Scissors,      title: t('partners.vp6Title'), body: t('partners.vp6Body') },
     ];
 
-    const STEPS = [
-        { num: '01', title: t('partners.step1Title'), body: t('partners.step1Body') },
-        { num: '02', title: t('partners.step2Title'), body: t('partners.step2Body') },
-        { num: '03', title: t('partners.step3Title'), body: t('partners.step3Body') },
-    ];
-
     const FAQS = [
         { q: t('partners.faq1q'), a: t('partners.faq1a') },
         { q: t('partners.faq2q'), a: t('partners.faq2a') },
