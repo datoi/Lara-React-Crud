@@ -145,7 +145,11 @@
   "carousel": {
     "title": "From Our Marketplace",
     "subtitle": "Handcrafted pieces by local Georgian tailors",
-    "viewAll": "View All Products"
+    "viewAll": "View All Products",
+    "productPinkDress": "Pink Mini Dress",
+    "productBlueDress": "Blue Sculptural Dress",
+    "productBlueSuit": "Pale Blue Classic Suit",
+    "productGreenDress": "Green Designer Dress"
   },
   "categories": {
     "sectionTitle": "Clothing Categories",
@@ -206,6 +210,9 @@
     "subtitle": "Real reviews from customers who ordered through Kere",
     "shareStyle": "Share your style with us",
     "hashtag": "#MyKereStyle",
+    "previousReview": "Previous review",
+    "nextReview": "Next review",
+    "goToReview": "Go to review {{number}}",
     "verifiedPurchase": "✓ Verified Purchase",
     "review1": "I sent in my measurements, chose the fabric, and the dress arrived fitting perfectly. Working with a real local tailor made all the difference.",
     "review2": "I designed a suit from scratch — fabric, cut, lining — and the tailor followed every detail. Will never buy off-the-rack again.",
@@ -216,6 +223,7 @@
     "location": "Tbilisi, Georgia",
     "stayUpdated": "Stay Updated",
     "newsletterDesc": "Subscribe to our newsletter for design tips and exclusive offers",
+    "newsletterSuccess": "You have successfully subscribed to updates.",
     "emailPlaceholder": "Your email address",
     "subscribe": "Subscribe",
     "allRightsReserved": "All rights reserved.",

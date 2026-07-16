@@ -1,108 +1,243 @@
 import { useState } from 'react';
-import { motion } from 'motion/react';
-import { FileText, Pencil, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router';
+import { ArrowRight, Check, ChevronDown, FileText, PencilRuler, Ruler } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
 
+interface GalleryImage {
+  src: string;
+  alt: string;
+  position?: string;
+}
+
 export function SizeFitSection() {
-    const [guideOpen, setGuideOpen] = useState(false);
-    const { t } = useTranslation();
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [activeImage, setActiveImage] = useState(0);
+  const [activeDetail, setActiveDetail] = useState<number | null>(0);
+  const { t } = useTranslation();
 
-    const features = [
-        {
-            icon: FileText,
-            title: t('sizeFit.step1Title'),
-            description: t('sizeFit.step1Desc'),
-        },
-        {
-            icon: Pencil,
-            title: t('sizeFit.step2Title'),
-            description: t('sizeFit.step2Desc'),
-        },
-        {
-            icon: CheckCircle,
-            title: t('sizeFit.step3Title'),
-            description: t('sizeFit.step3Desc'),
-        },
-    ];
+  const galleryImages: GalleryImage[] = [
+    {
+      src: '/assets/size-fit/size-main.jpg',
+      alt: t('sizeFit.badgeBottom'),
+      position: 'center top',
+    },
+    {
+      src: '/assets/size-fit/size-detail-1.jpg',
+      alt: t('sizeFit.step1Title'),
+      position: 'center top',
+    },
+    {
+      src: '/assets/size-fit/size-detail-2.jpg',
+      alt: t('sizeFit.step2Title'),
+      position: 'center top',
+    },
+    {
+      src: '/assets/size-fit/size-detail-3.jpg',
+      alt: t('sizeFit.step3Title'),
+      position: 'center top',
+    },
+  ];
 
-    return (
-        <section className="py-16 md:py-24 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid md:grid-cols-2 gap-12 items-center">
-                    {/* Left — text */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -30 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6 }}
-                    >
-                        <h2 className="font-serif text-3xl md:text-4xl font-semibold text-slate-900 mb-4 tracking-tight">
-                            {t('sizeFit.title')}
-                        </h2>
-                        <p className="text-slate-500 text-base mb-8 leading-relaxed">
-                            {t('sizeFit.subtitle')}
-                        </p>
+  const instructions = [
+    {
+      icon: FileText,
+      title: t('sizeFit.step1Title'),
+      description: t('sizeFit.step1Desc'),
+    },
+    {
+      icon: Ruler,
+      title: t('sizeFit.step2Title'),
+      description: t('sizeFit.step2Desc'),
+    },
+    {
+      icon: Check,
+      title: t('sizeFit.step3Title'),
+      description: t('sizeFit.step3Desc'),
+    },
+  ];
 
-                        <div className="space-y-6 mb-8">
-                            {features.map((f, i) => (
-                                <motion.div
-                                    key={f.title}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    whileInView={{ opacity: 1, x: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.4, delay: i * 0.1 }}
-                                    className="flex gap-4 items-start"
-                                >
-                                    <div className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center flex-shrink-0 bg-white">
-                                        <f.icon className="w-4 h-4 text-slate-700" />
-                                    </div>
-                                    <div>
-                                        <p className="font-semibold text-slate-900 mb-1">{f.title}</p>
-                                        <p className="text-sm text-slate-500 leading-relaxed">{f.description}</p>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
+  const details = instructions.map((instruction) => ({
+    label: instruction.title,
+    value: instruction.description,
+  }));
 
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => setGuideOpen(true)}
-                            className="border border-slate-900 text-slate-900 text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-50 transition-colors"
-                        >
-                            {t('sizeFit.viewGuide')}
-                        </motion.button>
-                    </motion.div>
+  return (
+    <section className="overflow-hidden bg-[#f7f6f3] px-4 py-20 sm:px-6 md:py-28 lg:px-8">
+      <div className="mx-auto max-w-[1500px]">
+        <div className="mb-14 grid gap-8 border-b border-black/15 pb-10 md:mb-20 md:grid-cols-[1.2fr_0.8fr] md:items-end md:pb-14">
+          <h2 className="max-w-[760px] font-serif text-[clamp(1.7rem,3.25vw,3.3rem)] font-medium leading-[0.98] tracking-normal text-[#111111]">
+            {t('sizeFit.title')}
+          </h2>
 
-                    {/* Right — image */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 30 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6 }}
-                        className="relative rounded-2xl overflow-hidden aspect-[4/3]"
-                    >
-                        <img
-                            src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop"
-                            alt="Fabric and measuring tape"
-                            className="w-full h-full object-cover"
-                        />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
-                            <p className="text-xs font-semibold uppercase tracking-widest text-slate-300 mb-1">
-                                {t('sizeFit.badgeTop')}
-                            </p>
-                            <p className="text-white text-lg font-semibold">{t('sizeFit.badgeBottom')}</p>
-                        </div>
-                    </motion.div>
+          <p className="max-w-lg text-sm leading-7 text-[#6f6f6f] sm:text-base md:justify-self-end">
+            {t('sizeFit.subtitle')}
+          </p>
+        </div>
+
+        <div className="grid gap-10 lg:grid-cols-[110px_minmax(0,1.15fr)_minmax(360px,0.85fr)] lg:gap-8 xl:grid-cols-[125px_minmax(0,1.2fr)_minmax(400px,0.8fr)]">
+          <div className="order-2 flex gap-3 overflow-x-auto lg:order-1 lg:flex-col lg:overflow-visible">
+            {galleryImages.map((image, index) => (
+              <button
+                key={image.src}
+                type="button"
+                onClick={() => setActiveImage(index)}
+                aria-label={`Show image ${index + 1}`}
+                className={[
+                  'relative h-28 w-24 shrink-0 overflow-hidden border bg-[#efeeeb] transition-all duration-200',
+                  'lg:h-[138px] lg:w-full',
+                  activeImage === index ? 'border-[#111111]' : 'border-black/15 hover:border-black/45',
+                ].join(' ')}
+              >
+                <img
+                  src={image.src}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  style={{
+                    objectPosition: image.position ?? 'center',
+                  }}
+                />
+
+                <span className="absolute bottom-2 left-2 text-[9px] font-bold tracking-[0.16em] text-black/55">
+                  0{index + 1}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="order-1 lg:order-2">
+            <div className="relative min-h-[520px] overflow-hidden border border-black/15 bg-[#efeeeb] sm:min-h-[680px] lg:h-full lg:min-h-[760px]">
+              {galleryImages.map((image, index) => (
+                <img
+                  key={image.src}
+                  src={image.src}
+                  alt={index === activeImage ? image.alt : ''}
+                  aria-hidden={index !== activeImage}
+                  className={[
+                    'absolute inset-0 h-full w-full object-cover transition-all duration-700',
+                    index === activeImage ? 'scale-100 opacity-100' : 'pointer-events-none scale-[1.015] opacity-0',
+                  ].join(' ')}
+                  style={{
+                    objectPosition: image.position ?? 'center',
+                  }}
+                />
+              ))}
+
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-black/55 via-black/10 to-transparent px-5 pb-5 pt-24 text-white sm:px-7 sm:pb-7">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/65">
+                    {t('sizeFit.badgeTop')}
+                  </p>
+
+                  <p className="mt-2 font-serif text-xl font-medium tracking-normal sm:text-2xl">
+                    {t('sizeFit.badgeBottom')}
+                  </p>
                 </div>
+
+                <span className="hidden text-[10px] font-bold uppercase tracking-[0.2em] text-white/65 sm:block">
+                  Image 0{activeImage + 1}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="order-3 flex flex-col lg:pl-5 xl:pl-10">
+            <div className="border-b border-black/15 pb-8">
+              <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-[#8b8b8b]">
+                {t('sizeFit.badgeTop')}
+              </p>
+
+              <h3 className="mt-5 font-serif text-[clamp(1.45rem,2.25vw,2.25rem)] font-medium leading-[1.04] tracking-normal text-[#111111]">
+                {t('sizeFit.title')}
+              </h3>
+
+              <p className="mt-6 text-sm leading-7 text-[#707070] sm:text-base">{t('sizeFit.subtitle')}</p>
             </div>
 
-            <MeasurementGuideModal
-                open={guideOpen}
-                onClose={() => setGuideOpen(false)}
-                initialStep="chest"
-            />
-        </section>
-    );
+            <div className="divide-y divide-black/15 border-b border-black/15">
+              {instructions.map((instruction, index) => (
+                <div key={instruction.title} className="group grid grid-cols-[46px_1fr] gap-4 py-6">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-black/20 text-[#111111] transition-colors duration-200 group-hover:bg-[#111111] group-hover:text-white">
+                    <instruction.icon className="h-[18px] w-[18px] stroke-[1.5]" />
+                  </div>
+
+                  <div>
+                    <div className="flex items-start justify-between gap-4">
+                      <h4 className="text-sm font-bold leading-6 tracking-normal text-[#111111] sm:text-base">
+                        {instruction.title}
+                      </h4>
+
+                      <span className="font-serif text-xl text-black/25">0{index + 1}</span>
+                    </div>
+
+                    <p className="mt-2 text-xs leading-6 text-[#777777] sm:text-sm">{instruction.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-7 border-y border-black/15">
+              <p className="py-4 text-[10px] font-bold uppercase tracking-[0.24em] text-[#777777]">
+                {t('sizeFit.viewGuide')}
+              </p>
+
+              {details.map((detail, index) => {
+                const isOpen = activeDetail === index;
+
+                return (
+                  <div key={detail.label} className="border-t border-black/15">
+                    <button
+                      type="button"
+                      onClick={() => setActiveDetail(isOpen ? null : index)}
+                      className="flex w-full items-center justify-between gap-5 py-4 text-left"
+                    >
+                      <span className="text-xs font-bold uppercase tracking-[0.1em] text-[#111111]">{detail.label}</span>
+
+                      <ChevronDown className={['h-4 w-4 transition-transform duration-200', isOpen ? 'rotate-180' : ''].join(' ')} />
+                    </button>
+
+                    <div className={['grid transition-all duration-300', isOpen ? 'grid-rows-[1fr] pb-4' : 'grid-rows-[0fr]'].join(' ')}>
+                      <div className="overflow-hidden">
+                        <p className="text-sm leading-6 text-[#777777]">{detail.value}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              <Link
+                to="/design"
+                className="inline-flex min-h-[52px] items-center justify-center gap-2 border border-[#111111] bg-[#111111] px-6 text-xs font-bold uppercase tracking-[0.09em] text-white transition-all duration-200 hover:bg-[#333333]"
+              >
+                <PencilRuler className="h-4 w-4" />
+                {t('hero.startDesigning')}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setGuideOpen(true)}
+                className="inline-flex min-h-[52px] items-center justify-center gap-2 border border-black/25 bg-transparent px-6 text-xs font-bold uppercase tracking-[0.09em] text-[#111111] transition-all duration-200 hover:bg-[#111111] hover:text-white"
+              >
+                <Ruler className="h-4 w-4" />
+                {t('sizeFit.viewGuide')}
+              </button>
+            </div>
+
+            <p className="mt-auto pt-10 text-[10px] uppercase leading-5 tracking-[0.15em] text-[#999999]">
+              {t('sizeFit.subtitle')}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <MeasurementGuideModal
+        open={guideOpen}
+        onClose={() => setGuideOpen(false)}
+        initialStep="chest"
+      />
+    </section>
+  );
 }

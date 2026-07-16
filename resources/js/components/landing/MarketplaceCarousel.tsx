@@ -1,283 +1,229 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { animate, motion, useMotionValue } from 'motion/react';
-import { ChevronLeft, ChevronRight, ShoppingBag, Star } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
+import { ShoppingBag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui/button';
 
 interface Product {
-    id: number;
+  id: number;
+  name: string;
+  price: number;
+  images: string[];
+  tailor_name: string | null;
+  category: {
     name: string;
-    price: number;
-    images: string[];
-    tailor_name: string | null;
-    category: { name: string; slug: string };
-    average_rating: number | null;
-    reviews_count: number;
+    slug: string;
+  };
+  average_rating: number | null;
+  reviews_count: number;
+  isFallback?: boolean;
 }
-
-const INTERVAL = 3500;
-
-function getVC(): number {
-    if (typeof window === 'undefined') return 4;
-    if (window.innerWidth < 640)  return 1;
-    if (window.innerWidth < 1024) return 2;
-    return 4;
-}
-
-// ─── product card ────────────────────────────────────────────────────────────
-
-function ProductCard({ product }: { product: Product }) {
-    const img = product.images?.[0];
-    return (
-        <Link to={`/product/${product.id}`} className="block group h-full">
-            <div className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-slate-100 mb-3">
-                {img ? (
-                    <img
-                        src={img}
-                        alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-300">
-                        <ShoppingBag className="w-10 h-10" />
-                    </div>
-                )}
-                <div className="absolute top-3 left-3">
-                    <span className="bg-white/90 backdrop-blur-sm text-slate-700 text-xs font-medium px-2.5 py-1 rounded-full">
-                        {product.category?.name}
-                    </span>
-                </div>
-            </div>
-            <div className="px-1">
-                <h3 className="font-semibold text-slate-900 text-sm truncate group-hover:text-slate-600 transition-colors mb-0.5">
-                    {product.name}
-                </h3>
-                {product.tailor_name && (
-                    <p className="text-xs text-slate-400 truncate mb-1">{product.tailor_name}</p>
-                )}
-                <div className="flex items-center justify-between">
-                    <span className="text-slate-900 font-bold text-sm">₾{product.price}</span>
-                    {product.average_rating !== null && (
-                        <span className="flex items-center gap-0.5 text-xs text-slate-500">
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            {product.average_rating}
-                        </span>
-                    )}
-                </div>
-            </div>
-        </Link>
-    );
-}
-
-// ─── carousel ────────────────────────────────────────────────────────────────
 
 export function MarketplaceCarousel() {
-    const { t } = useTranslation();
-    const containerRef = useRef<HTMLDivElement>(null);
-    const x             = useMotionValue(0);
-    const isAnim        = useRef(false);
-    const idxRef        = useRef(0);       // real index into `products`
-    const cardWRef      = useRef(0);
-    const vcRef         = useRef(getVC()); // visible count
-    const intervalRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { t } = useTranslation();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollStart, setScrollStart] = useState(0);
+  const stripRef = useRef<HTMLDivElement>(null);
 
-    const [products,  setProducts]  = useState<Product[]>([]);
-    const [cardW,     setCardW]     = useState(0);   // state copy → triggers re-render
-    const [vc,        setVc]        = useState(getVC);
-
-    // ── fetch & shuffle ──────────────────────────────────────────────────────
-    useEffect(() => {
-        fetch('/api/products?per_page=20')
-            .then(r => r.json())
-            .then(d => {
-                const list: Product[] = d.data ?? [];
-                const shuffled = [...list].sort(() => Math.random() - 0.5).slice(0, 16);
-                setProducts(shuffled);
-            })
-            .catch(() => {});
-    }, []);
-
-    // ── measure container ────────────────────────────────────────────────────
-    useEffect(() => {
-        const measure = () => {
-            if (!containerRef.current) return;
-            const newVc = getVC();
-            const newCW = containerRef.current.offsetWidth / newVc;
-            if (newCW === 0) return;
-            vcRef.current    = newVc;
-            cardWRef.current = newCW;
-            setVc(newVc);
-            setCardW(newCW);
-            x.set(-(idxRef.current + newVc) * newCW);
-        };
-        // Measure after paint
-        let raf = requestAnimationFrame(() => {
-            measure();
-            // Second frame in case first is still 0
-            raf = requestAnimationFrame(measure);
-        });
-        const ro = new ResizeObserver(measure);
-        if (containerRef.current) ro.observe(containerRef.current);
-        window.addEventListener('resize', measure);
-        return () => {
-            cancelAnimationFrame(raf);
-            ro.disconnect();
-            window.removeEventListener('resize', measure);
-        };
-    }, [x]);
-
-    // ── set initial position when products arrive ────────────────────────────
-    useEffect(() => {
-        if (products.length === 0) return;
-        const apply = () => {
-            if (!containerRef.current) return;
-            const newVc = getVC();
-            const newCW = containerRef.current.offsetWidth / newVc;
-            if (newCW === 0) return;
-            vcRef.current    = newVc;
-            cardWRef.current = newCW;
-            setVc(newVc);
-            setCardW(newCW);
-            x.set(-newVc * newCW);
-            idxRef.current = 0;
-        };
-        requestAnimationFrame(() => requestAnimationFrame(apply));
-    }, [products, x]);
-
-    const N  = products.length;
-
-    // extended = [tail(VC), ...products, head(VC)] — enables seamless wrap
-    // stripIdx = realIdx + VC
-    const extended = N > 0
-        ? [...products.slice(-vc), ...products, ...products.slice(0, vc)]
-        : [];
-
-    // ── advance (forward) ────────────────────────────────────────────────────
-    const advance = useCallback(async () => {
-        if (isAnim.current || !cardWRef.current || N <= vcRef.current) return;
-        isAnim.current = true;
-
-        const curr     = idxRef.current;
-        const stripIdx = curr + vcRef.current;
-        const toX      = -(stripIdx + 1) * cardWRef.current;
-
-        await animate(x, toX, { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] });
-
-        const next = (curr + 1) % N;
-        idxRef.current = next;
-        if (next === 0) {
-            // Snap back to main-section start (same visual, no jump)
-            x.set(-vcRef.current * cardWRef.current);
-        }
-        isAnim.current = false;
-    }, [x, N]);
-
-    // ── retreat (backward) ───────────────────────────────────────────────────
-    const retreat = useCallback(async () => {
-        if (isAnim.current || !cardWRef.current || N <= vcRef.current) return;
-        isAnim.current = true;
-
-        const curr = idxRef.current;
-        let toX: number;
-
-        if (curr === 0) {
-            // We're at realIdx=0, stripIdx=VC. Going back = stripIdx VC-1 (pre-section).
-            // That position already holds products[N-1] as first visible card — seamless.
-            toX = -(vcRef.current - 1) * cardWRef.current;
-        } else {
-            toX = -(curr - 1 + vcRef.current) * cardWRef.current;
+  useEffect(() => {
+    fetch('/api/products?per_page=20')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to load products');
         }
 
-        await animate(x, toX, { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] });
+        return response.json();
+      })
+      .then((data) => {
+        const list: Product[] = data.data ?? [];
+        setProducts(list.slice(0, 12));
+      })
+      .catch(() => {});
+  }, []);
 
-        const next = (curr - 1 + N) % N;
-        idxRef.current = next;
-        if (curr === 0) {
-            // Snap to equivalent position in main section (realIdx=N-1, stripIdx=N-1+VC)
-            x.set(-(next + vcRef.current) * cardWRef.current);
-        }
-        isAnim.current = false;
-    }, [x, N]);
+  const fallbackProducts: Product[] = [
+    {
+      id: -1,
+      name: t('carousel.productPinkDress'),
+      price: 210,
+      images: ['/assets/hero/kere-look-1.jpeg'],
+      tailor_name: 'Kere',
+      category: {
+        name: 'Dresses',
+        slug: 'dresses',
+      },
+      average_rating: null,
+      reviews_count: 0,
+      isFallback: true,
+    },
+    {
+      id: -2,
+      name: t('carousel.productBlueDress'),
+      price: 280,
+      images: ['/assets/hero/kere-look-2.jpeg'],
+      tailor_name: 'Kere',
+      category: {
+        name: 'Dresses',
+        slug: 'dresses',
+      },
+      average_rating: null,
+      reviews_count: 0,
+      isFallback: true,
+    },
+    {
+      id: -3,
+      name: t('carousel.productBlueSuit'),
+      price: 320,
+      images: ['/assets/hero/kere-look-3.jpeg'],
+      tailor_name: 'Kere',
+      category: {
+        name: 'Suits',
+        slug: 'suits',
+      },
+      average_rating: null,
+      reviews_count: 0,
+      isFallback: true,
+    },
+    {
+      id: -4,
+      name: t('carousel.productGreenDress'),
+      price: 260,
+      images: ['/assets/hero/kere-look-4.jpeg'],
+      tailor_name: 'Kere',
+      category: {
+        name: 'Dresses',
+        slug: 'dresses',
+      },
+      average_rating: null,
+      reviews_count: 0,
+      isFallback: true,
+    },
+  ];
 
-    // ── auto-advance ─────────────────────────────────────────────────────────
-    const restartInterval = useCallback(() => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        intervalRef.current = setInterval(advance, INTERVAL);
-    }, [advance]);
+  const displayedProducts = products.length > 0 ? products.slice(0, 8) : fallbackProducts;
 
-    useEffect(() => {
-        if (N <= vc || !cardW) return;
-        restartInterval();
-        return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-    }, [N, vc, cardW, restartInterval]);
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!stripRef.current) return;
 
-    const handlePrev = useCallback(() => { restartInterval(); retreat(); }, [restartInterval, retreat]);
-    const handleNext = useCallback(() => { restartInterval(); advance(); }, [restartInterval, advance]);
+    setIsDragging(true);
+    setStartX(event.clientX);
+    setScrollStart(stripRef.current.scrollLeft);
+    stripRef.current.setPointerCapture(event.pointerId);
+  };
 
-    if (N === 0) return null;
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || !stripRef.current) return;
 
-    return (
-        <section className="py-16 md:py-24 bg-white" id="categories">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    const distance = event.clientX - startX;
+    stripRef.current.scrollLeft = scrollStart - distance;
+  };
 
-                {/* Header row */}
-                <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
-                    <div>
-                        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2">
-                            {t('carousel.title')}
-                        </h2>
-                        <p className="text-slate-500 text-sm sm:text-base">{t('carousel.subtitle')}</p>
-                    </div>
-                    <div className="flex gap-2 flex-shrink-0">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handlePrev}
-                            aria-label="Previous"
-                            className="w-10 h-10 rounded-full border border-slate-300 hover:bg-slate-50"
-                        >
-                            <ChevronLeft className="w-5 h-5 text-slate-600" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleNext}
-                            aria-label="Next"
-                            className="w-10 h-10 rounded-full border border-slate-300 hover:bg-slate-50"
-                        >
-                            <ChevronRight className="w-5 h-5 text-slate-600" />
-                        </Button>
-                    </div>
-                </div>
+  const stopDragging = () => {
+    setIsDragging(false);
+  };
 
-                {/* Strip */}
-                <div ref={containerRef} className="overflow-hidden">
-                    {cardW > 0 && (
-                        <motion.div style={{ x }} className="flex">
-                            {extended.map((p, i) => (
-                                <div
-                                    key={`${p.id}-${i}`}
-                                    style={{ width: cardW, flexShrink: 0, paddingLeft: vcRef.current === 1 ? 4 : 8, paddingRight: vcRef.current === 1 ? 4 : 8 }}
-                                >
-                                    <ProductCard product={p} />
-                                </div>
-                            ))}
-                        </motion.div>
+  return (
+    <section id="categories" className="overflow-hidden bg-white px-4 py-20 sm:px-6 md:py-28 lg:px-8">
+      <div className="mx-auto max-w-[1500px]">
+        <div className="mb-12 sm:mb-16">
+          <h2 className="max-w-[620px] font-serif text-[clamp(1.75rem,3.2vw,3.25rem)] font-medium uppercase leading-[0.96] tracking-normal text-[#111111]">
+            {t('carousel.title')}
+          </h2>
+
+          <p className="mt-7 max-w-xl text-sm leading-7 text-[#6f6f6f] sm:text-base">
+            {t('carousel.subtitle')}
+          </p>
+        </div>
+
+        <div className="relative">
+          <div
+            ref={stripRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={stopDragging}
+            onPointerCancel={stopDragging}
+            onPointerLeave={stopDragging}
+            className={[
+              'marketplace-scrollbar-none flex snap-x snap-mandatory gap-6 overflow-x-auto pb-5 select-none',
+              isDragging ? 'cursor-grabbing' : 'cursor-grab',
+            ].join(' ')}
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              touchAction: 'pan-y',
+            }}
+          >
+            {displayedProducts.map((product) => {
+              const image = product.images?.[0];
+
+              return (
+                <Link
+                  key={product.id}
+                  to={product.isFallback ? '/marketplace' : `/product/${product.id}`}
+                  draggable={false}
+                  className="group block w-[78vw] shrink-0 snap-start sm:w-[46vw] lg:w-[calc((100%_-_72px)/4)]"
+                  onClick={(event) => {
+                    if (isDragging) {
+                      event.preventDefault();
+                    }
+                  }}
+                >
+                  <div className="relative aspect-[0.78] overflow-hidden border border-black/20 bg-[#f4f4f2]">
+                    {image ? (
+                      <img
+                        src={image}
+                        alt={product.name}
+                        draggable={false}
+                        loading="lazy"
+                        className="h-full w-full object-contain p-5 transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-[#b2b2b2]">
+                        <ShoppingBag className="h-12 w-12" />
+                      </div>
                     )}
-                </div>
 
-                {/* View all link */}
-                <div className="text-center mt-10">
-                    <Link
-                        to="/marketplace"
-                        className="inline-flex items-center gap-2 border border-slate-300 text-slate-700 text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-50 transition-colors"
-                    >
-                        <ShoppingBag className="w-4 h-4" />
-                        {t('carousel.viewAll')}
-                    </Link>
-                </div>
-            </div>
-        </section>
-    );
+                  </div>
+
+                  <div className="pt-4">
+                    <h3 className="truncate text-sm font-bold uppercase tracking-normal text-[#111111] sm:text-base">
+                      {product.name}
+                    </h3>
+
+                    <div className="mt-1 flex items-center justify-between gap-4">
+                      <p className="text-sm text-[#777777]">₾{product.price}</p>
+
+                      {product.tailor_name && (
+                        <p className="truncate text-right text-[11px] uppercase tracking-[0.08em] text-[#9a9a9a]">
+                          {product.tailor_name}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="pointer-events-none absolute left-[72%] top-[31%] z-20 hidden w-32 -translate-x-1/2 -translate-y-1/2 md:block lg:left-[76%] lg:w-36">
+            <img
+              src="/assets/brand/kere-logo.png"
+              alt="Kere"
+              className="h-auto w-full shadow-[0_24px_70px_rgba(38,10,14,0.28)]"
+            />
+          </div>
+        </div>
+
+        <div className="mt-12 flex justify-center">
+          <Link
+            to="/marketplace"
+            className="inline-flex min-h-[50px] items-center justify-center border border-black/30 bg-transparent px-8 text-xs font-bold uppercase tracking-[0.12em] text-[#111111] transition-all duration-200 hover:bg-[#111111] hover:text-white"
+          >
+            {t('carousel.viewAll')}
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
 }

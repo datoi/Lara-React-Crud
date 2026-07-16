@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
 import { NotificationBell } from '../NotificationBell';
 
-function LanguageToggle({ scrolled }: { scrolled: boolean }) {
+function LanguageToggle({ isOverDark }: { isOverDark: boolean }) {
     const { i18n } = useTranslation();
     const isKa = i18n.language === 'ka';
 
@@ -19,11 +19,7 @@ function LanguageToggle({ scrolled }: { scrolled: boolean }) {
     return (
         <button
             onClick={toggle}
-            className={`text-xs font-semibold px-2.5 py-1 rounded-md border transition-colors cursor-pointer ${
-                scrolled
-                    ? 'border-slate-300 text-slate-600 hover:bg-slate-100'
-                    : 'border-white/30 text-white/80 hover:bg-white/10'
-            }`}
+            className={`text-[10px] font-bold uppercase tracking-[0.12em] transition-opacity hover:opacity-55 ${isOverDark ? 'text-white' : 'text-[#111111]'}`}
             title={isKa ? 'Switch to English' : 'ქართულზე გადართვა'}
         >
             {isKa ? 'EN' : 'ქართ'}
@@ -33,106 +29,188 @@ function LanguageToggle({ scrolled }: { scrolled: boolean }) {
 
 export function Navigation() {
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [scrolled, setScrolled]     = useState(false);
+    const [isOverDark, setIsOverDark] = useState(false);
     const { t } = useTranslation();
     const user  = getAuthToken() ? getAuthUser() : null;
     useEffect(() => {
-        function onScroll() {
-            setScrolled(window.scrollY > 60);
+        function isDarkElement(element: Element | null) {
+            const section = element?.closest?.('section, main, [data-nav-theme]');
+
+            if (!section) {
+                return false;
+            }
+
+            if (
+                section.matches(
+                    '[data-nav-theme="dark"], .partners-benefits-design, .kere-brand-dark-section, .bg-slate-900, .bg-slate-800',
+                )
+            ) {
+                return true;
+            }
+
+            const background = window.getComputedStyle(section).backgroundColor;
+            const match = background.match(/\d+(\.\d+)?/g);
+
+            if (!match || match.length < 3) {
+                return false;
+            }
+
+            const [r, g, b] = match.slice(0, 3).map(Number);
+            const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+
+            return luminance < 0.42;
         }
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
+
+        function updateTone() {
+            const probeY = Math.min(92, window.innerHeight - 1);
+            const probeX = Math.floor(window.innerWidth / 2);
+            setIsOverDark(isDarkElement(document.elementFromPoint(probeX, probeY)));
+        }
+
+        updateTone();
+        window.addEventListener('scroll', updateTone, { passive: true });
+        window.addEventListener('resize', updateTone);
+
+        return () => {
+            window.removeEventListener('scroll', updateTone);
+            window.removeEventListener('resize', updateTone);
+        };
     }, []);
 
+    const navTextClass = isOverDark ? 'text-white' : 'text-[#111111]';
+    const navDividerClass = isOverDark ? 'border-white/25' : 'border-black/15';
+
     return (
-        <nav className={`fixed top-0 z-50 w-full backdrop-blur transition-colors duration-300 ${scrolled ? 'bg-white/90 border-b border-slate-200' : 'bg-slate-900/30 border-b border-white/10'}`}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
-                    {/* Logo */}
-                    <Link
-                        to="/"
-                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                        className={`text-2xl font-bold transition-colors ${scrolled ? 'text-slate-900 hover:text-slate-700' : 'text-white hover:text-white/80'}`}
-                    >
-                        Kere
-                    </Link>
-
-                    {/* Desktop center links */}
-                    <div className="hidden md:flex items-center gap-8">
-                        <a href="#how-it-works" className={`text-sm transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
-                            {t('nav.howItWorks')}
-                        </a>
-                        <a href="#faq" className={`text-sm transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
-                            {t('nav.faq')}
-                        </a>
-                        <Link
-                            to="/partners"
-                            className={`text-sm font-medium transition-colors ${scrolled ? 'text-slate-500 hover:text-slate-900' : 'text-white/60 hover:text-white/90'}`}
-                        >
-                            {t('nav.forTailors')}
-                        </Link>
-                    </div>
-
-                    {/* Desktop right */}
-                    <div className="hidden md:flex items-center gap-2">
-                        {user ? (
-                            <>
-                                <Link
-                                    to={user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
-                                    className={`flex items-center gap-2 text-sm transition-colors ${scrolled ? 'text-slate-700 hover:text-slate-900' : 'text-white/90 hover:text-white'}`}
-                                >
-                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center ${scrolled ? 'bg-slate-200' : 'bg-white/20'}`}>
-                                        <User className={`w-4 h-4 ${scrolled ? 'text-slate-600' : 'text-white'}`} />
-                                    </div>
-                                    <span className="font-medium">{user.first_name} {user.last_name}</span>
-                                </Link>
-
-                                {/* Notification bell */}
-                                <div className={scrolled ? '' : 'invert'}>
-                                    <NotificationBell />
-                                </div>
-
-                            </>
-                        ) : (
-                            <>
-                                <Link
-                                    to="/signin"
-                                    className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${scrolled ? 'text-slate-700 border border-slate-300 hover:bg-slate-50' : 'text-white border border-white/40 hover:bg-white/10'}`}
-                                >
-                                    {t('nav.signIn')}
-                                </Link>
-                                <Link
-                                    to="/design"
-                                    className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${scrolled ? 'bg-brand text-white hover:bg-brand-dark' : 'bg-white text-slate-900 hover:bg-white/90'}`}
-                                >
-                                    {t('nav.startDesigning')}
-                                </Link>
-                            </>
-                        )}
-                        <div className={`w-px h-5 mx-2 ${scrolled ? 'bg-slate-300' : 'bg-white/25'}`} />
-                        <LanguageToggle scrolled={scrolled} />
-                    </div>
-
-                    {/* Mobile toggle */}
+        <header
+            data-nav-tone={isOverDark ? 'dark' : 'light'}
+            className="kere-site-header fixed inset-x-0 top-0 z-[100] border-b border-transparent bg-transparent transition-colors duration-300"
+        >
+            <div className="kere-site-header-bar mx-auto grid h-14 max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:h-16 sm:px-6 lg:h-[68px] lg:px-10">
+                <div className="flex min-w-0 items-center gap-4 sm:gap-7">
                     <button
                         onClick={() => setMobileOpen(!mobileOpen)}
-                        className={`md:hidden p-2 rounded-lg transition-colors cursor-pointer ${scrolled ? 'text-slate-600 hover:bg-slate-100' : 'text-white/80 hover:bg-white/10'}`}
+                        className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 ${navTextClass}`}
+                        aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
                     >
-                        {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                        {mobileOpen ? <X className="h-[18px] w-[18px] stroke-[1.5]" /> : <Menu className="h-[18px] w-[18px] stroke-[1.5]" />}
+                        <span className="hidden text-[11px] font-semibold uppercase tracking-[0.08em] sm:inline">
+                            {mobileOpen ? 'Close' : 'Menu'}
+                        </span>
                     </button>
+
+                    <div className="hidden items-center gap-7 lg:flex">
+                        <a
+                            href="#how-it-works"
+                            className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                        >
+                            {t('nav.howItWorks')}
+                        </a>
+                        <a
+                            href="#faq"
+                            className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                        >
+                            {t('nav.faq')}
+                        </a>
+                    </div>
+                </div>
+
+                <Link
+                    to="/"
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className={`justify-self-center text-[22px] font-medium leading-none tracking-normal transition-opacity hover:opacity-70 sm:text-[24px] lg:text-[26px] ${navTextClass}`}
+                >
+                    Kere
+                </Link>
+
+                <div className="flex min-w-0 items-center justify-end gap-4 sm:gap-7">
+                    <Link
+                        to="/partners"
+                        className={`hidden text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 md:inline ${navTextClass}`}
+                    >
+                        {t('nav.forTailors')}
+                    </Link>
+
+                    {user ? (
+                        <>
+                            <Link
+                                to={user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
+                                className={`hidden items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 sm:inline-flex ${navTextClass}`}
+                            >
+                                <User className="h-[18px] w-[18px] stroke-[1.5]" />
+                                <span>{user.first_name} {user.last_name}</span>
+                            </Link>
+
+                            <div>
+                                <NotificationBell />
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <Link
+                                to="/signin"
+                                className={`hidden text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 sm:inline ${navTextClass}`}
+                            >
+                                {t('nav.signIn')}
+                            </Link>
+
+                            <Link to="/signin" aria-label={t('nav.signIn')} className={`inline-flex transition-opacity hover:opacity-55 sm:hidden ${navTextClass}`}>
+                                <User className="h-[18px] w-[18px] stroke-[1.5]" />
+                            </Link>
+                        </>
+                    )}
+
+                    <Link
+                        to="/design"
+                        className={`hidden text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 md:inline ${navTextClass}`}
+                    >
+                        {t('nav.startDesigning')}
+                    </Link>
+
+                    <div className={`hidden h-5 border-l pl-5 lg:block ${navDividerClass}`}>
+                        <LanguageToggle isOverDark={isOverDark} />
+                    </div>
                 </div>
             </div>
 
-            {/* Mobile menu */}
             <AnimatePresence>
                 {mobileOpen && (
                     <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="md:hidden border-t border-white/10 bg-slate-900/80"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[130] bg-black/35 md:hidden"
+                        onMouseDown={(event) => {
+                            if (event.target === event.currentTarget) {
+                                setMobileOpen(false);
+                            }
+                        }}
                     >
-                        <div className="px-4 py-4 space-y-2">
+                        <motion.aside
+                            initial={{ x: '-100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-100%' }}
+                            transition={{ duration: 0.5 }}
+                            className="absolute inset-y-0 left-0 flex w-full max-w-[580px] flex-col bg-[#f7f6f3] px-6 py-6 sm:px-10 sm:py-8"
+                        >
+                            <div className="flex items-center justify-between border-b border-black/15 pb-6">
+                                <Link
+                                    to="/"
+                                    onClick={() => setMobileOpen(false)}
+                                    className="text-[24px] font-medium tracking-normal text-[#111111]"
+                                >
+                                    Kere
+                                </Link>
+
+                                <button
+                                    onClick={() => setMobileOpen(false)}
+                                    aria-label="Close navigation"
+                                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/20 transition-colors hover:bg-[#111111] hover:text-white"
+                                >
+                                    <X className="h-5 w-5 stroke-[1.5]" />
+                                </button>
+                            </div>
+
+                            <nav className="flex flex-1 flex-col justify-center py-12">
                             {[
                                 { to: '#how-it-works', label: t('nav.howItWorks'), isAnchor: true },
                                 { to: '#faq',          label: t('nav.faq'), isAnchor: true },
@@ -142,32 +220,46 @@ export function Navigation() {
                                         key={link.to}
                                         href={link.to}
                                         onClick={() => setMobileOpen(false)}
-                                        className="block px-3 py-2 rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                                        className="group grid grid-cols-[42px_1fr_auto] items-center gap-4 border-b border-black/15 py-5 sm:py-7"
                                     >
-                                        {link.label}
+                                        <span className="text-[10px] font-bold tracking-[0.14em] text-black/40">
+                                            {link.to === '#how-it-works' ? '01' : '02'}
+                                        </span>
+                                        <span className="font-serif text-[clamp(1.25rem,3.6vw,2.15rem)] font-medium leading-tight tracking-normal text-[#111111]">
+                                            {link.label}
+                                        </span>
+                                        <span className="text-xl transition-transform duration-300 group-hover:translate-x-2">→</span>
                                     </a>
                                 ) : (
                                     <Link
                                         key={link.to}
                                         to={link.to}
                                         onClick={() => setMobileOpen(false)}
-                                        className="block px-3 py-2 rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                                        className="group grid grid-cols-[42px_1fr_auto] items-center gap-4 border-b border-black/15 py-5 sm:py-7"
                                     >
-                                        {link.label}
+                                        <span className="text-[10px] font-bold tracking-[0.14em] text-black/40">01</span>
+                                        <span className="font-serif text-[clamp(1.25rem,3.6vw,2.15rem)] font-medium leading-tight tracking-normal text-[#111111]">
+                                            {link.label}
+                                        </span>
+                                        <span className="text-xl transition-transform duration-300 group-hover:translate-x-2">→</span>
                                     </Link>
                                 )
                             ))}
                             <Link
                                 to="/partners"
                                 onClick={() => setMobileOpen(false)}
-                                className="block px-3 py-2 rounded-lg text-white/60 hover:bg-white/10 hover:text-white transition-colors text-sm"
+                                className="group grid grid-cols-[42px_1fr_auto] items-center gap-4 border-b border-black/15 py-5 sm:py-7"
                             >
-                                {t('nav.forTailors')}
+                                <span className="text-[10px] font-bold tracking-[0.14em] text-black/40">03</span>
+                                <span className="font-serif text-[clamp(1.25rem,3.6vw,2.15rem)] font-medium leading-tight tracking-normal text-[#111111]">
+                                    {t('nav.forTailors')}
+                                </span>
+                                <span className="text-xl transition-transform duration-300 group-hover:translate-x-2">→</span>
                             </Link>
+                            </nav>
 
-                            {/* Language toggle in mobile */}
-                            <div className="pt-1 pb-1">
-                                <LanguageToggle scrolled={false} />
+                            <div className="pb-5">
+                                <LanguageToggle isOverDark={false} />
                             </div>
 
                             {user ? (
@@ -175,34 +267,34 @@ export function Navigation() {
                                     <Link
                                         to={user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
                                         onClick={() => setMobileOpen(false)}
-                                        className="flex items-center gap-2 px-3 py-2 text-sm text-white font-medium hover:bg-white/10 rounded-lg transition-colors"
+                                        className="inline-flex min-h-[50px] w-full items-center justify-center gap-2 border border-black/25 text-[11px] font-bold uppercase tracking-[0.12em] text-[#111111] transition-colors hover:bg-[#111111] hover:text-white"
                                     >
-                                        <User className="w-4 h-4 text-white/70" />
+                                        <User className="h-4 w-4" />
                                         {user.first_name} {user.last_name}
                                     </Link>
                                 </div>
                             ) : (
-                                <div className="flex gap-2 pt-2">
+                                <div className="grid grid-cols-2 gap-3 border-t border-black/15 pt-6">
                                     <Link
                                         to="/signin"
                                         onClick={() => setMobileOpen(false)}
-                                        className="flex-1 text-center border border-white/30 text-white px-4 py-2.5 rounded-lg hover:bg-white/10 transition-colors text-sm font-medium"
+                                        className="inline-flex min-h-[50px] items-center justify-center border border-black/25 text-[11px] font-bold uppercase tracking-[0.12em] text-[#111111] transition-colors hover:bg-[#111111] hover:text-white"
                                     >
                                         {t('nav.signIn')}
                                     </Link>
                                     <Link
                                         to="/design"
                                         onClick={() => setMobileOpen(false)}
-                                        className="flex-1 text-center bg-white text-slate-900 px-4 py-2.5 rounded-lg hover:bg-white/90 transition-colors text-sm font-medium"
+                                        className="inline-flex min-h-[50px] items-center justify-center bg-[#111111] text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#333333]"
                                     >
                                         {t('nav.startDesigning')}
                                     </Link>
                                 </div>
                             )}
-                        </div>
+                        </motion.aside>
                     </motion.div>
                 )}
             </AnimatePresence>
-        </nav>
+        </header>
     );
 }
