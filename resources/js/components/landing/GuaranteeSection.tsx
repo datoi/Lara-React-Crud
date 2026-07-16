@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight, Quote } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { ArrowLeft, ArrowRight, Quote, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 
@@ -24,7 +24,7 @@ export function GuaranteeSection() {
             comment: t('guarantee.review1'),
             reviewer: 'Nino Beridze',
             location: 'Tbilisi, Georgia',
-            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&auto=format&fit=crop&crop=face',
+            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=500&h=650&auto=format&fit=crop&crop=face',
             rating: 5,
         },
         {
@@ -32,7 +32,7 @@ export function GuaranteeSection() {
             comment: t('guarantee.review2'),
             reviewer: 'Davit Merabishvili',
             location: 'Batumi, Georgia',
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&auto=format&fit=crop&crop=face',
+            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=650&auto=format&fit=crop&crop=face',
             rating: 5,
         },
         {
@@ -40,137 +40,224 @@ export function GuaranteeSection() {
             comment: t('guarantee.review3'),
             reviewer: 'Nino Kvaratskhelia',
             location: 'Kutaisi, Georgia',
-            avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&auto=format&fit=crop&crop=face',
+            avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=500&h=650&auto=format&fit=crop&crop=face',
             rating: 5,
         },
     ];
 
     const reviews = apiReviews.length > 0 ? apiReviews : staticReviews;
+    const current = reviews[active] ?? reviews[0];
 
     useEffect(() => {
         fetch('/api/reviews/landing')
-            .then(r => r.json())
-            .then(d => {
-                if (d.reviews?.length) setApiReviews(d.reviews);
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Failed to load reviews');
+                }
+
+                return response.json();
+            })
+            .then((data) => {
+                if (data.reviews?.length) {
+                    setApiReviews(data.reviews);
+                    setActive(0);
+                }
             })
             .catch(() => {});
     }, []);
 
-    const prev = () => setActive(a => (a - 1 + reviews.length) % reviews.length);
-    const next = () => setActive(a => (a + 1) % reviews.length);
+    useEffect(() => {
+        if (active >= reviews.length) {
+            setActive(0);
+        }
+    }, [active, reviews.length]);
 
-    const current = reviews[active] ?? reviews[0];
+    const prev = () => {
+        setActive((value) => (value - 1 + reviews.length) % reviews.length);
+    };
+
+    const next = () => {
+        setActive((value) => (value + 1) % reviews.length);
+    };
+
+    if (!current) {
+        return null;
+    }
 
     return (
-        <>
-            {/* Testimonials */}
-            <section className="py-16 md:py-24 bg-white">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.5 }}
-                        className="text-center mb-12"
-                    >
-                        <h2 className="font-serif text-3xl md:text-4xl font-semibold text-slate-900 mb-3 tracking-tight">
+        <section className="relative isolate overflow-hidden bg-[#631E26] bg-[url('/assets/backgrounds/guarantee-texture.jpg')] bg-cover bg-center px-4 py-12 sm:px-6 md:py-16 lg:px-8">
+            <div className="absolute inset-0 -z-10 bg-[#631E26]/78" />
+
+            <div className="mx-auto max-w-[1180px]">
+                <div className="mb-8 flex flex-col gap-4 border-b border-[#F4EBD4]/25 pb-6 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.22em] text-[#C3A69A]">
+                            Kere Stories
+                        </p>
+
+                        <h2 className="font-serif text-[clamp(1.45rem,2.7vw,2.45rem)] font-medium leading-[1.02] tracking-normal text-[#F4EBD4]">
                             {t('guarantee.title')}
                         </h2>
-                        <p className="text-slate-500">
-                            {t('guarantee.subtitle')}
-                        </p>
-                    </motion.div>
+                    </div>
 
-                    {/* Card */}
-                    <div className="relative overflow-hidden">
+                    <p className="max-w-sm text-xs leading-6 text-[#F4EBD4]/80 sm:text-sm">
+                        {t('guarantee.subtitle')}
+                    </p>
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-[0.72fr_1.28fr] md:items-stretch">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={`image-${current.id}`}
+                            initial={{ opacity: 0, scale: 1.02 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.985 }}
+                            transition={{ duration: 0.45 }}
+                            className="relative min-h-[280px] overflow-hidden bg-[#e9e6e1] shadow-[0_24px_70px_rgba(39,25,16,0.18)] sm:min-h-[340px] md:min-h-[390px]"
+                        >
+                            {current.avatar ? (
+                                <img
+                                    src={current.avatar}
+                                    alt={current.reviewer}
+                                    className="h-full w-full object-cover grayscale"
+                                />
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center font-serif text-6xl text-black/20">
+                                    {current.reviewer.charAt(0)}
+                                </div>
+                            )}
+
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#631E26]/48 via-[#631E26]/8 to-transparent" />
+
+                            <div className="absolute right-4 bottom-4 left-4 flex items-end justify-between text-white">
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-[0.1em]">
+                                        {current.reviewer}
+                                    </p>
+
+                                    {current.location && (
+                                        <p className="mt-1 text-[11px] text-white/65">
+                                            {current.location}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <span className="text-[10px] font-bold tracking-[0.15em] text-white/65">
+                                    {String(active + 1).padStart(2, '0')}
+                                </span>
+                            </div>
+                        </motion.div>
+                    </AnimatePresence>
+
+                    <div className="flex min-h-[280px] flex-col justify-between border-y border-[#F4EBD4]/25 bg-[#631E26]/72 py-6 shadow-[0_24px_70px_rgba(31,8,12,0.28)] backdrop-blur-[1px] sm:min-h-[340px] md:min-h-[390px] md:px-6 md:py-8 lg:px-8">
                         <AnimatePresence mode="wait">
                             <motion.div
-                                key={current.id}
-                                initial={{ opacity: 0, x: 40 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -40 }}
-                                transition={{ duration: 0.5 }}
-                                className="bg-slate-50 rounded-2xl p-8 md:p-10"
+                                key={`quote-${current.id}`}
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -16 }}
+                                transition={{ duration: 0.4 }}
                             >
-                                <Quote className="w-10 h-10 text-slate-300 mb-4" />
+                                <div className="flex items-center justify-between gap-5">
+                                    <Quote className="h-8 w-8 stroke-[1] text-[#C3A69A]/70" />
 
-                                {/* Stars */}
-                                <div className="flex gap-1 mb-5">
-                                    {Array.from({ length: current.rating }).map((_, i) => (
-                                        <span key={i} className="text-yellow-400 text-xl">★</span>
-                                    ))}
-                                </div>
-
-                                <p className="text-slate-700 text-lg leading-relaxed mb-8">
-                                    "{current.comment}"
-                                </p>
-
-                                <div className="flex items-center gap-4">
-                                    {current.avatar ? (
-                                        <img src={current.avatar} alt={current.reviewer} className="w-12 h-12 rounded-full object-cover" />
-                                    ) : (
-                                        <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-lg flex-shrink-0">
-                                            {current.reviewer.charAt(0)}
-                                        </div>
-                                    )}
-                                    <div>
-                                        <p className="font-semibold text-slate-900">{current.reviewer}</p>
-                                        {current.location && (
-                                            <p className="text-sm text-slate-500">{current.location}</p>
-                                        )}
-                                        {!current.location && current.id > 0 && (
-                                            <p className="text-xs text-slate-700 font-medium">{t('guarantee.verifiedPurchase')}</p>
-                                        )}
+                                    <div
+                                        className="flex items-center gap-1"
+                                        aria-label={`${current.rating} star rating`}
+                                    >
+                                        {Array.from({ length: Math.max(0, current.rating) }).map((_, index) => (
+                                            <Star
+                                                key={index}
+                                                className="h-3.5 w-3.5 fill-[#b9923c] text-[#b9923c]"
+                                            />
+                                        ))}
                                     </div>
                                 </div>
+
+                                <blockquote className="mt-8 max-w-2xl">
+                                    <p className="font-serif text-[clamp(1.05rem,1.85vw,1.65rem)] font-medium leading-[1.28] tracking-normal text-[#F4EBD4]">
+                                        “{current.comment}”
+                                    </p>
+                                </blockquote>
                             </motion.div>
                         </AnimatePresence>
-                    </div>
 
-                    {/* Navigation */}
-                    <div className="flex items-center justify-center gap-4 mt-8">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={prev}
-                            className="w-9 h-9 rounded-full border border-slate-300 hover:bg-slate-50"
-                        >
-                            <ChevronLeft className="w-4 h-4 text-slate-600" />
-                        </Button>
+                        <div className="mt-8 flex flex-col gap-5 border-t border-[#F4EBD4]/20 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                {!current.location && current.id > 0 && (
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#C3A69A]">
+                                        {t('guarantee.verifiedPurchase')}
+                                    </p>
+                                )}
 
-                        <div className="flex gap-2">
-                            {reviews.map((_, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => setActive(i)}
-                                    className={`h-2 rounded-full transition-all cursor-pointer ${i === active ? 'w-8 bg-slate-900' : 'w-2 bg-slate-300'}`}
-                                />
-                            ))}
+                                <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#C3A69A]">
+                                    {active + 1} / {reviews.length}
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={prev}
+                                    aria-label={t('guarantee.previousReview')}
+                                    className="h-9 w-9 rounded-full border border-[#F4EBD4]/35 text-[#F4EBD4] transition-colors hover:bg-[#F4EBD4] hover:text-[#631E26]"
+                                >
+                                    <ArrowLeft className="h-3.5 w-3.5 stroke-[1.5]" />
+                                </Button>
+
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={next}
+                                    aria-label={t('guarantee.nextReview')}
+                                    className="h-9 w-9 rounded-full border border-[#F4EBD4]/35 text-[#F4EBD4] transition-colors hover:bg-[#F4EBD4] hover:text-[#631E26]"
+                                >
+                                    <ArrowRight className="h-3.5 w-3.5 stroke-[1.5]" />
+                                </Button>
+                            </div>
                         </div>
+                    </div>
+                </div>
 
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={next}
-                            className="w-9 h-9 rounded-full border border-slate-300 hover:bg-slate-50"
-                        >
-                            <ChevronRight className="w-4 h-4 text-slate-600" />
-                        </Button>
+                <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2">
+                        {reviews.map((review, index) => {
+                            const isActive = index === active;
+
+                            return (
+                                <Button
+                                    key={review.id}
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => setActive(index)}
+                                    aria-label={t('guarantee.goToReview', {
+                                        number: index + 1,
+                                    })}
+                                    className={[
+                                        'h-1.5 rounded-full p-0 transition-all duration-200',
+                                        isActive
+                                            ? 'w-10 bg-[#111111] hover:bg-[#111111]'
+                                            : 'w-4 bg-black/15 hover:bg-black/35',
+                                    ].join(' ')}
+                                />
+                            );
+                        })}
                     </div>
 
-                    {/* #MyKereStyle */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                        className="text-center mt-14"
-                    >
-                        <p className="text-slate-500 text-sm mb-1">{t('guarantee.shareStyle')}</p>
-                        <p className="text-xl font-bold text-slate-900">{t('guarantee.hashtag')}</p>
-                    </motion.div>
+                    <div className="text-left sm:text-right">
+                        <p className="text-[10px] uppercase tracking-[0.12em] text-[#C3A69A]">
+                            {t('guarantee.shareStyle')}
+                        </p>
+
+                        <p className="mt-1 text-sm font-bold uppercase tracking-[0.04em] text-[#F4EBD4]">
+                            {t('guarantee.hashtag')}
+                        </p>
+                    </div>
                 </div>
-            </section>
-        </>
+            </div>
+        </section>
     );
 }

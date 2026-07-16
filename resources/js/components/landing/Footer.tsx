@@ -1,59 +1,79 @@
-import { useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { Link } from 'react-router';
-import { MapPin, Phone, Mail, Facebook, Instagram, Twitter, CreditCard } from 'lucide-react';
+import { ArrowRight, ChevronDown, CreditCard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui/button';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
 import { EmailSupportModal } from '../EmailSupportModal';
 
-const linkClass = 'text-sm hover:text-white transition-colors';
+type FooterLink =
+    | { label: string; type: 'router'; to: string }
+    | { label: string; type: 'hash'; href: string }
+    | { label: string; type: 'modal'; modal: 'size-guide' | 'email-support' };
+
+interface FooterColumnProps {
+    title: string;
+    links: FooterLink[];
+    onModalOpen: (modal: 'size-guide' | 'email-support') => void;
+}
 
 export function Footer() {
-    const [sizeGuideOpen,    setSizeGuideOpen]    = useState(false);
+    const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
     const [emailSupportOpen, setEmailSupportOpen] = useState(false);
-    const { t } = useTranslation();
+    const [email, setEmail] = useState('');
+    const [submitted, setSubmitted] = useState(false);
+    const { t, i18n } = useTranslation();
 
-    // link type: 'router' = <Link to>, 'hash' = <a href> (scrolls on landing), 'modal' = button
-    type FooterLink =
-        | { label: string; type: 'router'; to: string }
-        | { label: string; type: 'hash'; href: string }
-        | { label: string; type: 'modal'; modal: 'size-guide' | 'email-support' };
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        if (!email.trim()) return;
+
+        setSubmitted(true);
+        setEmail('');
+    };
+
+    const handleModalOpen = (modal: 'size-guide' | 'email-support') => {
+        if (modal === 'size-guide') setSizeGuideOpen(true);
+        if (modal === 'email-support') setEmailSupportOpen(true);
+    };
+
+    const toggleLanguage = () => {
+        void i18n.changeLanguage(i18n.language === 'ka' ? 'en' : 'ka');
+    };
 
     const footerColumns: { title: string; links: FooterLink[] }[] = [
         {
             title: t('footer.product'),
             links: [
-                { label: t('footer.howItWorks'),   type: 'hash',   href: '/#how-it-works' },
-                { label: t('footer.categories'),   type: 'hash',   href: '/#categories'   },
-                { label: t('footer.designGallery'), type: 'router', to: '/marketplace'   },
+                { label: t('footer.howItWorks'), type: 'hash', href: '/#how-it-works' },
+                { label: t('footer.categories'), type: 'hash', href: '/#categories' },
+                { label: t('footer.designGallery'), type: 'router', to: '/marketplace' },
             ],
         },
         {
             title: t('footer.company'),
             links: [
-                { label: t('footer.aboutUs'),         type: 'router', to: '/about'            },
-                { label: t('footer.ourTailors'),      type: 'router', to: '/our-tailors'      },
+                { label: t('footer.aboutUs'), type: 'router', to: '/about' },
+                { label: t('footer.ourTailors'), type: 'router', to: '/our-tailors' },
                 { label: t('footer.tailorDashboard'), type: 'router', to: '/tailor-dashboard' },
             ],
         },
         {
             title: t('footer.support'),
             links: [
-                { label: t('footer.helpCenter'),   type: 'router', to: '/help'           },
-                { label: t('footer.contactUs'),    type: 'router', to: '/contact'        },
-                { label: t('footer.emailSupport'), type: 'modal',  modal: 'email-support' },
-                { label: t('footer.sizeGuide'),    type: 'modal',  modal: 'size-guide'   },
-                { label: t('footer.faq'),          type: 'hash',   href: '/#faq'         },
+                { label: t('footer.helpCenter'), type: 'router', to: '/help' },
+                { label: t('footer.contactUs'), type: 'router', to: '/contact' },
+                { label: t('footer.emailSupport'), type: 'modal', modal: 'email-support' },
+                { label: t('footer.sizeGuide'), type: 'modal', modal: 'size-guide' },
+                { label: t('footer.faq'), type: 'hash', href: '/#faq' },
             ],
         },
-        {
-            title: t('footer.legal'),
-            links: [
-                { label: t('footer.privacyPolicy'),   type: 'router', to: '/privacy'       },
-                { label: t('footer.termsOfService'),  type: 'router', to: '/terms'         },
-                { label: t('footer.refundPolicy'),    type: 'router', to: '/refund-policy' },
-            ],
-        },
+    ];
+
+    const legalLinks: FooterLink[] = [
+        { label: t('footer.privacyPolicy'), type: 'router', to: '/privacy' },
+        { label: t('footer.termsOfService'), type: 'router', to: '/terms' },
+        { label: t('footer.refundPolicy'), type: 'router', to: '/refund-policy' },
     ];
 
     return (
@@ -61,135 +81,172 @@ export function Footer() {
             <MeasurementGuideModal open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
             <EmailSupportModal open={emailSupportOpen} onClose={() => setEmailSupportOpen(false)} />
 
-            <footer className="bg-slate-900 text-slate-400">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
-                    {/* Top row */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 sm:gap-8 md:gap-10 pb-12">
-                        {/* Brand column */}
-                        <div className="col-span-2 sm:col-span-3 md:col-span-1">
-                            <Link to="/" className="text-2xl font-bold text-white">Kere</Link>
-                            <p className="mt-3 text-sm leading-relaxed mb-6">
+            <footer className="overflow-hidden border-t border-black/15 bg-[#f7f6f3] text-[#111111]">
+                <div className="mx-auto max-w-[1600px] px-5 pb-8 pt-14 sm:px-8 sm:pb-10 sm:pt-16 lg:px-10 lg:pt-20">
+                    <div className="grid gap-14 border-b border-black/15 pb-16 md:grid-cols-2 lg:grid-cols-[1.55fr_0.8fr_0.9fr_0.7fr] lg:gap-16 lg:pb-20">
+                        <div>
+                            <h2 className="text-xl font-medium uppercase tracking-normal text-[#111111] sm:text-2xl">
+                                {t('footer.stayUpdated')}
+                            </h2>
+
+                            <form onSubmit={handleSubmit} className="mt-7 max-w-md">
+                                <div className="grid grid-cols-[1fr_auto] items-center border-b border-black/35">
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(event) => setEmail(event.target.value)}
+                                        placeholder={t('footer.emailPlaceholder')}
+                                        aria-label={t('footer.emailPlaceholder')}
+                                        required
+                                        className="min-w-0 bg-transparent py-3 text-sm text-[#111111] outline-none placeholder:text-black/35"
+                                    />
+
+                                    <button
+                                        type="submit"
+                                        aria-label={t('footer.subscribe')}
+                                        className="inline-flex h-10 w-10 items-center justify-center transition-transform hover:translate-x-1"
+                                    >
+                                        <ArrowRight className="h-5 w-5 stroke-[1.4]" />
+                                    </button>
+                                </div>
+
+                                <p className="mt-3 max-w-sm text-[9px] leading-4 text-black/45">
+                                    {submitted ? t('footer.newsletterSuccess') : t('footer.newsletterDesc')}
+                                </p>
+                            </form>
+                        </div>
+
+                        {footerColumns.map((column) => (
+                            <FooterColumn key={column.title} title={column.title} links={column.links} onModalOpen={handleModalOpen} />
+                        ))}
+                    </div>
+
+                    <div className="grid gap-10 border-b border-black/15 py-12 lg:grid-cols-[1.55fr_0.8fr_0.9fr_0.7fr] lg:gap-16">
+                        <div>
+                            <p className="max-w-sm text-sm leading-7 text-black/55">
                                 {t('footer.tagline')}
                             </p>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex items-center gap-2">
-                                    <MapPin className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                                    <span>{t('footer.location')}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Phone className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                                    <span>+995 571139539</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Mail className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                                    <span>Kereforyou@gmail.com</span>
-                                </div>
+
+                            <div className="mt-5 flex flex-col gap-2 text-xs uppercase tracking-[0.02em] text-black/55">
+                                <span>{t('footer.location')}</span>
+                                <a href="tel:+995571139539" className="w-fit transition-opacity hover:opacity-45">
+                                    +995 571139539
+                                </a>
+                                <a href="mailto:Kereforyou@gmail.com" className="w-fit transition-opacity hover:opacity-45">
+                                    Kereforyou@gmail.com
+                                </a>
                             </div>
-                            {/* Social icons */}
-                            <div className="flex gap-3 mt-5">
-                                {[
-                                    { Icon: Facebook, label: 'Facebook' },
-                                    { Icon: Instagram, label: 'Instagram' },
-                                    { Icon: Twitter, label: 'Twitter' },
-                                ].map(({ Icon, label }) => (
-                                    <Button
-                                        key={label}
-                                        variant="ghost"
-                                        size="icon"
-                                        aria-label={label}
-                                        className="w-9 h-9 rounded-full border border-slate-700 hover:border-slate-500 hover:text-white text-slate-400"
-                                    >
-                                        <Icon className="w-4 h-4" />
-                                    </Button>
+                        </div>
+
+                        <div className="lg:col-span-2">
+                            <h3 className="text-sm font-medium uppercase tracking-normal">{t('footer.legal')}</h3>
+
+                            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-x-8">
+                                {legalLinks.map((item) => (
+                                    <FooterItem key={item.label} item={item} onModalOpen={handleModalOpen} />
                                 ))}
                             </div>
                         </div>
 
-                        {/* Link columns */}
-                        {footerColumns.map((col) => (
-                            <div key={col.title}>
-                                <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-4">
-                                    {col.title}
-                                </p>
-                                <ul className="space-y-3">
-                                    {col.links.map((l) => (
-                                        <li key={l.label}>
-                                            {l.type === 'router' && (
-                                                <Link to={l.to} className={linkClass}>{l.label}</Link>
-                                            )}
-                                            {l.type === 'hash' && (
-                                                <a href={l.href} className={linkClass}>{l.label}</a>
-                                            )}
-                                            {l.type === 'modal' && (
-                                                <Button
-                                                    variant="ghost"
-                                                    onClick={() => {
-                                                        if (l.modal === 'size-guide') setSizeGuideOpen(true);
-                                                        if (l.modal === 'email-support') setEmailSupportOpen(true);
-                                                    }}
-                                                    className={`${linkClass} h-auto p-0`}
-                                                >
-                                                    {l.label}
-                                                </Button>
-                                            )}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
-                    </div>
+                        <div>
+                            <h3 className="text-sm font-medium uppercase tracking-normal">Social</h3>
 
-                    {/* Separator */}
-                    <div className="border-t border-slate-800" />
-
-                    {/* Newsletter */}
-                    <div className="py-8 text-center">
-                        <p className="font-semibold text-white mb-1">{t('footer.stayUpdated')}</p>
-                        <p className="text-sm text-slate-400 mb-5">
-                            {t('footer.newsletterDesc')}
-                        </p>
-                        <form
-                            onSubmit={(e) => e.preventDefault()}
-                            className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 max-w-sm mx-auto w-full px-2"
-                        >
-                            <input
-                                type="email"
-                                placeholder={t('footer.emailPlaceholder')}
-                                className="flex-1 bg-slate-800 border border-slate-700 text-white text-sm px-4 py-2.5 rounded-lg placeholder:text-slate-500 focus:outline-none focus:border-slate-500"
-                            />
-                            <Button
-                                type="submit"
-                                variant="default"
-                                className="bg-white text-slate-900 text-sm font-medium px-5 py-2.5 hover:bg-slate-100 flex-shrink-0"
-                            >
-                                {t('footer.subscribe')}
-                            </Button>
-                        </form>
-                    </div>
-
-                    {/* Separator */}
-                    <div className="border-t border-slate-800" />
-
-                    {/* Bottom bar */}
-                    <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
-                        <span>© {new Date().getFullYear()} Kere. {t('footer.allRightsReserved')}</span>
-                        <div className="flex items-center gap-2 text-slate-500">
-                            <span>{t('footer.weAccept')}</span>
-                            <div className="flex items-center gap-2">
-                                <div className="border border-slate-700 rounded px-2 py-0.5 text-xs text-slate-300 flex items-center gap-1">
-                                    <CreditCard className="w-3 h-3" />
-                                </div>
-                                <div className="border border-slate-700 rounded px-2 py-0.5 text-xs font-bold text-slate-300">
-                                    VISA
-                                </div>
-                                <div className="border border-slate-700 rounded px-2 py-0.5 text-xs font-bold text-slate-300">
-                                    MC
-                                </div>
+                            <div className="mt-5 flex flex-col gap-3">
+                                {['Instagram', 'Facebook', 'X / Twitter'].map((label) => (
+                                    <button
+                                        key={label}
+                                        type="button"
+                                        aria-label={label}
+                                        className="w-fit text-xs uppercase tracking-[0.02em] text-black/60 transition-opacity hover:opacity-45"
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
+                    </div>
+
+                    <div className="grid items-end gap-10 pt-8 sm:grid-cols-2 lg:grid-cols-[1fr_auto_1fr]">
+                        <div className="flex flex-wrap items-center gap-7">
+                            <Link to="/" className="font-['Poppins'] text-[30px] font-medium leading-none tracking-normal sm:text-[34px]">
+                                Kere
+                            </Link>
+
+                            <button
+                                type="button"
+                                onClick={toggleLanguage}
+                                className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.04em] text-black/65 transition-opacity hover:opacity-45"
+                            >
+                                {i18n.language === 'ka' ? 'KA' : 'EN'}
+                                <ChevronDown className="h-3.5 w-3.5" />
+                            </button>
+
+                            <span className="inline-flex items-center gap-1.5 text-xs text-black/65">
+                                {t('footer.location')}
+                                <ChevronDown className="h-3.5 w-3.5" />
+                            </span>
+                        </div>
+
+                        <p className="text-left text-xl uppercase tracking-normal sm:text-right lg:text-center lg:text-2xl">#KERE CRAFT</p>
+
+                        <div className="text-left sm:text-right">
+                            <p className="text-xl uppercase tracking-normal lg:text-2xl">#MADE FOR YOU</p>
+                            <div className="mt-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.08em] text-black/45 sm:justify-end">
+                                <span>{t('footer.weAccept')}</span>
+                                <CreditCard className="h-3.5 w-3.5" />
+                                <span>VISA</span>
+                                <span>MC</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-9 flex flex-col gap-3 border-t border-black/10 pt-5 text-[10px] uppercase tracking-[0.08em] text-black/40 sm:flex-row sm:items-center sm:justify-between">
+                        <p>© {new Date().getFullYear()} Kere. {t('footer.allRightsReserved')}</p>
+
+                        <p>{t('footer.location')}</p>
                     </div>
                 </div>
             </footer>
         </>
+    );
+}
+
+function FooterColumn({ title, links, onModalOpen }: FooterColumnProps) {
+    return (
+        <div>
+            <h3 className="text-sm font-medium uppercase tracking-normal text-[#111111] sm:text-base">{title}</h3>
+
+            <div className="mt-6 flex flex-col gap-4">
+                {links.map((item) => (
+                    <FooterItem key={item.label} item={item} onModalOpen={onModalOpen} />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function FooterItem({ item, onModalOpen }: { item: FooterLink; onModalOpen: (modal: 'size-guide' | 'email-support') => void }) {
+    const className = 'w-fit text-xs uppercase tracking-[0.02em] text-black/60 transition-opacity hover:opacity-45';
+
+    if (item.type === 'router') {
+        return (
+            <Link to={item.to} className={className}>
+                {item.label}
+            </Link>
+        );
+    }
+
+    if (item.type === 'hash') {
+        return (
+            <a href={item.href} className={className}>
+                {item.label}
+            </a>
+        );
+    }
+
+    return (
+        <button type="button" onClick={() => onModalOpen(item.modal)} className={className}>
+            {item.label}
+        </button>
     );
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, X, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowRight, Plus, X, Loader2, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
@@ -180,85 +180,104 @@ export function FAQSection() {
 
     return (
         <>
-        <section id="faq" className="py-16 md:py-24 bg-slate-50">
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5 }}
-                    className="text-center mb-12"
-                >
-                    <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center mx-auto mb-5 text-2xl">
-                        ❓
-                    </div>
-                    <h2 className="font-serif text-3xl md:text-4xl font-semibold text-slate-900 mb-4 tracking-tight">{t('faq.sectionTitle')}</h2>
-                    <p className="text-slate-500">{t('faq.sectionSubtitle')}</p>
-                </motion.div>
+        <section id="faq" className="overflow-hidden bg-[#f7f6f3] px-4 py-20 sm:px-6 md:py-28 lg:px-8">
+            <div className="mx-auto max-w-[1500px]">
+                <div className="border-b border-black/20 pb-8 sm:pb-10">
+                    <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.28em] text-[#8c8c8c]">
+                        {t('faq.emailSupport')}
+                    </p>
 
-                <div className="space-y-3">
-                    {faqs.map((faq, i) => (
-                        <motion.div
-                            key={i}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: i * 0.1 }}
-                            className="bg-white border border-slate-200 rounded-xl overflow-hidden"
-                        >
-                            <button
-                                onClick={() => setOpen(open === i ? null : i)}
-                                className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left hover:bg-slate-50 transition-colors"
-                            >
-                                <span className="font-medium text-slate-900">{faq.q}</span>
-                                <motion.div
-                                    animate={{ rotate: open === i ? 180 : 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="flex-shrink-0"
-                                >
-                                    <ChevronDown className="w-5 h-5 text-slate-400" />
-                                </motion.div>
-                            </button>
-                            <AnimatePresence initial={false}>
-                                {open === i && (
-                                    <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.25 }}
-                                    >
-                                        <div className="px-6 pb-5 text-slate-500 leading-relaxed text-sm border-t border-slate-100 pt-4">
-                                            {faq.a}
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </motion.div>
-                    ))}
+                    <h2 className="font-serif text-[clamp(1.65rem,3.1vw,3rem)] font-medium uppercase leading-[1] tracking-normal text-[#111111]">
+                        {t('faq.sectionTitle')}
+                    </h2>
+
+                    <p className="mt-8 max-w-xl text-sm leading-7 text-[#717171] sm:text-base">
+                        {t('faq.sectionSubtitle')}
+                    </p>
                 </div>
 
-                {/* Still have questions? */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5 }}
-                    className="mt-10 bg-white border border-slate-200 rounded-2xl p-8 text-center"
-                >
-                    <p className="font-semibold text-slate-900 text-lg mb-2">{t('faq.stillHaveQuestions')}</p>
-                    <p className="text-slate-500 text-sm mb-6">
-                        {t('faq.stillHaveQuestionsDesc')}
-                    </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-                        <Button
-                            variant="default"
-                            onClick={handleEmailSupport}
-                            className="bg-brand hover:bg-brand-dark text-sm font-medium px-6 py-3"
-                        >
-                            {t('faq.emailSupport')}
-                        </Button>
+                <div className="mx-auto max-w-5xl">
+                    {faqs.map((faq, i) => {
+                        const isOpen = open === i;
+                        const number = String(i + 1).padStart(2, '0');
+                        const panelId = `faq-panel-${i}`;
+                        const buttonId = `faq-button-${i}`;
+
+                        return (
+                            <article key={faq.q} className="border-b border-black/20">
+                                <button
+                                    id={buttonId}
+                                    type="button"
+                                    onClick={() => setOpen(isOpen ? null : i)}
+                                    aria-expanded={isOpen}
+                                    aria-controls={panelId}
+                                    className="group grid w-full grid-cols-[52px_minmax(0,1fr)_36px] items-center gap-4 py-6 text-left sm:grid-cols-[84px_minmax(0,1fr)_46px] sm:py-8 lg:grid-cols-[110px_minmax(0,1fr)_50px] lg:py-9"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xs font-bold tracking-[0.12em] text-[#333333]">{number}</span>
+
+                                        <ArrowRight className="h-3.5 w-3.5 text-[#444444] transition-transform duration-300 group-hover:translate-x-1" />
+                                    </div>
+
+                                    <h3 className="justify-self-start text-sm font-semibold leading-6 tracking-normal text-[#111111] sm:text-base">
+                                        {faq.q}
+                                    </h3>
+
+                                    <span className="flex h-9 w-9 items-center justify-center justify-self-end rounded-full transition-colors duration-300 group-hover:bg-black/5 sm:h-11 sm:w-11">
+                                        <Plus
+                                            className={[
+                                                'h-5 w-5 stroke-[1.4] text-[#111111] transition-transform duration-300',
+                                                isOpen ? 'rotate-45' : '',
+                                            ].join(' ')}
+                                        />
+                                    </span>
+                                </button>
+
+                                <div
+                                    id={panelId}
+                                    role="region"
+                                    aria-labelledby={buttonId}
+                                    className={[
+                                        'grid transition-[grid-template-rows,opacity] duration-500 ease-out',
+                                        isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+                                    ].join(' ')}
+                                >
+                                    <div className="overflow-hidden">
+                                        <div className="grid grid-cols-[52px_minmax(0,1fr)_36px] gap-4 pb-7 sm:grid-cols-[84px_minmax(0,1fr)_46px] sm:pb-9 lg:grid-cols-[110px_minmax(0,1fr)_50px] lg:pb-10">
+                                            <div />
+
+                                            <p className="max-w-2xl text-xs leading-6 text-[#707070] sm:text-sm">
+                                                {faq.a}
+                                            </p>
+
+                                            <div />
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        );
+                    })}
+                </div>
+
+                <div className="mx-auto flex max-w-5xl flex-col gap-6 pt-10 sm:flex-row sm:items-end sm:justify-between md:pt-14">
+                    <div>
+                        <p className="max-w-lg font-serif text-lg font-medium leading-tight tracking-normal text-[#111111] sm:text-xl">
+                            {t('faq.stillHaveQuestions')}
+                        </p>
+                        <p className="mt-3 max-w-lg text-sm leading-7 text-[#717171] sm:text-base">
+                            {t('faq.stillHaveQuestionsDesc')}
+                        </p>
                     </div>
-                </motion.div>
+
+                    <button
+                        type="button"
+                        onClick={handleEmailSupport}
+                        className="inline-flex min-h-[50px] w-fit items-center justify-center gap-3 border border-black/30 px-7 text-[11px] font-bold uppercase tracking-[0.14em] text-[#111111] transition-colors duration-200 hover:bg-[#111111] hover:text-white"
+                    >
+                        {t('faq.emailSupport')}
+                        <ArrowRight className="h-4 w-4" />
+                    </button>
+                </div>
             </div>
         </section>
 
