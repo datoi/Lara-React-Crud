@@ -11,7 +11,7 @@ export function ErrorFallback({ message = 'Failed to load data.', onRetry }: Pro
     const { t } = useTranslation();
     return (
         <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-            <p className="text-slate-500 text-sm mb-4">{message} {t('errorFallback.hint')}</p>
+            <p className="text-destructive text-sm mb-4">{message} {t('errorFallback.hint')}</p>
             {onRetry && (
                 <Button
                     variant="default"

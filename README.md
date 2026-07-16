@@ -1201,4 +1201,51 @@ php artisan migrate:fresh --seed   # creates all tables + Classic Shirt data
 php artisan storage:link           # serves SVG assets from /storage/layers/
 ```
 
+### 2026-07-12 — Auth Form Error Messages Now Red
+
+Error messages on login and registration rendered in grey (`text-slate-600` / `border-slate-400` / slate banners) and were barely distinguishable from helper text. All auth-flow error states now use the theme's `--color-destructive` red token (first consumer of it): `text-destructive` for messages, `border-destructive` for invalid inputs, `bg-destructive/10 border-destructive/30` for general-error banners.
+
+- `Login.tsx` — general banner + email/password field errors and borders.
+- `RegisterCustomer.tsx` — general banner (form + OTP verify step), all field errors, OTP digit boxes' error state.
+- `RegisterTailor.tsx` — general banner + all field errors and borders.
+- `AdminLogin.tsx` — error banner (red on dark background).
+- `PhoneInput.tsx` — error border on both the country selector and the number input.
+
+Verified in the browser (headless Chrome): empty-submit field errors and wrong-credential banners render `rgb(239, 68, 68)` on both login and register pages; Georgian i18n strings intact.
+
+**Follow-up (same day): full-app sweep.** Every remaining grey error message was converted to the same destructive treatment:
+
+- `ErrorFallback.tsx` — shared fetch-error component (used by Marketplace and others).
+- `DesignerApp.tsx` — upload-error banner + products fetch error.
+- `CustomizePage.tsx` — load-error / product-not-found message.
+- `TailorSelectStep.tsx`, `MyDesignsPage.tsx`, `OrderReview.tsx`, `ProductCustomization.tsx` — fetch/submit/order errors.
+- Modals: `AddProductModal`, `EmailSupportModal`, `ReviewModal`, `SaveDesignModal`, FAQ newsletter error.
+- `TailorProfileEditor.tsx` (upload + save errors), `StatsCards.tsx` (stats fetch), `OrderChat.tsx` (load error, icon at `text-destructive/40`).
+
+Deliberately left grey: the measurement out-of-range *warnings* in `DesignCanvas.tsx` / `ProductCustomization.tsx` — they are non-blocking hints, not errors. Verified in browser: `/customize/<bogus-slug>` not-found and Marketplace fetch-failure (API route aborted) both render red.
+
+### 2026-07-12 — Phone-Only Tailor Registration & Phone Login
+
+Many prospective tailors don't have email addresses. Tailors can now register with just a phone number; email is optional. All users can log in with email **or** phone.
+
+**Database** (`2026_07_12_000001_...`): `users.email` nullable, `users.phone` unique (existing duplicates cleared, keeping the oldest account), `verifications.email` nullable, `verifications.phone_attempts` added.
+
+**Backend:**
+- `SmsService` (`app/Services/SmsService.php`) — generic SMS sender extracted from `OtpService`'s Twilio logic; logs the message when Twilio is unconfigured (dev). Single swap point if we move to a local Georgian gateway (smsoffice.ge etc.) later.
+- `POST /api/register/initiate` — email now `required_if:role,customer`; phone must be unique and `+<digits>` format. Without email, the OTP is sent by SMS and the response carries `channel: "phone"` with a masked number.
+- `POST /api/register/verify-phone` — no longer requires prior email verification for email-less registrations; now enforces the same 5-attempt limit as the email step (previously unlimited — closed brute-force gap).
+- `POST /api/login` — `login` field accepts email or phone (tolerant of spacing and missing +995 prefix); legacy `email` field still accepted. Generic 401 message.
+- Legacy unverified `POST /api/register` removed — tailors previously registered with **no verification at all**; they now verify via OTP like customers.
+- SMS fallback (Georgian) when a tailor has no email: approval, rejection (with reason), and new-order alerts.
+
+**Frontend:**
+- `OtpStep` extracted from RegisterCustomer into `components/OtpStep.tsx` (shared).
+- RegisterTailor: email marked optional, initiate flow, then SMS-OTP (or email-OTP if email given) step, then the pending-approval screen.
+- Login: single "Email or phone number" field; localized invalid-credentials message on 401.
+- Admin dashboard + EmailSupportModal fall back to phone where email is null; `AuthUser.email/phone` typed nullable.
+
+**Verified** (headless Chrome + API): phone-only tailor registration end-to-end with OTP read from the SMS log; login by phone in local 9-digit format; customer email-OTP flow; login by email; duplicate phone rejected; wrong password 401; Georgian approval SMS logged for an email-less tailor.
+
+**Before production:** set `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM` on Railway (the SDK is already in composer.json) — until then SMS goes to the log only, so phone-only registration cannot complete in prod.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

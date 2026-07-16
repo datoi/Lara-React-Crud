@@ -251,7 +251,7 @@ export default function OrderReview() {
                         {/* Actions */}
                         <div className="p-6">
                             {submitError && (
-                                <div className="flex items-start gap-2 mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700">
+                                <div className="flex items-start gap-2 mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive">
                                     <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                                     <span>{submitError}</span>
                                 </div>

@@ -498,7 +498,10 @@
     "errorNetwork": "კავშირის შეცდომა. სცადე თავიდან.",
     "tailorPendingTitle": "განაცხადი გაიგზავნა",
     "tailorPendingDesc": "შენი განაცხადი განიხილება. დამტკიცების შემდეგ ელ-ფოსტით გაცნობებთ — ჩვეულებრივ 1–2 სამუშაო დღის ვადაში.",
-    "tailorPendingBack": "მთავარ გვერდზე დაბრუნება"
+    "tailorPendingBack": "მთავარ გვერდზე დაბრუნება",
+    "optional": "არასავალდებულო",
+    "verifyPhoneTitle": "დაადასტურე ტელეფონი",
+    "verifyPhoneDesc": "6-ნიშნა კოდი გამოგიგზავნეთ SMS-ით: {{phone}}"
   },
   "marketplace": {
     "title": "მარკეტი",
@@ -782,7 +785,10 @@
     "errorRequired": "სავალდებულო",
     "errorInvalidEmail": "არასწორი ელ-ფოსტა",
     "errorLoginFailed": "შესვლა ვერ მოხერხდა. სცადე თავიდან.",
-    "errorNetwork": "კავშირის შეცდომა. სცადე თავიდან."
+    "errorNetwork": "კავშირის შეცდომა. სცადე თავიდან.",
+    "emailOrPhoneLabel": "ელ-ფოსტა ან ტელეფონის ნომერი",
+    "emailOrPhonePlaceholder": "you@example.com ან 555 123 456",
+    "errorInvalidCredentials": "არასწორი მონაცემები ან პაროლი."
   },
   "terms": {
     "eyebrow": "სამართლებრივი",

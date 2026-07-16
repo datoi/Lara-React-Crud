@@ -1,6 +1,6 @@
 import { type ChangeEvent, type FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
     ArrowLeft,
     ArrowRight,
@@ -8,8 +8,11 @@ import {
     Eye,
     EyeOff,
     Loader2,
+    Mail,
+    Smartphone,
 } from 'lucide-react';
 import { PhoneInput } from '../components/PhoneInput';
+import { OtpStep } from '../components/OtpStep';
 import { saveAuth, type AuthUser } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
@@ -31,10 +34,13 @@ const EMPTY: FormState = {
     password_confirmation: '',
 };
 
+type Step = 'form' | 'email-otp' | 'phone-otp';
+
 export default function RegisterTailor() {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
+    const [step, setStep] = useState<Step>('form');
     const [form, setForm] = useState<FormState>(EMPTY);
     const [errors, setErrors] = useState<
         Partial<FormState & { general: string }>
@@ -43,6 +49,9 @@ export default function RegisterTailor() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [pendingApproval, setPendingApproval] = useState(false);
+
+    const [verificationId, setVerificationId] = useState('');
+    const [contactHint, setContactHint] = useState('');
 
     const set =
         (field: keyof FormState) =>
@@ -72,9 +81,8 @@ export default function RegisterTailor() {
             nextErrors.last_name = t('register.errorRequired');
         }
 
-        if (!form.email.trim()) {
-            nextErrors.email = t('register.errorRequired');
-        } else if (
+        if (
+            form.email.trim() &&
             !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
         ) {
             nextErrors.email = t('register.errorInvalidEmail');
@@ -113,7 +121,7 @@ export default function RegisterTailor() {
         setLoading(true);
 
         try {
-            const response = await fetch('/api/register', {
+            const response = await fetch('/api/register/initiate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -121,6 +129,7 @@ export default function RegisterTailor() {
                 },
                 body: JSON.stringify({
                     ...form,
+                    email: form.email.trim() || null,
                     role: 'tailor',
                 }),
             });
@@ -153,14 +162,14 @@ export default function RegisterTailor() {
                 return;
             }
 
-            const user = data.user as AuthUser;
+            setVerificationId(data.verification_id);
 
-            saveAuth(user, data.token as string);
-
-            if (user.approval_status === 'pending') {
-                setPendingApproval(true);
+            if (data.channel === 'phone') {
+                setContactHint(data.phone ?? form.phone);
+                setStep('phone-otp');
             } else {
-                navigate('/tailor-dashboard');
+                setContactHint(data.email ?? form.email);
+                setStep('email-otp');
             }
         } catch {
             setErrors({
@@ -168,6 +177,18 @@ export default function RegisterTailor() {
             });
         } finally {
             setLoading(false);
+        }
+    }
+
+    function handleVerified(data: Record<string, unknown>) {
+        const user = data.user as AuthUser;
+
+        saveAuth(user, data.token as string);
+
+        if (user.approval_status === 'pending') {
+            setPendingApproval(true);
+        } else {
+            navigate('/tailor-dashboard');
         }
     }
 
@@ -250,308 +271,367 @@ export default function RegisterTailor() {
                     </header>
 
                     <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center py-12">
-                        <div className="mb-8 text-center">
-                            <h1 className="font-serif text-[clamp(2.4rem,4vw,3.7rem)] font-medium leading-[0.96] tracking-[-0.05em]">
-                                {t('register.tailorTitle')}
-                            </h1>
+                        <AnimatePresence mode="wait">
+                        {step === 'form' && (
+                        <motion.div
+                            key="form"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <div className="mb-8 text-center">
+                                <h1 className="font-serif text-[clamp(2.4rem,4vw,3.7rem)] font-medium leading-[0.96] tracking-[-0.05em]">
+                                    {t('register.tailorTitle')}
+                                </h1>
 
-                            <p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-black/45">
-                                {t('register.tailorSubtitle')}
-                            </p>
-                        </div>
-
-                        {errors.general && (
-                            <div className="mb-5 rounded-md border border-[#6F1D24]/20 bg-[#6F1D24]/5 px-4 py-3 text-sm text-[#6F1D24]">
-                                {errors.general}
+                                <p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-black/45">
+                                    {t('register.tailorSubtitle')}
+                                </p>
                             </div>
+
+                            {errors.general && (
+                                <div className="mb-5 rounded-md border border-[#6F1D24]/20 bg-[#6F1D24]/5 px-4 py-3 text-sm text-[#6F1D24]">
+                                    {errors.general}
+                                </div>
+                            )}
+
+                            <form
+                                onSubmit={handleSubmit}
+                                noValidate
+                                className="space-y-4"
+                            >
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label
+                                            htmlFor="tailor-first-name"
+                                            className="mb-1.5 block text-xs font-medium"
+                                        >
+                                            {t('register.firstName')}
+                                        </label>
+
+                                        <input
+                                            id="tailor-first-name"
+                                            type="text"
+                                            value={form.first_name}
+                                            onChange={set('first_name')}
+                                            placeholder={t(
+                                                'register.firstNamePlaceholder',
+                                            )}
+                                            autoComplete="given-name"
+                                            className={inputClass(
+                                                Boolean(errors.first_name),
+                                            )}
+                                        />
+
+                                        {errors.first_name && (
+                                            <p className="mt-1.5 text-xs text-[#6F1D24]">
+                                                {errors.first_name}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            htmlFor="tailor-last-name"
+                                            className="mb-1.5 block text-xs font-medium"
+                                        >
+                                            {t('register.lastName')}
+                                        </label>
+
+                                        <input
+                                            id="tailor-last-name"
+                                            type="text"
+                                            value={form.last_name}
+                                            onChange={set('last_name')}
+                                            placeholder={t(
+                                                'register.lastNamePlaceholder',
+                                            )}
+                                            autoComplete="family-name"
+                                            className={inputClass(
+                                                Boolean(errors.last_name),
+                                            )}
+                                        />
+
+                                        {errors.last_name && (
+                                            <p className="mt-1.5 text-xs text-[#6F1D24]">
+                                                {errors.last_name}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label
+                                        htmlFor="tailor-email"
+                                        className="mb-1.5 block text-xs font-medium"
+                                    >
+                                        {t('register.email')}{' '}
+                                        <span className="font-normal text-black/40">
+                                            ({t('register.optional')})
+                                        </span>
+                                    </label>
+
+                                    <input
+                                        id="tailor-email"
+                                        type="email"
+                                        value={form.email}
+                                        onChange={set('email')}
+                                        placeholder={t(
+                                            'register.emailPlaceholder',
+                                        )}
+                                        autoComplete="email"
+                                        className={inputClass(
+                                            Boolean(errors.email),
+                                        )}
+                                    />
+
+                                    {errors.email && (
+                                        <p className="mt-1.5 text-xs text-[#6F1D24]">
+                                            {errors.email}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="mb-1.5 block text-xs font-medium">
+                                        {t('register.phone')}
+                                    </label>
+
+                                    <PhoneInput
+                                        value={form.phone}
+                                        onChange={(phone) => {
+                                            setForm((current) => ({
+                                                ...current,
+                                                phone,
+                                            }));
+
+                                            setErrors((current) => ({
+                                                ...current,
+                                                phone: undefined,
+                                                general: undefined,
+                                            }));
+                                        }}
+                                        error={Boolean(errors.phone)}
+                                    />
+
+                                    {errors.phone && (
+                                        <p className="mt-1.5 text-xs text-[#6F1D24]">
+                                            {errors.phone}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label
+                                        htmlFor="tailor-password"
+                                        className="mb-1.5 block text-xs font-medium"
+                                    >
+                                        {t('register.password')}
+                                    </label>
+
+                                    <div className="relative">
+                                        <input
+                                            id="tailor-password"
+                                            type={
+                                                showPassword
+                                                    ? 'text'
+                                                    : 'password'
+                                            }
+                                            value={form.password}
+                                            onChange={set('password')}
+                                            placeholder={t(
+                                                'register.passwordPlaceholder',
+                                            )}
+                                            autoComplete="new-password"
+                                            className={`${inputClass(
+                                                Boolean(errors.password),
+                                            )} pr-11`}
+                                        />
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowPassword(
+                                                    (current) => !current,
+                                                )
+                                            }
+                                            aria-label={
+                                                showPassword
+                                                    ? 'Hide password'
+                                                    : 'Show password'
+                                            }
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-black/35 transition hover:text-black"
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="h-4 w-4" />
+                                            ) : (
+                                                <Eye className="h-4 w-4" />
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {errors.password && (
+                                        <p className="mt-1.5 text-xs text-[#6F1D24]">
+                                            {errors.password}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label
+                                        htmlFor="tailor-password-confirmation"
+                                        className="mb-1.5 block text-xs font-medium"
+                                    >
+                                        {t(
+                                            'register.confirmPassword',
+                                        )}
+                                    </label>
+
+                                    <div className="relative">
+                                        <input
+                                            id="tailor-password-confirmation"
+                                            type={
+                                                showConfirm
+                                                    ? 'text'
+                                                    : 'password'
+                                            }
+                                            value={
+                                                form.password_confirmation
+                                            }
+                                            onChange={set(
+                                                'password_confirmation',
+                                            )}
+                                            placeholder={t(
+                                                'register.confirmPasswordPlaceholder',
+                                            )}
+                                            autoComplete="new-password"
+                                            className={`${inputClass(
+                                                Boolean(
+                                                    errors.password_confirmation,
+                                                ),
+                                            )} pr-11`}
+                                        />
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowConfirm(
+                                                    (current) => !current,
+                                                )
+                                            }
+                                            aria-label={
+                                                showConfirm
+                                                    ? 'Hide password'
+                                                    : 'Show password'
+                                            }
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-black/35 transition hover:text-black"
+                                        >
+                                            {showConfirm ? (
+                                                <EyeOff className="h-4 w-4" />
+                                            ) : (
+                                                <Eye className="h-4 w-4" />
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {errors.password_confirmation && (
+                                        <p className="mt-1.5 text-xs text-[#6F1D24]">
+                                            {
+                                                errors.password_confirmation
+                                            }
+                                        </p>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#181818] px-6 text-sm font-medium text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            {t(
+                                                'register.sendingCode',
+                                            )}
+                                        </>
+                                    ) : (
+                                        t('register.joinAsTailor')
+                                    )}
+                                </button>
+                            </form>
+
+                            <div className="mt-7 space-y-2 text-center text-xs text-black/45">
+                                <p>
+                                    {t('register.haveAccount')}{' '}
+                                    <Link
+                                        to="/login/tailor"
+                                        className="font-medium text-black underline underline-offset-4"
+                                    >
+                                        {t('register.signIn')}
+                                    </Link>
+                                </p>
+
+                                <p>
+                                    {t('register.lookingToOrder')}{' '}
+                                    <Link
+                                        to="/register/customer"
+                                        className="font-medium text-black underline underline-offset-4"
+                                    >
+                                        {t(
+                                            'register.registerAsCustomer',
+                                        )}
+                                    </Link>
+                                </p>
+                            </div>
+                        </motion.div>
                         )}
 
-                        <form
-                            onSubmit={handleSubmit}
-                            noValidate
-                            className="space-y-4"
+                        {step === 'phone-otp' && (
+                        <motion.div
+                            key="phone-otp"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.5 }}
                         >
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <div>
-                                    <label
-                                        htmlFor="tailor-first-name"
-                                        className="mb-1.5 block text-xs font-medium"
-                                    >
-                                        {t('register.firstName')}
-                                    </label>
+                            <OtpStep
+                                icon={<Smartphone className="w-6 h-6 text-slate-600" />}
+                                title={t('register.verifyPhoneTitle')}
+                                description={t('register.verifyPhoneDesc', { phone: contactHint })}
+                                verificationId={verificationId}
+                                otpType="phone"
+                                endpoint="/api/register/verify-phone"
+                                onSuccess={handleVerified}
+                                onBack={() => setStep('form')}
+                                isLastStep
+                            />
+                        </motion.div>
+                        )}
 
-                                    <input
-                                        id="tailor-first-name"
-                                        type="text"
-                                        value={form.first_name}
-                                        onChange={set('first_name')}
-                                        placeholder={t(
-                                            'register.firstNamePlaceholder',
-                                        )}
-                                        autoComplete="given-name"
-                                        className={inputClass(
-                                            Boolean(errors.first_name),
-                                        )}
-                                    />
-
-                                    {errors.first_name && (
-                                        <p className="mt-1.5 text-xs text-[#6F1D24]">
-                                            {errors.first_name}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label
-                                        htmlFor="tailor-last-name"
-                                        className="mb-1.5 block text-xs font-medium"
-                                    >
-                                        {t('register.lastName')}
-                                    </label>
-
-                                    <input
-                                        id="tailor-last-name"
-                                        type="text"
-                                        value={form.last_name}
-                                        onChange={set('last_name')}
-                                        placeholder={t(
-                                            'register.lastNamePlaceholder',
-                                        )}
-                                        autoComplete="family-name"
-                                        className={inputClass(
-                                            Boolean(errors.last_name),
-                                        )}
-                                    />
-
-                                    {errors.last_name && (
-                                        <p className="mt-1.5 text-xs text-[#6F1D24]">
-                                            {errors.last_name}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label
-                                    htmlFor="tailor-email"
-                                    className="mb-1.5 block text-xs font-medium"
-                                >
-                                    {t('register.email')}
-                                </label>
-
-                                <input
-                                    id="tailor-email"
-                                    type="email"
-                                    value={form.email}
-                                    onChange={set('email')}
-                                    placeholder={t(
-                                        'register.emailPlaceholder',
-                                    )}
-                                    autoComplete="email"
-                                    className={inputClass(
-                                        Boolean(errors.email),
-                                    )}
-                                />
-
-                                {errors.email && (
-                                    <p className="mt-1.5 text-xs text-[#6F1D24]">
-                                        {errors.email}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="mb-1.5 block text-xs font-medium">
-                                    {t('register.phone')}
-                                </label>
-
-                                <PhoneInput
-                                    value={form.phone}
-                                    onChange={(phone) => {
-                                        setForm((current) => ({
-                                            ...current,
-                                            phone,
-                                        }));
-
-                                        setErrors((current) => ({
-                                            ...current,
-                                            phone: undefined,
-                                            general: undefined,
-                                        }));
-                                    }}
-                                    error={Boolean(errors.phone)}
-                                />
-
-                                {errors.phone && (
-                                    <p className="mt-1.5 text-xs text-[#6F1D24]">
-                                        {errors.phone}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label
-                                    htmlFor="tailor-password"
-                                    className="mb-1.5 block text-xs font-medium"
-                                >
-                                    {t('register.password')}
-                                </label>
-
-                                <div className="relative">
-                                    <input
-                                        id="tailor-password"
-                                        type={
-                                            showPassword
-                                                ? 'text'
-                                                : 'password'
-                                        }
-                                        value={form.password}
-                                        onChange={set('password')}
-                                        placeholder={t(
-                                            'register.passwordPlaceholder',
-                                        )}
-                                        autoComplete="new-password"
-                                        className={`${inputClass(
-                                            Boolean(errors.password),
-                                        )} pr-11`}
-                                    />
-
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setShowPassword(
-                                                (current) => !current,
-                                            )
-                                        }
-                                        aria-label={
-                                            showPassword
-                                                ? 'Hide password'
-                                                : 'Show password'
-                                        }
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-black/35 transition hover:text-black"
-                                    >
-                                        {showPassword ? (
-                                            <EyeOff className="h-4 w-4" />
-                                        ) : (
-                                            <Eye className="h-4 w-4" />
-                                        )}
-                                    </button>
-                                </div>
-
-                                {errors.password && (
-                                    <p className="mt-1.5 text-xs text-[#6F1D24]">
-                                        {errors.password}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label
-                                    htmlFor="tailor-password-confirmation"
-                                    className="mb-1.5 block text-xs font-medium"
-                                >
-                                    {t(
-                                        'register.confirmPassword',
-                                    )}
-                                </label>
-
-                                <div className="relative">
-                                    <input
-                                        id="tailor-password-confirmation"
-                                        type={
-                                            showConfirm
-                                                ? 'text'
-                                                : 'password'
-                                        }
-                                        value={
-                                            form.password_confirmation
-                                        }
-                                        onChange={set(
-                                            'password_confirmation',
-                                        )}
-                                        placeholder={t(
-                                            'register.confirmPasswordPlaceholder',
-                                        )}
-                                        autoComplete="new-password"
-                                        className={`${inputClass(
-                                            Boolean(
-                                                errors.password_confirmation,
-                                            ),
-                                        )} pr-11`}
-                                    />
-
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setShowConfirm(
-                                                (current) => !current,
-                                            )
-                                        }
-                                        aria-label={
-                                            showConfirm
-                                                ? 'Hide password'
-                                                : 'Show password'
-                                        }
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-black/35 transition hover:text-black"
-                                    >
-                                        {showConfirm ? (
-                                            <EyeOff className="h-4 w-4" />
-                                        ) : (
-                                            <Eye className="h-4 w-4" />
-                                        )}
-                                    </button>
-                                </div>
-
-                                {errors.password_confirmation && (
-                                    <p className="mt-1.5 text-xs text-[#6F1D24]">
-                                        {
-                                            errors.password_confirmation
-                                        }
-                                    </p>
-                                )}
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#181818] px-6 text-sm font-medium text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                        {t(
-                                            'register.creatingAccount',
-                                        )}
-                                    </>
-                                ) : (
-                                    t('register.joinAsTailor')
-                                )}
-                            </button>
-                        </form>
-
-                        <div className="mt-7 space-y-2 text-center text-xs text-black/45">
-                            <p>
-                                {t('register.haveAccount')}{' '}
-                                <Link
-                                    to="/login/tailor"
-                                    className="font-medium text-black underline underline-offset-4"
-                                >
-                                    {t('register.signIn')}
-                                </Link>
-                            </p>
-
-                            <p>
-                                {t('register.lookingToOrder')}{' '}
-                                <Link
-                                    to="/register/customer"
-                                    className="font-medium text-black underline underline-offset-4"
-                                >
-                                    {t(
-                                        'register.registerAsCustomer',
-                                    )}
-                                </Link>
-                            </p>
-                        </div>
+                        {step === 'email-otp' && (
+                        <motion.div
+                            key="email-otp"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <OtpStep
+                                icon={<Mail className="w-6 h-6 text-slate-600" />}
+                                title={t('register.verifyEmailTitle')}
+                                description={t('register.verifyEmailDesc', { email: contactHint })}
+                                verificationId={verificationId}
+                                otpType="email"
+                                endpoint="/api/register/verify-email"
+                                onSuccess={handleVerified}
+                                onBack={() => setStep('form')}
+                                isLastStep
+                            />
+                        </motion.div>
+                        )}
+                        </AnimatePresence>
                     </div>
                 </section>
 

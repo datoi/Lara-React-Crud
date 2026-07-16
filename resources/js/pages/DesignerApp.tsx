@@ -308,7 +308,7 @@ function UploadPanel({
                 </div>
 
                 {uploadError && (
-                    <p className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5">
+                    <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-4 py-2.5">
                         {uploadError}
                     </p>
                 )}
@@ -401,7 +401,7 @@ function ProductStep({
                 </div>
             )}
 
-            {error && <p className="text-slate-500 text-sm">{error}</p>}
+            {error && <p className="text-destructive text-sm">{error}</p>}
 
             {!loading && !error && products.length === 0 && (
                 <div className="bg-white rounded-lg border border-slate-200 p-10 text-center">

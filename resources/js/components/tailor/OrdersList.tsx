@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, CheckCircle, Loader2, MessageCircle, Package } from 'lucide-react';
+import { X, Loader2, MessageCircle, Package } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { OrderChat } from '../OrderChat';
@@ -110,7 +110,6 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
     const cd = order.custom_design_data;
 
     const [actioning,  setActioning]  = useState<string | null>(null);
-    const [actionDone, setActionDone] = useState(false);
     const [actionErr,  setActionErr]  = useState(false);
     const [activeTab,  setActiveTab]  = useState<'details' | 'messages'>(initialTab);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -386,19 +385,6 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                     )}
 
                                     <AnimatePresence>
-                                        {actionDone && (
-                                            <motion.div
-                                                key="done"
-                                                initial={{ opacity: 0, y: 6 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0 }}
-                                                transition={{ duration: 0.3 }}
-                                                className="flex items-center gap-1.5 text-xs font-medium text-slate-900"
-                                            >
-                                                <CheckCircle className="w-3.5 h-3.5" />
-                                                {t('tailorComponents.statusSaved')}
-                                            </motion.div>
-                                        )}
                                         {actionErr && (
                                             <motion.div
                                                 key="err"
