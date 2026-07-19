@@ -103,8 +103,8 @@ function OpenOrderCard({ order, onRequested }: { order: OpenOrder; onRequested: 
                     {measurements.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
                             {measurements.map(([k, v]) => (
-                                <span key={k} className="text-xs bg-slate-50 border border-slate-200 text-slate-600 px-2 py-0.5 rounded capitalize">
-                                    {k}: {v} {t('tailorComponents.cmUnit')}
+                                <span key={k} className="text-xs bg-slate-50 border border-slate-200 text-slate-600 px-2 py-0.5 rounded">
+                                    <span className="capitalize">{t(`orderReview.size_${k}`, k)}</span>: {v} {t('tailorComponents.cmUnit')}
                                 </span>
                             ))}
                         </div>
@@ -174,16 +174,22 @@ function OpenOrderCard({ order, onRequested }: { order: OpenOrder; onRequested: 
 export function AvailableDesigns() {
     const { t } = useTranslation();
     const token = getAuthToken();
-    const [orders,  setOrders]  = useState<OpenOrder[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [orders,    setOrders]    = useState<OpenOrder[]>([]);
+    const [loading,   setLoading]   = useState(true);
+    const [loadError, setLoadError] = useState(false);
 
     const fetchOpenOrders = useCallback(async () => {
         if (!token) { setLoading(false); return; }
+        setLoading(true);
+        setLoadError(false);
         try {
             const res = await fetch('/api/tailor/open-orders', {
                 headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
             });
-            if (res.ok) setOrders((await res.json()).orders ?? []);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            setOrders((await res.json()).orders ?? []);
+        } catch {
+            setLoadError(true);
         } finally {
             setLoading(false);
         }
@@ -208,6 +214,13 @@ export function AvailableDesigns() {
             {loading ? (
                 <div className="flex justify-center py-10">
                     <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+                </div>
+            ) : loadError ? (
+                <div className="px-6 py-10 text-center">
+                    <p className="text-destructive text-sm">{t('tailorComponents.openDesignsLoadFailed')}</p>
+                    <Button variant="outline" size="sm" onClick={fetchOpenOrders} className="mt-3 text-xs">
+                        {t('tailorComponents.openDesignsRetry')}
+                    </Button>
                 </div>
             ) : orders.length === 0 ? (
                 <div className="px-6 py-10 text-center">

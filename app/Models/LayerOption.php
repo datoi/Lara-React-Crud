@@ -28,11 +28,11 @@ class LayerOption extends Model
     ];
 
     protected $casts = [
-        'display_scale'  => 'float',
+        'display_scale' => 'float',
         'price_modifier' => 'float',
-        'is_default'     => 'boolean',
-        'is_active'      => 'boolean',
-        'display_order'  => 'integer',
+        'is_default' => 'boolean',
+        'is_active' => 'boolean',
+        'display_order' => 'integer',
     ];
 
     public function layerCategory(): BelongsTo
@@ -44,7 +44,14 @@ class LayerOption extends Model
     public function children(): HasMany
     {
         return $this->hasMany(LayerOption::class, 'parent_option_id')
-                    ->where('is_active', true)
-                    ->orderBy('display_order');
+            ->where('is_active', true)
+            ->orderBy('display_order');
+    }
+
+    /** Colour variants of this style (each with its own photos) */
+    public function colors(): HasMany
+    {
+        return $this->hasMany(LayerOptionColor::class)
+            ->orderBy('display_order');
     }
 }

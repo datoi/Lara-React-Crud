@@ -609,6 +609,46 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-07-19] Customizer: Colour Variants Inside Styles + Slug-less Product Creation
+
+**What was done:** Colours are now variants *of a style* instead of separate styles or a separate option group — one style can carry any number of colours, each with its own photos.
+
+- **Data model:** new `layer_option_colors` table (migration `2026_07_19_000004`): `layer_option_id`, `name`, `color_hex`, front + back/left/right image paths, `is_default`, `display_order`. `LayerOption::colors()`; colours ride along in `LayerOptionResource`.
+- **Admin:** each style card has a **Colours** section — list of variants (dot, name, Front/Back/Left/Right upload slots, delete) and an Add Colour form (dot colour picker, name, front photo). CRUD via `POST /admin/customizer/options/{id}/colors`, `PUT/DELETE /admin/customizer/options/colors/{id}`. First colour becomes default; deleting the default promotes the next. The per-style "Dot colour" control was removed (superseded).
+- **Customer:** `useCustomizer` tracks `colorSelections` (option id → colour id, included in `DesignConfiguration.color_selections`); the right column shows a colour-dot card for the selected style's variants; `PreviewCanvas` renders the chosen colour's photos and rotation views come from the colour row. The old "all-options-colour-tagged category renders as dots" path was removed.
+- **Products:** the admin New Product form no longer asks for a slug — the backend generates a unique one from the name (`storeProduct`).
+- **Seeder:** `SleevelessTankSeeder` restructured — one "Sleeveless" style carrying 9 colour variants (White has the 4 views); it deletes the legacy per-product Color category on re-run.
+
+### [2026-07-19] QA Fix Pass: Throttle Buckets, Suspended-Tailor Guard, Silent Failures
+
+**What was done:** Fixes for the QA findings on the offer-pool and customizer batches.
+
+- **Throttle collision (MAJOR):** all inline `throttle:X,1` groups shared one per-user counter, so OrderChat's 4s message polling starved the 10/min write bucket — "Choose This Tailor" 429'd at normal reading pace. Each group now has its own bucket via the throttle prefix parameter (`throttle:60,1,api-reads`, `throttle:10,1,api-writes`, `api-customizer`, `api-admin`) in `routes/api.php`.
+- **Suspended-tailor hire (MAJOR):** `CustomerOrderController::chooseTailor` now re-checks the offering tailor's eligibility (`approval_status` approved/null and not `is_suspended`) and returns 409, matching the manual-selection path.
+- **Silent failures:** `AvailableDesigns.tsx` shows a destructive error state with a Retry button on load failure (new `tailorComponents.openDesignsLoadFailed/openDesignsRetry` keys, both locales). `CustomizerAdminPage` view-image uploads and dot-colour saves check `res.ok` and surface the server message.
+- **Cosmetics:** pool-card measurement chips use translated `orderReview.size_*` labels and no longer capitalize the cm unit; customer stat tile "Pending" now includes `pending_assignment` orders.
+
+### [2026-07-19] Customizer: Colour Dots, Rotation Views, Selector-Only Groups + Sleeveless Tank
+
+**What was done:** Three engine extensions to the 2D customizer, plus the first product built on them.
+
+- **Rotation views:** `layer_options` gained nullable `back/left/right_image_path` (migration `2026_07_19_000001`). `PreviewCanvas` takes a `view` prop; `ViewSwitcher` (right column card) cycles Front/Back/Left/Right and renders only when every painted layer has the angle — switching to an option without it snaps back to front. Admin: per-style "Rotation views" upload slots (proper `_method=PUT` spoofing).
+- **Colour dots:** `layer_options.color_hex` (migration `2026_07_19_000002`). When every option in a category is colour-tagged (and childless), the category renders as `ColorDotPicker` swatches in the right column instead of image thumbnails; the option panel hides when empty. Admin: "Dot colour" picker + remove per style.
+- **Selector-only groups:** `layer_categories.is_preview_layer` (migration `2026_07_19_000003`, default true). When false, the category shows as picker cards but paints no canvas layer — needed for photo-swap products where the "style" card would otherwise stack over the colour photo. Single-option categories now display in the panel.
+- **Sleeveless Tank** (`SleevelessTankSeeder`, re-runnable): ₾90, category shirt, "Style your own" (selector-only, 1 style) + 9 colour options from `public/assets/garments/shirts/` (public-asset paths supported by the resources); White carries the 4 rotation views. Preview renders images at natural size (`object-scale-down`, `object-[center_25%]`, viewport-capped canvas) because the source photos are ~220×400.
+
+### [2026-07-19] Landing Polish: Nav Bar Surface, Fonts, Carousel Click Fix, How-It-Works Section
+
+**What was done:** Post-redesign fixes on Mariam's landing.
+
+- **How It Works:** standalone `/how-it-works` page deleted (route + page + page-only locale keys); new `HowItWorksSection` on the landing (4 steps, `howItWorks.s1–s4` keys, her design language) with `id="how-it-works"`; navbar/burger/footer links scroll to it like FAQ.
+- **Hero carousel:** `HeroSection` now pulls real marketplace products (`/api/products`, ≥4 with images required) into the rotating gallery as clickable product links; her poster images remain the fallback.
+- **Navbar:** burger button hidden ≥lg (drawer breakpoint aligned from md to lg — it never opened on tablets); "Start Designing" link removed; language toggle vertically centred; header is now a frosted ivory surface (`rgba(251,248,240,.9)` + blur + hairline border) with always-dark text — replaces the transparent bar + scroll tone-flipping.
+- **Fonts:** per-script stacks — `Newsreader, Noto Serif Georgian` / `Instrument Sans, Noto Sans Georgian` in the theme and all landing CSS; Latin gets the editorial faces, Georgian keeps Noto. Poppins dropped (footer logo now `font-serif`); Google Fonts moved from CSS `@import` to the blade `<link>`.
+- **Marketplace carousel:** cards were unclickable — `setPointerCapture` on pointerdown retargeted every click to the strip. Drag mode (and capture) now starts only after 6px of movement; clean clicks navigate to `/product/{id}`.
+
+---
+
 ### [2026-07-13] Upload-Design Measurements + Open Order Pool with Tailor Offers
 
 **What was done:** The upload-your-design step now collects measurements and an explicit customization request; custom orders without a hand-picked tailor go to an open pool where every approved tailor is notified, can send an offer, and the customer picks the winner from her dashboard.

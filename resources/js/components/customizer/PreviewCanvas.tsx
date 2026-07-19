@@ -28,15 +28,15 @@
  */
 import { useMemo } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import type { LayerCategory, LayerOption, Fabric, GarmentView } from '../../types/customizer';
+import type { LayerCategory, LayerOption, OptionColor, Fabric, GarmentView, ViewImageSet } from '../../types/customizer';
 
-/** The option's image for a view, or null when the option has no photo for it */
-export function viewImageUrl(option: LayerOption, view: GarmentView): string | null {
+/** The source's image for a view, or null when it has no photo for that angle */
+export function viewImageUrl(source: ViewImageSet, view: GarmentView): string | null {
     switch (view) {
-        case 'back':  return option.back_image_url;
-        case 'left':  return option.left_image_url;
-        case 'right': return option.right_image_url;
-        default:      return option.image_url;
+        case 'back':  return source.back_image_url;
+        case 'left':  return source.left_image_url;
+        case 'right': return source.right_image_url;
+        default:      return source.image_url;
     }
 }
 
@@ -49,6 +49,8 @@ interface PreviewCanvasProps {
     view?: GarmentView;
     /** If provided, used to resolve the effective option (parent or child) per category */
     resolveOption?: (category: LayerCategory) => LayerOption | null;
+    /** If provided, resolves the selected colour variant whose photos replace the option's */
+    resolveColor?: (option: LayerOption) => OptionColor | null;
 }
 
 export default function PreviewCanvas({
@@ -58,6 +60,7 @@ export default function PreviewCanvas({
     loading = false,
     view = 'front',
     resolveOption,
+    resolveColor,
 }: PreviewCanvasProps) {
     // Sort ascending: lowest z_index renders first (behind)
     const sorted = useMemo(
@@ -132,8 +135,11 @@ export default function PreviewCanvas({
 
                 if (!option) return null;
 
+                // Selected colour variant supplies the photos when the option has colours
+                const color = resolveColor?.(option) ?? null;
+
                 // Legacy collar-variant image switching (only when resolveOption not provided)
-                let src = option.image_url;
+                let src = color?.image_url ?? option.image_url;
                 if (!resolveOption && category.slug === 'sleeves') {
                     if (collarVariant === 'alt1') src = option.thumbnail_url;
                     else if (collarVariant === 'alt2') src = option.alt_image_url ?? option.image_url;
@@ -141,13 +147,13 @@ export default function PreviewCanvas({
 
                 // Rotation view — falls back to the front image when this layer has no photo for the angle
                 if (view !== 'front') {
-                    src = viewImageUrl(option, view) ?? src;
+                    src = viewImageUrl(color ?? option, view) ?? src;
                 }
 
                 return (
                     <AnimatePresence mode="popLayout" key={category.id}>
                         <motion.img
-                            key={`${category.id}-${option.id}-${view}`}
+                            key={`${category.id}-${option.id}-${color?.id ?? 'base'}-${view}`}
                             src={src}
                             alt={`${category.name}: ${option.name}`}
                             draggable={false}

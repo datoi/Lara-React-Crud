@@ -37,14 +37,17 @@ export default function Customizer({
     const {
         selections,
         subSelections,
+        colorSelections,
         fabricId,
         selectOption,
         selectSubOption,
+        selectColor,
         selectFabric,
         reset,
         getConfiguration,
         totalPrice,
         resolveOption,
+        resolveColor,
     } = useCustomizer({ basePrice: product.base_price, layerCategories, fabrics });
     const { t } = useTranslation();
 
@@ -54,30 +57,31 @@ export default function Customizer({
 
     const selectedFabric = fabrics.find(f => f.id === fabricId) ?? null;
 
-    // Categories where every choice is colour-tagged render as dots under the
-    // preview; the rest stay as image swatches in the right-hand panel.
-    const isDotCategory = (category: LayerCategory) =>
-        category.options.length > 0 &&
-        category.options.every(o => o.color_hex && !(o.children && o.children.length > 0));
+    const hasPanelContent = layerCategories.some(c => c.options.length > 0) || fabrics.length > 0;
 
-    const dotCategories   = layerCategories.filter(isDotCategory);
-    const panelCategories = layerCategories.filter(c => !isDotCategory(c));
-    const hasPanelContent = panelCategories.some(c => c.options.length > 0) || fabrics.length > 0;
+    // Colour dot groups: one per category whose currently-selected style has colour variants
+    const colorGroups = layerCategories
+        .filter(c => c.slug !== 'collar')
+        .map(category => ({ category, option: resolveOption(category) }))
+        .filter((g): g is { category: LayerCategory; option: NonNullable<ReturnType<typeof resolveOption>> } =>
+            g.option !== null && g.option.colors.length > 0,
+        );
 
     // A view is offered only when every rendered layer has a photo for it,
-    // so the composite never mixes angles.
+    // so the composite never mixes angles. The selected colour's photos win.
     const availableViews = useMemo((): GarmentView[] => {
-        const renderedOptions = layerCategories
+        const renderedSources = layerCategories
             .filter(c => c.slug !== 'collar' && c.is_preview_layer !== false)
             .map(c => resolveOption(c))
-            .filter((o): o is NonNullable<typeof o> => o !== null);
+            .filter((o): o is NonNullable<typeof o> => o !== null)
+            .map(o => resolveColor(o) ?? o);
 
-        if (renderedOptions.length === 0) return ['front'];
+        if (renderedSources.length === 0) return ['front'];
 
         return (['front', 'back', 'left', 'right'] as GarmentView[]).filter(v =>
-            renderedOptions.every(o => viewImageUrl(o, v) !== null),
+            renderedSources.every(s => viewImageUrl(s, v) !== null),
         );
-    }, [layerCategories, resolveOption]);
+    }, [layerCategories, resolveOption, resolveColor]);
 
     // Picking a color/style that lacks the current angle snaps back to front
     useEffect(() => {
@@ -99,6 +103,7 @@ export default function Customizer({
                     selectedFabric={selectedFabric}
                     view={view}
                     resolveOption={resolveOption}
+                    resolveColor={resolveColor}
                 />
                 {/* Fabric swatch label below preview */}
                 {selectedFabric && (
@@ -120,11 +125,11 @@ export default function Customizer({
                     )}
                 </div>
 
-                {/* Option panel — hidden when colour dots are the only choice */}
+                {/* Option panel */}
                 {hasPanelContent && (
                     <div className="bg-white rounded-2xl border border-slate-100 p-4">
                         <OptionPanel
-                            layerCategories={panelCategories}
+                            layerCategories={layerCategories}
                             fabrics={fabrics}
                             selections={selections}
                             subSelections={subSelections}
@@ -136,13 +141,14 @@ export default function Customizer({
                     </div>
                 )}
 
-                {/* Colour dot groups */}
-                {dotCategories.map(category => (
-                    <div key={category.id} className="bg-white rounded-2xl border border-slate-100 p-4">
+                {/* Colour dot groups — colours of the currently selected style */}
+                {colorGroups.map(({ category, option }) => (
+                    <div key={`${category.id}-${option.id}`} className="bg-white rounded-2xl border border-slate-100 p-4">
                         <ColorDotPicker
-                            category={category}
-                            selectedId={selections[category.id]}
-                            onSelect={optionId => selectOption(category.id, optionId)}
+                            label={t('customizer.colorLabel')}
+                            colors={option.colors}
+                            selectedId={colorSelections[option.id] ?? option.colors.find(c => c.is_default)?.id ?? option.colors[0]?.id}
+                            onSelect={colorId => selectColor(option.id, colorId)}
                         />
                     </div>
                 ))}

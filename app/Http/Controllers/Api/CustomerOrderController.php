@@ -33,36 +33,36 @@ class CustomerOrderController extends Controller
             ->flip();
 
         $orders = $orders->map(function ($order) use ($reviewedOrderIds) {
-                $tailorName = $order->tailor?->getFullName();
+            $tailorName = $order->tailor?->getFullName();
 
-                $items = $order->items->map(function ($item) {
-                    return [
-                        'id'           => $item->id,
-                        'product_id'   => $item->product_id,
-                        'product_name' => $item->product?->name ?? 'Custom Design',
-                        'image'        => $item->product?->images[0] ?? null,
-                        'color'        => $item->color,
-                        'size'         => $item->size,
-                        'quantity'     => $item->quantity,
-                        'price'        => $item->price,
-                        'measurements' => $item->cm_measurements ?? [],
-                    ];
-                });
-
+            $items = $order->items->map(function ($item) {
                 return [
-                    'id'                    => $order->id,
-                    'order_type'            => $order->order_type ?? 'marketplace',
-                    'status'                => $order->status,
-                    'total'                 => $order->total,
-                    'tailor_id'             => $order->tailor_id,
-                    'tailor_name'           => $tailorName,
-                    'custom_design_data'    => $order->custom_design_data,
-                    'items'                 => $items,
-                    'created_at'            => $order->created_at->toISOString(),
-                    'has_review'            => $reviewedOrderIds->has($order->id),
-                    'tailor_requests_count' => $order->tailor_requests_count,
+                    'id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product?->name ?? 'Custom Design',
+                    'image' => $item->product?->images[0] ?? null,
+                    'color' => $item->color,
+                    'size' => $item->size,
+                    'quantity' => $item->quantity,
+                    'price' => $item->price,
+                    'measurements' => $item->cm_measurements ?? [],
                 ];
             });
+
+            return [
+                'id' => $order->id,
+                'order_type' => $order->order_type ?? 'marketplace',
+                'status' => $order->status,
+                'total' => $order->total,
+                'tailor_id' => $order->tailor_id,
+                'tailor_name' => $tailorName,
+                'custom_design_data' => $order->custom_design_data,
+                'items' => $items,
+                'created_at' => $order->created_at->toISOString(),
+                'has_review' => $reviewedOrderIds->has($order->id),
+                'tailor_requests_count' => $order->tailor_requests_count,
+            ];
+        });
 
         return response()->json(['orders' => $orders]);
     }
@@ -91,19 +91,19 @@ class CustomerOrderController extends Controller
             $stat = $ratingStats->get($tr->tailor_id);
 
             return [
-                'id'               => $tr->id,
-                'status'           => $tr->status,
-                'message'          => $tr->message,
-                'created_at'       => $tr->created_at?->toISOString(),
-                'tailor'           => [
-                    'id'               => $tr->tailor->id,
-                    'name'             => $tr->tailor->getFullName(),
-                    'specialty'        => $tr->tailor->specialty,
+                'id' => $tr->id,
+                'status' => $tr->status,
+                'message' => $tr->message,
+                'created_at' => $tr->created_at?->toISOString(),
+                'tailor' => [
+                    'id' => $tr->tailor->id,
+                    'name' => $tr->tailor->getFullName(),
+                    'specialty' => $tr->tailor->specialty,
                     'years_experience' => $tr->tailor->years_experience,
-                    'turnaround_days'  => $tr->tailor->turnaround_days,
-                    'profile_image'    => $tr->tailor->profile_image,
-                    'avg_rating'       => $stat ? round((float) $stat->avg_r, 1) : null,
-                    'reviews_count'    => $stat ? (int) $stat->cnt : 0,
+                    'turnaround_days' => $tr->tailor->turnaround_days,
+                    'profile_image' => $tr->tailor->profile_image,
+                    'avg_rating' => $stat ? round((float) $stat->avg_r, 1) : null,
+                    'reviews_count' => $stat ? (int) $stat->cnt : 0,
                 ],
             ];
         })->values()]);
@@ -131,6 +131,15 @@ class CustomerOrderController extends Controller
 
         if (! $chosen || $chosen->status !== 'pending') {
             return response()->json(['message' => 'This offer is no longer available.'], 422);
+        }
+
+        $tailor = $chosen->tailor;
+        $tailorEligible = $tailor
+            && (! $tailor->approval_status || $tailor->approval_status === 'approved')
+            && ! $tailor->is_suspended;
+
+        if (! $tailorEligible) {
+            return response()->json(['message' => 'This tailor is no longer available. Please choose another offer.'], 409);
         }
 
         $declinedTailorIds = DB::transaction(function () use ($order, $chosen) {

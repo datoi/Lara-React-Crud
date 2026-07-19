@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { getAuthToken, getAuthUser } from '../hooks/useAuth';
-import type { CustomizerProduct, LayerCategory, LayerOption, Fabric } from '../types/customizer';
+import type { CustomizerProduct, LayerCategory, LayerOption, OptionColor, Fabric } from '../types/customizer';
 
 // ── Types used only in this page ─────────────────────────────────────────────
 
@@ -103,7 +103,6 @@ function ProductsSection({ token }: { token: string }) {
 
     // New product form
     const [newName, setNewName]         = useState('');
-    const [newSlug, setNewSlug]         = useState('');
     const [newPrice, setNewPrice]       = useState('');
     const [newDesc, setNewDesc]         = useState('');
     const [newCategory, setNewCategory] = useState('shirt');
@@ -124,12 +123,11 @@ function ProductsSection({ token }: { token: string }) {
     useEffect(() => { load(); }, []);
 
     const handleCreate = async () => {
-        if (!newName || !newSlug || !newPrice) return;
+        if (!newName || !newPrice) return;
         setSaving(true);
         try {
             const fd = new FormData();
             fd.append('name', newName);
-            fd.append('slug', newSlug);
             fd.append('base_price', newPrice);
             fd.append('description', newDesc);
             fd.append('category', newCategory);
@@ -143,7 +141,7 @@ function ProductsSection({ token }: { token: string }) {
             });
             if (res.ok) {
                 setCreating(false);
-                setNewName(''); setNewSlug(''); setNewPrice(''); setNewDesc('');
+                setNewName(''); setNewPrice(''); setNewDesc('');
                 setNewCategory('shirt'); setNewPreview(null);
                 load();
             }
@@ -180,7 +178,6 @@ function ProductsSection({ token }: { token: string }) {
                     <h3 className="text-sm font-semibold text-slate-700">New Product</h3>
                     <div className="grid sm:grid-cols-2 gap-3">
                         <FormField label="Name" value={newName} onChange={setNewName} placeholder="Classic Shirt" />
-                        <FormField label="Slug" value={newSlug} onChange={setNewSlug} placeholder="classic-shirt" />
                         <FormField label="Base Price (₾)" value={newPrice} onChange={setNewPrice} placeholder="89" type="number" />
                         <FormField label="Description" value={newDesc} onChange={setNewDesc} placeholder="Optional" />
                         <div>
@@ -547,6 +544,183 @@ function ViewImageSlot({
     );
 }
 
+function ColorVariantRow({ color, token, onRefresh }: { color: OptionColor; token: string; onRefresh: () => void }) {
+    const [busyField, setBusyField] = useState<string | null>(null);
+    const [error, setError]         = useState<string | null>(null);
+
+    const uploadImage = async (field: 'image' | 'back_image' | 'left_image' | 'right_image', file: File) => {
+        setBusyField(field);
+        setError(null);
+        try {
+            const fd = new FormData();
+            fd.append('_method', 'PUT');
+            fd.append(field, file);
+            const res = await fetch(`/api/admin/customizer/options/colors/${color.id}`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                body: fd,
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error((data as { message?: string }).message ?? `Upload failed (HTTP ${res.status})`);
+            }
+            onRefresh();
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Upload failed.');
+        } finally { setBusyField(null); }
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm(`Delete the "${color.name}" colour?`)) return;
+        await fetch(`/api/admin/customizer/options/colors/${color.id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        });
+        onRefresh();
+    };
+
+    return (
+        <div className="border border-slate-200 rounded-lg p-2.5 bg-white">
+            <div className="flex items-center gap-3">
+                <span
+                    className="w-6 h-6 rounded-full border border-slate-200 shrink-0"
+                    style={{ backgroundColor: color.color_hex }}
+                    title={color.color_hex}
+                />
+                <span className="flex-1 text-xs font-semibold text-slate-700 truncate">
+                    {color.name}
+                    {color.is_default && <span className="ml-1.5 text-[9px] font-normal text-slate-400 uppercase">default</span>}
+                </span>
+
+                <div className="flex gap-1.5">
+                    <ViewImageSlot label="Front" url={color.image_url} uploading={busyField === 'image'} onPick={f => uploadImage('image', f)} />
+                    <ViewImageSlot label="Back" url={color.back_image_url} uploading={busyField === 'back_image'} onPick={f => uploadImage('back_image', f)} />
+                    <ViewImageSlot label="Left" url={color.left_image_url} uploading={busyField === 'left_image'} onPick={f => uploadImage('left_image', f)} />
+                    <ViewImageSlot label="Right" url={color.right_image_url} uploading={busyField === 'right_image'} onPick={f => uploadImage('right_image', f)} />
+                </div>
+
+                <button onClick={handleDelete} className="text-slate-400 hover:text-slate-700 transition-colors p-1 shrink-0" title="Delete colour">
+                    <Trash2 className="w-3.5 h-3.5" />
+                </button>
+            </div>
+
+            {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
+        </div>
+    );
+}
+
+function AddColorForm({ optionId, token, onRefresh }: { optionId: number; token: string; onRefresh: () => void }) {
+    const [open, setOpen]       = useState(false);
+    const [name, setName]       = useState('');
+    const [hex, setHex]         = useState('#ffffff');
+    const [file, setFile]       = useState<File | null>(null);
+    const [saving, setSaving]   = useState(false);
+    const [error, setError]     = useState<string | null>(null);
+    const fileRef = useRef<HTMLInputElement>(null);
+
+    const handleSave = async () => {
+        if (!name.trim() || !file || saving) return;
+        setSaving(true);
+        setError(null);
+        try {
+            const fd = new FormData();
+            fd.append('name', name.trim());
+            fd.append('color_hex', hex);
+            fd.append('image', file);
+            const res = await fetch(`/api/admin/customizer/options/${optionId}/colors`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                body: fd,
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error((data as { message?: string }).message ?? `Save failed (HTTP ${res.status})`);
+            }
+            setOpen(false);
+            setName('');
+            setHex('#ffffff');
+            setFile(null);
+            onRefresh();
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Save failed.');
+        } finally { setSaving(false); }
+    };
+
+    if (!open) {
+        return (
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="w-full border border-dashed border-slate-300 rounded-lg py-2 text-xs text-slate-500 hover:border-slate-500 hover:text-slate-700 transition-colors"
+            >
+                + Add Colour
+            </button>
+        );
+    }
+
+    return (
+        <div className="border border-slate-200 rounded-lg p-2.5 bg-white space-y-2">
+            <div className="flex items-center gap-2">
+                <input
+                    type="color"
+                    value={hex}
+                    onChange={e => setHex(e.target.value)}
+                    title="Colour dot customers will click"
+                    className="w-8 h-8 rounded-lg border border-slate-200 cursor-pointer bg-white p-0.5 shrink-0"
+                />
+                <input
+                    autoFocus
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Colour name (e.g. Navy)"
+                    className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900"
+                />
+            </div>
+
+            <div
+                onClick={() => fileRef.current?.click()}
+                className="border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:border-slate-400 transition-colors"
+            >
+                {file ? (
+                    <div className="flex items-center gap-2 p-2">
+                        <div
+                            className="w-10 h-12 rounded overflow-hidden shrink-0"
+                            style={{ backgroundImage: 'repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%)', backgroundSize: '6px 6px' }}
+                        >
+                            <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-contain" />
+                        </div>
+                        <p className="text-[10px] text-slate-600 truncate">{file.name}</p>
+                    </div>
+                ) : (
+                    <div className="p-3 text-center">
+                        <Upload className="w-4 h-4 text-slate-400 mx-auto mb-1" />
+                        <p className="text-[10px] text-slate-500">Front photo of this colour (PNG, JPG, WebP)</p>
+                    </div>
+                )}
+                <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".png,.svg,.jpg,.jpeg,.webp"
+                    className="hidden"
+                    onChange={e => setFile(e.target.files?.[0] ?? null)}
+                />
+            </div>
+
+            {error && <p className="text-xs text-destructive">{error}</p>}
+
+            <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setOpen(false); setError(null); }} className="text-xs">
+                    Cancel
+                </Button>
+                <Button variant="default" size="sm" onClick={handleSave} disabled={saving || !name.trim() || !file} className="text-xs flex-1">
+                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save Colour'}
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 function StyleCard({
     option, categoryId, token, onDelete, onRefresh,
 }: {
@@ -561,37 +735,33 @@ function StyleCard({
     const [subFile, setSubFile]               = useState<File | null>(null);
     const [saving, setSaving]                 = useState(false);
     const [uploadingView, setUploadingView]   = useState<string | null>(null);
-    const [savingColor, setSavingColor]       = useState(false);
+    const [saveError, setSaveError]           = useState<string | null>(null);
     const subFileRef = useRef<HTMLInputElement>(null);
 
     const children: LayerOption[] = option.children ?? [];
 
     const handleUploadView = async (field: 'back_image' | 'left_image' | 'right_image', file: File) => {
         setUploadingView(field);
-        const fd = new FormData();
-        fd.append('_method', 'PUT');
-        fd.append(field, file);
+        setSaveError(null);
         try {
-            await fetch(`/api/admin/customizer/options/${option.id}`, {
+            const fd = new FormData();
+            fd.append('_method', 'PUT');
+            fd.append(field, file);
+            const res = await fetch(`/api/admin/customizer/options/${option.id}`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
                 body: fd,
             });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error((data as { message?: string }).message ?? `Upload failed (HTTP ${res.status})`);
+            }
             onRefresh();
+        } catch (err: unknown) {
+            setSaveError(err instanceof Error ? err.message : 'Upload failed.');
         } finally { setUploadingView(null); }
     };
 
-    const handleSaveColor = async (hex: string | null) => {
-        setSavingColor(true);
-        try {
-            await fetch(`/api/admin/customizer/options/${option.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
-                body: JSON.stringify({ color_hex: hex }),
-            });
-            onRefresh();
-        } finally { setSavingColor(false); }
-    };
 
     const handleAddSubStyle = async () => {
         if (!subName.trim() || !subFile) return;
@@ -640,31 +810,25 @@ function StyleCard({
 
             {/* Sub-styles section */}
             <div className="p-3 space-y-2">
-                {/* Dot colour — when every style in a group has one, customers pick via colour dots */}
-                <div className="flex items-center gap-2.5">
-                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide shrink-0">
-                        Dot colour
+                {/* Colours — variants of this style; customers pick them as colour dots */}
+                <div>
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                        Colours
+                        <span className="text-slate-400 font-normal ml-1 normal-case">(same style, different colour — shown as dots to customers)</span>
                     </p>
-                    <input
-                        type="color"
-                        value={option.color_hex ?? '#ffffff'}
-                        onChange={e => handleSaveColor(e.target.value)}
-                        title="Pick the colour dot customers click to select this style"
-                        className="w-8 h-8 rounded-lg border border-slate-200 cursor-pointer bg-white p-0.5"
-                    />
-                    {option.color_hex ? (
-                        <button
-                            type="button"
-                            onClick={() => handleSaveColor(null)}
-                            className="text-[10px] text-slate-400 hover:text-slate-600 underline"
-                        >
-                            remove
-                        </button>
-                    ) : (
-                        <span className="text-[10px] text-slate-400">none — shows as image thumbnail</span>
-                    )}
-                    {savingColor && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+
+                    <div className="mt-2 space-y-2">
+                        {(option.colors ?? []).map(color => (
+                            <ColorVariantRow key={color.id} color={color} token={token} onRefresh={onRefresh} />
+                        ))}
+
+                        <AddColorForm optionId={option.id} token={token} onRefresh={onRefresh} />
+                    </div>
                 </div>
+
+                {saveError && (
+                    <p className="text-xs text-destructive">{saveError}</p>
+                )}
 
                 {/* Rotation views — optional back/side photos enable the preview's rotate control */}
                 <div className="flex items-start gap-2.5">

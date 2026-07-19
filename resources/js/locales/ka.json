@@ -713,6 +713,7 @@
   "customizer": {
     "total": "სულ",
     "reset": "გადატვირთვა",
+    "colorLabel": "ფერი",
     "viewFront": "წინხედი",
     "viewBack": "უკანხედი",
     "viewLeft": "მარცხენა მხარე",
@@ -1076,6 +1077,8 @@
     "availableDesignsTitle": "ხელმისაწვდომი დიზაინები",
     "availableDesignsDesc": "მომხმარებლების ღია დიზაინები — გამოგზავნე შემოთავაზება, თუ გინდა შეკერო.",
     "noOpenDesigns": "ღია დიზაინები ამჟამად არ არის. ახლები აქ გამოჩნდება.",
+    "openDesignsLoadFailed": "ღია დიზაინების ჩატვირთვა ვერ მოხერხდა.",
+    "openDesignsRetry": "სცადე თავიდან",
     "offersSoFar_one": "ჯამში {{count}} შემოთავაზება",
     "offersSoFar_other": "ჯამში {{count}} შემოთავაზება",
     "offerBtn": "შევკერავ ამას",

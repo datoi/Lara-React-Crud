@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import type {
     LayerCategory,
     LayerOption,
+    OptionColor,
     Fabric,
     DesignConfiguration,
 } from '../types/customizer';
@@ -16,14 +17,19 @@ interface UseCustomizerReturn {
     selections: Record<number, number>;
     /** Maps parentOptionId → selected childOptionId */
     subSelections: Record<number, number>;
+    /** Maps optionId → selected colour variant id */
+    colorSelections: Record<number, number>;
     fabricId: number | null;
     selectOption: (categoryId: number, optionId: number) => void;
     selectSubOption: (parentOptionId: number, childOptionId: number) => void;
+    selectColor: (optionId: number, colorId: number) => void;
     reset: () => void;
     getConfiguration: () => DesignConfiguration;
     totalPrice: number;
     /** Returns the effective option to render for a category (child if sub-selected, else parent) */
     resolveOption: (category: LayerCategory) => LayerOption | null;
+    /** Returns the selected colour variant of an option, or null when it has none */
+    resolveColor: (option: LayerOption) => OptionColor | null;
     selectFabric: (id: number | null) => void;
 }
 
@@ -58,9 +64,27 @@ export function useCustomizer({
         return subDefaults;
     }, [layerCategories]);
 
+    const buildColorDefaults = useCallback((): Record<number, number> => {
+        const defaults: Record<number, number> = {};
+        const apply = (option: LayerOption) => {
+            if (option.colors && option.colors.length > 0) {
+                const def = option.colors.find(c => c.is_default) ?? option.colors[0];
+                defaults[option.id] = def.id;
+            }
+            option.children?.forEach(apply);
+        };
+        for (const category of layerCategories) {
+            category.options.forEach(apply);
+        }
+        return defaults;
+    }, [layerCategories]);
+
     const [selections, setSelections] = useState<Record<number, number>>(buildDefaults);
     const [subSelections, setSubSelections] = useState<Record<number, number>>(
         () => buildSubDefaults()
+    );
+    const [colorSelections, setColorSelections] = useState<Record<number, number>>(
+        () => buildColorDefaults()
     );
     const [fabricId, setFabricId] = useState<number | null>(
         () => fabrics[0]?.id ?? null
@@ -85,6 +109,10 @@ export function useCustomizer({
         setSubSelections(prev => ({ ...prev, [parentOptionId]: childOptionId }));
     }, []);
 
+    const selectColor = useCallback((optionId: number, colorId: number) => {
+        setColorSelections(prev => ({ ...prev, [optionId]: colorId }));
+    }, []);
+
     const selectFabric = useCallback((id: number | null) => {
         setFabricId(id);
     }, []);
@@ -93,13 +121,15 @@ export function useCustomizer({
         const defaults = buildDefaults();
         setSelections(defaults);
         setSubSelections(buildSubDefaults());
+        setColorSelections(buildColorDefaults());
         setFabricId(fabrics[0]?.id ?? null);
-    }, [buildDefaults, buildSubDefaults, fabrics]);
+    }, [buildDefaults, buildSubDefaults, buildColorDefaults, fabrics]);
 
     const getConfiguration = useCallback((): DesignConfiguration => ({
         selections,
+        color_selections: colorSelections,
         fabric_id: fabricId,
-    }), [selections, fabricId]);
+    }), [selections, colorSelections, fabricId]);
 
     /**
      * Resolves which option's image the canvas should render for a category.
@@ -125,6 +155,14 @@ export function useCustomizer({
         return parentOption;
     }, [selections, subSelections]);
 
+    const resolveColor = useCallback((option: LayerOption): OptionColor | null => {
+        if (!option.colors || option.colors.length === 0) return null;
+
+        return option.colors.find(c => c.id === colorSelections[option.id])
+            ?? option.colors.find(c => c.is_default)
+            ?? option.colors[0];
+    }, [colorSelections]);
+
     const totalPrice = useMemo(() => {
         let total = basePrice;
 
@@ -147,13 +185,16 @@ export function useCustomizer({
     return {
         selections,
         subSelections,
+        colorSelections,
         fabricId,
         selectOption,
         selectSubOption,
+        selectColor,
         selectFabric,
         reset,
         getConfiguration,
         totalPrice,
         resolveOption,
+        resolveColor,
     };
 }

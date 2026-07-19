@@ -490,7 +490,7 @@ export default function CustomerDashboard() {
 
     const stats = {
         total:      orders.length,
-        pending:    orders.filter(o => o.status === 'pending').length,
+        pending:    orders.filter(o => o.status === 'pending' || o.status === 'pending_assignment').length,
         inProgress: orders.filter(o => o.status === 'processing').length,
         delivered:  orders.filter(o => o.status === 'delivered').length,
     };

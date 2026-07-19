@@ -1,5 +1,22 @@
 // ─── API response shapes ─────────────────────────────────────────────────────
 
+/** Anything that carries a front photo plus optional rotation-view photos */
+export interface ViewImageSet {
+    image_url: string;
+    back_image_url: string | null;
+    left_image_url: string | null;
+    right_image_url: string | null;
+}
+
+/** A colour variant of a style — same garment, different colour photos */
+export interface OptionColor extends ViewImageSet {
+    id: number;
+    name: string;
+    color_hex: string;
+    is_default: boolean;
+    display_order: number;
+}
+
 export interface LayerOption {
     id: number;
     name: string;
@@ -21,6 +38,8 @@ export interface LayerOption {
     display_order: number;
     /** Sub-options (e.g. collar variants for a specific sleeve type) */
     children?: LayerOption[];
+    /** Colour variants — when non-empty, the customer picks a colour dot and the canvas uses its photos */
+    colors: OptionColor[];
 }
 
 export interface LayerCategory {
@@ -83,6 +102,8 @@ export type GarmentView = 'front' | 'back' | 'left' | 'right';
  */
 export interface DesignConfiguration {
     selections: Record<number, number>;
+    /** Chosen colour variant per option id (only options that have colours) */
+    color_selections: Record<number, number>;
     fabric_id: number | null;
 }
 

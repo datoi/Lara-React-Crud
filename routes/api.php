@@ -36,7 +36,9 @@ Route::get('/reviews/landing', [ReviewController::class, 'landing']);
 Route::get('/platform/stats', [ProductController::class, 'platformStats']);
 
 // ─── Authenticated reads (60 req/min) ─────────────────────────────────────────
-Route::middleware(['auth.bearer', 'throttle:60,1'])->group(function () {
+// NOTE: each group needs its own bucket prefix — inline throttles without one
+// share a single per-user counter, so read polling starves write endpoints.
+Route::middleware(['auth.bearer', 'throttle:60,1,api-reads'])->group(function () {
     // Current user
     Route::get('/me', [AuthController::class, 'me']);
 
@@ -64,7 +66,7 @@ Route::middleware(['auth.bearer', 'throttle:60,1'])->group(function () {
 });
 
 // ─── Authenticated writes (10 req/min) ────────────────────────────────────────
-Route::middleware(['auth.bearer', 'throttle:10,1'])->group(function () {
+Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function () {
     // Orders
     Route::post('/orders', [OrderController::class, 'store']);
     Route::patch('/tailor/orders/{id}/status', [OrderController::class, 'updateStatus']);
@@ -101,7 +103,7 @@ Route::prefix('customizer')->group(function () {
 });
 
 // ─── Customizer — Auth-protected ──────────────────────────────────────────────
-Route::middleware(['auth.bearer', 'throttle:30,1'])->prefix('customizer')->group(function () {
+Route::middleware(['auth.bearer', 'throttle:30,1,api-customizer'])->prefix('customizer')->group(function () {
     Route::get('/designs', [SavedDesignController::class, 'index']);
     Route::post('/designs', [SavedDesignController::class, 'store']);
     Route::get('/designs/{id}', [SavedDesignController::class, 'show']);
@@ -110,7 +112,7 @@ Route::middleware(['auth.bearer', 'throttle:30,1'])->prefix('customizer')->group
 });
 
 // ─── Admin (bearer + admin role, 30 req/min) ──────────────────────────────────
-Route::middleware(['auth.bearer', 'auth.admin', 'throttle:30,1'])->prefix('admin')->group(function () {
+Route::middleware(['auth.bearer', 'auth.admin', 'throttle:30,1,api-admin'])->prefix('admin')->group(function () {
     Route::get('/orders', [AdminController::class, 'orders']);
     Route::get('/orders/{orderId}/messages', [AdminController::class, 'orderMessages']);
     Route::get('/users', [AdminController::class, 'users']);
@@ -136,6 +138,10 @@ Route::middleware(['auth.bearer', 'auth.admin', 'throttle:30,1'])->prefix('admin
         Route::post('/options', [CustomizerAdminController::class, 'storeOption']);
         Route::put('/options/{id}', [CustomizerAdminController::class, 'updateOption']);
         Route::delete('/options/{id}', [CustomizerAdminController::class, 'destroyOption']);
+
+        Route::post('/options/{id}/colors', [CustomizerAdminController::class, 'storeOptionColor']);
+        Route::put('/options/colors/{colorId}', [CustomizerAdminController::class, 'updateOptionColor']);
+        Route::delete('/options/colors/{colorId}', [CustomizerAdminController::class, 'destroyOptionColor']);
         // Fabrics
         Route::get('/fabrics', [CustomizerAdminController::class, 'indexFabrics']);
         Route::post('/fabrics', [CustomizerAdminController::class, 'storeFabric']);

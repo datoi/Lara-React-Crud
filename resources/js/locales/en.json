@@ -713,6 +713,7 @@
   "customizer": {
     "total": "Total",
     "reset": "Reset",
+    "colorLabel": "Color",
     "viewFront": "Front",
     "viewBack": "Back",
     "viewLeft": "Left side",
@@ -1076,6 +1077,8 @@
     "availableDesignsTitle": "Available Design Requests",
     "availableDesignsDesc": "Open customer designs — send an offer if you want to make one.",
     "noOpenDesigns": "No open design requests right now. New ones will appear here.",
+    "openDesignsLoadFailed": "Couldn't load open design requests.",
+    "openDesignsRetry": "Try Again",
     "offersSoFar_one": "{{count}} offer so far",
     "offersSoFar_other": "{{count}} offers so far",
     "offerBtn": "Offer to Make It",

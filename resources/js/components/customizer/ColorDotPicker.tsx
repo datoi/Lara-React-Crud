@@ -1,42 +1,43 @@
 /**
- * ColorDotPicker — round colour swatches for a layer category whose options
- * all carry a color_hex. Rendered under the preview canvas; clicking a dot
- * swaps the garment photo. Mirrors FabricPicker's dot styling.
+ * ColorDotPicker — round colour swatches for a style's colour variants.
+ * Clicking a dot swaps the garment photos in the preview canvas.
+ * Mirrors FabricPicker's dot styling.
  */
 import { Check } from 'lucide-react';
 import { motion } from 'motion/react';
-import type { LayerCategory } from '../../types/customizer';
+import type { OptionColor } from '../../types/customizer';
 
 interface ColorDotPickerProps {
-    category: LayerCategory;
+    label: string;
+    colors: OptionColor[];
     selectedId: number | undefined;
-    onSelect: (optionId: number) => void;
+    onSelect: (colorId: number) => void;
 }
 
-export default function ColorDotPicker({ category, selectedId, onSelect }: ColorDotPickerProps) {
-    const selected = category.options.find(o => o.id === selectedId);
+export default function ColorDotPicker({ label, colors, selectedId, onSelect }: ColorDotPickerProps) {
+    const selected = colors.find(c => c.id === selectedId);
 
     return (
         <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                {category.name}
+                {label}
             </p>
             <div className="flex flex-wrap gap-2">
-                {category.options.map(option => {
-                    const isSelected = option.id === selectedId;
+                {colors.map(color => {
+                    const isSelected = color.id === selectedId;
                     return (
                         <motion.button
-                            key={option.id}
-                            onClick={() => onSelect(option.id)}
+                            key={color.id}
+                            onClick={() => onSelect(color.id)}
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.95 }}
                             transition={{ duration: 0.15 }}
-                            aria-label={option.name}
+                            aria-label={color.name}
                             aria-pressed={isSelected}
-                            title={option.name}
+                            title={color.name}
                             className="relative w-9 h-9 rounded-full border-2 transition-all"
                             style={{
-                                backgroundColor: option.color_hex ?? '#ffffff',
+                                backgroundColor: color.color_hex,
                                 borderColor: isSelected ? '#0f172a' : '#e2e8f0',
                                 boxShadow: isSelected
                                     ? '0 0 0 2px white, 0 0 0 4px #0f172a'
@@ -47,7 +48,7 @@ export default function ColorDotPicker({ category, selectedId, onSelect }: Color
                                 <Check
                                     className="absolute inset-0 m-auto w-4 h-4"
                                     style={{
-                                        color: isLight(option.color_hex ?? '#ffffff') ? '#0f172a' : '#ffffff',
+                                        color: isLight(color.color_hex) ? '#0f172a' : '#ffffff',
                                     }}
                                 />
                             )}
