@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { DashboardHeader } from '../components/tailor/DashboardHeader';
 import { StatsCards } from '../components/tailor/StatsCards';
 import { OrdersList, type TailorOrder } from '../components/tailor/OrdersList';
+import { AvailableDesigns } from '../components/tailor/AvailableDesigns';
 import { ProductManager, type TailorProductFull } from '../components/tailor/ProductManager';
 import { TailorProfileEditor } from '../components/tailor/TailorProfileEditor';
 import { OnboardingPanel } from '../components/tailor/OnboardingPanel';
@@ -279,6 +280,15 @@ export default function TailorDashboard() {
                         {t('tailorDashboard.motivationNudge')}
                     </motion.p>
                 )}
+
+                {/* ── Available design requests (open pool) ── */}
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                >
+                    <AvailableDesigns />
+                </motion.div>
 
                 {/* ── Orders ── */}
                 <motion.div

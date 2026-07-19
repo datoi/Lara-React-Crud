@@ -8,6 +8,12 @@ export interface LayerOption {
     thumbnail_url: string;
     /** Third collar variant (e.g. mandarin) — null for options that have no alternate */
     alt_image_url: string | null;
+    /** Rotation views — null when the option only has a front photo */
+    back_image_url: string | null;
+    left_image_url: string | null;
+    right_image_url: string | null;
+    /** Dot colour for swatch-style pickers — null renders as an image thumbnail */
+    color_hex: string | null;
     /** CSS scale factor to normalise photos taken at different zoom levels (default 1.0) */
     display_scale: number;
     price_modifier: number;
@@ -28,6 +34,8 @@ export interface LayerCategory {
     is_required: boolean;
     /** When true, the active fabric color is CSS-tinted over this layer */
     is_colorable: boolean;
+    /** When false, the category is a selector only — its options never paint a canvas layer */
+    is_preview_layer: boolean;
     display_order: number;
     options: LayerOption[];
 }
@@ -65,6 +73,9 @@ export interface SavedDesign {
 }
 
 // ─── Engine state ─────────────────────────────────────────────────────────────
+
+/** Camera angle shown on the preview canvas */
+export type GarmentView = 'front' | 'back' | 'left' | 'right';
 
 /**
  * The live configuration state held in useCustomizer.

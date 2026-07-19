@@ -1,28 +1,60 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowRight, Scissors, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-const heroImages = [
-  {
-    src: '/assets/hero/kere-look-3.jpeg',
-    altKey: 'carousel.productBlueSuit',
-  },
-  {
-    src: '/assets/hero/kere-look-2.jpeg',
-    altKey: 'carousel.productBlueDress',
-  },
-  {
-    src: '/assets/hero/kere-look-1.jpeg',
-    altKey: 'carousel.productPinkDress',
-  },
-  {
-    src: '/assets/hero/kere-look-4.jpeg',
-    altKey: 'carousel.productGreenDress',
-  },
+interface HeroImage {
+  src: string;
+  alt: string;
+  productId: number | null;
+}
+
+const fallbackImages = [
+  { src: '/assets/hero/kere-look-3.jpeg', altKey: 'carousel.productBlueSuit' },
+  { src: '/assets/hero/kere-look-2.jpeg', altKey: 'carousel.productBlueDress' },
+  { src: '/assets/hero/kere-look-1.jpeg', altKey: 'carousel.productPinkDress' },
+  { src: '/assets/hero/kere-look-4.jpeg', altKey: 'carousel.productGreenDress' },
 ];
 
 export function HeroSection() {
   const { t } = useTranslation();
+  const [productImages, setProductImages] = useState<HeroImage[]>([]);
+
+  useEffect(() => {
+    fetch('/api/products?per_page=12')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to load products');
+        }
+
+        return response.json();
+      })
+      .then((data) => {
+        const list: { id: number; name: string; images?: string[] }[] = data.data ?? [];
+
+        setProductImages(
+          list
+            .filter((product) => product.images?.[0])
+            .slice(0, 6)
+            .map((product) => ({
+              src: product.images![0],
+              alt: product.name,
+              productId: product.id,
+            })),
+        );
+      })
+      .catch(() => {});
+  }, []);
+
+  const heroImages: HeroImage[] =
+    productImages.length >= 4
+      ? productImages
+      : fallbackImages.map((image) => ({
+          src: image.src,
+          alt: t(image.altKey),
+          productId: null,
+        }));
+
   const movingImages = [...heroImages, ...heroImages];
 
   return (
@@ -46,9 +78,15 @@ export function HeroSection() {
 
           <div className="kere-gallery-track">
             {movingImages.map((image, index) => (
-              <div className="kere-gallery-image" key={`${image.src}-${index}`}>
-                <img src={image.src} alt={index < heroImages.length ? t(image.altKey) : ''} aria-hidden={index >= heroImages.length} />
-              </div>
+              <Link
+                to={image.productId != null ? `/product/${image.productId}` : '/marketplace'}
+                className="kere-gallery-image"
+                key={`${image.src}-${index}`}
+                tabIndex={index >= heroImages.length ? -1 : undefined}
+                aria-hidden={index >= heroImages.length}
+              >
+                <img src={image.src} alt={index < heroImages.length ? image.alt : ''} />
+              </Link>
             ))}
           </div>
         </div>

@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Mail\NewOrderAlert;
 use App\Mail\OrderConfirmation;
 use App\Mail\OrderStatusUpdated;
+use App\Mail\TailorRequestReceived;
 use App\Models\KereNotification;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\TailorRequest;
 use App\Models\User;
 use App\Services\SmsService;
 use Illuminate\Http\Request;
@@ -24,23 +26,6 @@ class OrderController extends Controller
         return User::where('role', 'tailor')
             ->where(fn ($q) => $q->where('is_available', true)->orWhereNull('is_available'))
             ->inRandomOrder()
-            ->first();
-    }
-
-    // Match the least-busy available tailor whose specialty matches the garment type
-    private function matchTailorForGarment(string $garmentType): ?User
-    {
-        $keyword = '%'.str_replace(['-', '_'], ' ', strtolower($garmentType)).'%';
-
-        return User::where('role', 'tailor')
-            ->where(fn ($q) => $q->where('is_available', true)->orWhereNull('is_available'))
-            ->where(function ($q) use ($keyword) {
-                $q->whereRaw('LOWER(specialty) LIKE ?', [$keyword])
-                    ->orWhereNull('specialty'); // tailors without a specialty are eligible
-            })
-            ->orderByRaw(
-                "(SELECT COUNT(*) FROM orders WHERE orders.tailor_id = users.id AND orders.status IN ('pending','processing')) ASC"
-            )
             ->first();
     }
 
@@ -206,6 +191,7 @@ class OrderController extends Controller
             // New fields from custom order flow
             'custom_design_data.design_file_url' => 'nullable|url|max:2000',
             'custom_design_data.tailor_notes' => 'nullable|string|max:500',
+            'custom_design_data.customization_request' => 'nullable|string|max:1000',
             'custom_design_data.customization' => 'nullable|array|max:50',
             // Existing fields
             'custom_design_data.fabric' => 'nullable|string|max:100',
@@ -236,31 +222,21 @@ class OrderController extends Controller
         $status = 'pending';
         $tailor = null;
 
-        if ($assignmentMode === 'random') {
-            $tailor = $this->matchTailorForGarment($garmentType);
+        if ($assignmentMode === 'manual' && ! empty($data['tailor_id'])) {
+            $tailor = User::where('id', $data['tailor_id'])
+                ->where('role', 'tailor')
+                ->where(fn ($q) => $q->where('is_available', true)->orWhereNull('is_available'))
+                ->first();
+
             if (! $tailor) {
-                $status = 'pending_assignment';
+                // Tailor became unavailable between selection and submit
+                return response()->json([
+                    'message' => 'This tailor is no longer available. Please choose another.',
+                ], 409);
             }
         } else {
-            // Manual: customer chose a specific tailor or left it null (fallback to random)
-            if (! empty($data['tailor_id'])) {
-                $tailor = User::where('id', $data['tailor_id'])
-                    ->where('role', 'tailor')
-                    ->where(fn ($q) => $q->where('is_available', true)->orWhereNull('is_available'))
-                    ->first();
-
-                if (! $tailor) {
-                    // Tailor became unavailable between selection and submit
-                    return response()->json([
-                        'message' => 'This tailor is no longer available. Please choose another.',
-                    ], 409);
-                }
-            } else {
-                $tailor = $this->randomTailor();
-                if (! $tailor) {
-                    $status = 'pending_assignment';
-                }
-            }
+            // No tailor chosen: the order goes to the open pool where tailors send offers
+            $status = 'pending_assignment';
         }
 
         $order = DB::transaction(function () use ($data, $user, $tailor, $shipping, $status, $assignmentMode, $garmentType) {
@@ -295,17 +271,19 @@ class OrderController extends Controller
                     ['clothing_type' => $garmentType]
                 );
             } else {
-                // Notify first admin of unassigned order
-                $admin = User::where('role', 'admin')->first();
-                if ($admin) {
-                    $this->notify(
-                        $admin->id,
-                        'unassigned_order',
-                        'Unassigned Order Needs Tailor',
-                        "Order #{$order->order_number} needs a tailor assigned.",
-                        $order->id
-                    );
-                }
+                // Open pool: every approved tailor can see the design and send an offer
+                User::where('role', 'tailor')
+                    ->where(fn ($q) => $q->where('approval_status', 'approved')->orWhereNull('approval_status'))
+                    ->where(fn ($q) => $q->where('is_suspended', false)->orWhereNull('is_suspended'))
+                    ->pluck('id')
+                    ->each(fn ($tailorId) => $this->notify(
+                        $tailorId,
+                        'open_order',
+                        'New Design Request Available',
+                        "A customer placed a custom {$garmentType} order. Send an offer from your dashboard if you want to make it.",
+                        $order->id,
+                        ['clothing_type' => $garmentType]
+                    ));
             }
 
             return $order;
@@ -357,6 +335,113 @@ class OrderController extends Controller
             ->map(fn ($o) => $this->formatOrder($o));
 
         return response()->json(['orders' => $orders]);
+    }
+
+    // ─── GET /api/tailor/open-orders ─────────────────────────────────────────
+    // Unassigned custom orders any approved tailor can offer to make
+
+    public function openOrders(Request $request)
+    {
+        $user = $request->user();
+        if ($user->role !== 'tailor') {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        if ($user->approval_status === 'pending' || $user->approval_status === 'rejected') {
+            return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
+        }
+
+        $orders = Order::with('user')
+            ->withCount('tailorRequests')
+            ->where('order_type', 'custom')
+            ->where('status', 'pending_assignment')
+            ->whereNull('tailor_id')
+            ->latest()
+            ->get();
+
+        $myRequests = TailorRequest::where('tailor_id', $user->id)
+            ->whereIn('order_id', $orders->pluck('id'))
+            ->pluck('status', 'order_id');
+
+        return response()->json(['orders' => $orders->map(fn ($o) => [
+            'id' => $o->id,
+            'order_number' => $o->order_number,
+            'created_at' => $o->created_at?->toISOString(),
+            'custom_design_data' => $o->custom_design_data,
+            'customer' => ['name' => $o->user->getFullName()],
+            'requests_count' => $o->tailor_requests_count,
+            'my_request_status' => $myRequests[$o->id] ?? null,
+        ])->values()]);
+    }
+
+    // ─── POST /api/tailor/orders/{id}/request ────────────────────────────────
+    // Tailor offers to make an open order; the customer picks the winner
+
+    public function requestOrder(Request $request, int $id)
+    {
+        $user = $request->user();
+        if ($user->role !== 'tailor') {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        if ($user->approval_status === 'pending' || $user->approval_status === 'rejected') {
+            return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
+        }
+
+        $data = $request->validate([
+            'message' => 'nullable|string|max:500',
+        ]);
+
+        $order = Order::with('user')
+            ->where('id', $id)
+            ->where('order_type', 'custom')
+            ->where('status', 'pending_assignment')
+            ->whereNull('tailor_id')
+            ->first();
+
+        if (! $order) {
+            return response()->json(['message' => 'This order is no longer open for offers.'], 409);
+        }
+
+        if (TailorRequest::where('order_id', $order->id)->where('tailor_id', $user->id)->exists()) {
+            return response()->json(['message' => 'You already sent an offer for this order.'], 409);
+        }
+
+        try {
+            $tailorRequest = TailorRequest::create([
+                'order_id' => $order->id,
+                'tailor_id' => $user->id,
+                'message' => $data['message'] ?? null,
+                'status' => 'pending',
+            ]);
+        } catch (\Illuminate\Database\QueryException) {
+            // Unique (order_id, tailor_id) race — treat as duplicate
+            return response()->json(['message' => 'You already sent an offer for this order.'], 409);
+        }
+
+        $this->notify(
+            $order->user_id,
+            'tailor_request',
+            'A Tailor Wants to Make Your Design!',
+            "{$user->getFullName()} offered to make your order #{$order->order_number}. Compare offers on your dashboard and choose your tailor.",
+            $order->id,
+            ['tailor_id' => $user->id, 'tailor_request_id' => $tailorRequest->id]
+        );
+
+        try {
+            if ($order->user->email) {
+                Mail::to($order->user->email)->send(new TailorRequestReceived($order, $user));
+            } elseif ($order->user->phone) {
+                (new SmsService)->send($order->user->phone, "Kere: მკერავს სურს თქვენი დიზაინის შეკერვა — შეკვეთა #{$order->order_number}. აირჩიეთ მკერავი თქვენს პანელზე.");
+            }
+        } catch (\Throwable $e) {
+            Log::error('TailorRequestReceived notification failed: '.$e->getMessage());
+        }
+
+        return response()->json(['request' => [
+            'id' => $tailorRequest->id,
+            'status' => $tailorRequest->status,
+        ]], 201);
     }
 
     // ─── PATCH /api/tailor/orders/{id}/status ────────────────────────────────

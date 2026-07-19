@@ -56,6 +56,12 @@ export default function OrderReview() {
         setSubmitting(true);
         setSubmitError(null);
 
+        const measurements = Object.fromEntries(
+            Object.entries(draft.measurements ?? {})
+                .filter(([, v]) => v !== '')
+                .map(([k, v]) => [k, Number(v)])
+        );
+
         const body: Record<string, unknown> = {
             order_type:             'custom',
             tailor_assignment_mode: draft.assignment_mode,
@@ -65,6 +71,8 @@ export default function OrderReview() {
                 customization:   draft.customization,
                 design_file_url: draft.design_file_url,
                 tailor_notes:    draft.tailor_notes,
+                ...(Object.keys(measurements).length > 0 && { measurements }),
+                ...(draft.customization_request && { customization_request: draft.customization_request }),
             },
         };
 
@@ -170,6 +178,24 @@ export default function OrderReview() {
                                     <dt className="text-slate-500">{t('orderReview.garment')}</dt>
                                     <dd className="font-medium text-slate-900">{garmentLabel}</dd>
                                 </div>
+                                {Object.entries(draft.measurements ?? {}).filter(([, v]) => v !== '').length > 0 && (
+                                    <div className="flex justify-between gap-4">
+                                        <dt className="text-slate-500 shrink-0">{t('orderReview.measurements')}</dt>
+                                        <dd className="flex flex-wrap justify-end gap-1">
+                                            {Object.entries(draft.measurements).filter(([, v]) => v !== '').map(([k, v]) => (
+                                                <span key={k} className="text-xs bg-slate-50 border border-slate-200 text-slate-600 px-2 py-0.5 rounded">
+                                                    {t(`orderReview.size_${k}`, k)}: {v} {t('orderReview.cmUnit')}
+                                                </span>
+                                            ))}
+                                        </dd>
+                                    </div>
+                                )}
+                                {draft.customization_request && (
+                                    <div className="flex justify-between gap-4">
+                                        <dt className="text-slate-500 shrink-0">{t('orderReview.customizationRequest')}</dt>
+                                        <dd className="font-medium text-slate-900 text-right">{draft.customization_request}</dd>
+                                    </div>
+                                )}
                                 {draft.tailor_notes && (
                                     <div className="flex justify-between gap-4">
                                         <dt className="text-slate-500 shrink-0">{t('orderReview.notes')}</dt>

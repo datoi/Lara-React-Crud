@@ -6,17 +6,19 @@
  *   Right — OptionPanel (tabs per category → option swatches + fabric picker)
  *            PriceSummary + Save/Order CTAs
  */
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bookmark, RotateCcw, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
-import PreviewCanvas from './PreviewCanvas';
+import PreviewCanvas, { viewImageUrl } from './PreviewCanvas';
+import ViewSwitcher from './ViewSwitcher';
+import ColorDotPicker from './ColorDotPicker';
 import OptionPanel from './OptionPanel';
 import PriceSummary from './PriceSummary';
 import SaveDesignModal from './SaveDesignModal';
 import { useCustomizer } from '../../hooks/useCustomizer';
-import type { CustomizerProduct, Fabric, LayerCategory } from '../../types/customizer';
+import type { CustomizerProduct, Fabric, GarmentView, LayerCategory } from '../../types/customizer';
 
 interface CustomizerProps {
     product: CustomizerProduct;
@@ -48,8 +50,39 @@ export default function Customizer({
 
     const [saveOpen, setSaveOpen]   = useState(false);
     const [savedName, setSavedName] = useState<string | null>(null);
+    const [view, setView]           = useState<GarmentView>('front');
 
     const selectedFabric = fabrics.find(f => f.id === fabricId) ?? null;
+
+    // Categories where every choice is colour-tagged render as dots under the
+    // preview; the rest stay as image swatches in the right-hand panel.
+    const isDotCategory = (category: LayerCategory) =>
+        category.options.length > 0 &&
+        category.options.every(o => o.color_hex && !(o.children && o.children.length > 0));
+
+    const dotCategories   = layerCategories.filter(isDotCategory);
+    const panelCategories = layerCategories.filter(c => !isDotCategory(c));
+    const hasPanelContent = panelCategories.some(c => c.options.length > 0) || fabrics.length > 0;
+
+    // A view is offered only when every rendered layer has a photo for it,
+    // so the composite never mixes angles.
+    const availableViews = useMemo((): GarmentView[] => {
+        const renderedOptions = layerCategories
+            .filter(c => c.slug !== 'collar' && c.is_preview_layer !== false)
+            .map(c => resolveOption(c))
+            .filter((o): o is NonNullable<typeof o> => o !== null);
+
+        if (renderedOptions.length === 0) return ['front'];
+
+        return (['front', 'back', 'left', 'right'] as GarmentView[]).filter(v =>
+            renderedOptions.every(o => viewImageUrl(o, v) !== null),
+        );
+    }, [layerCategories, resolveOption]);
+
+    // Picking a color/style that lacks the current angle snaps back to front
+    useEffect(() => {
+        if (!availableViews.includes(view)) setView('front');
+    }, [availableViews, view]);
 
     return (
         <motion.div
@@ -64,6 +97,7 @@ export default function Customizer({
                     layerCategories={layerCategories}
                     selections={selections}
                     selectedFabric={selectedFabric}
+                    view={view}
                     resolveOption={resolveOption}
                 />
                 {/* Fabric swatch label below preview */}
@@ -86,19 +120,34 @@ export default function Customizer({
                     )}
                 </div>
 
-                {/* Option panel */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-4">
-                    <OptionPanel
-                        layerCategories={layerCategories}
-                        fabrics={fabrics}
-                        selections={selections}
-                        subSelections={subSelections}
-                        fabricId={fabricId}
-                        onSelectOption={selectOption}
-                        onSelectSubOption={selectSubOption}
-                        onSelectFabric={selectFabric}
-                    />
-                </div>
+                {/* Option panel — hidden when colour dots are the only choice */}
+                {hasPanelContent && (
+                    <div className="bg-white rounded-2xl border border-slate-100 p-4">
+                        <OptionPanel
+                            layerCategories={panelCategories}
+                            fabrics={fabrics}
+                            selections={selections}
+                            subSelections={subSelections}
+                            fabricId={fabricId}
+                            onSelectOption={selectOption}
+                            onSelectSubOption={selectSubOption}
+                            onSelectFabric={selectFabric}
+                        />
+                    </div>
+                )}
+
+                {/* Colour dot groups */}
+                {dotCategories.map(category => (
+                    <div key={category.id} className="bg-white rounded-2xl border border-slate-100 p-4">
+                        <ColorDotPicker
+                            category={category}
+                            selectedId={selections[category.id]}
+                            onSelect={optionId => selectOption(category.id, optionId)}
+                        />
+                    </div>
+                ))}
+
+                <ViewSwitcher views={availableViews} view={view} onChange={setView} />
 
                 {/* Price summary — hidden on mobile (shown in sticky bar below) */}
                 <div className="hidden lg:block">

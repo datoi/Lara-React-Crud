@@ -506,6 +506,47 @@ function CategoriesSection({
 
 // ── Style card: one top-level option with its sub-styles ─────────────────────
 
+function ViewImageSlot({
+    label, url, uploading, onPick,
+}: {
+    label: string;
+    url: string | null;
+    uploading: boolean;
+    onPick: (file: File) => void;
+}) {
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    return (
+        <div className="flex flex-col items-center gap-0.5">
+            <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                title={`Upload ${label.toLowerCase()} view image`}
+                className="w-10 h-12 rounded-lg border border-dashed border-slate-300 hover:border-slate-500 transition-colors overflow-hidden flex items-center justify-center bg-white"
+                style={url ? { backgroundImage: 'repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%)', backgroundSize: '6px 6px' } : undefined}
+            >
+                {uploading
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
+                    : url
+                        ? <img src={url} alt={label} className="w-full h-full object-contain" />
+                        : <Plus className="w-3.5 h-3.5 text-slate-400" />}
+            </button>
+            <span className="text-[9px] text-slate-500">{label}</span>
+            <input
+                ref={inputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) onPick(file);
+                    e.target.value = '';
+                }}
+            />
+        </div>
+    );
+}
+
 function StyleCard({
     option, categoryId, token, onDelete, onRefresh,
 }: {
@@ -519,9 +560,38 @@ function StyleCard({
     const [subName, setSubName]               = useState('');
     const [subFile, setSubFile]               = useState<File | null>(null);
     const [saving, setSaving]                 = useState(false);
+    const [uploadingView, setUploadingView]   = useState<string | null>(null);
+    const [savingColor, setSavingColor]       = useState(false);
     const subFileRef = useRef<HTMLInputElement>(null);
 
     const children: LayerOption[] = option.children ?? [];
+
+    const handleUploadView = async (field: 'back_image' | 'left_image' | 'right_image', file: File) => {
+        setUploadingView(field);
+        const fd = new FormData();
+        fd.append('_method', 'PUT');
+        fd.append(field, file);
+        try {
+            await fetch(`/api/admin/customizer/options/${option.id}`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                body: fd,
+            });
+            onRefresh();
+        } finally { setUploadingView(null); }
+    };
+
+    const handleSaveColor = async (hex: string | null) => {
+        setSavingColor(true);
+        try {
+            await fetch(`/api/admin/customizer/options/${option.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                body: JSON.stringify({ color_hex: hex }),
+            });
+            onRefresh();
+        } finally { setSavingColor(false); }
+    };
 
     const handleAddSubStyle = async () => {
         if (!subName.trim() || !subFile) return;
@@ -570,6 +640,59 @@ function StyleCard({
 
             {/* Sub-styles section */}
             <div className="p-3 space-y-2">
+                {/* Dot colour — when every style in a group has one, customers pick via colour dots */}
+                <div className="flex items-center gap-2.5">
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide shrink-0">
+                        Dot colour
+                    </p>
+                    <input
+                        type="color"
+                        value={option.color_hex ?? '#ffffff'}
+                        onChange={e => handleSaveColor(e.target.value)}
+                        title="Pick the colour dot customers click to select this style"
+                        className="w-8 h-8 rounded-lg border border-slate-200 cursor-pointer bg-white p-0.5"
+                    />
+                    {option.color_hex ? (
+                        <button
+                            type="button"
+                            onClick={() => handleSaveColor(null)}
+                            className="text-[10px] text-slate-400 hover:text-slate-600 underline"
+                        >
+                            remove
+                        </button>
+                    ) : (
+                        <span className="text-[10px] text-slate-400">none — shows as image thumbnail</span>
+                    )}
+                    {savingColor && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+                </div>
+
+                {/* Rotation views — optional back/side photos enable the preview's rotate control */}
+                <div className="flex items-start gap-2.5">
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide pt-1 shrink-0">
+                        Rotation views
+                    </p>
+                    <div className="flex gap-1.5">
+                        <ViewImageSlot
+                            label="Back"
+                            url={option.back_image_url}
+                            uploading={uploadingView === 'back_image'}
+                            onPick={file => handleUploadView('back_image', file)}
+                        />
+                        <ViewImageSlot
+                            label="Left"
+                            url={option.left_image_url}
+                            uploading={uploadingView === 'left_image'}
+                            onPick={file => handleUploadView('left_image', file)}
+                        />
+                        <ViewImageSlot
+                            label="Right"
+                            url={option.right_image_url}
+                            uploading={uploadingView === 'right_image'}
+                            onPick={file => handleUploadView('right_image', file)}
+                        />
+                    </div>
+                </div>
+
                 <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
                     Sub-styles for "{option.name}"
                     <span className="text-slate-400 font-normal ml-1">(e.g. collar variants)</span>

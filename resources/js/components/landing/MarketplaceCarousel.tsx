@@ -22,8 +22,7 @@ export function MarketplaceCarousel() {
   const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollStart, setScrollStart] = useState(0);
+  const pressRef = useRef<{ pointerId: number; startX: number; scrollStart: number } | null>(null);
   const stripRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -106,20 +105,32 @@ export function MarketplaceCarousel() {
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!stripRef.current) return;
 
-    setIsDragging(true);
-    setStartX(event.clientX);
-    setScrollStart(stripRef.current.scrollLeft);
-    stripRef.current.setPointerCapture(event.pointerId);
+    pressRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      scrollStart: stripRef.current.scrollLeft,
+    };
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging || !stripRef.current) return;
+    const press = pressRef.current;
+    if (!press || !stripRef.current) return;
 
-    const distance = event.clientX - startX;
-    stripRef.current.scrollLeft = scrollStart - distance;
+    const distance = event.clientX - press.startX;
+
+    // Capturing the pointer redirects the eventual click away from the card
+    // links, so only enter drag mode once the pointer has clearly moved.
+    if (!isDragging) {
+      if (Math.abs(distance) < 6) return;
+      setIsDragging(true);
+      stripRef.current.setPointerCapture(press.pointerId);
+    }
+
+    stripRef.current.scrollLeft = press.scrollStart - distance;
   };
 
   const stopDragging = () => {
+    pressRef.current = null;
     setIsDragging(false);
   };
 

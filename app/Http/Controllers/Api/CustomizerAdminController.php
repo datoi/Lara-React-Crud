@@ -153,6 +153,10 @@ class CustomizerAdminController extends Controller
             'slug'              => $request->slug,
             'image_path'        => $path,
             'thumbnail_path'    => $path,
+            'back_image_path'   => $this->storeViewImage($request, 'back_image'),
+            'left_image_path'   => $this->storeViewImage($request, 'left_image'),
+            'right_image_path'  => $this->storeViewImage($request, 'right_image'),
+            'color_hex'         => $request->input('color_hex'),
             'price_modifier'    => $request->price_modifier ?? 0,
             'is_default'        => $request->boolean('is_default', false),
             'is_active'         => true,
@@ -168,6 +172,7 @@ class CustomizerAdminController extends Controller
 
         $data = $request->validate([
             'name'           => ['sometimes', 'string', 'max:120'],
+            'color_hex'      => ['sometimes', 'nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'price_modifier' => ['nullable', 'numeric', 'min:0'],
             'is_default'     => ['nullable', 'boolean'],
             'is_active'      => ['nullable', 'boolean'],
@@ -191,6 +196,22 @@ class CustomizerAdminController extends Controller
             $data['thumbnail_path'] = $newPath;
         }
 
+        // Optional rotation-view image uploads (back / left / right)
+        foreach (['back_image', 'left_image', 'right_image'] as $viewField) {
+            if (! $request->hasFile($viewField)) {
+                continue;
+            }
+
+            $column  = $viewField . '_path';
+            $newPath = $this->storeViewImage($request, $viewField);
+
+            if ($option->{$column}) {
+                Storage::disk('public')->delete($option->{$column});
+            }
+
+            $data[$column] = $newPath;
+        }
+
         $option->update($data);
 
         return response()->json(['option' => new LayerOptionResource($option)]);
@@ -200,13 +221,29 @@ class CustomizerAdminController extends Controller
     {
         $option = LayerOption::findOrFail($id);
 
-        if ($option->image_path) {
-            Storage::disk('public')->delete($option->image_path);
+        foreach (['image_path', 'back_image_path', 'left_image_path', 'right_image_path'] as $column) {
+            if ($option->{$column}) {
+                Storage::disk('public')->delete($option->{$column});
+            }
         }
 
         $option->delete();
 
         return response()->json(['message' => 'Option deleted.']);
+    }
+
+    /** Store an optional rotation-view upload; returns its storage path or null. */
+    private function storeViewImage(Request $request, string $field): ?string
+    {
+        if (! $request->hasFile($field)) {
+            return null;
+        }
+
+        $request->validate([$field => ['file', 'mimes:png,svg,jpg,jpeg,webp', 'max:4096']]);
+
+        $file = $request->file($field);
+
+        return $file->storeAs('layers', Str::uuid() . '.' . $file->getClientOriginalExtension(), 'public');
     }
 
     // ── Fabrics ───────────────────────────────────────────────────────────────

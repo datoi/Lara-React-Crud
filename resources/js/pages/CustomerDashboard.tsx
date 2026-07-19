@@ -4,10 +4,11 @@ import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import {
     ShoppingBag, Package, Clock, CheckCircle, Truck, X,
-    ChevronRight, User, Scissors, MessageCircle, Star
+    ChevronRight, User, Scissors, MessageCircle, Star, Users, Loader2
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getAuthToken, getAuthUser, clearAuth } from '../hooks/useAuth';
+import { Button } from '../components/ui/button';
 import { NotificationBell } from '../components/NotificationBell';
 import { ReviewModal } from '../components/ReviewModal';
 import { OrderChat } from '../components/OrderChat';
@@ -44,6 +45,12 @@ interface DesignData {
     darkerShade?: string;
     additionalColor?: string;
     designElements?: { customNotes?: string };
+    // upload flow shape
+    garment_type?: string;
+    design_file_url?: string | null;
+    measurements?: Record<string, number | string>;
+    customization_request?: string;
+    tailor_notes?: string;
 }
 
 interface CustomerOrder {
@@ -57,9 +64,28 @@ interface CustomerOrder {
     items: OrderItem[];
     created_at: string;
     has_review: boolean;
+    tailor_requests_count: number;
+}
+
+interface TailorOffer {
+    id: number;
+    status: string;
+    message: string | null;
+    created_at: string;
+    tailor: {
+        id: number;
+        name: string;
+        specialty: string | null;
+        years_experience: number | null;
+        turnaround_days: string | null;
+        profile_image: string | null;
+        avg_rating: number | null;
+        reviews_count: number;
+    };
 }
 
 const STATUS_CONFIG: Record<string, { labelKey: string; color: string; icon: typeof Package }> = {
+    pending_assignment: { labelKey: 'customerDashboard.statusAwaitingOffers', color: 'bg-slate-100 text-slate-600', icon: Users },
     pending:    { labelKey: 'customerDashboard.statusPending',    color: 'bg-slate-100 text-slate-600',  icon: Clock },
     processing: { labelKey: 'customerDashboard.statusInProgress', color: 'bg-slate-100 text-slate-700',  icon: Scissors },
     shipped:    { labelKey: 'customerDashboard.statusShipped',    color: 'bg-slate-100 text-slate-700',  icon: Truck },
@@ -80,7 +106,121 @@ function StatusBadge({ status }: { status: string }) {
     );
 }
 
-function OrderDetailModal({ order, currentUserId, onClose, initialTab = 'details' }: { order: CustomerOrder; currentUserId: number; onClose: () => void; initialTab?: 'details' | 'messages' }) {
+function TailorOffers({ orderId, onChosen }: { orderId: number; onChosen: (tailorId: number, tailorName: string) => void }) {
+    const { t } = useTranslation();
+    const token = getAuthToken();
+    const [offers,   setOffers]   = useState<TailorOffer[]>([]);
+    const [loading,  setLoading]  = useState(true);
+    const [choosing, setChoosing] = useState<number | null>(null);
+    const [error,    setError]    = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!token) return;
+        fetch(`/api/customer/orders/${orderId}/requests`, {
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        })
+            .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
+            .then(d => setOffers(d.requests ?? []))
+            .catch(() => setError(t('customerDashboard.offersLoadFailed')))
+            .finally(() => setLoading(false));
+    }, [token, orderId, t]);
+
+    const handleChoose = async (offer: TailorOffer) => {
+        if (!token || choosing) return;
+        setChoosing(offer.id);
+        setError(null);
+        try {
+            const res = await fetch(`/api/customer/orders/${orderId}/choose-tailor`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                body: JSON.stringify({ request_id: offer.id }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error((data as { message?: string }).message ?? t('customerDashboard.chooseFailed'));
+            onChosen(offer.tailor.id, offer.tailor.name);
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : t('customerDashboard.chooseFailed'));
+        } finally {
+            setChoosing(null);
+        }
+    };
+
+    return (
+        <div className="bg-slate-50 rounded-xl p-4">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.offersTitle')}</p>
+
+            {loading ? (
+                <div className="flex justify-center py-6">
+                    <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
+                </div>
+            ) : offers.length === 0 ? (
+                <p className="text-sm text-slate-500">{t('customerDashboard.noOffersYet')}</p>
+            ) : (
+                <div className="space-y-3">
+                    {offers.map(offer => (
+                        <div key={offer.id} className="bg-white rounded-xl border border-slate-200 p-4">
+                            <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 flex items-center justify-center shrink-0">
+                                    {offer.tailor.profile_image ? (
+                                        <img src={offer.tailor.profile_image} alt={offer.tailor.name} className="w-full h-full object-cover" loading="lazy" />
+                                    ) : (
+                                        <User className="w-5 h-5 text-slate-500" />
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <Link
+                                            to={`/tailor/${offer.tailor.id}`}
+                                            className="font-semibold text-slate-900 text-sm truncate hover:underline"
+                                        >
+                                            {offer.tailor.name}
+                                        </Link>
+                                        {offer.tailor.avg_rating !== null && (
+                                            <span className="flex items-center gap-1 text-xs text-slate-600 shrink-0">
+                                                <Star className="w-3 h-3 fill-slate-500 text-slate-500" />
+                                                <span className="font-semibold">{offer.tailor.avg_rating.toFixed(1)}</span>
+                                                <span className="text-slate-400">({offer.tailor.reviews_count})</span>
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-slate-400 mt-0.5 truncate">
+                                        {[
+                                            offer.tailor.specialty,
+                                            offer.tailor.years_experience && t('customerDashboard.offerExperience', { n: offer.tailor.years_experience }),
+                                            offer.tailor.turnaround_days && t('customerDashboard.offerTurnaround', { n: offer.tailor.turnaround_days }),
+                                        ].filter(Boolean).join(' · ')}
+                                    </p>
+                                    {offer.message && (
+                                        <p className="text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 mt-2">
+                                            “{offer.message}”
+                                        </p>
+                                    )}
+                                    <div className="mt-2.5">
+                                        <Button
+                                            variant="default"
+                                            size="sm"
+                                            onClick={() => handleChoose(offer)}
+                                            disabled={choosing !== null}
+                                            className="text-xs"
+                                        >
+                                            {choosing === offer.id
+                                                ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />{t('customerDashboard.choosing')}</>
+                                                : t('customerDashboard.chooseTailorBtn')}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {error && <p className="text-xs text-destructive mt-3">{error}</p>}
+        </div>
+    );
+}
+
+function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initialTab = 'details' }: { order: CustomerOrder; currentUserId: number; onClose: () => void; onTailorChosen: (orderId: number, tailorId: number, tailorName: string) => void; initialTab?: 'details' | 'messages' }) {
     const { t } = useTranslation();
     const isCustom = order.order_type === 'custom';
     const design = order.custom_design_data;
@@ -155,13 +295,28 @@ function OrderDetailModal({ order, currentUserId, onClose, initialTab = 'details
                             )}
                         </div>
 
+                        {order.status === 'pending_assignment' && (
+                            <TailorOffers
+                                orderId={order.id}
+                                onChosen={(tailorId, tailorName) => onTailorChosen(order.id, tailorId, tailorName)}
+                            />
+                        )}
+
                         {isCustom && design ? (
                             <div className="space-y-4">
+                                {design.design_file_url?.match(/\.(jpg|jpeg|png|svg)$/i) && (
+                                    <img
+                                        src={design.design_file_url}
+                                        alt={t('customerDashboard.customDesignLabel')}
+                                        className="w-full max-h-48 object-contain rounded-xl border border-slate-200 bg-slate-50"
+                                        loading="lazy"
+                                    />
+                                )}
                                 <div className="bg-slate-50 rounded-xl p-4">
                                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.customDesignLabel')}</p>
                                     <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                                        {(design.garmentType ?? design.clothingType) && (
-                                            <><span className="text-slate-500">{t('customerDashboard.typeLabel')}</span><span className="font-medium text-slate-900 capitalize">{design.garmentType ?? design.clothingType}</span></>
+                                        {(design.garmentType ?? design.garment_type ?? design.clothingType) && (
+                                            <><span className="text-slate-500">{t('customerDashboard.typeLabel')}</span><span className="font-medium text-slate-900 capitalize">{design.garmentType ?? design.garment_type ?? design.clothingType}</span></>
                                         )}
                                         {(design.style ?? design.subcategory) && (
                                             <><span className="text-slate-500">{t('customerDashboard.styleLabel')}</span><span className="font-medium text-slate-900">{design.style ?? design.subcategory}</span></>
@@ -194,10 +349,30 @@ function OrderDetailModal({ order, currentUserId, onClose, initialTab = 'details
                                     </div>
                                 )}
 
-                                {(design.notes ?? design.designElements?.customNotes) && (
+                                {design.measurements && Object.keys(design.measurements).length > 0 && (
+                                    <div className="bg-slate-50 rounded-xl p-4">
+                                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.measurementsLabel')}</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {Object.entries(design.measurements).map(([k, v]) => (
+                                                <span key={k} className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded capitalize">
+                                                    {k}: {v}cm
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {design.customization_request && (
+                                    <div className="bg-slate-50 rounded-xl p-4">
+                                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('customerDashboard.customizationRequestLabel')}</p>
+                                        <p className="text-sm text-slate-600">{design.customization_request}</p>
+                                    </div>
+                                )}
+
+                                {(design.notes ?? design.tailor_notes ?? design.designElements?.customNotes) && (
                                     <div className="bg-slate-50 rounded-xl p-4">
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('customerDashboard.tailorNotes')}</p>
-                                        <p className="text-sm text-slate-600">{design.notes ?? design.designElements?.customNotes}</p>
+                                        <p className="text-sm text-slate-600">{design.notes ?? design.tailor_notes ?? design.designElements?.customNotes}</p>
                                     </div>
                                 )}
                             </div>
@@ -303,6 +478,12 @@ export default function CustomerDashboard() {
     const handleCloseOrder = () => {
         setSelected(null);
         setMsgCounts(c => ({ ...c }));
+    };
+
+    const handleTailorChosen = (orderId: number, tailorId: number, tailorName: string) => {
+        const patch = { status: 'pending', tailor_id: tailorId, tailor_name: tailorName };
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...patch } : o));
+        setSelected(s => s && s.id === orderId ? { ...s, ...patch } : s);
     };
 
     const handleSignOut = () => { clearAuth(); navigate('/'); };
@@ -449,7 +630,7 @@ export default function CustomerDashboard() {
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium text-slate-900 text-sm truncate">
                                             {order.order_type === 'custom'
-                                                ? `${t('customerDashboard.customPrefix')} ${String((order.custom_design_data as Record<string, unknown>)?.garmentType ?? (order.custom_design_data as Record<string, unknown>)?.clothingType ?? t('customerDashboard.customDesignLabel'))}`
+                                                ? `${t('customerDashboard.customPrefix')} ${String(order.custom_design_data?.garmentType ?? order.custom_design_data?.garment_type ?? order.custom_design_data?.clothingType ?? t('customerDashboard.customDesignLabel'))}`
                                                 : order.items[0]?.product_name ?? t('customerDashboard.orderFallback')
                                             }
                                         </p>
@@ -472,6 +653,12 @@ export default function CustomerDashboard() {
                                         </p>
                                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                             <StatusBadge status={order.status} />
+                                            {order.status === 'pending_assignment' && order.tailor_requests_count > 0 && (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-white bg-slate-900 rounded-full px-2 py-0.5">
+                                                    <Users className="w-3 h-3" />
+                                                    {t('customerDashboard.offersChip', { count: order.tailor_requests_count })}
+                                                </span>
+                                            )}
                                             {order.status === 'delivered' && !order.has_review && (
                                                 <button
                                                     onClick={e => { e.stopPropagation(); setReviewOrder(order); }}
@@ -550,6 +737,7 @@ export default function CustomerDashboard() {
                         currentUserId={user?.id ?? 0}
                         initialTab={openTab}
                         onClose={handleCloseOrder}
+                        onTailorChosen={handleTailorChosen}
                     />
                 )}
             </AnimatePresence>
@@ -561,7 +749,7 @@ export default function CustomerDashboard() {
                     orderId={reviewOrder.id}
                     orderLabel={
                         reviewOrder.order_type === 'custom'
-                            ? `${t('customerDashboard.customPrefix')} ${String((reviewOrder.custom_design_data as Record<string, unknown>)?.garmentType ?? (reviewOrder.custom_design_data as Record<string, unknown>)?.clothingType ?? t('customerDashboard.customDesignLabel'))}`
+                            ? `${t('customerDashboard.customPrefix')} ${String(reviewOrder.custom_design_data?.garmentType ?? reviewOrder.custom_design_data?.garment_type ?? reviewOrder.custom_design_data?.clothingType ?? t('customerDashboard.customDesignLabel'))}`
                             : reviewOrder.items[0]?.product_name ?? t('customerDashboard.orderFallback')
                     }
                     onClose={() => setReviewOrder(null)}

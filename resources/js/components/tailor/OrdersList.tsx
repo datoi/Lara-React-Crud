@@ -51,6 +51,12 @@ interface CustomDesign {
     sizeStandard?: string;
     sizeCm?: Record<string, string>;
     designElements?: { cuts?: string[]; height?: string; customNotes?: string };
+    // upload flow shape
+    garment_type?: string | null;
+    design_file_url?: string | null;
+    measurements?: Record<string, number | string>;
+    customization_request?: string;
+    tailor_notes?: string;
 }
 
 export interface TailorOrder {
@@ -254,11 +260,19 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                         {/* Custom design details */}
                         {isCustom && cd && (
                             <>
+                                {cd.design_file_url?.match(/\.(jpg|jpeg|png|svg)$/i) && (
+                                    <img
+                                        src={cd.design_file_url}
+                                        alt={t('tailorComponents.customDesignBadge')}
+                                        className="w-full max-h-64 object-contain rounded-xl border border-slate-100 bg-slate-50"
+                                        loading="lazy"
+                                    />
+                                )}
                                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                                     <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
                                         {t('tailorComponents.garmentSpecs')}
                                     </div>
-                                    <SpecRow label={t('tailorComponents.specType')}     value={(cd.garmentType ?? cd.clothingType) ?? undefined} />
+                                    <SpecRow label={t('tailorComponents.specType')}     value={(cd.garmentType ?? cd.garment_type ?? cd.clothingType) ?? undefined} />
                                     <SpecRow label={t('tailorComponents.specStyle')}    value={(cd.style ?? cd.subcategory) ?? undefined} />
                                     <SpecRow label={t('tailorComponents.specFabric')}   value={cd.fabric} />
                                     <SpecRow label={t('tailorComponents.specNeckline')} value={cd.components?.neckline ?? cd.neckline} />
@@ -294,6 +308,10 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                         ? <SpecRow key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={`${v} cm`} />
                                         : null
                                     )}
+                                    {Object.entries(cd.measurements ?? {}).map(([k, v]) => v !== '' && v !== null
+                                        ? <SpecRow key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={`${v} cm`} />
+                                        : null
+                                    )}
                                     {(cd.height ?? cd.designElements?.height) && (
                                         <SpecRow label={t('tailorComponents.specHeight')} value={`${cd.height ?? cd.designElements?.height} cm`} />
                                     )}
@@ -312,12 +330,21 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                     </div>
                                 )}
 
-                                {(cd.notes ?? cd.designElements?.customNotes) && (
+                                {cd.customization_request && (
+                                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                            {t('tailorComponents.customizationRequest')}
+                                        </div>
+                                        <p className="text-sm text-slate-700 leading-relaxed">{cd.customization_request}</p>
+                                    </div>
+                                )}
+
+                                {(cd.notes ?? cd.tailor_notes ?? cd.designElements?.customNotes) && (
                                     <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                                         <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
                                             {t('tailorComponents.customNotesSection')}
                                         </div>
-                                        <p className="text-sm text-slate-700 leading-relaxed">{cd.notes ?? cd.designElements?.customNotes}</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed">{cd.notes ?? cd.tailor_notes ?? cd.designElements?.customNotes}</p>
                                     </div>
                                 )}
                             </>
@@ -477,7 +504,7 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                             const statusClasses = STATUS_CLASSES[order.status] ?? STATUS_CLASSES.pending;
                             const statusLabel   = t(STATUS_LABEL_KEYS[order.status] ?? STATUS_LABEL_KEYS.pending);
                             const productLabel = order.order_type === 'custom'
-                                ? `${t('tailorComponents.customPrefix')}: ${order.custom_design_data?.garmentType ?? order.custom_design_data?.clothingType ?? '—'}`
+                                ? `${t('tailorComponents.customPrefix')}: ${order.custom_design_data?.garmentType ?? order.custom_design_data?.garment_type ?? order.custom_design_data?.clothingType ?? '—'}`
                                 : (order.items[0]?.product_name ?? '—');
                             const dateLabel = order.created_at
                                 ? new Date(order.created_at).toLocaleDateString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB')
@@ -551,7 +578,7 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                                     const statusClasses = STATUS_CLASSES[order.status] ?? STATUS_CLASSES.pending;
                                     const statusLabel   = t(STATUS_LABEL_KEYS[order.status] ?? STATUS_LABEL_KEYS.pending);
                                     const productLabel = order.order_type === 'custom'
-                                        ? `${t('tailorComponents.customPrefix')}: ${order.custom_design_data?.garmentType ?? order.custom_design_data?.clothingType ?? '—'}`
+                                        ? `${t('tailorComponents.customPrefix')}: ${order.custom_design_data?.garmentType ?? order.custom_design_data?.garment_type ?? order.custom_design_data?.clothingType ?? '—'}`
                                         : (order.items[0]?.product_name ?? '—');
                                     const dateLabel = order.created_at
                                         ? new Date(order.created_at).toLocaleDateString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB')

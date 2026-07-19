@@ -609,6 +609,36 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-07-13] Upload-Design Measurements + Open Order Pool with Tailor Offers
+
+**What was done:** The upload-your-design step now collects measurements and an explicit customization request; custom orders without a hand-picked tailor go to an open pool where every approved tailor is notified, can send an offer, and the customer picks the winner from her dashboard.
+
+**Upload step (`DesignerApp.tsx` UploadPanel):** Four optional cm measurement inputs (chest, waist, hips, length — validated to ≤999 with one decimal, matching backend `measurements.*` rules), a "I want to customize this design" checkbox that reveals a 1000-char request textarea, and the additional-information box shrunk to 2 rows. All persisted via `useCustomOrderDraft` (`measurements`, `customization_request`) and submitted inside `custom_design_data`.
+
+**Order creation (`OrderController::storeCustomOrder`):** Manual tailor selection still assigns directly. Any other path (formerly "Let Kere Choose" auto-match — `matchTailorForGarment()` removed) now sets `status = pending_assignment` with `tailor_id = null` and creates an `open_order` KereNotification for every approved, non-suspended tailor. `custom_design_data.customization_request` accepted (max 1000).
+
+**Offer flow:**
+- `GET /api/tailor/open-orders` — pool of unassigned custom orders with design data, `requests_count`, and the caller's `my_request_status`.
+- `POST /api/tailor/orders/{id}/request` — creates a `TailorRequest` (optional 500-char message; unique per order+tailor, 409 on duplicate or closed order). Customer gets an in-app `tailor_request` notification plus a `TailorRequestReceived` email (SMS fallback when no email).
+- `GET /api/customer/orders/{orderId}/requests` — offers with tailor profile + weighted product-review rating.
+- `POST /api/customer/orders/{orderId}/choose-tailor` — transactionally assigns the tailor, sets order `pending`, marks the offer `accepted` and the rest `declined`; chosen tailor gets `request_accepted` notification + `NewOrderAlert` email (SMS fallback), declined tailors get `request_declined`.
+
+**Dashboards:** `TailorDashboard` renders a new `AvailableDesigns` card (design preview, measurements, customization request, offer form with message). `CustomerDashboard` shows an "Awaiting Offers" status badge and offers-count chip on `pending_assignment` orders; the order modal lists offers (`TailorOffers`) with a Choose button and now also renders the upload-shape design data (`garment_type`, image, measurements, customization request, notes) — as does the tailor's `OrdersList` modal.
+
+**Migration:** `2026_07_12_120000_create_tailor_requests_table.php` (`order_id`, `tailor_id`, `message`, `status`, unique `[order_id, tailor_id]`).
+
+**Where the logic is:**
+- `app/Http/Controllers/Api/OrderController.php` — pool creation + broadcast, `openOrders()`, `requestOrder()`
+- `app/Http/Controllers/Api/CustomerOrderController.php` — `requests()`, `chooseTailor()`, `tailor_requests_count` in `index()`
+- `app/Models/TailorRequest.php`, `Order::tailorRequests()`
+- `app/Mail/TailorRequestReceived.php` + `resources/views/emails/tailor-request-received.blade.php`
+- `resources/js/components/tailor/AvailableDesigns.tsx` — pool UI
+- `resources/js/pages/CustomerDashboard.tsx` — `TailorOffers`, status badge, chip
+- `resources/js/pages/DesignerApp.tsx`, `OrderReview.tsx`, `hooks/useCustomOrderDraft.ts` — new draft fields
+- i18n: new keys in `design`, `orderReview`, `customerDashboard`, `tailorComponents`; `tailorSelect.letKereChoose*` copy now describes the offers flow
+
+---
+
 ### [2026-06-27] Tailor Approval Flow
 
 **What was done:** New tailors cannot access the platform until manually approved by an admin.

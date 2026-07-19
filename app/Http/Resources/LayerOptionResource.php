@@ -18,6 +18,16 @@ class LayerOptionResource extends JsonResource
             'alt_image_url'    => $this->alt_image_path
                                       ? $this->resolveUrl($this->alt_image_path)
                                       : null,
+            'back_image_url'   => $this->back_image_path
+                                      ? $this->resolveUrl($this->back_image_path)
+                                      : null,
+            'left_image_url'   => $this->left_image_path
+                                      ? $this->resolveUrl($this->left_image_path)
+                                      : null,
+            'right_image_url'  => $this->right_image_path
+                                      ? $this->resolveUrl($this->right_image_path)
+                                      : null,
+            'color_hex'        => $this->color_hex,
             'display_scale'    => $this->display_scale ?? 1.0,
             'price_modifier'   => $this->price_modifier,
             'is_default'       => $this->is_default,

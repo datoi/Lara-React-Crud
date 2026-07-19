@@ -43,6 +43,7 @@ Route::middleware(['auth.bearer', 'throttle:60,1'])->group(function () {
     // Customer
     Route::get('/customer/orders', [CustomerOrderController::class, 'index']);
     Route::get('/customer/orders/{orderId}/review-status', [ReviewController::class, 'orderReviewStatus']);
+    Route::get('/customer/orders/{orderId}/requests', [CustomerOrderController::class, 'requests']);
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
@@ -53,6 +54,7 @@ Route::middleware(['auth.bearer', 'throttle:60,1'])->group(function () {
 
     // Tailor reads
     Route::get('/tailor/orders', [OrderController::class, 'tailorOrders']);
+    Route::get('/tailor/open-orders', [OrderController::class, 'openOrders']);
     Route::get('/tailor/stats', [ProductController::class, 'tailorStats']);
     Route::get('/tailor/products', [ProductController::class, 'tailorProducts']);
 
@@ -66,6 +68,8 @@ Route::middleware(['auth.bearer', 'throttle:10,1'])->group(function () {
     // Orders
     Route::post('/orders', [OrderController::class, 'store']);
     Route::patch('/tailor/orders/{id}/status', [OrderController::class, 'updateStatus']);
+    Route::post('/tailor/orders/{id}/request', [OrderController::class, 'requestOrder']);
+    Route::post('/customer/orders/{orderId}/choose-tailor', [CustomerOrderController::class, 'chooseTailor']);
 
     // Tailor
     Route::patch('/tailor/profile', [TailorController::class, 'updateProfile']);

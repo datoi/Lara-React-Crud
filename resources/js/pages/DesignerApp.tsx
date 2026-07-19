@@ -149,23 +149,46 @@ function UploadTypeStep({
 
 // ─── Step: Upload panel ───────────────────────────────────────────────────────
 
+export interface UploadResult {
+    fileUrl: string;
+    measurements: Record<string, string>;
+    customizationRequest: string;
+    notes: string;
+}
+
+const MEASUREMENT_FIELDS = [
+    { key: 'chest',  tKey: 'design.sizeChest' },
+    { key: 'waist',  tKey: 'design.sizeWaist' },
+    { key: 'hips',   tKey: 'design.sizeHips' },
+    { key: 'length', tKey: 'design.sizeLength' },
+];
+
 function UploadPanel({
     category,
     onContinue,
     onBack,
 }: {
     category: string;
-    onContinue: (fileUrl: string, notes: string) => void;
+    onContinue: (result: UploadResult) => void;
     onBack: () => void;
 }) {
     const { t } = useTranslation();
     const [fileUrl,     setFileUrl]     = useState<string | null>(null);
     const [previewUrl,  setPreviewUrl]  = useState<string | null>(null);
     const [fileName,    setFileName]    = useState<string | null>(null);
+    const [measurements, setMeasurements] = useState<Record<string, string>>({});
+    const [wantsCustomization, setWantsCustomization] = useState(false);
+    const [customizationRequest, setCustomizationRequest] = useState('');
     const [notes,       setNotes]       = useState('');
     const [uploading,   setUploading]   = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    const setMeasurement = (key: string, value: string) => {
+        // Digits with optional decimal, capped at 3 integer digits — matches backend max:999
+        if (value !== '' && !/^\d{1,3}(\.\d{0,1})?$/.test(value)) return;
+        setMeasurements(prev => ({ ...prev, [key]: value }));
+    };
 
     const catEntry = CATEGORY_KEYS.find(c => c.key === category);
     const catLabel = catEntry ? t(catEntry.tKey) : category;
@@ -313,7 +336,67 @@ function UploadPanel({
                     </p>
                 )}
 
-                {/* Notes */}
+                {/* Measurements */}
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        {t('design.sizesLabel')} <span className="text-slate-400 font-normal">{t('design.notesOptional')}</span>
+                    </label>
+                    <p className="text-xs text-slate-400 mb-3">{t('design.sizesHint')}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {MEASUREMENT_FIELDS.map(field => (
+                            <div key={field.key}>
+                                <label className="block text-xs text-slate-500 mb-1">{t(field.tKey)}</label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={measurements[field.key] ?? ''}
+                                        onChange={e => setMeasurement(field.key, e.target.value)}
+                                        placeholder="—"
+                                        className="w-full border border-slate-200 rounded-lg pl-3 pr-9 py-2.5 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">{t('design.cmUnit')}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Customization request */}
+                <div>
+                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            checked={wantsCustomization}
+                            onChange={e => setWantsCustomization(e.target.checked)}
+                            className="mt-0.5 w-4 h-4 rounded border-slate-300 accent-slate-900 cursor-pointer"
+                        />
+                        <span>
+                            <span className="block text-sm font-medium text-slate-700">{t('design.customizeLabel')}</span>
+                            <span className="block text-xs text-slate-400 mt-0.5">{t('design.customizeHint')}</span>
+                        </span>
+                    </label>
+                    {wantsCustomization && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5 }}
+                            className="mt-3"
+                        >
+                            <textarea
+                                value={customizationRequest}
+                                onChange={e => setCustomizationRequest(e.target.value.slice(0, 1000))}
+                                placeholder={t('design.customizePlaceholder')}
+                                rows={4}
+                                maxLength={1000}
+                                className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
+                            />
+                            <p className={`text-xs mt-1 text-right ${customizationRequest.length > 900 ? 'text-slate-600' : 'text-slate-400'}`}>{customizationRequest.length} / 1000</p>
+                        </motion.div>
+                    )}
+                </div>
+
+                {/* Additional information */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">
                         {t('design.notesLabel')} <span className="text-slate-400 font-normal">{t('design.notesOptional')}</span>
@@ -322,14 +405,24 @@ function UploadPanel({
                         value={notes}
                         onChange={e => setNotes(e.target.value.slice(0, 500))}
                         placeholder={t('design.notesPlaceholder')}
-                        rows={4}
+                        rows={2}
                         maxLength={500}
-                        className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
+                        className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
                     />
                     <p className={`text-xs mt-1 text-right ${notes.length > 450 ? 'text-slate-600' : 'text-slate-400'}`}>{notes.length} / 500</p>
                 </div>
 
-                <Button variant="default" disabled={!canContinue} onClick={() => onContinue(fileUrl ?? '', notes)} className="w-full">
+                <Button
+                    variant="default"
+                    disabled={!canContinue}
+                    onClick={() => onContinue({
+                        fileUrl: fileUrl ?? '',
+                        measurements,
+                        customizationRequest: wantsCustomization ? customizationRequest : '',
+                        notes,
+                    })}
+                    className="w-full"
+                >
                     {t('design.continueToTailor')}
                     <ArrowRight className="w-4 h-4 ml-1.5" />
                 </Button>
@@ -472,14 +565,20 @@ export default function DesignerApp() {
             : { step: 'category' }
     );
 
-    const handleUploadContinue = (fileUrl: string, notes: string) => {
+    const handleUploadContinue = (result: UploadResult) => {
         if (flow.step !== 'upload-file') return;
 
+        const filledMeasurements = Object.fromEntries(
+            Object.entries(result.measurements).filter(([, v]) => v !== '')
+        );
+
         saveDraft({
-            garment_type:    flow.category,
-            customization:   null,
-            design_file_url: fileUrl || null,
-            tailor_notes:    notes,
+            garment_type:          flow.category,
+            customization:         null,
+            design_file_url:       result.fileUrl || null,
+            measurements:          filledMeasurements,
+            customization_request: result.customizationRequest.trim(),
+            tailor_notes:          result.notes,
         });
 
         const user = getAuthUser();

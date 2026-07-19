@@ -16,14 +16,16 @@ class LayerCategory extends Model
         'z_index',
         'is_required',
         'is_colorable',
+        'is_preview_layer',
         'display_order',
     ];
 
     protected $casts = [
-        'z_index'       => 'integer',
-        'is_required'   => 'boolean',
-        'is_colorable'  => 'boolean',
-        'display_order' => 'integer',
+        'z_index'          => 'integer',
+        'is_required'      => 'boolean',
+        'is_colorable'     => 'boolean',
+        'is_preview_layer' => 'boolean',
+        'display_order'    => 'integer',
     ];
 
     public function customizerProduct(): BelongsTo

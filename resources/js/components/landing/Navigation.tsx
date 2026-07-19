@@ -89,7 +89,7 @@ export function Navigation() {
                 <div className="flex min-w-0 items-center gap-4 sm:gap-7">
                     <button
                         onClick={() => setMobileOpen(!mobileOpen)}
-                        className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 ${navTextClass}`}
+                        className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 lg:hidden ${navTextClass}`}
                         aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
                     >
                         {mobileOpen ? <X className="h-[18px] w-[18px] stroke-[1.5]" /> : <Menu className="h-[18px] w-[18px] stroke-[1.5]" />}
@@ -159,14 +159,7 @@ export function Navigation() {
                         </>
                     )}
 
-                    <Link
-                        to="/design"
-                        className={`hidden text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 md:inline ${navTextClass}`}
-                    >
-                        {t('nav.startDesigning')}
-                    </Link>
-
-                    <div className={`hidden h-5 border-l pl-5 lg:block ${navDividerClass}`}>
+                    <div className={`hidden h-5 items-center border-l pl-5 lg:flex ${navDividerClass}`}>
                         <LanguageToggle isOverDark={isOverDark} />
                     </div>
                 </div>
@@ -178,7 +171,7 @@ export function Navigation() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[130] bg-black/35 md:hidden"
+                        className="fixed inset-0 z-[130] bg-black/35 lg:hidden"
                         onMouseDown={(event) => {
                             if (event.target === event.currentTarget) {
                                 setMobileOpen(false);

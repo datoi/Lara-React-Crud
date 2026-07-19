@@ -44,4 +44,9 @@ class Order extends Model
     {
         return $this->hasMany(Message::class);
     }
+
+    public function tailorRequests(): HasMany
+    {
+        return $this->hasMany(TailorRequest::class);
+    }
 }
