@@ -11,7 +11,7 @@ import { Footer } from '../components/landing/Footer';
 
 export default function Landing() {
     return (
-        <div className="kere-landing min-h-screen overflow-x-hidden bg-[#F4EBD4]">
+        <div className="kere-landing min-h-screen overflow-x-hidden bg-[#E4E0D7]">
             <Helmet>
                 <title>Kere — Custom Clothing Marketplace | Tbilisi</title>
                 <meta name="description" content="Connect with expert Georgian tailors for bespoke clothing. Design custom garments or browse our curated marketplace. Handcrafted in Tbilisi." />

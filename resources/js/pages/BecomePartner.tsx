@@ -290,11 +290,11 @@ export default function BecomePartner() {
     ];
 
     return (
-        <div className="kere-landing partners-page min-h-screen overflow-x-hidden bg-[#F4EBD4]">
+        <div className="kere-landing partners-page min-h-screen overflow-x-hidden bg-[#E4E0D7]">
             <Navigation />
 
             {/* ── Partner Hero ── */}
-            <section className="partners-hero-design relative overflow-hidden bg-[#F4EBD4] px-4 pb-14 pt-28 sm:px-6 md:pb-20 md:pt-32 lg:px-8">
+            <section className="partners-hero-design relative overflow-hidden bg-[#E4E0D7] px-4 pb-14 pt-28 sm:px-6 md:pb-20 md:pt-32 lg:px-8">
                 <div className="pointer-events-none absolute inset-0">
                     <div className="absolute left-0 top-[29%] h-px w-full bg-[#6F1D24]/10" />
                     <div className="absolute bottom-[18%] left-0 h-px w-full bg-[#6F1D24]/10" />
@@ -364,7 +364,7 @@ export default function BecomePartner() {
                         >
                             <div className="absolute left-1/2 top-1/2 h-[82%] w-[82%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#E7D3C6]/70 blur-3xl" />
 
-                            <div className="relative aspect-[4/5] overflow-hidden rounded-[44%_44%_10%_10%/25%_25%_8%_8%] border border-[#6F1D24]/10 bg-[#F4EBD4]">
+                            <div className="relative aspect-[4/5] overflow-hidden rounded-[44%_44%_10%_10%/25%_25%_8%_8%] border border-[#6F1D24]/10 bg-[#E4E0D7]">
                                 <img
                                     src="/assets/partners/kere-partner-hero.jpg"
                                     alt="Tailor fitting a garment on a dress form"
@@ -497,7 +497,7 @@ export default function BecomePartner() {
                 </div>
             </section>
 
-            <section className="partners-process-design overflow-hidden bg-[#F4EBD4] px-4 py-14 sm:px-6 md:py-20 lg:px-8">
+            <section className="partners-process-design overflow-hidden bg-[#E4E0D7] px-4 py-14 sm:px-6 md:py-20 lg:px-8">
                 <div className="mx-auto max-w-[1320px]">
                     <ProcessExperience
                         steps={[
@@ -541,7 +541,7 @@ export default function BecomePartner() {
             </section>
 
             {/* ── 5. Featured tailors ── */}
-            <section className="py-20 md:py-28 bg-white">
+            <section className="py-20 md:py-28 bg-[#E4E0D7]">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
@@ -664,7 +664,7 @@ export default function BecomePartner() {
             </section>
 
             {/* ── 6. FAQ ── */}
-            <section className="py-20 md:py-28 bg-slate-50">
+            <section className="py-20 md:py-28 bg-[#E4E0D7]">
                 <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
@@ -693,7 +693,7 @@ export default function BecomePartner() {
             </section>
 
             {/* ── 7. Final CTA ── */}
-            <section className="relative overflow-hidden bg-[#F4EBD4] px-4 py-16 sm:px-6 md:py-20 lg:px-8">
+            <section className="relative overflow-hidden bg-[#E4E0D7] px-4 py-16 sm:px-6 md:py-20 lg:px-8">
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[#6F1D24]/15" />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[#6F1D24]/15" />
                 <div className="relative mx-auto max-w-[980px] text-center">

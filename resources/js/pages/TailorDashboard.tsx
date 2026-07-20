@@ -157,7 +157,7 @@ export default function TailorDashboard() {
     // ─── Approval gate ────────────────────────────────────────────────────────
     if (user?.approval_status === 'pending') {
         return (
-            <div className="min-h-screen bg-slate-50 flex flex-col">
+            <div className="tailor-dashboard-page min-h-screen bg-[#F4EBD4] flex flex-col">
                 <nav className="bg-white border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                         <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
@@ -182,7 +182,7 @@ export default function TailorDashboard() {
 
     if (user?.approval_status === 'rejected') {
         return (
-            <div className="min-h-screen bg-slate-50 flex flex-col">
+            <div className="tailor-dashboard-page min-h-screen bg-[#F4EBD4] flex flex-col">
                 <nav className="bg-white border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                         <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
@@ -208,7 +208,7 @@ export default function TailorDashboard() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="tailor-dashboard-page min-h-screen bg-[#F4EBD4] text-[#631E26]">
             <DashboardHeader earnings={stats.revenue} />
 
             {/* ── Post-add success toast ── */}
@@ -219,7 +219,7 @@ export default function TailorDashboard() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -12 }}
                         transition={{ duration: 0.25 }}
-                        className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-lg flex items-center gap-2.5 max-w-sm w-full mx-4"
+                        className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#111111] text-white text-sm font-medium px-5 py-3 rounded-lg shadow-lg flex items-center gap-2.5 max-w-sm w-full mx-4"
                     >
                         <CheckCircle className="w-4 h-4 text-slate-300 shrink-0" />
                         <span className="flex-1">{t('tailorDashboard.productLive')}</span>
@@ -237,8 +237,10 @@ export default function TailorDashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                 >
-                    <h1 className="text-2xl font-bold text-slate-900">{t('tailorDashboard.welcomeBack', { name: greeting })}</h1>
-                    <p className="text-slate-500 mt-1">{t('tailorDashboard.shopToday')}</p>
+                    <h1 className="font-serif text-[clamp(2rem,4vw,3.5rem)] font-medium leading-[1.02] tracking-normal text-[#111111]">
+                        {t('tailorDashboard.welcomeBack', { name: greeting })}
+                    </h1>
+                    <p className="mt-3 max-w-2xl text-sm leading-7 text-[#92615E] sm:text-base">{t('tailorDashboard.shopToday')}</p>
                 </motion.div>
 
                 {/* ── Onboarding panel — 0 products ── */}
