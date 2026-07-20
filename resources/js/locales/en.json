@@ -814,6 +814,13 @@
     "emailOrPhonePlaceholder": "you@example.com or 555 123 456",
     "errorInvalidCredentials": "Incorrect login or password."
   },
+  "consent": {
+    "title": "Cookie preferences",
+    "message": "We use analytics cookies to understand how visitors use Kere and improve the experience.",
+    "accept": "Accept",
+    "decline": "Decline",
+    "learnMore": "Privacy Policy"
+  },
   "terms": {
     "eyebrow": "Legal",
     "title": "Terms of Service",
@@ -886,9 +893,12 @@
     "s6b1": "We use industry-standard security measures to protect your data.",
     "s6b2": "Passwords are stored in hashed form and never in plaintext.",
     "s6b3": "Session tokens are stored securely and expire on logout.",
-    "s7Title": "7. Cookies",
-    "s7b1": "We use essential cookies only for session management and security.",
-    "s7b2": "We do not use advertising or tracking cookies.",
+    "s7Title": "7. Cookies & Analytics",
+    "s7b1": "We use essential cookies for session management and security.",
+    "s7b2": "We do not use advertising cookies and never sell your data.",
+    "s7b3": "With your consent, we use Microsoft Clarity to understand how visitors use Kere — through heatmaps and anonymised session replays — so we can improve the site.",
+    "s7b4": "Clarity masks the text you enter into forms.",
+    "s7b5": "You can decline analytics from the consent banner at any time; declining keeps only the essential cookies.",
     "s8Title": "8. Contact",
     "s8b1": "For privacy-related enquiries, contact us at: info@kereforyou.com",
     "s8b2": "Kere — Custom Clothing Marketplace, Tbilisi, Georgia."

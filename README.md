@@ -609,6 +609,15 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-07-20] Visitor Analytics: Microsoft Clarity Behind a Consent Gate
+
+**What was done:** Consent-gated Microsoft Clarity (heatmaps + session replay) to see where visitors go on the site.
+
+- **Loader** (`resources/js/lib/analytics.ts`): injects the Clarity tag only after consent; reads project id from `VITE_CLARITY_PROJECT_ID` (build-time). No id → every function is a no-op, so dev/local builds never phone home. Consent stored in `localStorage` as `kere_analytics_consent` (granted/denied).
+- **Consent banner** (`components/AnalyticsConsent.tsx`, mounted in `App.tsx` beside `RouterProvider`): wine-brand card fixed to the bottom, fade-up 0.5s, `<Button>` Accept/Decline, link to `/privacy`, both locales (`consent.*`). Shows once; Accept injects Clarity, Decline remembers refusal; hidden entirely when analytics isn't configured or a choice was already made.
+- **Privacy page:** section 7 renamed "Cookies & Analytics" and expanded to disclose Clarity, form-text masking, and how to decline (replaces the now-inaccurate "we do not use tracking cookies" line); EN + KA.
+- **Config:** `VITE_CLARITY_PROJECT_ID` documented in `.env.example` — must be set in Railway before the production build for Vite to inline it. SPA route changes and per-URL heatmaps are handled by Clarity natively (no manual pageview wiring).
+
 ### [2026-07-19] Customizer: Colour Variants Inside Styles + Slug-less Product Creation
 
 **What was done:** Colours are now variants *of a style* instead of separate styles or a separate option group — one style can carry any number of colours, each with its own photos.
