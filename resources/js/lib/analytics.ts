@@ -7,7 +7,21 @@
  * function here is a no-op, so local/dev builds never phone home.
  */
 const CONSENT_KEY = 'kere_analytics_consent';
-const PROJECT_ID = import.meta.env.VITE_CLARITY_PROJECT_ID as string | undefined;
+
+// Clarity project id. A Clarity id is NOT a secret — it ships in the client
+// bundle for every visitor — so we bake the production id in directly and let
+// VITE_CLARITY_PROJECT_ID override it (used for local dev). This avoids relying
+// on the host exposing the env var to the Vite build step. The baked-in id only
+// activates on the live domain, so previews/localhost stay untracked unless they
+// set the env var themselves.
+const PROD_PROJECT_ID = 'xpi6r0az95';
+const PROD_HOSTS = ['kereforyou.com', 'www.kereforyou.com'];
+
+const PROJECT_ID =
+    (import.meta.env.VITE_CLARITY_PROJECT_ID as string | undefined) ||
+    (typeof window !== 'undefined' && PROD_HOSTS.includes(window.location.hostname)
+        ? PROD_PROJECT_ID
+        : undefined);
 
 export type ConsentState = 'granted' | 'denied' | null;
 
