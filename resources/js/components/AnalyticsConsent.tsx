@@ -51,6 +51,7 @@ export function AnalyticsConsent() {
                     role="dialog"
                     aria-live="polite"
                     aria-label={t('consent.title')}
+                    data-testid="analytics-consent"
                     className="fixed inset-x-0 bottom-0 z-[200] p-4 sm:p-6"
                 >
                     <div className="mx-auto flex max-w-3xl flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-lg sm:flex-row sm:items-center sm:justify-between">
