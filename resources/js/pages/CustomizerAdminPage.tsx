@@ -572,11 +572,20 @@ function ColorVariantRow({ color, token, onRefresh }: { color: OptionColor; toke
 
     const handleDelete = async () => {
         if (!window.confirm(`Delete the "${color.name}" colour?`)) return;
-        await fetch(`/api/admin/customizer/options/colors/${color.id}`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-        });
-        onRefresh();
+        setError(null);
+        try {
+            const res = await fetch(`/api/admin/customizer/options/colors/${color.id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error((data as { message?: string }).message ?? `Delete failed (HTTP ${res.status})`);
+            }
+            onRefresh();
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Delete failed.');
+        }
     };
 
     return (
