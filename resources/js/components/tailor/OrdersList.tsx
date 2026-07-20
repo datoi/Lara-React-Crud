@@ -250,7 +250,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                             {t('tailorComponents.measurementsCm')}
                                         </div>
                                         {Object.entries(item.cm_measurements).map(([k, v]) => (
-                                            <SpecRow key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={`${v} cm`} />
+                                            <SpecRow key={k} label={t(`orderReview.size_${k}`, { defaultValue: k.charAt(0).toUpperCase() + k.slice(1) })} value={`${v} ${t('tailorComponents.cmUnit')}`} />
                                         ))}
                                     </>
                                 )}
@@ -305,15 +305,15 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                     </div>
                                     <SpecRow label={t('tailorComponents.specStandardSize')} value={cd.sizeStandard} />
                                     {Object.entries(cd.sizeCm ?? {}).map(([k, v]) => v
-                                        ? <SpecRow key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={`${v} cm`} />
+                                        ? <SpecRow key={k} label={t(`orderReview.size_${k}`, { defaultValue: k.charAt(0).toUpperCase() + k.slice(1) })} value={`${v} ${t('tailorComponents.cmUnit')}`} />
                                         : null
                                     )}
                                     {Object.entries(cd.measurements ?? {}).map(([k, v]) => v !== '' && v !== null
-                                        ? <SpecRow key={k} label={k.charAt(0).toUpperCase() + k.slice(1)} value={`${v} cm`} />
+                                        ? <SpecRow key={k} label={t(`orderReview.size_${k}`, { defaultValue: k.charAt(0).toUpperCase() + k.slice(1) })} value={`${v} ${t('tailorComponents.cmUnit')}`} />
                                         : null
                                     )}
                                     {(cd.height ?? cd.designElements?.height) && (
-                                        <SpecRow label={t('tailorComponents.specHeight')} value={`${cd.height ?? cd.designElements?.height} cm`} />
+                                        <SpecRow label={t('tailorComponents.specHeight')} value={`${cd.height ?? cd.designElements?.height} ${t('tailorComponents.cmUnit')}`} />
                                     )}
                                 </div>
 

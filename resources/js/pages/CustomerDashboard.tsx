@@ -354,8 +354,8 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.measurementsLabel')}</p>
                                         <div className="flex flex-wrap gap-1.5">
                                             {Object.entries(design.measurements).map(([k, v]) => (
-                                                <span key={k} className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded capitalize">
-                                                    {k}: {v}cm
+                                                <span key={k} className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded">
+                                                    <span className="capitalize">{t(`orderReview.size_${k}`, k)}</span>: {v} {t('orderReview.cmUnit')}
                                                 </span>
                                             ))}
                                         </div>
@@ -396,7 +396,7 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                                 <div className="mt-1.5 flex flex-wrap gap-1">
                                                     {Object.entries(item.measurements).map(([k, v]) => (
                                                         <span key={k} className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded">
-                                                            {k}: {v}cm
+                                                            <span className="capitalize">{t(`orderReview.size_${k}`, k)}</span>: {v} {t('orderReview.cmUnit')}
                                                         </span>
                                                     ))}
                                                 </div>
