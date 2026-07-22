@@ -89,7 +89,7 @@ export function Navigation() {
                 <div className="flex min-w-0 items-center gap-4 sm:gap-7">
                     <button
                         onClick={() => setMobileOpen(!mobileOpen)}
-                        className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 ${navTextClass}`}
+                        className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 lg:hidden ${navTextClass}`}
                         aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
                     >
                         {mobileOpen ? <X className="h-[18px] w-[18px] stroke-[1.5]" /> : <Menu className="h-[18px] w-[18px] stroke-[1.5]" />}
@@ -171,7 +171,7 @@ export function Navigation() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[130] bg-white"
+                        className="fixed inset-0 z-[130] bg-white lg:hidden"
                         onMouseDown={(event) => {
                             if (event.target === event.currentTarget) {
                                 setMobileOpen(false);
