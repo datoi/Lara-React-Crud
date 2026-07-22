@@ -530,7 +530,7 @@ closeCart(): void
 | `DATABASE_URL` | PostgreSQL connection string (auto-set by Railway Postgres addon) |
 | `TRUSTED_PROXIES` | `*` — Railway terminates HTTPS at proxy layer |
 | `MAIL_MAILER` | `resend` |
-| `RESEND_API_KEY` | `re_MsfQBBRQ_4dwmJE3uDgnvXEEJ2p8S2HkU` |
+| `RESEND_API_KEY` | Set in Railway env only — never commit the real key |
 | `MAIL_FROM_ADDRESS` | `noreply@kereforyou.com` |
 | `MAIL_FROM_NAME` | `Kere` |
 | `ADMIN_PASSWORD` | Admin panel password (synced on every deploy) |
