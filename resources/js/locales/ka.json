@@ -5,7 +5,9 @@
     "faq": "ხშირად დასმული კითხვები",
     "forTailors": "მკერავებისთვის",
     "signIn": "შესვლა",
-    "startDesigning": "დიზაინი"
+    "startDesigning": "დიზაინი",
+    "customDesign": "დიზაინის შექმნა",
+    "uploadDesign": "დიზაინის ატვირთვა"
   },
   "hero": {
     "headline": "სამოსი, რომელიც მხოლოდ შენთვის შეიქმნა.",
