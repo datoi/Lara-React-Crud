@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { ArrowLeft, Star, Minus, Plus, Check, Loader2, HelpCircle, User, Info } from 'lucide-react';
+import { ArrowLeft, Star, Minus, Plus, Check, Loader2, HelpCircle, User, Info, Palette } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal, type MeasurementKey } from '../components/MeasurementGuideModal';
 import { measurementWarning } from '../utils/measurementSanity';
@@ -30,7 +30,7 @@ interface ApiProduct {
     tailor_name: string | null;
 }
 
-export default function ProductCustomization() {
+export default function ProductCustomization({ customize = false }: { customize?: boolean }) {
     const { t } = useTranslation();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -40,6 +40,7 @@ export default function ProductCustomization() {
     const [selectedColor, setSelectedColor] = useState('');
     const [selectedSize, setSelectedSize] = useState('M');
     const [measurements, setMeasurements] = useState({ chest: '', waist: '', hips: '', length: '' });
+    const [customizationNote, setCustomizationNote] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [shippingCost, setShippingCost]         = useState(15);
     const [assignedTailor, setAssignedTailor]     = useState('');
@@ -97,6 +98,7 @@ export default function ProductCustomization() {
                         hips:   pending.measurements?.hips   ?? '',
                         length: pending.measurements?.length ?? '',
                     });
+                    setCustomizationNote(pending.customizationNote ?? '');
                     // State restored — don't clear yet; clear only after order succeeds
                 } else if (!pending || pending.type !== 'marketplace') {
                     // No saved state for this product — use defaults
@@ -141,6 +143,7 @@ export default function ProductCustomization() {
                     size: selectedSize,
                     quantity,
                     measurements,
+                    customizationNote,
                 } satisfies PendingMarketplaceOrder);
             }
             saveReturnTo(window.location.pathname);
@@ -163,9 +166,10 @@ export default function ProductCustomization() {
                     color: selectedColor,
                     size: selectedSize,
                     quantity,
-                    cm_measurements: Object.fromEntries(
-                        Object.entries(measurements).filter(([, v]) => v !== '')
-                    ),
+                    cm_measurements: customize
+                        ? Object.fromEntries(Object.entries(measurements).filter(([, v]) => v !== ''))
+                        : {},
+                    customization_note: customize ? customizationNote.trim() || null : null,
                     tailor_id: selectedTailorId,
                 }),
             });
@@ -378,7 +382,25 @@ export default function ProductCustomization() {
                                 </div>
                             )}
 
-                            {/* Measurements */}
+                            {/* Customization details — only when customizing */}
+                            {customize && (
+                                <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                                    <div className="text-sm font-semibold text-slate-700 mb-1">{t('productCustomization.customizationDetails')}</div>
+                                    <p className="text-xs text-slate-500 mb-3">{t('productCustomization.customizationDetailsHint')}</p>
+                                    <textarea
+                                        value={customizationNote}
+                                        onChange={e => setCustomizationNote(e.target.value.slice(0, 1000))}
+                                        rows={4}
+                                        maxLength={1000}
+                                        placeholder={t('productCustomization.customizationPlaceholder')}
+                                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
+                                    />
+                                    <p className="text-[10px] text-slate-400 mt-1 text-right">{customizationNote.length}/1000</p>
+                                </div>
+                            )}
+
+                            {/* Measurements — only when customizing */}
+                            {customize && (
                             <div className="bg-white rounded-2xl border border-slate-200 p-5">
                                 <div className="text-sm font-semibold text-slate-700 mb-1">{t('productCustomization.customMeasurements')} <span className="font-normal text-slate-400">{t('productCustomization.measurementsOptional')}</span></div>
                                 <p className="text-xs text-slate-500 mb-4">{t('productCustomization.measurementsHint')}</p>
@@ -422,6 +444,18 @@ export default function ProductCustomization() {
                                     })}
                                 </div>
                             </div>
+                            )}
+
+                            {/* Customize CTA — shown on the plain product view for customizable products */}
+                            {!customize && product.is_customizable && (
+                                <button
+                                    onClick={() => navigate(`/product/${product.id}/customize`)}
+                                    className="w-full flex items-center justify-center gap-2 border border-slate-900 text-slate-900 font-semibold py-3.5 rounded-xl hover:bg-slate-900 hover:text-white transition-colors active:scale-[0.98]"
+                                >
+                                    <Palette className="w-4 h-4" />
+                                    {t('productCustomization.customizeThis')}
+                                </button>
+                            )}
 
                             {/* Quantity */}
                             <div className="bg-white rounded-2xl border border-slate-200 p-5">

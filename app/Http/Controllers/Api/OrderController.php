@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\TailorRequest;
 use App\Models\User;
 use App\Services\SmsService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -66,10 +67,14 @@ class OrderController extends Controller
             'cm_measurements.waist' => ['nullable', 'numeric', 'min:0'],
             'cm_measurements.hips' => ['nullable', 'numeric', 'min:0'],
             'cm_measurements.length' => ['nullable', 'numeric', 'min:0'],
+            'customization_note' => ['nullable', 'string', 'max:1000'],
             'tailor_id' => 'nullable|integer|exists:users,id',
         ]);
 
         $product = Product::findOrFail($data['product_id']);
+
+        // Only accept a customization note when the tailor allows customization
+        $customizationNote = $product->is_customizable ? ($data['customization_note'] ?? null) : null;
 
         // Critical #7: prevent overselling
         if ($product->stock < $data['quantity']) {
@@ -99,7 +104,7 @@ class OrderController extends Controller
         $subtotal = $unitPrice * $data['quantity'];
 
         try {
-            $order = DB::transaction(function () use ($data, $user, $tailor, $product, $unitPrice, $subtotal, $shipping) {
+            $order = DB::transaction(function () use ($data, $user, $tailor, $product, $unitPrice, $subtotal, $shipping, $customizationNote) {
                 // Critical #1: capture affected rows — throws so transaction rolls back if stock is gone
                 $affected = Product::where('id', $product->id)
                     ->where('stock', '>=', $data['quantity'])
@@ -136,6 +141,7 @@ class OrderController extends Controller
                     'quantity' => $data['quantity'],
                     'price' => $unitPrice,
                     'cm_measurements' => $data['cm_measurements'] ?? null,
+                    'customization_note' => $customizationNote,
                 ]);
 
                 $this->notify(
@@ -414,7 +420,7 @@ class OrderController extends Controller
                 'message' => $data['message'] ?? null,
                 'status' => 'pending',
             ]);
-        } catch (\Illuminate\Database\QueryException) {
+        } catch (QueryException) {
             // Unique (order_id, tailor_id) race — treat as duplicate
             return response()->json(['message' => 'You already sent an offer for this order.'], 409);
         }
@@ -562,6 +568,7 @@ class OrderController extends Controller
                 'quantity' => $item->quantity,
                 'price' => $item->price,
                 'cm_measurements' => $item->cm_measurements,
+                'customization_note' => $item->customization_note,
             ])->values()->all(),
         ];
     }

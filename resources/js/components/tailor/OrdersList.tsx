@@ -27,6 +27,7 @@ interface OrderItem {
     quantity: number;
     price: number;
     cm_measurements: Record<string, string> | null;
+    customization_note: string | null;
 }
 
 interface CustomDesign {
@@ -242,6 +243,16 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                             <div className="w-4 h-4 rounded-full border border-slate-200" style={{ backgroundColor: item.color }} />
                                             <span className="text-xs font-mono text-slate-700">{item.color}</span>
                                         </div>
+                                    </div>
+                                )}
+                                {item.customization_note && (
+                                    <div className="mt-3">
+                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                                            {t('tailorComponents.customizationNote')}
+                                        </div>
+                                        <p className="text-xs text-slate-700 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 leading-relaxed whitespace-pre-wrap">
+                                            {item.customization_note}
+                                        </p>
                                     </div>
                                 )}
                                 {item.cm_measurements && Object.keys(item.cm_measurements).length > 0 && (

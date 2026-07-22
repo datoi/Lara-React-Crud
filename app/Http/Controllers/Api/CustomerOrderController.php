@@ -46,6 +46,7 @@ class CustomerOrderController extends Controller
                     'quantity' => $item->quantity,
                     'price' => $item->price,
                     'measurements' => $item->cm_measurements ?? [],
+                    'customization_note' => $item->customization_note,
                 ];
             });
 
