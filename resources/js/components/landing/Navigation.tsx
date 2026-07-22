@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { Menu, Search, ShoppingBag, X, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +32,8 @@ export function Navigation() {
     const [isOverDark, setIsOverDark] = useState(false);
     const { t } = useTranslation();
     const user  = getAuthToken() ? getAuthUser() : null;
+    // The #how-it-works / #faq anchors only exist on the landing page
+    const isLanding = useLocation().pathname === '/';
     useEffect(() => {
         function isDarkElement(element: Element | null) {
             const section = element?.closest?.('section, main, [data-nav-theme]');
@@ -98,20 +100,22 @@ export function Navigation() {
                         </span>
                     </button>
 
-                    <div className="hidden items-center gap-7 lg:flex">
-                        <a
-                            href="#how-it-works"
-                            className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
-                        >
-                            {t('nav.howItWorks')}
-                        </a>
-                        <a
-                            href="#faq"
-                            className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
-                        >
-                            {t('nav.faq')}
-                        </a>
-                    </div>
+                    {isLanding && (
+                        <div className="hidden items-center gap-7 lg:flex">
+                            <a
+                                href="#how-it-works"
+                                className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                            >
+                                {t('nav.howItWorks')}
+                            </a>
+                            <a
+                                href="#faq"
+                                className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                            >
+                                {t('nav.faq')}
+                            </a>
+                        </div>
+                    )}
                 </div>
 
                 <Link
@@ -223,9 +227,11 @@ export function Navigation() {
                             </div>
 
                             <nav className="mx-auto mt-10 flex w-full max-w-[620px] flex-1 flex-col gap-5 sm:mt-12 sm:gap-6 lg:mt-10 lg:grid lg:grid-cols-2 lg:gap-x-14 lg:gap-y-5">
-                                <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
-                                    {t('nav.howItWorks')}
-                                </a>
+                                {isLanding && (
+                                    <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                        {t('nav.howItWorks')}
+                                    </a>
+                                )}
                                 <Link to="/marketplace" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
                                     {t('marketplace.title')}
                                 </Link>
@@ -235,9 +241,11 @@ export function Navigation() {
                                 <Link to="/partners" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
                                     {t('nav.forTailors')}
                                 </Link>
-                                <a href="#faq" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
-                                    {t('nav.faq')}
-                                </a>
+                                {isLanding && (
+                                    <a href="#faq" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                        {t('nav.faq')}
+                                    </a>
+                                )}
                                 <Link
                                     to={user ? (user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard') : '/signin'}
                                     onClick={() => setMobileOpen(false)}
