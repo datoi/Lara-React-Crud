@@ -609,6 +609,17 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-07-22] Tailor Phone Verification + Dual-Channel (SMS + Email) Notifications
+
+**What was done:** Finished the phone-first tailor flow so Georgian tailors (who often have no email) verify and get notified by SMS, with email as an optional bonus channel.
+
+- **SMS gateway → SMSOffice.ge:** `SmsService` now sends through the Georgian gateway SMSOffice.ge (best +995 delivery/cost, supports a registered "Kere" sender) instead of Twilio, via `SMSOFFICE_KEY`/`SMSOFFICE_SENDER`/`SMSOFFICE_URL` (`config/services.php`). Logs the message when unconfigured (dev). `OtpService::sendSms` and every alert route through it.
+- **Phone-first verification:** `registerInitiate` now sends the OTP by SMS for `role=tailor` even when they also enter an email (email stays optional, unverified contact); customers still verify by email. OTP text is Georgian.
+- **Dual-channel alerts:** new `Notifier::dual($user, $smsText, $mail)` — SMS always (if phone) + email additionally (if present). Replaces the old `if (email) … elseif (phone)` either/or blocks in all tailor-facing alerts: `NewOrderAlert` (marketplace, custom, chosen-tailor), `TailorApproved`, `TailorRejected`. Customer notifications unchanged.
+- **Config:** `SMSOFFICE_KEY`/`SMSOFFICE_SENDER` documented in `.env.example` (old Twilio config removed).
+
+**To activate in production:** create an SMSOffice.ge account, register "Kere" as the sender, and set `SMSOFFICE_KEY` (+ `SMSOFFICE_SENDER=Kere`) on Railway. Until then SMS is logged, not delivered.
+
 ### [2026-07-22] Convention: Marketplace/ProductCustomization action buttons → `<Button>`
 
 **What was done:** Converted the raw hand-styled `<button>` action buttons in `ProductCustomization` (size pills, quantity steppers, Customize CTA, Place Order, sign-in modal) and the two Marketplace product-card CTAs (Customize / Check Product) to the shared `<Button variant size>` component, per the project convention. Appearance preserved via `className` overrides. Color swatches and the tiny measurement help-icon stay raw — they're specialised controls, matching the app's own swatch pickers (FabricPicker/ColorDotPicker).

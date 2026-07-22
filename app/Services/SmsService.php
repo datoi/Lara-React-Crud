@@ -2,37 +2,45 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Twilio\Rest\Client;
 
 class SmsService
 {
     /**
-     * Send an SMS via Twilio.
-     * Falls back to logging if Twilio credentials are not configured.
+     * Send an SMS via the SMSOffice.ge gateway (best delivery/cost for Georgian
+     * +995 numbers, and supports a registered "Kere" sender name).
+     * Falls back to logging when no gateway key is configured (dev/local).
      */
     public function send(string $phone, string $message): void
     {
-        $sid = config('services.twilio.sid');
-        $token = config('services.twilio.token');
-        $from = config('services.twilio.from');
+        $key = config('services.smsoffice.key');
+        $sender = config('services.smsoffice.sender');
+        $url = config('services.smsoffice.url');
 
-        if (! $sid || ! $token || ! $from || ! class_exists(Client::class)) {
-            // No Twilio configured or SDK not installed — log the message for development
+        // Georgian gateways expect the number without a leading '+'
+        $destination = ltrim($phone, '+');
+
+        if (! $key || ! $sender) {
+            // Not configured — log the message so the flow still works in dev
             Log::channel('daily')->info("SMS [{$phone}]: {$message}");
 
             return;
         }
 
         try {
-            $twilio = new Client($sid, $token);
-            $twilio->messages->create($phone, [
-                'from' => $from,
-                'body' => $message,
+            $response = Http::asForm()->post($url, [
+                'key' => $key,
+                'destination' => $destination,
+                'sender' => $sender,
+                'content' => $message,
             ]);
-        } catch (\Exception $e) {
+
+            if ($response->failed()) {
+                Log::error("SMS gateway HTTP {$response->status()} for {$phone}: ".$response->body());
+            }
+        } catch (\Throwable $e) {
             Log::error("SMS failed for {$phone}: ".$e->getMessage());
-            throw $e;
         }
     }
 }

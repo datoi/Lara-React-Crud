@@ -39,10 +39,10 @@ return [
         'email' => env('SUPPORT_EMAIL'),
     ],
 
-    'twilio' => [
-        'sid'   => env('TWILIO_ACCOUNT_SID'),
-        'token' => env('TWILIO_AUTH_TOKEN'),
-        'from'  => env('TWILIO_FROM'),
+    'smsoffice' => [
+        'key' => env('SMSOFFICE_KEY'),
+        'sender' => env('SMSOFFICE_SENDER', 'Kere'),
+        'url' => env('SMSOFFICE_URL', 'https://smsoffice.ge/api/v2/send/'),
     ],
 
 ];

@@ -10,7 +10,7 @@ use App\Models\KereNotification;
 use App\Models\Message;
 use App\Models\Order;
 use App\Models\User;
-use App\Services\SmsService;
+use App\Services\Notifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -219,15 +219,11 @@ class AdminController extends Controller
             'is_read' => false,
         ]);
 
-        try {
-            if ($tailor->email) {
-                Mail::to($tailor->email)->send(new TailorApproved($tailor));
-            } elseif ($tailor->phone) {
-                (new SmsService)->send($tailor->phone, 'Kere: თქვენი ანგარიში დადასტურდა — შეგიძლიათ შეხვიდეთ, დაამატოთ პროდუქტები და მიიღოთ შეკვეთები.');
-            }
-        } catch (\Throwable $e) {
-            Log::error('TailorApproved notification failed: '.$e->getMessage());
-        }
+        (new Notifier)->dual(
+            $tailor,
+            'Kere: თქვენი ანგარიში დადასტურდა — შეგიძლიათ შეხვიდეთ, დაამატოთ პროდუქტები და მიიღოთ შეკვეთები.',
+            new TailorApproved($tailor)
+        );
 
         return response()->json(['approval_status' => 'approved']);
     }
@@ -239,19 +235,15 @@ class AdminController extends Controller
         $tailor = User::where('role', 'tailor')->findOrFail($id);
         $tailor->update(['approval_status' => 'rejected']);
 
-        try {
-            if ($tailor->email) {
-                Mail::to($tailor->email)->send(new TailorRejected($tailor, $data['reason'] ?? ''));
-            } elseif ($tailor->phone) {
-                $message = 'Kere: სამწუხაროდ, თქვენი განაცხადი ვერ დადასტურდა.';
-                if (! empty($data['reason'])) {
-                    $message .= ' მიზეზი: '.$data['reason'];
-                }
-                (new SmsService)->send($tailor->phone, $message);
-            }
-        } catch (\Throwable $e) {
-            Log::error('TailorRejected notification failed: '.$e->getMessage());
+        $rejectSms = 'Kere: სამწუხაროდ, თქვენი განაცხადი ვერ დადასტურდა.';
+        if (! empty($data['reason'])) {
+            $rejectSms .= ' მიზეზი: '.$data['reason'];
         }
+        (new Notifier)->dual(
+            $tailor,
+            $rejectSms,
+            new TailorRejected($tailor, $data['reason'] ?? '')
+        );
 
         return response()->json(['approval_status' => 'rejected']);
     }

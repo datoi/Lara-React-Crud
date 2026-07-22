@@ -12,6 +12,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\TailorRequest;
 use App\Models\User;
+use App\Services\Notifier;
 use App\Services\SmsService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -169,15 +170,11 @@ class OrderController extends Controller
             Log::error('OrderConfirmation email failed: '.$e->getMessage());
         }
 
-        try {
-            if ($tailor->email) {
-                Mail::to($tailor->email)->send(new NewOrderAlert($order, $user));
-            } elseif ($tailor->phone) {
-                (new SmsService)->send($tailor->phone, "Kere: ახალი შეკვეთა #{$order->order_number} — იხილეთ დეტალები თქვენს პანელზე.");
-            }
-        } catch (\Throwable $e) {
-            Log::error('NewOrderAlert notification failed: '.$e->getMessage());
-        }
+        (new Notifier)->dual(
+            $tailor,
+            "Kere: ახალი შეკვეთა #{$order->order_number} — იხილეთ დეტალები თქვენს პანელზე.",
+            new NewOrderAlert($order, $user)
+        );
 
         return response()->json([
             'order_number' => $order->order_number,
@@ -302,15 +299,11 @@ class OrderController extends Controller
         }
 
         if ($tailor) {
-            try {
-                if ($tailor->email) {
-                    Mail::to($tailor->email)->send(new NewOrderAlert($order, $user));
-                } elseif ($tailor->phone) {
-                    (new SmsService)->send($tailor->phone, "Kere: ახალი შეკვეთა #{$order->order_number} — იხილეთ დეტალები თქვენს პანელზე.");
-                }
-            } catch (\Throwable $e) {
-                Log::error('NewOrderAlert notification failed (custom): '.$e->getMessage());
-            }
+            (new Notifier)->dual(
+                $tailor,
+                "Kere: ახალი შეკვეთა #{$order->order_number} — იხილეთ დეტალები თქვენს პანელზე.",
+                new NewOrderAlert($order, $user)
+            );
         }
 
         return response()->json([
