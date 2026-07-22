@@ -5,7 +5,9 @@
     "faq": "FAQ",
     "forTailors": "For Tailors",
     "signIn": "Sign In",
-    "startDesigning": "Start Designing"
+    "startDesigning": "Start Designing",
+    "customDesign": "Custom Design",
+    "uploadDesign": "Upload Design"
   },
   "hero": {
     "headline": "Custom Clothing Made Exactly for Your Body",

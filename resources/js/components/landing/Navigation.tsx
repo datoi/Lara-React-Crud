@@ -32,8 +32,11 @@ export function Navigation() {
     const [isOverDark, setIsOverDark] = useState(false);
     const { t } = useTranslation();
     const user  = getAuthToken() ? getAuthUser() : null;
+    const { pathname } = useLocation();
     // The #how-it-works / #faq anchors only exist on the landing page
-    const isLanding = useLocation().pathname === '/';
+    const isLanding = pathname === '/';
+    // On the "for tailors" page we show no primary links
+    const isPartners = pathname === '/partners' || pathname === '/become-a-tailor';
     useEffect(() => {
         function isDarkElement(element: Element | null) {
             const section = element?.closest?.('section, main, [data-nav-theme]');
@@ -100,7 +103,7 @@ export function Navigation() {
                         </span>
                     </button>
 
-                    {isLanding && (
+                    {isLanding ? (
                         <div className="hidden items-center gap-7 lg:flex">
                             <a
                                 href="#how-it-works"
@@ -115,7 +118,28 @@ export function Navigation() {
                                 {t('nav.faq')}
                             </a>
                         </div>
-                    )}
+                    ) : !isPartners ? (
+                        <div className="hidden items-center gap-7 lg:flex">
+                            <Link
+                                to="/design"
+                                className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                            >
+                                {t('nav.customDesign')}
+                            </Link>
+                            <Link
+                                to="/marketplace"
+                                className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                            >
+                                {t('marketplace.title')}
+                            </Link>
+                            <Link
+                                to="/design?upload=1"
+                                className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                            >
+                                {t('nav.uploadDesign')}
+                            </Link>
+                        </div>
+                    ) : null}
                 </div>
 
                 <Link
