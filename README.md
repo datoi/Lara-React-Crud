@@ -609,6 +609,16 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-07-22] Marketplace Customization: Customize CTA, Description Field, Reused Order/Chat Flow
+
+**What was done:** Customizable marketplace products now route customers through a dedicated customization page (description + size + measurements); everything else (tailor accept/decline, live chat) reuses the existing order flow.
+
+- **Gate on `is_customizable`:** Marketplace cards for customizable products show a "Customizable" badge and a **Customize** button → `/product/:id/customize`; non-customizable products keep "Check the product" and order as-is.
+- **Dedicated customize page:** new `/product/:id/customize` route renders `ProductCustomization` with a `customize` prop. In that mode it adds a "Describe your customization" textarea (max 1000) plus the existing size + optional measurements; the plain `/product/:id` view drops those and shows a "Customize this product" button when the flag is set. The customization note only sends in customize mode.
+- **Backend:** `order_items.customization_note` (migration `2026_07_21_000001`, `OrderItem` fillable). `storeMarketplaceOrder` validates `customization_note` (max 1000) and only stores it when the product is customizable. Surfaced in `formatOrder` (tailor) and `CustomerOrderController::index` (customer) item payloads; login-redirect thaw carries it via `PendingMarketplaceOrder.customizationNote`.
+- **Display:** the note renders in the tailor's `OrdersList` order detail (new `tailorComponents.customizationNote` key) and the customer's dashboard order modal, both locales.
+- **No new work needed for accept/decline or chat** — verified end-to-end: order arrives `pending`, tailor Accept (→ processing) / Cancel already exist, and `OrderChat` already renders per order for both sides. API round-trip confirmed: note saves, returns to both dashboards, and the tailor accept transition works.
+
 ### [2026-07-20] Visitor Analytics: Microsoft Clarity Behind a Consent Gate
 
 **What was done:** Consent-gated Microsoft Clarity (heatmaps + session replay) to see where visitors go on the site.

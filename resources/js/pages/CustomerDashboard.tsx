@@ -24,6 +24,7 @@ interface OrderItem {
     quantity: number;
     price: number;
     measurements: Record<string, string>;
+    customization_note?: string | null;
 }
 
 // Supports both old shape (clothingType/subcategory) and new DesignConfig shape (garmentType/style)
@@ -392,6 +393,11 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                             <p className="text-xs text-slate-400 mt-0.5">
                                                 {[item.color && t('customerDashboard.colorLabel', { color: item.color }), item.size && t('customerDashboard.sizeShort', { size: item.size }), t('customerDashboard.qty', { qty: item.quantity })].filter(Boolean).join(' · ')}
                                             </p>
+                                            {item.customization_note && (
+                                                <p className="mt-1.5 text-xs text-slate-600 bg-white border border-slate-200 rounded px-2 py-1 leading-relaxed whitespace-pre-wrap">
+                                                    {item.customization_note}
+                                                </p>
+                                            )}
                                             {item.measurements && Object.keys(item.measurements).length > 0 && (
                                                 <div className="mt-1.5 flex flex-wrap gap-1">
                                                     {Object.entries(item.measurements).map(([k, v]) => (

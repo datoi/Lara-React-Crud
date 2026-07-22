@@ -69,6 +69,7 @@ export interface PendingMarketplaceOrder {
     size: string;
     quantity: number;
     measurements: Record<string, string>;
+    customizationNote?: string;
 }
 
 export interface PendingCustomOrder {
