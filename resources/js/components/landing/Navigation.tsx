@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
-import { Menu, X, User } from 'lucide-react';
+import { Menu, Search, ShoppingBag, X, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
@@ -83,13 +83,13 @@ export function Navigation() {
     return (
         <header
             data-nav-tone={isOverDark ? 'dark' : 'light'}
-            className="kere-site-header fixed inset-x-0 top-0 z-[100] border-b border-transparent bg-transparent transition-colors duration-300"
+            className="kere-site-header fixed inset-x-0 top-0 z-[100] bg-transparent transition-colors duration-300"
         >
             <div className="kere-site-header-bar mx-auto grid h-14 max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:h-16 sm:px-6 lg:h-[68px] lg:px-10">
                 <div className="flex min-w-0 items-center gap-4 sm:gap-7">
                     <button
                         onClick={() => setMobileOpen(!mobileOpen)}
-                        className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 lg:hidden ${navTextClass}`}
+                        className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 ${navTextClass}`}
                         aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
                     >
                         {mobileOpen ? <X className="h-[18px] w-[18px] stroke-[1.5]" /> : <Menu className="h-[18px] w-[18px] stroke-[1.5]" />}
@@ -171,7 +171,7 @@ export function Navigation() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[130] bg-black/35 lg:hidden"
+                        className="fixed inset-0 z-[130] bg-white"
                         onMouseDown={(event) => {
                             if (event.target === event.currentTarget) {
                                 setMobileOpen(false);
@@ -179,111 +179,87 @@ export function Navigation() {
                         }}
                     >
                         <motion.aside
-                            initial={{ x: '-100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '-100%' }}
+                            initial={{ opacity: 0, y: -12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -12 }}
                             transition={{ duration: 0.5 }}
-                            className="absolute inset-y-0 left-0 flex w-full max-w-[580px] flex-col bg-[#f7f6f3] px-6 py-6 sm:px-10 sm:py-8"
+                            className="flex min-h-[100dvh] w-full flex-col overflow-y-auto bg-white px-6 pb-8 pt-6 text-[#111111] sm:px-10 lg:px-16"
                         >
-                            <div className="flex items-center justify-between border-b border-black/15 pb-6">
+                            <div className="grid grid-cols-[1fr_auto_1fr] items-center">
+                                <button
+                                    onClick={() => setMobileOpen(false)}
+                                    aria-label="Close navigation"
+                                    className="justify-self-start text-[#111111] transition-opacity hover:opacity-55"
+                                >
+                                    <X className="h-7 w-7 stroke-[1.4] sm:h-8 sm:w-8" />
+                                </button>
+
                                 <Link
                                     to="/"
                                     onClick={() => setMobileOpen(false)}
-                                    className="text-[24px] font-medium tracking-normal text-[#111111]"
+                                    className="justify-self-center text-center text-[clamp(1.5rem,5vw,2.4rem)] font-semibold uppercase leading-none tracking-[0.1em] text-[#111111]"
                                 >
                                     Kere
                                 </Link>
 
-                                <button
+                                <Link
+                                    to="/marketplace"
                                     onClick={() => setMobileOpen(false)}
-                                    aria-label="Close navigation"
-                                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/20 transition-colors hover:bg-[#111111] hover:text-white"
+                                    aria-label="Marketplace"
+                                    className="justify-self-end text-[#111111] transition-opacity hover:opacity-55"
                                 >
-                                    <X className="h-5 w-5 stroke-[1.5]" />
-                                </button>
+                                    <ShoppingBag className="h-7 w-7 stroke-[1.6] sm:h-8 sm:w-8" />
+                                </Link>
                             </div>
 
-                            <nav className="flex flex-1 flex-col justify-center py-12">
-                            {[
-                                { to: '#how-it-works', label: t('nav.howItWorks'), isAnchor: true },
-                                { to: '#faq',          label: t('nav.faq'), isAnchor: true },
-                            ].map(link => (
-                                link.isAnchor ? (
-                                    <a
-                                        key={link.to}
-                                        href={link.to}
-                                        onClick={() => setMobileOpen(false)}
-                                        className="group grid grid-cols-[42px_1fr_auto] items-center gap-4 border-b border-black/15 py-5 sm:py-7"
-                                    >
-                                        <span className="text-[10px] font-bold tracking-[0.14em] text-black/40">
-                                            {link.to === '#how-it-works' ? '01' : '02'}
-                                        </span>
-                                        <span className="font-serif text-[clamp(1.25rem,3.6vw,2.15rem)] font-medium leading-tight tracking-normal text-[#111111]">
-                                            {link.label}
-                                        </span>
-                                        <span className="text-xl transition-transform duration-300 group-hover:translate-x-2">→</span>
-                                    </a>
-                                ) : (
-                                    <Link
-                                        key={link.to}
-                                        to={link.to}
-                                        onClick={() => setMobileOpen(false)}
-                                        className="group grid grid-cols-[42px_1fr_auto] items-center gap-4 border-b border-black/15 py-5 sm:py-7"
-                                    >
-                                        <span className="text-[10px] font-bold tracking-[0.14em] text-black/40">01</span>
-                                        <span className="font-serif text-[clamp(1.25rem,3.6vw,2.15rem)] font-medium leading-tight tracking-normal text-[#111111]">
-                                            {link.label}
-                                        </span>
-                                        <span className="text-xl transition-transform duration-300 group-hover:translate-x-2">→</span>
-                                    </Link>
-                                )
-                            ))}
-                            <Link
-                                to="/partners"
-                                onClick={() => setMobileOpen(false)}
-                                className="group grid grid-cols-[42px_1fr_auto] items-center gap-4 border-b border-black/15 py-5 sm:py-7"
-                            >
-                                <span className="text-[10px] font-bold tracking-[0.14em] text-black/40">03</span>
-                                <span className="font-serif text-[clamp(1.25rem,3.6vw,2.15rem)] font-medium leading-tight tracking-normal text-[#111111]">
+                            <div className="mx-auto mt-14 flex w-full max-w-[620px] items-center gap-4 border-b border-black/14 pb-3 sm:mt-16 sm:gap-5">
+                                <Search className="h-6 w-6 shrink-0 text-black/22 sm:h-7 sm:w-7" />
+                                <input
+                                    readOnly
+                                    aria-label={t('marketplace.searchPlaceholder')}
+                                    placeholder={t('marketplace.searchPlaceholder')}
+                                    className="w-full border-0 bg-transparent p-0 text-[clamp(0.95rem,3vw,1.35rem)] font-light tracking-[0.03em] text-[#111111] placeholder:text-black/48 focus:outline-none focus:ring-0"
+                                />
+                            </div>
+
+                            <nav className="mx-auto mt-10 flex w-full max-w-[620px] flex-1 flex-col gap-5 sm:mt-12 sm:gap-6 lg:mt-10 lg:grid lg:grid-cols-2 lg:gap-x-14 lg:gap-y-5">
+                                <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                    {t('nav.howItWorks')}
+                                </a>
+                                <Link to="/marketplace" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                    {t('marketplace.title')}
+                                </Link>
+                                <Link to="/design" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                    {t('nav.startDesigning')}
+                                </Link>
+                                <Link to="/partners" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
                                     {t('nav.forTailors')}
-                                </span>
-                                <span className="text-xl transition-transform duration-300 group-hover:translate-x-2">→</span>
-                            </Link>
+                                </Link>
+                                <a href="#faq" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                    {t('nav.faq')}
+                                </a>
+                                <Link
+                                    to={user ? (user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard') : '/signin'}
+                                    onClick={() => setMobileOpen(false)}
+                                    className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45"
+                                >
+                                    {user ? `${user.first_name} ${user.last_name}` : t('nav.signIn')}
+                                </Link>
                             </nav>
 
-                            <div className="pb-5">
+                            <div className="mx-auto mt-10 flex w-full max-w-[620px] items-center justify-between border-t border-black/10 pt-5">
                                 <LanguageToggle isOverDark={false} />
-                            </div>
-
-                            {user ? (
-                                <div className="pt-2">
-                                    <Link
-                                        to={user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
-                                        onClick={() => setMobileOpen(false)}
-                                        className="inline-flex min-h-[50px] w-full items-center justify-center gap-2 border border-black/25 text-[11px] font-bold uppercase tracking-[0.12em] text-[#111111] transition-colors hover:bg-[#111111] hover:text-white"
-                                    >
-                                        <User className="h-4 w-4" />
-                                        {user.first_name} {user.last_name}
-                                    </Link>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-2 gap-3 border-t border-black/15 pt-6">
+                                {!user && (
                                     <Link
                                         to="/signin"
                                         onClick={() => setMobileOpen(false)}
-                                        className="inline-flex min-h-[50px] items-center justify-center border border-black/25 text-[11px] font-bold uppercase tracking-[0.12em] text-[#111111] transition-colors hover:bg-[#111111] hover:text-white"
+                                        className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#111111] transition-opacity hover:opacity-55"
                                     >
+                                        <User className="h-4 w-4" />
                                         {t('nav.signIn')}
                                     </Link>
-                                    <Link
-                                        to="/design"
-                                        onClick={() => setMobileOpen(false)}
-                                        className="inline-flex min-h-[50px] items-center justify-center bg-[#111111] text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#333333]"
-                                    >
-                                        {t('nav.startDesigning')}
-                                    </Link>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </motion.aside>
                     </motion.div>
                 )}
