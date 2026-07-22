@@ -168,7 +168,7 @@ export function Footer() {
 
                     <div className="grid items-end gap-10 pt-8 sm:grid-cols-2 lg:grid-cols-[1fr_auto_1fr]">
                         <div className="flex flex-wrap items-center gap-7">
-                            <Link to="/" className="font-['Poppins'] text-[30px] font-medium leading-none tracking-normal sm:text-[34px]">
+                            <Link to="/" className="font-serif text-[30px] font-medium leading-none tracking-normal sm:text-[34px]">
                                 Kere
                             </Link>
 

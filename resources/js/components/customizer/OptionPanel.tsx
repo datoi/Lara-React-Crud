@@ -31,7 +31,7 @@ export default function OptionPanel({
     onSelectSubOption,
     onSelectFabric,
 }: OptionPanelProps) {
-    const choosableCategories = layerCategories.filter(c => c.options.length > 1);
+    const choosableCategories = layerCategories.filter(c => c.options.length > 0);
     const useStackedLayout = choosableCategories.length > 1;
 
     const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);

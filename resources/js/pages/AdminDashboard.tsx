@@ -29,7 +29,8 @@ interface AdminOrder {
 interface AdminUser {
     id: number;
     name: string;
-    email: string;
+    email: string | null;
+    phone: string | null;
     role: string;
     is_suspended: boolean;
     created_at: string;
@@ -44,7 +45,8 @@ interface AssignSlot {
 interface PendingTailor {
     id: number;
     name: string;
-    email: string;
+    email: string | null;
+    phone: string | null;
     created_at: string;
 }
 
@@ -679,7 +681,7 @@ export default function AdminDashboard() {
                                         <div className="flex items-start justify-between gap-4 flex-wrap">
                                             <div>
                                                 <p className="text-sm font-medium text-slate-900">{tailor.name}</p>
-                                                <p className="text-xs text-slate-400 mt-0.5">{tailor.email}</p>
+                                                <p className="text-xs text-slate-400 mt-0.5">{tailor.email ?? tailor.phone}</p>
                                                 <p className="text-xs text-slate-400 mt-0.5">{t('adminDashboard.colApplied')}: {tailor.created_at}</p>
                                             </div>
                                             <div className="flex items-center gap-2 flex-wrap">
@@ -783,7 +785,7 @@ export default function AdminDashboard() {
                                                 className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
                                             >
                                                 <td className="px-6 py-4 text-sm font-medium text-slate-900">{u.name}</td>
-                                                <td className="px-6 py-4 text-sm text-slate-500 hidden sm:table-cell">{u.email}</td>
+                                                <td className="px-6 py-4 text-sm text-slate-500 hidden sm:table-cell">{u.email ?? u.phone}</td>
                                                 <td className="px-6 py-4 text-xs text-slate-400 hidden md:table-cell">{u.created_at}</td>
                                                 <td className="px-6 py-4">
                                                     <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border ${

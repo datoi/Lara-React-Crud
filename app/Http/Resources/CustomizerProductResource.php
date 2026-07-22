@@ -17,7 +17,7 @@ class CustomizerProductResource extends JsonResource
             'description'       => $this->description,
             'base_price'        => $this->base_price,
             'preview_image_url' => $this->preview_image_path
-                                        ? asset('storage/' . $this->preview_image_path)
+                                        ? $this->resolvePreviewUrl($this->preview_image_path)
                                         : null,
             'layer_categories'  => LayerCategoryResource::collection(
                 $this->whenLoaded('layerCategories')
@@ -26,5 +26,13 @@ class CustomizerProductResource extends JsonResource
                 $this->whenLoaded('fabrics')
             ),
         ];
+    }
+
+    /** Paths starting with '/' are public assets; everything else lives in storage. */
+    private function resolvePreviewUrl(string $path): string
+    {
+        $encoded = implode('/', array_map('rawurlencode', explode('/', $path)));
+
+        return str_starts_with($path, '/') ? $encoded : asset('storage/' . $encoded);
     }
 }

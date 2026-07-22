@@ -187,7 +187,7 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                                 )}
 
                                 {uploadError && (
-                                    <p className="text-xs text-slate-600">{uploadError}</p>
+                                    <p className="text-xs text-destructive">{uploadError}</p>
                                 )}
 
                                 <p className="text-xs text-slate-400">{t('tailorComponents.photoFormatHint')}</p>
@@ -256,7 +256,7 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                             </span>
                         )}
                         {saveError && (
-                            <span className="text-sm text-slate-600">{t('tailorComponents.saveProfileError')}</span>
+                            <span className="text-sm text-destructive">{t('tailorComponents.saveProfileError')}</span>
                         )}
                     </div>
                 </form>

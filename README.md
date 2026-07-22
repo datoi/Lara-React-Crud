@@ -609,6 +609,76 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-07-19] Customizer: Colour Variants Inside Styles + Slug-less Product Creation
+
+**What was done:** Colours are now variants *of a style* instead of separate styles or a separate option group — one style can carry any number of colours, each with its own photos.
+
+- **Data model:** new `layer_option_colors` table (migration `2026_07_19_000004`): `layer_option_id`, `name`, `color_hex`, front + back/left/right image paths, `is_default`, `display_order`. `LayerOption::colors()`; colours ride along in `LayerOptionResource`.
+- **Admin:** each style card has a **Colours** section — list of variants (dot, name, Front/Back/Left/Right upload slots, delete) and an Add Colour form (dot colour picker, name, front photo). CRUD via `POST /admin/customizer/options/{id}/colors`, `PUT/DELETE /admin/customizer/options/colors/{id}`. First colour becomes default; deleting the default promotes the next. The per-style "Dot colour" control was removed (superseded).
+- **Customer:** `useCustomizer` tracks `colorSelections` (option id → colour id, included in `DesignConfiguration.color_selections`); the right column shows a colour-dot card for the selected style's variants; `PreviewCanvas` renders the chosen colour's photos and rotation views come from the colour row. The old "all-options-colour-tagged category renders as dots" path was removed.
+- **Products:** the admin New Product form no longer asks for a slug — the backend generates a unique one from the name (`storeProduct`).
+- **Seeder:** `SleevelessTankSeeder` restructured — one "Sleeveless" style carrying 9 colour variants (White has the 4 views); it deletes the legacy per-product Color category on re-run.
+
+### [2026-07-19] QA Fix Pass: Throttle Buckets, Suspended-Tailor Guard, Silent Failures
+
+**What was done:** Fixes for the QA findings on the offer-pool and customizer batches.
+
+- **Throttle collision (MAJOR):** all inline `throttle:X,1` groups shared one per-user counter, so OrderChat's 4s message polling starved the 10/min write bucket — "Choose This Tailor" 429'd at normal reading pace. Each group now has its own bucket via the throttle prefix parameter (`throttle:60,1,api-reads`, `throttle:10,1,api-writes`, `api-customizer`, `api-admin`) in `routes/api.php`.
+- **Suspended-tailor hire (MAJOR):** `CustomerOrderController::chooseTailor` now re-checks the offering tailor's eligibility (`approval_status` approved/null and not `is_suspended`) and returns 409, matching the manual-selection path.
+- **Silent failures:** `AvailableDesigns.tsx` shows a destructive error state with a Retry button on load failure (new `tailorComponents.openDesignsLoadFailed/openDesignsRetry` keys, both locales). `CustomizerAdminPage` view-image uploads and dot-colour saves check `res.ok` and surface the server message.
+- **Cosmetics:** pool-card measurement chips use translated `orderReview.size_*` labels and no longer capitalize the cm unit; customer stat tile "Pending" now includes `pending_assignment` orders.
+
+### [2026-07-19] Customizer: Colour Dots, Rotation Views, Selector-Only Groups + Sleeveless Tank
+
+**What was done:** Three engine extensions to the 2D customizer, plus the first product built on them.
+
+- **Rotation views:** `layer_options` gained nullable `back/left/right_image_path` (migration `2026_07_19_000001`). `PreviewCanvas` takes a `view` prop; `ViewSwitcher` (right column card) cycles Front/Back/Left/Right and renders only when every painted layer has the angle — switching to an option without it snaps back to front. Admin: per-style "Rotation views" upload slots (proper `_method=PUT` spoofing).
+- **Colour dots:** `layer_options.color_hex` (migration `2026_07_19_000002`). When every option in a category is colour-tagged (and childless), the category renders as `ColorDotPicker` swatches in the right column instead of image thumbnails; the option panel hides when empty. Admin: "Dot colour" picker + remove per style.
+- **Selector-only groups:** `layer_categories.is_preview_layer` (migration `2026_07_19_000003`, default true). When false, the category shows as picker cards but paints no canvas layer — needed for photo-swap products where the "style" card would otherwise stack over the colour photo. Single-option categories now display in the panel.
+- **Sleeveless Tank** (`SleevelessTankSeeder`, re-runnable): ₾90, category shirt, "Style your own" (selector-only, 1 style) + 9 colour options from `public/assets/garments/shirts/` (public-asset paths supported by the resources); White carries the 4 rotation views. Preview renders images at natural size (`object-scale-down`, `object-[center_25%]`, viewport-capped canvas) because the source photos are ~220×400.
+
+### [2026-07-19] Landing Polish: Nav Bar Surface, Fonts, Carousel Click Fix, How-It-Works Section
+
+**What was done:** Post-redesign fixes on Mariam's landing.
+
+- **How It Works:** standalone `/how-it-works` page deleted (route + page + page-only locale keys); new `HowItWorksSection` on the landing (4 steps, `howItWorks.s1–s4` keys, her design language) with `id="how-it-works"`; navbar/burger/footer links scroll to it like FAQ.
+- **Hero carousel:** `HeroSection` now pulls real marketplace products (`/api/products`, ≥4 with images required) into the rotating gallery as clickable product links; her poster images remain the fallback.
+- **Navbar:** burger button hidden ≥lg (drawer breakpoint aligned from md to lg — it never opened on tablets); "Start Designing" link removed; language toggle vertically centred; header is now a frosted ivory surface (`rgba(251,248,240,.9)` + blur + hairline border) with always-dark text — replaces the transparent bar + scroll tone-flipping.
+- **Fonts:** per-script stacks — `Newsreader, Noto Serif Georgian` / `Instrument Sans, Noto Sans Georgian` in the theme and all landing CSS; Latin gets the editorial faces, Georgian keeps Noto. Poppins dropped (footer logo now `font-serif`); Google Fonts moved from CSS `@import` to the blade `<link>`.
+- **Marketplace carousel:** cards were unclickable — `setPointerCapture` on pointerdown retargeted every click to the strip. Drag mode (and capture) now starts only after 6px of movement; clean clicks navigate to `/product/{id}`.
+
+---
+
+### [2026-07-13] Upload-Design Measurements + Open Order Pool with Tailor Offers
+
+**What was done:** The upload-your-design step now collects measurements and an explicit customization request; custom orders without a hand-picked tailor go to an open pool where every approved tailor is notified, can send an offer, and the customer picks the winner from her dashboard.
+
+**Upload step (`DesignerApp.tsx` UploadPanel):** Four optional cm measurement inputs (chest, waist, hips, length — validated to ≤999 with one decimal, matching backend `measurements.*` rules), a "I want to customize this design" checkbox that reveals a 1000-char request textarea, and the additional-information box shrunk to 2 rows. All persisted via `useCustomOrderDraft` (`measurements`, `customization_request`) and submitted inside `custom_design_data`.
+
+**Order creation (`OrderController::storeCustomOrder`):** Manual tailor selection still assigns directly. Any other path (formerly "Let Kere Choose" auto-match — `matchTailorForGarment()` removed) now sets `status = pending_assignment` with `tailor_id = null` and creates an `open_order` KereNotification for every approved, non-suspended tailor. `custom_design_data.customization_request` accepted (max 1000).
+
+**Offer flow:**
+- `GET /api/tailor/open-orders` — pool of unassigned custom orders with design data, `requests_count`, and the caller's `my_request_status`.
+- `POST /api/tailor/orders/{id}/request` — creates a `TailorRequest` (optional 500-char message; unique per order+tailor, 409 on duplicate or closed order). Customer gets an in-app `tailor_request` notification plus a `TailorRequestReceived` email (SMS fallback when no email).
+- `GET /api/customer/orders/{orderId}/requests` — offers with tailor profile + weighted product-review rating.
+- `POST /api/customer/orders/{orderId}/choose-tailor` — transactionally assigns the tailor, sets order `pending`, marks the offer `accepted` and the rest `declined`; chosen tailor gets `request_accepted` notification + `NewOrderAlert` email (SMS fallback), declined tailors get `request_declined`.
+
+**Dashboards:** `TailorDashboard` renders a new `AvailableDesigns` card (design preview, measurements, customization request, offer form with message). `CustomerDashboard` shows an "Awaiting Offers" status badge and offers-count chip on `pending_assignment` orders; the order modal lists offers (`TailorOffers`) with a Choose button and now also renders the upload-shape design data (`garment_type`, image, measurements, customization request, notes) — as does the tailor's `OrdersList` modal.
+
+**Migration:** `2026_07_12_120000_create_tailor_requests_table.php` (`order_id`, `tailor_id`, `message`, `status`, unique `[order_id, tailor_id]`).
+
+**Where the logic is:**
+- `app/Http/Controllers/Api/OrderController.php` — pool creation + broadcast, `openOrders()`, `requestOrder()`
+- `app/Http/Controllers/Api/CustomerOrderController.php` — `requests()`, `chooseTailor()`, `tailor_requests_count` in `index()`
+- `app/Models/TailorRequest.php`, `Order::tailorRequests()`
+- `app/Mail/TailorRequestReceived.php` + `resources/views/emails/tailor-request-received.blade.php`
+- `resources/js/components/tailor/AvailableDesigns.tsx` — pool UI
+- `resources/js/pages/CustomerDashboard.tsx` — `TailorOffers`, status badge, chip
+- `resources/js/pages/DesignerApp.tsx`, `OrderReview.tsx`, `hooks/useCustomOrderDraft.ts` — new draft fields
+- i18n: new keys in `design`, `orderReview`, `customerDashboard`, `tailorComponents`; `tailorSelect.letKereChoose*` copy now describes the offers flow
+
+---
+
 ### [2026-06-27] Tailor Approval Flow
 
 **What was done:** New tailors cannot access the platform until manually approved by an admin.
@@ -1200,5 +1270,52 @@ Frontend:
 php artisan migrate:fresh --seed   # creates all tables + Classic Shirt data
 php artisan storage:link           # serves SVG assets from /storage/layers/
 ```
+
+### 2026-07-12 — Auth Form Error Messages Now Red
+
+Error messages on login and registration rendered in grey (`text-slate-600` / `border-slate-400` / slate banners) and were barely distinguishable from helper text. All auth-flow error states now use the theme's `--color-destructive` red token (first consumer of it): `text-destructive` for messages, `border-destructive` for invalid inputs, `bg-destructive/10 border-destructive/30` for general-error banners.
+
+- `Login.tsx` — general banner + email/password field errors and borders.
+- `RegisterCustomer.tsx` — general banner (form + OTP verify step), all field errors, OTP digit boxes' error state.
+- `RegisterTailor.tsx` — general banner + all field errors and borders.
+- `AdminLogin.tsx` — error banner (red on dark background).
+- `PhoneInput.tsx` — error border on both the country selector and the number input.
+
+Verified in the browser (headless Chrome): empty-submit field errors and wrong-credential banners render `rgb(239, 68, 68)` on both login and register pages; Georgian i18n strings intact.
+
+**Follow-up (same day): full-app sweep.** Every remaining grey error message was converted to the same destructive treatment:
+
+- `ErrorFallback.tsx` — shared fetch-error component (used by Marketplace and others).
+- `DesignerApp.tsx` — upload-error banner + products fetch error.
+- `CustomizePage.tsx` — load-error / product-not-found message.
+- `TailorSelectStep.tsx`, `MyDesignsPage.tsx`, `OrderReview.tsx`, `ProductCustomization.tsx` — fetch/submit/order errors.
+- Modals: `AddProductModal`, `EmailSupportModal`, `ReviewModal`, `SaveDesignModal`, FAQ newsletter error.
+- `TailorProfileEditor.tsx` (upload + save errors), `StatsCards.tsx` (stats fetch), `OrderChat.tsx` (load error, icon at `text-destructive/40`).
+
+Deliberately left grey: the measurement out-of-range *warnings* in `DesignCanvas.tsx` / `ProductCustomization.tsx` — they are non-blocking hints, not errors. Verified in browser: `/customize/<bogus-slug>` not-found and Marketplace fetch-failure (API route aborted) both render red.
+
+### 2026-07-12 — Phone-Only Tailor Registration & Phone Login
+
+Many prospective tailors don't have email addresses. Tailors can now register with just a phone number; email is optional. All users can log in with email **or** phone.
+
+**Database** (`2026_07_12_000001_...`): `users.email` nullable, `users.phone` unique (existing duplicates cleared, keeping the oldest account), `verifications.email` nullable, `verifications.phone_attempts` added.
+
+**Backend:**
+- `SmsService` (`app/Services/SmsService.php`) — generic SMS sender extracted from `OtpService`'s Twilio logic; logs the message when Twilio is unconfigured (dev). Single swap point if we move to a local Georgian gateway (smsoffice.ge etc.) later.
+- `POST /api/register/initiate` — email now `required_if:role,customer`; phone must be unique and `+<digits>` format. Without email, the OTP is sent by SMS and the response carries `channel: "phone"` with a masked number.
+- `POST /api/register/verify-phone` — no longer requires prior email verification for email-less registrations; now enforces the same 5-attempt limit as the email step (previously unlimited — closed brute-force gap).
+- `POST /api/login` — `login` field accepts email or phone (tolerant of spacing and missing +995 prefix); legacy `email` field still accepted. Generic 401 message.
+- Legacy unverified `POST /api/register` removed — tailors previously registered with **no verification at all**; they now verify via OTP like customers.
+- SMS fallback (Georgian) when a tailor has no email: approval, rejection (with reason), and new-order alerts.
+
+**Frontend:**
+- `OtpStep` extracted from RegisterCustomer into `components/OtpStep.tsx` (shared).
+- RegisterTailor: email marked optional, initiate flow, then SMS-OTP (or email-OTP if email given) step, then the pending-approval screen.
+- Login: single "Email or phone number" field; localized invalid-credentials message on 401.
+- Admin dashboard + EmailSupportModal fall back to phone where email is null; `AuthUser.email/phone` typed nullable.
+
+**Verified** (headless Chrome + API): phone-only tailor registration end-to-end with OTP read from the SMS log; login by phone in local 9-digit format; customer email-OTP flow; login by email; duplicate phone rejected; wrong password 401; Georgian approval SMS logged for an email-less tailor.
+
+**Before production:** set `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM` on Railway (the SDK is already in composer.json) — until then SMS goes to the log only, so phone-only registration cannot complete in prod.
 
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

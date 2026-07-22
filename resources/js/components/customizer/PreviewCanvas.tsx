@@ -28,15 +28,29 @@
  */
 import { useMemo } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import type { LayerCategory, LayerOption, Fabric } from '../../types/customizer';
+import type { LayerCategory, LayerOption, OptionColor, Fabric, GarmentView, ViewImageSet } from '../../types/customizer';
+
+/** The source's image for a view, or null when it has no photo for that angle */
+export function viewImageUrl(source: ViewImageSet, view: GarmentView): string | null {
+    switch (view) {
+        case 'back':  return source.back_image_url;
+        case 'left':  return source.left_image_url;
+        case 'right': return source.right_image_url;
+        default:      return source.image_url;
+    }
+}
 
 interface PreviewCanvasProps {
     layerCategories: LayerCategory[];
     selections: Record<number, number>;
     selectedFabric: Fabric | null;
     loading?: boolean;
+    /** Camera angle to render; layers missing the view fall back to their front image */
+    view?: GarmentView;
     /** If provided, used to resolve the effective option (parent or child) per category */
     resolveOption?: (category: LayerCategory) => LayerOption | null;
+    /** If provided, resolves the selected colour variant whose photos replace the option's */
+    resolveColor?: (option: LayerOption) => OptionColor | null;
 }
 
 export default function PreviewCanvas({
@@ -44,7 +58,9 @@ export default function PreviewCanvas({
     selections,
     selectedFabric,
     loading = false,
+    view = 'front',
     resolveOption,
+    resolveColor,
 }: PreviewCanvasProps) {
     // Sort ascending: lowest z_index renders first (behind)
     const sorted = useMemo(
@@ -94,14 +110,14 @@ export default function PreviewCanvas({
 
     return (
         <div
-            className="relative w-full h-56 sm:h-72 lg:h-auto lg:aspect-[3/4]"
+            className="relative w-full h-56 sm:h-72 lg:h-auto lg:aspect-[3/4] lg:max-h-[calc(100vh-10rem)]"
             style={{ backgroundColor: canvasBackground }}
             role="img"
             aria-label={`Shirt preview${selectedFabric ? ` in ${selectedFabric.name}` : ''}`}
         >
             {sorted.map(category => {
-                // Legacy pure-UI collar category (no canvas layer of its own)
-                if (category.slug === 'collar') return null;
+                // Selector-only categories (and the legacy collar picker) paint no layer
+                if (category.slug === 'collar' || category.is_preview_layer === false) return null;
 
                 // Resolve effective option: uses child sub-selection when available
                 const option = resolveOption
@@ -119,21 +135,29 @@ export default function PreviewCanvas({
 
                 if (!option) return null;
 
+                // Selected colour variant supplies the photos when the option has colours
+                const color = resolveColor?.(option) ?? null;
+
                 // Legacy collar-variant image switching (only when resolveOption not provided)
-                let src = option.image_url;
+                let src = color?.image_url ?? option.image_url;
                 if (!resolveOption && category.slug === 'sleeves') {
                     if (collarVariant === 'alt1') src = option.thumbnail_url;
                     else if (collarVariant === 'alt2') src = option.alt_image_url ?? option.image_url;
                 }
 
+                // Rotation view — falls back to the front image when this layer has no photo for the angle
+                if (view !== 'front') {
+                    src = viewImageUrl(color ?? option, view) ?? src;
+                }
+
                 return (
                     <AnimatePresence mode="popLayout" key={category.id}>
                         <motion.img
-                            key={`${category.id}-${option.id}`}
+                            key={`${category.id}-${option.id}-${color?.id ?? 'base'}-${view}`}
                             src={src}
                             alt={`${category.name}: ${option.name}`}
                             draggable={false}
-                            className="absolute inset-0 w-full h-full object-contain object-center pointer-events-none select-none"
+                            className="absolute inset-0 w-full h-full object-scale-down object-[center_25%] pointer-events-none select-none"
                             style={{
                                 zIndex: category.z_index,
                                 filter: category.is_colorable

@@ -49,7 +49,7 @@ export default function CustomizePage() {
     if (error || !product) {
         return (
             <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
-                <p className="text-slate-500">{error ?? t('productCustomization.productNotFound')}</p>
+                <p className="text-destructive">{error ?? t('productCustomization.productNotFound')}</p>
                 <Link to="/marketplace" className="text-slate-900 underline text-sm">
                     {t('productCustomization.backToMarketplace')}
                 </Link>

@@ -104,7 +104,7 @@ export default function AdminLogin() {
                     </div>
 
                     {error && (
-                        <p className="text-sm text-slate-300 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5">
+                        <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-2.5">
                             {error}
                         </p>
                     )}

@@ -6,17 +6,19 @@
  *   Right — OptionPanel (tabs per category → option swatches + fabric picker)
  *            PriceSummary + Save/Order CTAs
  */
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bookmark, RotateCcw, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
-import PreviewCanvas from './PreviewCanvas';
+import PreviewCanvas, { viewImageUrl } from './PreviewCanvas';
+import ViewSwitcher from './ViewSwitcher';
+import ColorDotPicker from './ColorDotPicker';
 import OptionPanel from './OptionPanel';
 import PriceSummary from './PriceSummary';
 import SaveDesignModal from './SaveDesignModal';
 import { useCustomizer } from '../../hooks/useCustomizer';
-import type { CustomizerProduct, Fabric, LayerCategory } from '../../types/customizer';
+import type { CustomizerProduct, Fabric, GarmentView, LayerCategory } from '../../types/customizer';
 
 interface CustomizerProps {
     product: CustomizerProduct;
@@ -35,21 +37,56 @@ export default function Customizer({
     const {
         selections,
         subSelections,
+        colorSelections,
         fabricId,
         selectOption,
         selectSubOption,
+        selectColor,
         selectFabric,
         reset,
         getConfiguration,
         totalPrice,
         resolveOption,
+        resolveColor,
     } = useCustomizer({ basePrice: product.base_price, layerCategories, fabrics });
     const { t } = useTranslation();
 
     const [saveOpen, setSaveOpen]   = useState(false);
     const [savedName, setSavedName] = useState<string | null>(null);
+    const [view, setView]           = useState<GarmentView>('front');
 
     const selectedFabric = fabrics.find(f => f.id === fabricId) ?? null;
+
+    const hasPanelContent = layerCategories.some(c => c.options.length > 0) || fabrics.length > 0;
+
+    // Colour dot groups: one per category whose currently-selected style has colour variants
+    const colorGroups = layerCategories
+        .filter(c => c.slug !== 'collar')
+        .map(category => ({ category, option: resolveOption(category) }))
+        .filter((g): g is { category: LayerCategory; option: NonNullable<ReturnType<typeof resolveOption>> } =>
+            g.option !== null && g.option.colors.length > 0,
+        );
+
+    // A view is offered only when every rendered layer has a photo for it,
+    // so the composite never mixes angles. The selected colour's photos win.
+    const availableViews = useMemo((): GarmentView[] => {
+        const renderedSources = layerCategories
+            .filter(c => c.slug !== 'collar' && c.is_preview_layer !== false)
+            .map(c => resolveOption(c))
+            .filter((o): o is NonNullable<typeof o> => o !== null)
+            .map(o => resolveColor(o) ?? o);
+
+        if (renderedSources.length === 0) return ['front'];
+
+        return (['front', 'back', 'left', 'right'] as GarmentView[]).filter(v =>
+            renderedSources.every(s => viewImageUrl(s, v) !== null),
+        );
+    }, [layerCategories, resolveOption, resolveColor]);
+
+    // Picking a color/style that lacks the current angle snaps back to front
+    useEffect(() => {
+        if (!availableViews.includes(view)) setView('front');
+    }, [availableViews, view]);
 
     return (
         <motion.div
@@ -64,7 +101,9 @@ export default function Customizer({
                     layerCategories={layerCategories}
                     selections={selections}
                     selectedFabric={selectedFabric}
+                    view={view}
                     resolveOption={resolveOption}
+                    resolveColor={resolveColor}
                 />
                 {/* Fabric swatch label below preview */}
                 {selectedFabric && (
@@ -87,18 +126,34 @@ export default function Customizer({
                 </div>
 
                 {/* Option panel */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-4">
-                    <OptionPanel
-                        layerCategories={layerCategories}
-                        fabrics={fabrics}
-                        selections={selections}
-                        subSelections={subSelections}
-                        fabricId={fabricId}
-                        onSelectOption={selectOption}
-                        onSelectSubOption={selectSubOption}
-                        onSelectFabric={selectFabric}
-                    />
-                </div>
+                {hasPanelContent && (
+                    <div className="bg-white rounded-2xl border border-slate-100 p-4">
+                        <OptionPanel
+                            layerCategories={layerCategories}
+                            fabrics={fabrics}
+                            selections={selections}
+                            subSelections={subSelections}
+                            fabricId={fabricId}
+                            onSelectOption={selectOption}
+                            onSelectSubOption={selectSubOption}
+                            onSelectFabric={selectFabric}
+                        />
+                    </div>
+                )}
+
+                {/* Colour dot groups — colours of the currently selected style */}
+                {colorGroups.map(({ category, option }) => (
+                    <div key={`${category.id}-${option.id}`} className="bg-white rounded-2xl border border-slate-100 p-4">
+                        <ColorDotPicker
+                            label={t('customizer.colorLabel')}
+                            colors={option.colors}
+                            selectedId={colorSelections[option.id] ?? option.colors.find(c => c.is_default)?.id ?? option.colors[0]?.id}
+                            onSelect={colorId => selectColor(option.id, colorId)}
+                        />
+                    </div>
+                ))}
+
+                <ViewSwitcher views={availableViews} view={view} onChange={setView} />
 
                 {/* Price summary — hidden on mobile (shown in sticky bar below) */}
                 <div className="hidden lg:block">

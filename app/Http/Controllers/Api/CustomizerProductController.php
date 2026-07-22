@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PreviewDesignRequest;
 use App\Http\Resources\CustomizerProductResource;
+use App\Http\Resources\FabricResource;
+use App\Http\Resources\LayerCategoryResource;
 use App\Models\CustomizerProduct;
 use App\Models\Fabric;
 use App\Models\LayerOption;
@@ -30,7 +32,8 @@ class CustomizerProductController extends Controller
         $product = CustomizerProduct::where('slug', $slug)
             ->where('is_active', true)
             ->with([
-                'layerCategories.options.children',
+                'layerCategories.options.children.colors',
+                'layerCategories.options.colors',
                 'fabrics' => fn ($q) => $q->where('is_active', true)->orderBy('display_order'),
             ])
             ->firstOrFail();
@@ -48,10 +51,10 @@ class CustomizerProductController extends Controller
             'product' => (new CustomizerProductResource($product))
                 ->additional(['fabrics_override' => $allFabrics]),
             // Flatten for convenience
-            'layer_categories' => \App\Http\Resources\LayerCategoryResource::collection(
+            'layer_categories' => LayerCategoryResource::collection(
                 $product->layerCategories
             ),
-            'fabrics' => \App\Http\Resources\FabricResource::collection($allFabrics),
+            'fabrics' => FabricResource::collection($allFabrics),
         ]);
     }
 
@@ -65,7 +68,7 @@ class CustomizerProductController extends Controller
         $product = CustomizerProduct::where('slug', $request->product_slug)->firstOrFail();
 
         $selections = $request->selections; // [ categoryId => optionId ]
-        $fabricId   = $request->fabric_id;
+        $fabricId = $request->fabric_id;
 
         $optionModifiers = 0.0;
         $resolvedSelections = [];
@@ -95,12 +98,12 @@ class CustomizerProductController extends Controller
         $total = $product->base_price + $optionModifiers + $fabricModifier;
 
         return response()->json([
-            'base_price'       => $product->base_price,
+            'base_price' => $product->base_price,
             'option_modifiers' => $optionModifiers,
-            'fabric_modifier'  => $fabricModifier,
-            'total'            => round($total, 2),
-            'selections'       => $resolvedSelections,
-            'fabric_id'        => $fabricId,
+            'fabric_modifier' => $fabricModifier,
+            'total' => round($total, 2),
+            'selections' => $resolvedSelections,
+            'fabric_id' => $fabricId,
         ]);
     }
 }

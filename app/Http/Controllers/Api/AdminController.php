@@ -10,6 +10,7 @@ use App\Models\KereNotification;
 use App\Models\Message;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -23,31 +24,31 @@ class AdminController extends Controller
             ->withCount('messages')
             ->latest()
             ->get()
-            ->map(fn($o) => [
-                'id'           => $o->id,
+            ->map(fn ($o) => [
+                'id' => $o->id,
                 'order_number' => $o->order_number,
-                'order_type'   => $o->order_type,
-                'status'       => $o->status,
-                'total'        => $o->total,
-                'created_at'   => $o->created_at?->toDateString(),
-                'customer'     => $o->user ? [
-                    'id'    => $o->user->id,
-                    'name'  => $o->user->getFullName(),
+                'order_type' => $o->order_type,
+                'status' => $o->status,
+                'total' => $o->total,
+                'created_at' => $o->created_at?->toDateString(),
+                'customer' => $o->user ? [
+                    'id' => $o->user->id,
+                    'name' => $o->user->getFullName(),
                     'email' => $o->user->email,
                 ] : null,
                 'tailor_assignment_mode' => $o->tailor_assignment_mode ?? 'manual',
                 'tailor' => $o->tailor ? [
-                    'id'   => $o->tailor->id,
+                    'id' => $o->tailor->id,
                     'name' => $o->tailor->getFullName(),
                 ] : null,
-                'items' => $o->items->map(fn($i) => [
-                    'id'           => $i->id,
+                'items' => $o->items->map(fn ($i) => [
+                    'id' => $i->id,
                     'product_name' => $i->product_name,
-                    'quantity'     => $i->quantity,
-                    'price'        => $i->price,
+                    'quantity' => $i->quantity,
+                    'price' => $i->price,
                 ])->values()->all(),
                 'message_count' => $o->messages_count,
-                'delivered_at'  => $o->delivered_at?->toDateString(),
+                'delivered_at' => $o->delivered_at?->toDateString(),
             ]);
 
         return response()->json(['orders' => $orders]);
@@ -67,10 +68,10 @@ class AdminController extends Controller
         if ($order->user_id) {
             KereNotification::create([
                 'user_id' => $order->user_id,
-                'type'    => 'order_status',
-                'title'   => 'თქვენი შეკვეთა ჩაბარდა',
-                'body'    => "თქვენი შეკვეთა #{$order->order_number} ჩაბარებულია. შეგიძლიათ დატოვოთ შეფასება.",
-                'data'    => ['order_id' => $order->id, 'status' => 'delivered'],
+                'type' => 'order_status',
+                'title' => 'თქვენი შეკვეთა ჩაბარდა',
+                'body' => "თქვენი შეკვეთა #{$order->order_number} ჩაბარებულია. შეგიძლიათ დატოვოთ შეფასება.",
+                'data' => ['order_id' => $order->id, 'status' => 'delivered'],
                 'is_read' => false,
             ]);
         }
@@ -80,11 +81,11 @@ class AdminController extends Controller
                 Mail::to($order->user->email)->send(new OrderStatusUpdated($order, 'delivered'));
             }
         } catch (\Throwable $e) {
-            Log::error('OrderStatusUpdated (delivered) email failed: ' . $e->getMessage());
+            Log::error('OrderStatusUpdated (delivered) email failed: '.$e->getMessage());
         }
 
         return response()->json([
-            'status'       => 'delivered',
+            'status' => 'delivered',
             'delivered_at' => $order->fresh()->delivered_at?->toDateString(),
         ]);
     }
@@ -92,12 +93,12 @@ class AdminController extends Controller
     // GET /api/admin/orders/{orderId}/messages
     public function orderMessages(string $orderId)
     {
-        if (!ctype_digit($orderId)) {
+        if (! ctype_digit($orderId)) {
             return response()->json(['message' => 'Order not found.'], 404);
         }
 
         $order = Order::find($orderId);
-        if (!$order) {
+        if (! $order) {
             return response()->json(['message' => 'Order not found.'], 404);
         }
 
@@ -105,12 +106,12 @@ class AdminController extends Controller
             ->where('order_id', $orderId)
             ->orderBy('created_at')
             ->get()
-            ->map(fn($m) => [
-                'id'          => $m->id,
-                'sender_id'   => $m->sender_id,
+            ->map(fn ($m) => [
+                'id' => $m->id,
+                'sender_id' => $m->sender_id,
                 'sender_name' => $m->sender->getFullName(),
-                'message'     => $m->message,
-                'created_at'  => $m->created_at->toISOString(),
+                'message' => $m->message,
+                'created_at' => $m->created_at->toISOString(),
             ]);
 
         return response()->json(['messages' => $messages]);
@@ -119,14 +120,15 @@ class AdminController extends Controller
     // GET /api/admin/users
     public function users()
     {
-        $users = User::latest()->get()->map(fn($u) => [
-            'id'           => $u->id,
-            'name'         => $u->getFullName(),
-            'email'        => $u->email,
-            'role'         => $u->role,
-            'is_suspended'    => (bool) $u->is_suspended,
+        $users = User::latest()->get()->map(fn ($u) => [
+            'id' => $u->id,
+            'name' => $u->getFullName(),
+            'email' => $u->email,
+            'phone' => $u->phone,
+            'role' => $u->role,
+            'is_suspended' => (bool) $u->is_suspended,
             'approval_status' => $u->approval_status,
-            'created_at'      => $u->created_at?->toDateString(),
+            'created_at' => $u->created_at?->toDateString(),
         ]);
 
         return response()->json(['users' => $users]);
@@ -156,17 +158,17 @@ class AdminController extends Controller
         if ($wasUnassigned && $order->user_id) {
             KereNotification::create([
                 'user_id' => $order->user_id,
-                'type'    => 'order_status',
-                'title'   => 'შეკვეთაზე მკერავი დაინიშნა',
-                'body'    => "თქვენს შეკვეთაზე #{$order->order_number} მკერავი დაინიშნა.",
-                'data'    => ['order_id' => $order->id],
+                'type' => 'order_status',
+                'title' => 'შეკვეთაზე მკერავი დაინიშნა',
+                'body' => "თქვენს შეკვეთაზე #{$order->order_number} მკერავი დაინიშნა.",
+                'data' => ['order_id' => $order->id],
                 'is_read' => false,
             ]);
         }
 
         return response()->json([
-            'tailor'  => ['id' => $tailor->id, 'name' => $tailor->getFullName()],
-            'status'  => $order->fresh()->status,
+            'tailor' => ['id' => $tailor->id, 'name' => $tailor->getFullName()],
+            'status' => $order->fresh()->status,
         ]);
     }
 
@@ -191,11 +193,11 @@ class AdminController extends Controller
             ->where('approval_status', 'pending')
             ->latest()
             ->get()
-            ->map(fn($u) => [
-                'id'         => $u->id,
-                'name'       => $u->getFullName(),
-                'email'      => $u->email,
-                'phone'      => $u->phone,
+            ->map(fn ($u) => [
+                'id' => $u->id,
+                'name' => $u->getFullName(),
+                'email' => $u->email,
+                'phone' => $u->phone,
                 'created_at' => $u->created_at?->toDateString(),
             ]);
 
@@ -210,17 +212,21 @@ class AdminController extends Controller
 
         KereNotification::create([
             'user_id' => $tailor->id,
-            'type'    => 'account_approved',
-            'title'   => 'თქვენი ანგარიში დაადასტურეს',
-            'body'    => 'შეგიძლიათ შეხვიდეთ, დაამატოთ პროდუქტები და მიიღოთ შეკვეთები.',
-            'data'    => [],
+            'type' => 'account_approved',
+            'title' => 'თქვენი ანგარიში დაადასტურეს',
+            'body' => 'შეგიძლიათ შეხვიდეთ, დაამატოთ პროდუქტები და მიიღოთ შეკვეთები.',
+            'data' => [],
             'is_read' => false,
         ]);
 
         try {
-            Mail::to($tailor->email)->send(new TailorApproved($tailor));
+            if ($tailor->email) {
+                Mail::to($tailor->email)->send(new TailorApproved($tailor));
+            } elseif ($tailor->phone) {
+                (new SmsService)->send($tailor->phone, 'Kere: თქვენი ანგარიში დადასტურდა — შეგიძლიათ შეხვიდეთ, დაამატოთ პროდუქტები და მიიღოთ შეკვეთები.');
+            }
         } catch (\Throwable $e) {
-            Log::error('TailorApproved email failed: ' . $e->getMessage());
+            Log::error('TailorApproved notification failed: '.$e->getMessage());
         }
 
         return response()->json(['approval_status' => 'approved']);
@@ -229,15 +235,22 @@ class AdminController extends Controller
     // POST /api/admin/tailors/{id}/reject
     public function rejectTailor(Request $request, int $id)
     {
-        $data   = $request->validate(['reason' => 'nullable|string|max:500']);
+        $data = $request->validate(['reason' => 'nullable|string|max:500']);
         $tailor = User::where('role', 'tailor')->findOrFail($id);
         $tailor->update(['approval_status' => 'rejected']);
 
         try {
-            $mail = new TailorRejected($tailor, $data['reason'] ?? '');
-            Mail::to($tailor->email)->send($mail);
+            if ($tailor->email) {
+                Mail::to($tailor->email)->send(new TailorRejected($tailor, $data['reason'] ?? ''));
+            } elseif ($tailor->phone) {
+                $message = 'Kere: სამწუხაროდ, თქვენი განაცხადი ვერ დადასტურდა.';
+                if (! empty($data['reason'])) {
+                    $message .= ' მიზეზი: '.$data['reason'];
+                }
+                (new SmsService)->send($tailor->phone, $message);
+            }
         } catch (\Throwable $e) {
-            Log::error('TailorRejected email failed: ' . $e->getMessage());
+            Log::error('TailorRejected notification failed: '.$e->getMessage());
         }
 
         return response()->json(['approval_status' => 'rejected']);

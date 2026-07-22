@@ -17,6 +17,7 @@ class LayerCategoryResource extends JsonResource
             'z_index'        => $this->z_index,
             'is_required'    => $this->is_required,
             'is_colorable'   => $this->is_colorable,
+            'is_preview_layer' => $this->is_preview_layer,
             'display_order'  => $this->display_order,
             'options'        => LayerOptionResource::collection($this->whenLoaded('options')),
         ];

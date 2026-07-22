@@ -278,7 +278,7 @@ export function FinalPreview({ config, onBack }: FinalPreviewProps) {
                                 You can adjust details later with your tailor. No payment required now.
                             </p>
                             {submitError && (
-                                <p className="text-xs text-slate-600 text-center">{submitError}</p>
+                                <p className="text-xs text-destructive text-center">{submitError}</p>
                             )}
                             <Button
                                 variant="default"

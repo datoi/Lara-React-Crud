@@ -13,7 +13,6 @@ import Login from './pages/Login';
 import TailorDashboard from './pages/TailorDashboard';
 import CustomerDashboard from './pages/CustomerDashboard';
 import NotFound from './pages/NotFound';
-import HowItWorks from './pages/HowItWorks';
 import AboutUs from './pages/AboutUs';
 import OurTailors from './pages/OurTailors';
 import HelpCenter from './pages/HelpCenter';
@@ -59,7 +58,6 @@ export const router = createBrowserRouter([
     { path: '/admin/login',         element: wrap(<AdminLogin />) },
     { path: '/admin/customizer',    element: guard(<CustomizerAdminPage />, 'admin') },
     // Info pages
-    { path: '/how-it-works',        element: wrap(<HowItWorks />) },
     { path: '/about',               element: wrap(<AboutUs />) },
     { path: '/our-tailors',         element: wrap(<OurTailors />) },
     { path: '/help',                element: wrap(<HelpCenter />) },

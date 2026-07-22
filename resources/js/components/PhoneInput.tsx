@@ -78,7 +78,7 @@ export function PhoneInput({ value, onChange, error, placeholder }: Props) {
                 <button
                     type="button"
                     onClick={() => setOpen(o => !o)}
-                    className={`h-full flex items-center gap-1.5 border rounded-lg px-2.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${error ? 'border-slate-400' : 'border-slate-200'}`}
+                    className={`h-full flex items-center gap-1.5 border rounded-lg px-2.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${error ? 'border-destructive' : 'border-slate-200'}`}
                 >
                     <span className="text-base leading-none">{countryFlag(country.iso2)}</span>
                     <span className="text-slate-700">{country.dialCode}</span>
@@ -125,7 +125,7 @@ export function PhoneInput({ value, onChange, error, placeholder }: Props) {
                 value={localNumber}
                 onChange={handleLocalNumberChange}
                 placeholder={placeholder ?? t('register.phoneNumberPlaceholder')}
-                className={`flex-1 min-w-0 border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${error ? 'border-slate-400' : 'border-slate-200'}`}
+                className={`flex-1 min-w-0 border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${error ? 'border-destructive' : 'border-slate-200'}`}
             />
         </div>
     );

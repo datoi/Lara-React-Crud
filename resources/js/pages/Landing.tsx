@@ -2,6 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { Navigation } from '../components/landing/Navigation';
 import { HeroSection } from '../components/landing/HeroSection';
 import { FeaturesSection } from '../components/landing/FeaturesSection';
+import { HowItWorksSection } from '../components/landing/HowItWorksSection';
 import { SizeFitSection } from '../components/landing/SizeFitSection';
 import { MarketplaceCarousel } from '../components/landing/MarketplaceCarousel';
 import { GuaranteeSection } from '../components/landing/GuaranteeSection';
@@ -34,6 +35,7 @@ export default function Landing() {
             <HeroSection />
             <MarketplaceCarousel />
             <FeaturesSection />
+            <HowItWorksSection />
             <SizeFitSection />
             <GuaranteeSection />
             <CTASection />

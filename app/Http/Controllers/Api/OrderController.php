@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Mail\NewOrderAlert;
 use App\Mail\OrderConfirmation;
 use App\Mail\OrderStatusUpdated;
+use App\Mail\TailorRequestReceived;
 use App\Models\KereNotification;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\TailorRequest;
 use App\Models\User;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -26,31 +29,14 @@ class OrderController extends Controller
             ->first();
     }
 
-    // Match the least-busy available tailor whose specialty matches the garment type
-    private function matchTailorForGarment(string $garmentType): ?User
-    {
-        $keyword = '%' . str_replace(['-', '_'], ' ', strtolower($garmentType)) . '%';
-
-        return User::where('role', 'tailor')
-            ->where(fn ($q) => $q->where('is_available', true)->orWhereNull('is_available'))
-            ->where(function ($q) use ($keyword) {
-                $q->whereRaw('LOWER(specialty) LIKE ?', [$keyword])
-                  ->orWhereNull('specialty'); // tailors without a specialty are eligible
-            })
-            ->orderByRaw(
-                "(SELECT COUNT(*) FROM orders WHERE orders.tailor_id = users.id AND orders.status IN ('pending','processing')) ASC"
-            )
-            ->first();
-    }
-
     private function notify(int $userId, string $type, string $title, string $body, int $orderId, array $extra = []): void
     {
         KereNotification::create([
             'user_id' => $userId,
-            'type'    => $type,
-            'title'   => $title,
-            'body'    => $body,
-            'data'    => array_merge(['order_id' => $orderId], $extra),
+            'type' => $type,
+            'title' => $title,
+            'body' => $body,
+            'data' => array_merge(['order_id' => $orderId], $extra),
             'is_read' => false,
         ]);
     }
@@ -71,16 +57,16 @@ class OrderController extends Controller
     private function storeMarketplaceOrder(Request $request, User $user)
     {
         $data = $request->validate([
-            'product_id'      => 'required|exists:products,id',
-            'color'           => 'nullable|string|max:100',
-            'size'            => 'nullable|string|max:50',
-            'quantity'        => 'required|integer|min:1|max:1000',
-            'cm_measurements'         => ['nullable', 'array'],
-            'cm_measurements.chest'   => ['nullable', 'numeric', 'min:0'],
-            'cm_measurements.waist'   => ['nullable', 'numeric', 'min:0'],
-            'cm_measurements.hips'    => ['nullable', 'numeric', 'min:0'],
-            'cm_measurements.length'  => ['nullable', 'numeric', 'min:0'],
-            'tailor_id'               => 'nullable|integer|exists:users,id',
+            'product_id' => 'required|exists:products,id',
+            'color' => 'nullable|string|max:100',
+            'size' => 'nullable|string|max:50',
+            'quantity' => 'required|integer|min:1|max:1000',
+            'cm_measurements' => ['nullable', 'array'],
+            'cm_measurements.chest' => ['nullable', 'numeric', 'min:0'],
+            'cm_measurements.waist' => ['nullable', 'numeric', 'min:0'],
+            'cm_measurements.hips' => ['nullable', 'numeric', 'min:0'],
+            'cm_measurements.length' => ['nullable', 'numeric', 'min:0'],
+            'tailor_id' => 'nullable|integer|exists:users,id',
         ]);
 
         $product = Product::findOrFail($data['product_id']);
@@ -93,7 +79,7 @@ class OrderController extends Controller
         $shipping = (int) config('app.shipping_cost', 15);
 
         // Customer-chosen tailor takes priority; fall back to product's tailor then random
-        if (!empty($data['tailor_id'])) {
+        if (! empty($data['tailor_id'])) {
             $tailor = User::where('id', $data['tailor_id'])->where('role', 'tailor')->first();
             if (! $tailor) {
                 return response()->json(['message' => 'Selected tailor is not available.'], 422);
@@ -110,59 +96,59 @@ class OrderController extends Controller
         }
 
         $unitPrice = $product->price;
-        $subtotal  = $unitPrice * $data['quantity'];
+        $subtotal = $unitPrice * $data['quantity'];
 
         try {
-        $order = DB::transaction(function () use ($data, $user, $tailor, $product, $unitPrice, $subtotal, $shipping) {
-            // Critical #1: capture affected rows — throws so transaction rolls back if stock is gone
-            $affected = Product::where('id', $product->id)
-                ->where('stock', '>=', $data['quantity'])
-                ->decrement('stock', $data['quantity']);
+            $order = DB::transaction(function () use ($data, $user, $tailor, $product, $unitPrice, $subtotal, $shipping) {
+                // Critical #1: capture affected rows — throws so transaction rolls back if stock is gone
+                $affected = Product::where('id', $product->id)
+                    ->where('stock', '>=', $data['quantity'])
+                    ->decrement('stock', $data['quantity']);
 
-            if ($affected === 0) {
-                throw new \RuntimeException('out_of_stock');
-            }
+                if ($affected === 0) {
+                    throw new \RuntimeException('out_of_stock');
+                }
 
-            $order = Order::create([
-                'user_id'      => $user->id,
-                'tailor_id'    => $tailor->id,
-                'order_number' => 'ORD-' . strtoupper(Str::random(8)),
-                'order_type'   => 'marketplace',
-                'status'       => 'pending',
-                'subtotal'     => $subtotal,
-                'shipping'     => $shipping,
-                'total'        => $subtotal + $shipping,
-                'first_name'   => $user->first_name ?? $user->name,
-                'last_name'    => $user->last_name  ?? '',
-                'email'        => $user->email,
-                'phone'        => $user->phone,
-                'address'      => 'N/A',
-                'city'         => 'Tbilisi',
-                'zip'          => '0100',
-                'country'      => 'GE',
-            ]);
+                $order = Order::create([
+                    'user_id' => $user->id,
+                    'tailor_id' => $tailor->id,
+                    'order_number' => 'ORD-'.strtoupper(Str::random(8)),
+                    'order_type' => 'marketplace',
+                    'status' => 'pending',
+                    'subtotal' => $subtotal,
+                    'shipping' => $shipping,
+                    'total' => $subtotal + $shipping,
+                    'first_name' => $user->first_name ?? $user->name,
+                    'last_name' => $user->last_name ?? '',
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'address' => 'N/A',
+                    'city' => 'Tbilisi',
+                    'zip' => '0100',
+                    'country' => 'GE',
+                ]);
 
-            $order->items()->create([
-                'product_id'      => $product->id,
-                'product_name'    => $product->name,
-                'color'           => $data['color'] ?? null,
-                'size'            => $data['size']  ?? null,
-                'quantity'        => $data['quantity'],
-                'price'           => $unitPrice,
-                'cm_measurements' => $data['cm_measurements'] ?? null,
-            ]);
+                $order->items()->create([
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'color' => $data['color'] ?? null,
+                    'size' => $data['size'] ?? null,
+                    'quantity' => $data['quantity'],
+                    'price' => $unitPrice,
+                    'cm_measurements' => $data['cm_measurements'] ?? null,
+                ]);
 
-            $this->notify(
-                $tailor->id,
-                'new_order',
-                'New Order Received!',
-                "You received a new order for \"{$product->name}\" from {$user->getFullName()}.",
-                $order->id,
-                ['product_name' => $product->name]
-            );
+                $this->notify(
+                    $tailor->id,
+                    'new_order',
+                    'New Order Received!',
+                    "You received a new order for \"{$product->name}\" from {$user->getFullName()}.",
+                    $order->id,
+                    ['product_name' => $product->name]
+                );
 
-            return $order;
-        });
+                return $order;
+            });
         } catch (\RuntimeException $e) {
             if ($e->getMessage() === 'out_of_stock') {
                 return response()->json(['message' => 'Not enough stock available.'], 422);
@@ -174,47 +160,52 @@ class OrderController extends Controller
             $order->load('items');
             Mail::to($user->email)->send(new OrderConfirmation($order));
         } catch (\Throwable $e) {
-            Log::error('OrderConfirmation email failed: ' . $e->getMessage());
+            Log::error('OrderConfirmation email failed: '.$e->getMessage());
         }
 
         try {
-            Mail::to($tailor->email)->send(new NewOrderAlert($order, $user));
+            if ($tailor->email) {
+                Mail::to($tailor->email)->send(new NewOrderAlert($order, $user));
+            } elseif ($tailor->phone) {
+                (new SmsService)->send($tailor->phone, "Kere: ახალი შეკვეთა #{$order->order_number} — იხილეთ დეტალები თქვენს პანელზე.");
+            }
         } catch (\Throwable $e) {
-            Log::error('NewOrderAlert email failed: ' . $e->getMessage());
+            Log::error('NewOrderAlert notification failed: '.$e->getMessage());
         }
 
         return response()->json([
             'order_number' => $order->order_number,
-            'total'        => $order->total,
-            'tailor_name'  => $tailor->getFullName(),
+            'total' => $order->total,
+            'tailor_name' => $tailor->getFullName(),
         ], 201);
     }
 
     private function storeCustomOrder(Request $request, User $user)
     {
         $data = $request->validate([
-            'tailor_assignment_mode'                  => 'nullable|in:manual,random',
-            'custom_design_data'                      => 'required|array|max:50',
+            'tailor_assignment_mode' => 'nullable|in:manual,random',
+            'custom_design_data' => 'required|array|max:50',
             // Support old shape (clothingType) and new shape (garment_type)
-            'custom_design_data.clothingType'         => 'nullable|string|max:100',
-            'custom_design_data.garment_type'         => 'nullable|string|max:100',
+            'custom_design_data.clothingType' => 'nullable|string|max:100',
+            'custom_design_data.garment_type' => 'nullable|string|max:100',
             // New fields from custom order flow
-            'custom_design_data.design_file_url'      => 'nullable|url|max:2000',
-            'custom_design_data.tailor_notes'         => 'nullable|string|max:500',
-            'custom_design_data.customization'        => 'nullable|array|max:50',
+            'custom_design_data.design_file_url' => 'nullable|url|max:2000',
+            'custom_design_data.tailor_notes' => 'nullable|string|max:500',
+            'custom_design_data.customization_request' => 'nullable|string|max:1000',
+            'custom_design_data.customization' => 'nullable|array|max:50',
             // Existing fields
-            'custom_design_data.fabric'               => 'nullable|string|max:100',
-            'custom_design_data.color'                => 'nullable|string|max:100',
-            'custom_design_data.embroidery'           => 'nullable|string|max:200',
-            'custom_design_data.pattern'              => 'nullable|string|max:100',
-            'custom_design_data.notes'                => 'nullable|string|max:1000',
-            'custom_design_data.measurements'         => 'nullable|array|max:20',
-            'custom_design_data.measurements.*'       => 'nullable|numeric|min:0|max:999',
-            'custom_design_data.designElements'       => 'nullable|array|max:20',
-            'custom_design_data.designElements.*'     => 'nullable|string|max:100',
-            'custom_design_data.colorPalette'         => 'nullable|array|max:10',
-            'custom_design_data.colorPalette.*'       => 'nullable|string|max:50',
-            'tailor_id'                               => 'nullable|integer|exists:users,id',
+            'custom_design_data.fabric' => 'nullable|string|max:100',
+            'custom_design_data.color' => 'nullable|string|max:100',
+            'custom_design_data.embroidery' => 'nullable|string|max:200',
+            'custom_design_data.pattern' => 'nullable|string|max:100',
+            'custom_design_data.notes' => 'nullable|string|max:1000',
+            'custom_design_data.measurements' => 'nullable|array|max:20',
+            'custom_design_data.measurements.*' => 'nullable|numeric|min:0|max:999',
+            'custom_design_data.designElements' => 'nullable|array|max:20',
+            'custom_design_data.designElements.*' => 'nullable|string|max:100',
+            'custom_design_data.colorPalette' => 'nullable|array|max:10',
+            'custom_design_data.colorPalette.*' => 'nullable|string|max:50',
+            'tailor_id' => 'nullable|integer|exists:users,id',
         ]);
 
         // Resolve the canonical garment identifier (new field takes priority)
@@ -227,57 +218,47 @@ class OrderController extends Controller
         }
 
         $assignmentMode = $data['tailor_assignment_mode'] ?? 'manual';
-        $shipping       = (int) config('app.shipping_cost', 15);
-        $status         = 'pending';
-        $tailor         = null;
+        $shipping = (int) config('app.shipping_cost', 15);
+        $status = 'pending';
+        $tailor = null;
 
-        if ($assignmentMode === 'random') {
-            $tailor = $this->matchTailorForGarment($garmentType);
+        if ($assignmentMode === 'manual' && ! empty($data['tailor_id'])) {
+            $tailor = User::where('id', $data['tailor_id'])
+                ->where('role', 'tailor')
+                ->where(fn ($q) => $q->where('is_available', true)->orWhereNull('is_available'))
+                ->first();
+
             if (! $tailor) {
-                $status = 'pending_assignment';
+                // Tailor became unavailable between selection and submit
+                return response()->json([
+                    'message' => 'This tailor is no longer available. Please choose another.',
+                ], 409);
             }
         } else {
-            // Manual: customer chose a specific tailor or left it null (fallback to random)
-            if (! empty($data['tailor_id'])) {
-                $tailor = User::where('id', $data['tailor_id'])
-                    ->where('role', 'tailor')
-                    ->where(fn ($q) => $q->where('is_available', true)->orWhereNull('is_available'))
-                    ->first();
-
-                if (! $tailor) {
-                    // Tailor became unavailable between selection and submit
-                    return response()->json([
-                        'message' => 'This tailor is no longer available. Please choose another.',
-                    ], 409);
-                }
-            } else {
-                $tailor = $this->randomTailor();
-                if (! $tailor) {
-                    $status = 'pending_assignment';
-                }
-            }
+            // No tailor chosen: the order goes to the open pool where tailors send offers
+            $status = 'pending_assignment';
         }
 
         $order = DB::transaction(function () use ($data, $user, $tailor, $shipping, $status, $assignmentMode, $garmentType) {
             $order = Order::create([
-                'user_id'                => $user->id,
-                'tailor_id'              => $tailor?->id,
-                'order_number'           => 'ORD-' . strtoupper(Str::random(8)),
-                'order_type'             => 'custom',
+                'user_id' => $user->id,
+                'tailor_id' => $tailor?->id,
+                'order_number' => 'ORD-'.strtoupper(Str::random(8)),
+                'order_type' => 'custom',
                 'tailor_assignment_mode' => $assignmentMode,
-                'status'                 => $status,
-                'subtotal'               => 0,
-                'shipping'               => $shipping,
-                'total'                  => $shipping,
-                'custom_design_data'     => $data['custom_design_data'],
-                'first_name'             => $user->first_name ?? $user->name,
-                'last_name'              => $user->last_name  ?? '',
-                'email'                  => $user->email,
-                'phone'                  => $user->phone,
-                'address'                => 'N/A',
-                'city'                   => 'Tbilisi',
-                'zip'                    => '0100',
-                'country'                => 'GE',
+                'status' => $status,
+                'subtotal' => 0,
+                'shipping' => $shipping,
+                'total' => $shipping,
+                'custom_design_data' => $data['custom_design_data'],
+                'first_name' => $user->first_name ?? $user->name,
+                'last_name' => $user->last_name ?? '',
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'address' => 'N/A',
+                'city' => 'Tbilisi',
+                'zip' => '0100',
+                'country' => 'GE',
             ]);
 
             if ($tailor) {
@@ -290,17 +271,19 @@ class OrderController extends Controller
                     ['clothing_type' => $garmentType]
                 );
             } else {
-                // Notify first admin of unassigned order
-                $admin = User::where('role', 'admin')->first();
-                if ($admin) {
-                    $this->notify(
-                        $admin->id,
-                        'unassigned_order',
-                        'Unassigned Order Needs Tailor',
-                        "Order #{$order->order_number} needs a tailor assigned.",
-                        $order->id
-                    );
-                }
+                // Open pool: every approved tailor can see the design and send an offer
+                User::where('role', 'tailor')
+                    ->where(fn ($q) => $q->where('approval_status', 'approved')->orWhereNull('approval_status'))
+                    ->where(fn ($q) => $q->where('is_suspended', false)->orWhereNull('is_suspended'))
+                    ->pluck('id')
+                    ->each(fn ($tailorId) => $this->notify(
+                        $tailorId,
+                        'open_order',
+                        'New Design Request Available',
+                        "A customer placed a custom {$garmentType} order. Send an offer from your dashboard if you want to make it.",
+                        $order->id,
+                        ['clothing_type' => $garmentType]
+                    ));
             }
 
             return $order;
@@ -309,22 +292,26 @@ class OrderController extends Controller
         try {
             Mail::to($user->email)->send(new OrderConfirmation($order));
         } catch (\Throwable $e) {
-            Log::error('OrderConfirmation email failed (custom): ' . $e->getMessage());
+            Log::error('OrderConfirmation email failed (custom): '.$e->getMessage());
         }
 
         if ($tailor) {
             try {
-                Mail::to($tailor->email)->send(new NewOrderAlert($order, $user));
+                if ($tailor->email) {
+                    Mail::to($tailor->email)->send(new NewOrderAlert($order, $user));
+                } elseif ($tailor->phone) {
+                    (new SmsService)->send($tailor->phone, "Kere: ახალი შეკვეთა #{$order->order_number} — იხილეთ დეტალები თქვენს პანელზე.");
+                }
             } catch (\Throwable $e) {
-                Log::error('NewOrderAlert email failed (custom): ' . $e->getMessage());
+                Log::error('NewOrderAlert notification failed (custom): '.$e->getMessage());
             }
         }
 
         return response()->json([
             'order_number' => $order->order_number,
-            'total'        => $order->total,
-            'tailor_name'  => $tailor?->getFullName(),
-            'status'       => $order->status,
+            'total' => $order->total,
+            'tailor_name' => $tailor?->getFullName(),
+            'status' => $order->status,
         ], 201);
     }
 
@@ -345,9 +332,116 @@ class OrderController extends Controller
             ->where('tailor_id', $user->id)
             ->latest()
             ->get()
-            ->map(fn($o) => $this->formatOrder($o));
+            ->map(fn ($o) => $this->formatOrder($o));
 
         return response()->json(['orders' => $orders]);
+    }
+
+    // ─── GET /api/tailor/open-orders ─────────────────────────────────────────
+    // Unassigned custom orders any approved tailor can offer to make
+
+    public function openOrders(Request $request)
+    {
+        $user = $request->user();
+        if ($user->role !== 'tailor') {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        if ($user->approval_status === 'pending' || $user->approval_status === 'rejected') {
+            return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
+        }
+
+        $orders = Order::with('user')
+            ->withCount('tailorRequests')
+            ->where('order_type', 'custom')
+            ->where('status', 'pending_assignment')
+            ->whereNull('tailor_id')
+            ->latest()
+            ->get();
+
+        $myRequests = TailorRequest::where('tailor_id', $user->id)
+            ->whereIn('order_id', $orders->pluck('id'))
+            ->pluck('status', 'order_id');
+
+        return response()->json(['orders' => $orders->map(fn ($o) => [
+            'id' => $o->id,
+            'order_number' => $o->order_number,
+            'created_at' => $o->created_at?->toISOString(),
+            'custom_design_data' => $o->custom_design_data,
+            'customer' => ['name' => $o->user->getFullName()],
+            'requests_count' => $o->tailor_requests_count,
+            'my_request_status' => $myRequests[$o->id] ?? null,
+        ])->values()]);
+    }
+
+    // ─── POST /api/tailor/orders/{id}/request ────────────────────────────────
+    // Tailor offers to make an open order; the customer picks the winner
+
+    public function requestOrder(Request $request, int $id)
+    {
+        $user = $request->user();
+        if ($user->role !== 'tailor') {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        if ($user->approval_status === 'pending' || $user->approval_status === 'rejected') {
+            return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
+        }
+
+        $data = $request->validate([
+            'message' => 'nullable|string|max:500',
+        ]);
+
+        $order = Order::with('user')
+            ->where('id', $id)
+            ->where('order_type', 'custom')
+            ->where('status', 'pending_assignment')
+            ->whereNull('tailor_id')
+            ->first();
+
+        if (! $order) {
+            return response()->json(['message' => 'This order is no longer open for offers.'], 409);
+        }
+
+        if (TailorRequest::where('order_id', $order->id)->where('tailor_id', $user->id)->exists()) {
+            return response()->json(['message' => 'You already sent an offer for this order.'], 409);
+        }
+
+        try {
+            $tailorRequest = TailorRequest::create([
+                'order_id' => $order->id,
+                'tailor_id' => $user->id,
+                'message' => $data['message'] ?? null,
+                'status' => 'pending',
+            ]);
+        } catch (\Illuminate\Database\QueryException) {
+            // Unique (order_id, tailor_id) race — treat as duplicate
+            return response()->json(['message' => 'You already sent an offer for this order.'], 409);
+        }
+
+        $this->notify(
+            $order->user_id,
+            'tailor_request',
+            'A Tailor Wants to Make Your Design!',
+            "{$user->getFullName()} offered to make your order #{$order->order_number}. Compare offers on your dashboard and choose your tailor.",
+            $order->id,
+            ['tailor_id' => $user->id, 'tailor_request_id' => $tailorRequest->id]
+        );
+
+        try {
+            if ($order->user->email) {
+                Mail::to($order->user->email)->send(new TailorRequestReceived($order, $user));
+            } elseif ($order->user->phone) {
+                (new SmsService)->send($order->user->phone, "Kere: მკერავს სურს თქვენი დიზაინის შეკერვა — შეკვეთა #{$order->order_number}. აირჩიეთ მკერავი თქვენს პანელზე.");
+            }
+        } catch (\Throwable $e) {
+            Log::error('TailorRequestReceived notification failed: '.$e->getMessage());
+        }
+
+        return response()->json(['request' => [
+            'id' => $tailorRequest->id,
+            'status' => $tailorRequest->status,
+        ]], 201);
     }
 
     // ─── PATCH /api/tailor/orders/{id}/status ────────────────────────────────
@@ -377,47 +471,47 @@ class OrderController extends Controller
 
         // Define valid forward-only transitions
         $validTransitions = [
-            'pending'    => ['processing', 'cancelled'],
+            'pending' => ['processing', 'cancelled'],
             'processing' => ['finished', 'cancelled'],
-            'finished'   => [],
-            'cancelled'  => [],
+            'finished' => [],
+            'cancelled' => [],
         ];
 
         $allowed = $validTransitions[$oldStatus] ?? [];
-        if ($newStatus !== $oldStatus && !in_array($newStatus, $allowed, true)) {
+        if ($newStatus !== $oldStatus && ! in_array($newStatus, $allowed, true)) {
             return response()->json(['message' => 'Invalid status transition.'], 422);
         }
 
         $order->update(['status' => $newStatus]);
 
         $notifyStatuses = ['processing', 'finished', 'cancelled'];
-        $shouldNotify   = in_array($data['status'], $notifyStatuses) && $data['status'] !== $oldStatus;
+        $shouldNotify = in_array($data['status'], $notifyStatuses) && $data['status'] !== $oldStatus;
 
         if ($shouldNotify) {
             $statusLabel = match ($data['status']) {
                 'processing' => 'Accepted — In Progress',
-                'finished'   => 'Completed',
-                'cancelled'  => 'Cancelled',
-                default      => ucfirst($data['status']),
+                'finished' => 'Completed',
+                'cancelled' => 'Cancelled',
+                default => ucfirst($data['status']),
             };
 
             try {
                 $this->notify(
                     $order->user_id,
                     'order_status',
-                    'Order #' . $order->id . ' Status Updated',
+                    'Order #'.$order->id.' Status Updated',
                     "Your order #{$order->id} status has been updated to: {$statusLabel}.",
                     $order->id,
                     ['status' => $data['status']]
                 );
             } catch (\Throwable $e) {
-                Log::error('OrderStatusNotification failed: ' . $e->getMessage());
+                Log::error('OrderStatusNotification failed: '.$e->getMessage());
             }
 
             try {
                 Mail::to($order->user->email)->send(new OrderStatusUpdated($order, $data['status']));
             } catch (\Throwable $e) {
-                Log::error('OrderStatusUpdated email failed: ' . $e->getMessage());
+                Log::error('OrderStatusUpdated email failed: '.$e->getMessage());
             }
 
             if ($data['status'] === 'finished') {
@@ -426,13 +520,13 @@ class OrderController extends Controller
                         fn ($adminId) => $this->notify(
                             $adminId,
                             'order_finished',
-                            'Order #' . $order->id . ' Ready for Delivery',
+                            'Order #'.$order->id.' Ready for Delivery',
                             "{$user->getFullName()} finished order #{$order->id} — it's ready to be delivered to the customer.",
                             $order->id
                         )
                     );
                 } catch (\Throwable $e) {
-                    Log::error('Admin order_finished notification failed: ' . $e->getMessage());
+                    Log::error('Admin order_finished notification failed: '.$e->getMessage());
                 }
             }
         }
@@ -445,28 +539,28 @@ class OrderController extends Controller
     private function formatOrder(Order $order): array
     {
         return [
-            'id'                 => $order->id,
-            'order_number'       => $order->order_number,
-            'order_type'         => $order->order_type,
-            'status'             => $order->status,
-            'subtotal'           => $order->subtotal,
-            'shipping'           => $order->shipping,
-            'total'              => $order->total,
-            'created_at'         => $order->created_at?->toDateString(),
+            'id' => $order->id,
+            'order_number' => $order->order_number,
+            'order_type' => $order->order_type,
+            'status' => $order->status,
+            'subtotal' => $order->subtotal,
+            'shipping' => $order->shipping,
+            'total' => $order->total,
+            'created_at' => $order->created_at?->toDateString(),
             'custom_design_data' => $order->custom_design_data,
             'customer' => [
                 'name' => $order->user->getFullName(),
             ],
-            'items' => $order->items->map(fn($item) => [
-                'id'              => $item->id,
-                'product_name'    => $item->product_name,
-                'product_image'   => (is_array($item->product?->images) && count($item->product->images))
+            'items' => $order->items->map(fn ($item) => [
+                'id' => $item->id,
+                'product_name' => $item->product_name,
+                'product_image' => (is_array($item->product?->images) && count($item->product->images))
                                         ? $item->product->images[0]
                                         : null,
-                'color'           => $item->color,
-                'size'            => $item->size,
-                'quantity'        => $item->quantity,
-                'price'           => $item->price,
+                'color' => $item->color,
+                'size' => $item->size,
+                'quantity' => $item->quantity,
+                'price' => $item->price,
                 'cm_measurements' => $item->cm_measurements,
             ])->values()->all(),
         ];
