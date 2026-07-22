@@ -105,6 +105,18 @@ export function Navigation() {
                         >
                             {t('nav.howItWorks')}
                         </a>
+                        <Link
+                            to="/marketplace"
+                            className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                        >
+                            {t('marketplace.title')}
+                        </Link>
+                        <Link
+                            to="/design"
+                            className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                        >
+                            {t('nav.startDesigning')}
+                        </Link>
                         <a
                             href="#faq"
                             className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
