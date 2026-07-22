@@ -33,10 +33,11 @@ export function Navigation() {
     const { t } = useTranslation();
     const user  = getAuthToken() ? getAuthUser() : null;
     const { pathname } = useLocation();
-    // The #how-it-works / #faq anchors only exist on the landing page
+    // The #how-it-works / #faq sections exist on the landing and "for tailors" pages,
+    // so the navbar anchors show there (and scroll to whichever page you're on).
     const isLanding = pathname === '/';
-    // On the "for tailors" page we show no primary links
     const isPartners = pathname === '/partners' || pathname === '/become-a-tailor';
+    const showSiteAnchors = isLanding || isPartners;
     useEffect(() => {
         function isDarkElement(element: Element | null) {
             const section = element?.closest?.('section, main, [data-nav-theme]');
@@ -103,7 +104,7 @@ export function Navigation() {
                         </span>
                     </button>
 
-                    {isLanding ? (
+                    {showSiteAnchors && (
                         <div className="hidden items-center gap-7 lg:flex">
                             <a
                                 href="#how-it-works"
@@ -118,28 +119,7 @@ export function Navigation() {
                                 {t('nav.faq')}
                             </a>
                         </div>
-                    ) : !isPartners ? (
-                        <div className="hidden items-center gap-7 lg:flex">
-                            <Link
-                                to="/design"
-                                className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
-                            >
-                                {t('nav.customDesign')}
-                            </Link>
-                            <Link
-                                to="/marketplace"
-                                className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
-                            >
-                                {t('marketplace.title')}
-                            </Link>
-                            <Link
-                                to="/design?upload=1"
-                                className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
-                            >
-                                {t('nav.uploadDesign')}
-                            </Link>
-                        </div>
-                    ) : null}
+                    )}
                 </div>
 
                 <Link
@@ -251,7 +231,7 @@ export function Navigation() {
                             </div>
 
                             <nav className="mx-auto mt-10 flex w-full max-w-[620px] flex-1 flex-col gap-5 sm:mt-12 sm:gap-6 lg:mt-10 lg:grid lg:grid-cols-2 lg:gap-x-14 lg:gap-y-5">
-                                {isLanding && (
+                                {showSiteAnchors && (
                                     <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
                                         {t('nav.howItWorks')}
                                     </a>
@@ -265,7 +245,7 @@ export function Navigation() {
                                 <Link to="/partners" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
                                     {t('nav.forTailors')}
                                 </Link>
-                                {isLanding && (
+                                {showSiteAnchors && (
                                     <a href="#faq" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
                                         {t('nav.faq')}
                                     </a>

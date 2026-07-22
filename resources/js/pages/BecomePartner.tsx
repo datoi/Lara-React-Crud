@@ -491,7 +491,7 @@ export default function BecomePartner() {
                 </div>
             </section>
 
-            <section className="partners-process-design overflow-hidden bg-[#E4E0D7] px-4 py-14 sm:px-6 md:py-20 lg:px-8">
+            <section id="how-it-works" className="partners-process-design scroll-mt-20 overflow-hidden bg-[#E4E0D7] px-4 py-14 sm:px-6 md:py-20 lg:px-8">
                 <div className="mx-auto max-w-[1320px]">
                     <ProcessExperience
                         steps={[
@@ -658,7 +658,7 @@ export default function BecomePartner() {
             </section>
 
             {/* ── 6. FAQ ── */}
-            <section className="py-20 md:py-28 bg-[#E4E0D7]">
+            <section id="faq" className="scroll-mt-20 py-20 md:py-28 bg-[#E4E0D7]">
                 <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
