@@ -8,6 +8,7 @@ import { ErrorFallback } from '../components/ErrorFallback';
 import { NotificationBell } from '../components/NotificationBell';
 import { User } from 'lucide-react';
 import { getAuthToken, getAuthUser } from '../hooks/useAuth';
+import { Button } from '../components/ui/button';
 import { useTranslation } from 'react-i18next';
 
 interface ApiProduct {
@@ -458,20 +459,22 @@ export default function Marketplace() {
                                     <div className="flex items-center justify-between">
                                         <span className="text-lg font-bold text-slate-900">₾{product.price}</span>
                                         {product.is_customizable ? (
-                                            <button
+                                            <Button
+                                                size="sm"
                                                 onClick={e => { e.stopPropagation(); navigate(`/product/${product.id}/customize`); }}
-                                                className="inline-flex items-center gap-1.5 text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors active:scale-95"
+                                                className="gap-1.5 rounded-lg bg-slate-900 px-4 text-white hover:bg-slate-700 active:scale-95"
                                             >
                                                 <Palette className="w-3.5 h-3.5" />
                                                 {t('marketplace.customize')}
-                                            </button>
+                                            </Button>
                                         ) : (
-                                            <button
+                                            <Button
+                                                size="sm"
                                                 onClick={e => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
-                                                className="text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors active:scale-95"
+                                                className="rounded-lg bg-slate-900 px-4 text-white hover:bg-slate-700 active:scale-95"
                                             >
                                                 {t('marketplace.checkProduct')}
-                                            </button>
+                                            </Button>
                                         )}
                                     </div>
                                 </div>
