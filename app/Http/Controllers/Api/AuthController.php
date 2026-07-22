@@ -35,7 +35,9 @@ class AuthController extends Controller
         ]);
 
         $email = $data['email'] ?? null;
-        $viaSms = $email === null;
+        // Tailors always verify by phone (their primary identity), even when they
+        // also provide an email; customers verify by email.
+        $viaSms = $email === null || $data['role'] === 'tailor';
 
         // Delete any previous incomplete verification for this email/phone
         if ($email) {

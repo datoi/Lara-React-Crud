@@ -22,6 +22,6 @@ class OtpService
     /** Send OTP via SMS */
     public function sendSms(string $phone, string $code): void
     {
-        (new SmsService)->send($phone, "Your Kere verification code is {$code}. It expires in 10 minutes.");
+        (new SmsService)->send($phone, "Kere: თქვენი დამადასტურებელი კოდია {$code}");
     }
 }

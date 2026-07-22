@@ -9,11 +9,9 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\TailorRequest;
-use App\Services\SmsService;
+use App\Services\Notifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class CustomerOrderController extends Controller
 {
@@ -176,15 +174,11 @@ class CustomerOrderController extends Controller
             ]);
         }
 
-        try {
-            if ($chosen->tailor->email) {
-                Mail::to($chosen->tailor->email)->send(new NewOrderAlert($order->fresh(), $user));
-            } elseif ($chosen->tailor->phone) {
-                (new SmsService)->send($chosen->tailor->phone, "Kere: თქვენი შემოთავაზება მიღებულია! შეკვეთა #{$order->order_number} — იხილეთ დეტალები თქვენს პანელზე.");
-            }
-        } catch (\Throwable $e) {
-            Log::error('NewOrderAlert (chosen tailor) notification failed: '.$e->getMessage());
-        }
+        (new Notifier)->dual(
+            $chosen->tailor,
+            "Kere: თქვენი შემოთავაზება მიღებულია! შეკვეთა #{$order->order_number} — იხილეთ დეტალები თქვენს პანელზე.",
+            new NewOrderAlert($order->fresh(), $user)
+        );
 
         return response()->json(['order' => [
             'id' => $order->id,
