@@ -4,6 +4,7 @@ import { Link, useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { ArrowLeft, Star, Minus, Plus, Check, Loader2, HelpCircle, User, Info, Palette } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '../components/ui/button';
 import { MeasurementGuideModal, type MeasurementKey } from '../components/MeasurementGuideModal';
 import { measurementWarning } from '../utils/measurementSanity';
 import {
@@ -366,17 +367,19 @@ export default function ProductCustomization({ customize = false }: { customize?
                                     </div>
                                     <div className="flex flex-wrap gap-2">
                                         {product.sizes.map(s => (
-                                            <button
+                                            <Button
                                                 key={s}
+                                                type="button"
+                                                variant={selectedSize === s ? 'default' : 'outline'}
                                                 onClick={() => setSelectedSize(s)}
-                                                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                                                className={`h-auto rounded-lg px-4 py-2 ${
                                                     selectedSize === s
-                                                        ? 'bg-slate-900 text-white border-slate-900'
-                                                        : 'border-slate-200 text-slate-600 hover:border-slate-400'
+                                                        ? 'bg-slate-900 text-white border border-slate-900 hover:bg-slate-900'
+                                                        : 'border-slate-200 text-slate-600 hover:border-slate-400 hover:bg-transparent hover:text-slate-600'
                                                 }`}
                                             >
                                                 {s}
-                                            </button>
+                                            </Button>
                                         ))}
                                     </div>
                                 </div>
@@ -448,26 +451,29 @@ export default function ProductCustomization({ customize = false }: { customize?
 
                             {/* Customize CTA — shown on the plain product view for customizable products */}
                             {!customize && product.is_customizable && (
-                                <button
+                                <Button
+                                    variant="outline"
                                     onClick={() => navigate(`/product/${product.id}/customize`)}
-                                    className="w-full flex items-center justify-center gap-2 border border-slate-900 text-slate-900 font-semibold py-3.5 rounded-xl hover:bg-slate-900 hover:text-white transition-colors active:scale-[0.98]"
+                                    className="w-full h-auto rounded-xl border-slate-900 py-3.5 font-semibold text-slate-900 hover:bg-slate-900 hover:text-white active:scale-[0.98]"
                                 >
                                     <Palette className="w-4 h-4" />
                                     {t('productCustomization.customizeThis')}
-                                </button>
+                                </Button>
                             )}
 
                             {/* Quantity */}
                             <div className="bg-white rounded-2xl border border-slate-200 p-5">
                                 <div className="text-sm font-semibold text-slate-700 mb-3">{t('productCustomization.quantity')}</div>
                                 <div className="flex items-center gap-4">
-                                    <button
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
                                         onClick={() => setQuantity(q => Math.max(1, q - 1))}
                                         disabled={quantity === 1}
-                                        className="w-10 h-10 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="w-10 h-10 rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
-                                        <Minus className="w-4 h-4 text-slate-600" />
-                                    </button>
+                                        <Minus className="w-4 h-4" />
+                                    </Button>
                                     <input
                                         type="number"
                                         min={1}
@@ -479,13 +485,15 @@ export default function ProductCustomization({ customize = false }: { customize?
                                         }}
                                         className="text-lg font-bold text-slate-900 w-14 text-center border border-slate-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-slate-900"
                                     />
-                                    <button
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
                                         onClick={() => setQuantity(q => Math.min(q + 1, 1000))}
                                         disabled={quantity >= 1000}
-                                        className="w-10 h-10 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="w-10 h-10 rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
-                                        <Plus className="w-4 h-4 text-slate-600" />
-                                    </button>
+                                        <Plus className="w-4 h-4" />
+                                    </Button>
                                 </div>
                             </div>
 
@@ -548,14 +556,14 @@ export default function ProductCustomization({ customize = false }: { customize?
                                 {orderError && (
                                     <p className="text-xs text-destructive text-center mb-2">{orderError}</p>
                                 )}
-                                <button
+                                <Button
                                     onClick={handleOrder}
                                     disabled={placing}
-                                    className="w-full bg-white text-slate-900 font-semibold py-3.5 rounded-xl hover:bg-slate-100 transition-colors active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="w-full h-auto rounded-xl bg-white py-3.5 font-semibold text-slate-900 hover:bg-slate-100 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     {placing && <Loader2 className="w-4 h-4 animate-spin" />}
                                     {placing ? t('productCustomization.placingOrder') : t('productCustomization.placeOrder')}
-                                </button>
+                                </Button>
                                 <p className="text-xs text-slate-400 text-center mt-3">
                                     {t('productCustomization.noPaymentNow')}
                                 </p>
@@ -631,24 +639,26 @@ export default function ProductCustomization({ customize = false }: { customize?
                             {t('productCustomization.signInHint')}
                         </p>
                         <div className="flex flex-col gap-3">
-                            <button
+                            <Button
                                 onClick={() => navigate('/login/customer')}
-                                className="w-full bg-slate-900 text-white font-semibold py-3 rounded-xl hover:bg-slate-700 transition-colors"
+                                className="w-full h-auto rounded-xl bg-slate-900 py-3 font-semibold text-white hover:bg-slate-700"
                             >
                                 {t('productCustomization.signIn')}
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="outline"
                                 onClick={() => navigate('/register')}
-                                className="w-full border border-slate-200 text-slate-700 font-medium py-3 rounded-xl hover:bg-slate-50 transition-colors"
+                                className="w-full h-auto rounded-xl border-slate-200 py-3 font-medium text-slate-700 hover:bg-slate-50"
                             >
                                 {t('productCustomization.createAccount')}
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="ghost"
                                 onClick={() => setShowLoginPrompt(false)}
-                                className="text-sm text-slate-400 hover:text-slate-600 transition-colors pt-1"
+                                className="h-auto pt-1 text-sm text-slate-400 hover:bg-transparent hover:text-slate-600"
                             >
                                 {t('productCustomization.cancel')}
-                            </button>
+                            </Button>
                         </div>
                     </motion.div>
                 </div>

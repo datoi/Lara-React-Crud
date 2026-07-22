@@ -609,6 +609,10 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-07-22] Convention: Marketplace/ProductCustomization action buttons → `<Button>`
+
+**What was done:** Converted the raw hand-styled `<button>` action buttons in `ProductCustomization` (size pills, quantity steppers, Customize CTA, Place Order, sign-in modal) and the two Marketplace product-card CTAs (Customize / Check Product) to the shared `<Button variant size>` component, per the project convention. Appearance preserved via `className` overrides. Color swatches and the tiny measurement help-icon stay raw — they're specialised controls, matching the app's own swatch pickers (FabricPicker/ColorDotPicker).
+
 ### [2026-07-22] Marketplace Customization: Customize CTA, Description Field, Reused Order/Chat Flow
 
 **What was done:** Customizable marketplace products now route customers through a dedicated customization page (description + size + measurements); everything else (tailor accept/decline, live chat) reuses the existing order flow.
