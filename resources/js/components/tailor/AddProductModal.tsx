@@ -40,6 +40,14 @@ const TEXTURE_KEYS = [
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Custom'];
 
+type ProductGender = 'men' | 'women' | 'unisex';
+
+const GENDER_KEYS: { key: ProductGender; tKey: string }[] = [
+    { key: 'women',  tKey: 'section.women' },
+    { key: 'men',    tKey: 'section.men' },
+    { key: 'unisex', tKey: 'tailorComponents.genderBoth' },
+];
+
 const MEASUREMENT_KEYS = [
     { key: 'chest',              tKey: 'tailorComponents.measureChest' },
     { key: 'waist',              tKey: 'tailorComponents.measureWaist' },
@@ -74,6 +82,7 @@ export interface TailorProductFull {
     name: string;
     category: string;
     category_id: number;
+    gender: ProductGender;
     price: number;
     description: string | null;
     images: string[];
@@ -92,6 +101,7 @@ interface FormState {
     description: string;
     price: string;
     category_id: number;
+    gender: ProductGender;
     uploading: boolean;
     images: string[];
     colors: string[];
@@ -108,6 +118,7 @@ const BLANK: FormState = {
     description: '',
     price: '',
     category_id: 1,
+    gender: 'unisex',
     uploading: false,
     images: [],
     colors: [],
@@ -125,6 +136,7 @@ function productToForm(p: TailorProductFull): FormState {
         description: p.description ?? '',
         price: String(p.price),
         category_id: p.category_id,
+        gender: p.gender ?? 'unisex',
         uploading: false,
         images: [...p.images],
         colors: [...p.colors],
@@ -261,6 +273,7 @@ export function AddProductModal({ onClose, onCreated, editProduct, onUpdated }: 
                     description:           form.description || null,
                     price:                 parseFloat(form.price),
                     category_id:           form.category_id,
+                    gender:                form.gender,
                     images:                form.images,
                     colors:                form.colors,
                     sizes:                 form.sizes,
@@ -398,6 +411,27 @@ export function AddProductModal({ onClose, onCreated, editProduct, onUpdated }: 
                                     ))}
                                 </select>
                             </div>
+                        </div>
+
+                        <div>
+                            <Label>{t('tailorComponents.genderLabel')}</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {GENDER_KEYS.map(g => (
+                                    <button
+                                        key={g.key}
+                                        type="button"
+                                        onClick={() => set('gender', g.key)}
+                                        className={`px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                                            form.gender === g.key
+                                                ? 'bg-slate-900 text-white border-slate-900'
+                                                : 'border-slate-200 text-slate-600 hover:border-slate-400 bg-white'
+                                        }`}
+                                    >
+                                        {t(g.tKey)}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-xs text-slate-400 mt-1.5">{t('tailorComponents.genderHint')}</p>
                         </div>
 
                         <div>

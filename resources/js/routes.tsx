@@ -29,6 +29,7 @@ import CustomizerAdminPage from './pages/CustomizerAdminPage';
 import AdminLogin from './pages/AdminLogin';
 import TailorSelectStep from './pages/TailorSelectStep';
 import OrderReview from './pages/OrderReview';
+import SectionSelect from './pages/SectionSelect';
 
 function wrap(el: ReactElement) {
     return <ErrorBoundary>{el}</ErrorBoundary>;
@@ -40,6 +41,7 @@ function guard(el: ReactElement, role?: 'customer' | 'tailor' | 'admin') {
 
 export const router = createBrowserRouter([
     { path: '/',                    element: wrap(<Landing />) },
+    { path: '/section',             element: wrap(<SectionSelect />) },
     { path: '/design',               element: wrap(<DesignerApp />) },
     { path: '/design/tailor-select', element: wrap(<TailorSelectStep />) },
     { path: '/design/review',        element: wrap(<OrderReview />) },

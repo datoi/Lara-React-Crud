@@ -85,6 +85,12 @@ export default function CustomizerAdminPage() {
 
 // ── Products section ──────────────────────────────────────────────────────────
 
+const GENDER_OPTIONS: { key: 'men' | 'women' | 'unisex'; label: string }[] = [
+    { key: 'women',  label: 'Women' },
+    { key: 'men',    label: 'Men' },
+    { key: 'unisex', label: 'Both (Unisex)' },
+];
+
 const GARMENT_CATEGORIES = [
     { key: 'shirt',      label: 'Shirt / Top' },
     { key: 'womens-top', label: "Woman's Top"  },
@@ -106,6 +112,7 @@ function ProductsSection({ token }: { token: string }) {
     const [newPrice, setNewPrice]       = useState('');
     const [newDesc, setNewDesc]         = useState('');
     const [newCategory, setNewCategory] = useState('shirt');
+    const [newGender, setNewGender]     = useState<'men' | 'women' | 'unisex'>('women');
     const [newPreview, setNewPreview]   = useState<File | null>(null);
     const [saving, setSaving]           = useState(false);
     const previewRef = useRef<HTMLInputElement>(null);
@@ -131,6 +138,7 @@ function ProductsSection({ token }: { token: string }) {
             fd.append('base_price', newPrice);
             fd.append('description', newDesc);
             fd.append('category', newCategory);
+            fd.append('gender', newGender);
             fd.append('is_active', '1');
             if (newPreview) fd.append('preview', newPreview);
 
@@ -142,7 +150,7 @@ function ProductsSection({ token }: { token: string }) {
             if (res.ok) {
                 setCreating(false);
                 setNewName(''); setNewPrice(''); setNewDesc('');
-                setNewCategory('shirt'); setNewPreview(null);
+                setNewCategory('shirt'); setNewGender('women'); setNewPreview(null);
                 load();
             }
         } finally { setSaving(false); }
@@ -189,6 +197,18 @@ function ProductsSection({ token }: { token: string }) {
                             >
                                 {GARMENT_CATEGORIES.map(c => (
                                     <option key={c.key} value={c.key}>{c.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-slate-600 mb-1">Section</label>
+                            <select
+                                value={newGender}
+                                onChange={e => setNewGender(e.target.value as 'men' | 'women' | 'unisex')}
+                                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
+                            >
+                                {GENDER_OPTIONS.map(g => (
+                                    <option key={g.key} value={g.key}>{g.label}</option>
                                 ))}
                             </select>
                         </div>
@@ -298,6 +318,15 @@ function ProductCard({
         } finally { setSavingName(false); setEditingName(false); }
     };
 
+    const handleGenderChange = async (gender: string) => {
+        await fetch(`/api/admin/customizer/products/${product.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
+            body: JSON.stringify({ gender }),
+        });
+        onRefresh();
+    };
+
     return (
         <div className="bg-white rounded-2xl border border-slate-200">
             <div className="flex items-center justify-between p-4 gap-3">
@@ -354,7 +383,18 @@ function ProductCard({
                             {product.name}
                         </button>
                     )}
-                    <p className="text-xs text-slate-400 mt-0.5">/{product.slug} · ₾{product.base_price} · {product.category}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs text-slate-400">/{product.slug} · ₾{product.base_price} · {product.category}</p>
+                        <select
+                            value={product.gender}
+                            onChange={e => handleGenderChange(e.target.value)}
+                            onClick={e => e.stopPropagation()}
+                            className="text-[11px] border border-slate-200 rounded px-1.5 py-0.5 bg-white text-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                            title="Section"
+                        >
+                            {GENDER_OPTIONS.map(g => <option key={g.key} value={g.key}>{g.label}</option>)}
+                        </select>
+                    </div>
                     {!product.preview_image_url && (
                         <p className="text-[10px] text-slate-500 mt-0.5">No preview image — click thumbnail to upload</p>
                     )}

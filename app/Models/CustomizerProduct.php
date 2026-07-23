@@ -11,6 +11,7 @@ class CustomizerProduct extends Model
         'name',
         'slug',
         'category',
+        'gender',
         'description',
         'base_price',
         'is_active',

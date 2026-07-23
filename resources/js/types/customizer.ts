@@ -74,6 +74,7 @@ export interface CustomizerProduct {
     name: string;
     slug: string;
     category: string;
+    gender: 'men' | 'women' | 'unisex';
     description: string | null;
     base_price: number;
     preview_image_url: string | null;
