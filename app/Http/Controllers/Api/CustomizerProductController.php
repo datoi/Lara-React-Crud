@@ -15,9 +15,13 @@ use Illuminate\Http\JsonResponse;
 class CustomizerProductController extends Controller
 {
     /** GET /api/customizer/products */
-    public function index(): JsonResponse
+    public function index(\Illuminate\Http\Request $request): JsonResponse
     {
         $products = CustomizerProduct::where('is_active', true)
+            ->when(in_array($request->gender, ['men', 'women'], true), function ($q) use ($request) {
+                // Section split: a men/women shopper sees their gender plus unisex products.
+                $q->whereIn('gender', [$request->gender, 'unisex']);
+            })
             ->orderBy('name')
             ->get();
 

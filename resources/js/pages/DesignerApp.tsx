@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, ArrowRight, Loader2, Upload, X, FileText } from 'lucide-react';
 import { getAuthUser, getAuthToken, saveReturnTo } from '../hooks/useAuth';
+import { getSection, setSection, type Section, type SectionScope } from '../hooks/useSection';
 import { saveDraft } from '../hooks/useCustomOrderDraft';
 import { Button } from '../components/ui/button';
 import { useTranslation } from 'react-i18next';
@@ -495,9 +496,11 @@ function UploadPanel({
 
 function ProductStep({
     category,
+    gender,
     onBack,
 }: {
     category: string;
+    gender: Section;
     onBack: () => void;
 }) {
     const navigate = useNavigate();
@@ -512,7 +515,7 @@ function ProductStep({
     useEffect(() => {
         setLoading(true);
         setError(null);
-        fetch('/api/customizer/products')
+        fetch(`/api/customizer/products?gender=${gender}`)
             .then(r => {
                 if (!r.ok) throw new Error(`HTTP ${r.status}`);
                 return r.json();
@@ -523,7 +526,7 @@ function ProductStep({
             })
             .catch(err => setError((err as Error).message ?? 'Failed to load products.'))
             .finally(() => setLoading(false));
-    }, [category]);
+    }, [category, gender]);
 
     const handleProductClick = (product: Product) => {
         saveDraft({ garment_type: category, customization: null, design_file_url: null, estimated_price: product.base_price ?? 0 });
@@ -615,13 +618,42 @@ function ProductStep({
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export default function DesignerApp() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
+    const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [flow, setFlow] = useState<FlowState>(
         searchParams.get('upload') === '1'
             ? { step: 'upload-type' }
             : { step: 'category' }
     );
+
+    // Upload launched straight from the home page keeps its own section memory;
+    // reaching upload from inside the design flow shares the 'design' memory.
+    const scope: SectionScope = searchParams.get('upload') === '1' ? 'upload' : 'design';
+
+    // Section split — explicit ?gender= wins, else the remembered choice.
+    const genderParam = searchParams.get('gender');
+    const section: Section | null =
+        genderParam === 'men' || genderParam === 'women' ? genderParam : getSection(scope);
+
+    useEffect(() => {
+        if (!section) {
+            // Preserve any query (e.g. ?upload=1) so intent survives the chooser hop.
+            navigate(`/section?next=${encodeURIComponent(location.pathname + location.search)}`, { replace: true });
+            return;
+        }
+        setSection(scope, section);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [section]);
+
+    const switchSection = (s: Section) => {
+        if (s === section) return;
+        setSection(scope, s);
+        const params = new URLSearchParams(searchParams);
+        params.set('gender', s);
+        setSearchParams(params, { replace: true });
+    };
 
     const handleUploadContinue = (result: UploadResult) => {
         if (flow.step !== 'upload-file') return;
@@ -649,6 +681,8 @@ export default function DesignerApp() {
         navigate('/design/tailor-select');
     };
 
+    if (!section) return null; // awaiting redirect to the section chooser
+
     return (
         <div className="design-page min-h-screen bg-[#E4E0D7] text-[#261D1B]">
             <Helmet>
@@ -659,6 +693,22 @@ export default function DesignerApp() {
             <Navigation />
 
             <main className="relative overflow-hidden px-5 pb-8 pt-10 sm:px-8 sm:pt-12 md:pb-10 md:pt-14 lg:px-12">
+                <div className="relative z-10 mx-auto mb-4 flex max-w-[1050px] items-center justify-end gap-2">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#776158]">{t('section.shoppingFor')}</span>
+                    <div className="flex items-center rounded-full border border-[#6F1D24]/25 p-0.5">
+                        {(['women', 'men'] as Section[]).map(s => (
+                            <button
+                                key={s}
+                                onClick={() => switchSection(s)}
+                                className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${
+                                    section === s ? 'bg-[#6F1D24] text-white' : 'text-[#6F1D24]/70 hover:text-[#6F1D24]'
+                                }`}
+                            >
+                                {t(`section.${s}`)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
                 <div className="pointer-events-none absolute inset-0">
                     <div className="absolute left-[8%] top-0 h-full w-px bg-[#6F1D24]/8" />
                     <div className="absolute right-[8%] top-0 h-full w-px bg-[#6F1D24]/8" />
@@ -677,6 +727,7 @@ export default function DesignerApp() {
                         <ProductStep
                             key={`design-${flow.category}`}
                             category={flow.category}
+                            gender={section}
                             onBack={() => setFlow({ step: 'category' })}
                         />
                     )}

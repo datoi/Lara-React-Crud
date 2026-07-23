@@ -1352,4 +1352,33 @@ Many prospective tailors don't have email addresses. Tailors can now register wi
 
 **Before production:** set `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM` on Railway (the SDK is already in composer.json) — until then SMS goes to the log only, so phone-only registration cannot complete in prod.
 
+### 2026-07-23 — Men / Women Sections
+
+Split the shopping experience by gender. On entering the marketplace, custom design, or upload flow, a first-time shopper is asked to pick a section (Men or Women); the choice is remembered and switchable, so returning shoppers skip the prompt. Each section shows only its own products plus anything tagged unisex.
+
+**Database:**
+- `2026_07_23_000001_...` — `products.gender` (`men` | `women` | `unisex`, default `unisex`, indexed).
+- `2026_07_23_000002_...` — `customizer_products.gender` (same). Existing rows default to `unisex` so nothing disappears before re-tagging.
+
+**Backend:**
+- `GET /api/products` and `GET /api/customizer/products` accept `?gender=men|women` → `whereIn('gender', [gender, 'unisex'])`. Any other/absent value returns everything (admin/unfiltered).
+- `ProductController::store/update` validate `gender` (`in:men,women,unisex`) and persist it; `formatProduct` returns it. `CustomizerAdminController::store/updateProduct` validate + persist; `CustomizerProductResource` exposes it.
+
+**Frontend:**
+- `hooks/useSection.ts` — the shopper's section (`men`/`women`) remembered **per flow**: `kere_section_market`, `kere_section_design`, and `kere_section_upload`. Each is independent (picking men in the marketplace does not carry into the design studio). The `upload` scope only applies when the upload flow is launched straight from the home page (`/design?upload=1`); reaching upload from inside the design flow reuses the `design` memory. Carried in the URL as `?gender=`; `scopeForPath()` maps a target path (including the `upload=1` query) to its scope.
+- `pages/SectionSelect.tsx` (`/section?next=…`) — branded interstitial; sets the section and bounces to `next` with `?gender=`. The two cards are self-contained editorial tiles (wine radial for women, warm charcoal for men, serif labels + inset frame) needing no image asset; a real photo dropped at `/assets/sections/{men,women}.jpg` layers on top automatically.
+- `Marketplace` and `DesignerApp` resolve the section from URL → storage, redirect to `/section` if unset, filter their API calls, and each expose a Men/Women switch (marketplace header; a "Shopping for" pill on the design page) so a remembered choice is always visible and changeable. Entry links are not individually rewritten — the pages self-guard, so every existing `/marketplace` and `/design` link funnels first-timers through the chooser.
+- Product forms gained a section selector: tailor `AddProductModal` (Women/Men/Both, defaults to Both/unisex to match the column default) and admin `CustomizerAdminPage` (create form + per-product inline edit).
+
+**Verified** (API + build): `?gender=men` returns men + unisex and excludes women (and vice-versa); no-gender returns all; customizer endpoint filters identically; migrations apply on SQLite; `tsc` clean for all touched files; `vite build` passes. Not yet driven in a browser — the section-select page and header switch should get a visual pass.
+
+### 2026-07-23 — Landing Georgian Copy Pass + 6-Step How-It-Works
+
+Applied a batch of Georgian copy corrections to the landing page (from `corections (1).docx`):
+- **How it works** (`howItWorks`): heading → "როგორ მუშაობს Kere?", description trimmed to "დიზაინის არჩევიდან მზა ტანსაცმლამდე.", and the section **expanded from 4 to 6 steps** with new copy (discover → customize → measurements → order → tailor creates → receive) plus a closing line "შენ ირჩევ. მკერავი ქმნის. Kere გაკავშირებთ." `HowItWorksSection.tsx` now renders 6 steps in a 3-col / 2-row grid (icons: Search, Palette, Ruler, ClipboardCheck, Scissors, Package) with a centered closing statement. New keys `s5*/s6*/closing` added to **both** locales (EN steps re-translated to keep the 6-step flow coherent, since the component is shared).
+- **CTA** (`cta`, ka only): title → "შენი იდეა — ქართველი მკერავის ხელით შექმნილი", subtitle rewritten.
+- **Reviews** (`guarantee.subtitle`, ka only): → "კერეს მომხმარებელთა შეფასებები".
+
+Note: per the request ("Georgian texts"), the EN `cta`/`guarantee` strings were left unchanged, so they now differ in wording from the updated Georgian — revisit if EN parity is wanted. Verified in headless Chrome (KA): all four sections render correctly, 6-step grid + closing line land as intended. Build + typecheck clean.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

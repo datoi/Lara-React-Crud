@@ -8,6 +8,7 @@ import { ErrorFallback } from '../components/ErrorFallback';
 import { NotificationBell } from '../components/NotificationBell';
 import { User } from 'lucide-react';
 import { getAuthToken, getAuthUser } from '../hooks/useAuth';
+import { getSection, setSection, type Section } from '../hooks/useSection';
 import { Button } from '../components/ui/button';
 import { useTranslation } from 'react-i18next';
 
@@ -37,6 +38,34 @@ export default function Marketplace() {
     const [searchParams, setSearchParams] = useSearchParams();
     const token = getAuthToken();
     const user  = getAuthUser();
+
+    // Section split — explicit ?gender= wins, else the remembered choice.
+    const genderParam = searchParams.get('gender');
+    const section: Section | null =
+        genderParam === 'men' || genderParam === 'women' ? genderParam : getSection('market');
+
+    useEffect(() => {
+        if (!section) {
+            navigate(`/section?next=${encodeURIComponent('/marketplace')}`, { replace: true });
+            return;
+        }
+        setSection('market', section);
+        if (genderParam !== section) {
+            const next = new URLSearchParams(searchParams);
+            next.set('gender', section);
+            setSearchParams(next, { replace: true });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [section, genderParam]);
+
+    const switchSection = (s: Section) => {
+        if (s === section) return;
+        setSection('market', s);
+        setPage(1);
+        const next = new URLSearchParams(searchParams);
+        next.set('gender', s);
+        setSearchParams(next, { replace: true });
+    };
 
     const [products,  setProducts]  = useState<ApiProduct[]>([]);
     const [categories, setCategories] = useState<ApiCategory[]>([]);
@@ -96,6 +125,7 @@ export default function Marketplace() {
     const prevFiltersRef = useRef({ selectedCategory, debouncedSearch, priceMax, sort, retryKey });
 
     useEffect(() => {
+        if (!section) return; // awaiting redirect to the section chooser
         const prev = prevFiltersRef.current;
         const filtersChanged =
             prev.selectedCategory !== selectedCategory ||
@@ -120,6 +150,7 @@ export default function Marketplace() {
 
         const controller = new AbortController();
         const params = new URLSearchParams();
+        if (section)           params.set('gender', section);
         if (selectedCategory) params.set('category', selectedCategory);
         if (debouncedSearch)   params.set('search', debouncedSearch);
         if (priceMax < 500)    params.set('max_price', String(priceMax));
@@ -149,7 +180,7 @@ export default function Marketplace() {
             });
 
         return () => controller.abort();
-    }, [selectedCategory, debouncedSearch, priceMax, sort, page, retryKey]);
+    }, [section, selectedCategory, debouncedSearch, priceMax, sort, page, retryKey]);
 
     const handleLoadMore = () => {
         isAppendRef.current = true;
@@ -176,6 +207,8 @@ export default function Marketplace() {
     ];
     const sortLabel = sortOptions.find(o => o.value === sort)?.label ?? t('marketplace.sortLabel');
 
+    if (!section) return null; // awaiting redirect to the section chooser
+
     return (
         <div className="min-h-screen bg-white">
             <Helmet>
@@ -188,6 +221,19 @@ export default function Marketplace() {
                         Kere
                     </Link>
                     <div className="flex items-center gap-2">
+                        <div className="flex items-center rounded-lg border border-slate-200 p-0.5">
+                            {(['women', 'men'] as Section[]).map(s => (
+                                <button
+                                    key={s}
+                                    onClick={() => switchSection(s)}
+                                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                                        section === s ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-900'
+                                    }`}
+                                >
+                                    {t(`section.${s}`)}
+                                </button>
+                            ))}
+                        </div>
                         {user && (
                             <Link
                                 to={user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
@@ -201,7 +247,7 @@ export default function Marketplace() {
                         )}
                         {token && <NotificationBell />}
                         <Link
-                            to="/design"
+                            to={section ? `/design?gender=${section}` : '/design'}
                             className="flex items-center gap-2 border border-slate-300 text-slate-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"
                         >
                             <Palette className="w-4 h-4" />

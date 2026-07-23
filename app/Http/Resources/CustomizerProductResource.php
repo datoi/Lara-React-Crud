@@ -14,6 +14,7 @@ class CustomizerProductResource extends JsonResource
             'name'              => $this->name,
             'slug'              => $this->slug,
             'category'          => $this->category,
+            'gender'            => $this->gender ?? 'unisex',
             'description'       => $this->description,
             'base_price'        => $this->base_price,
             'preview_image_url' => $this->preview_image_path

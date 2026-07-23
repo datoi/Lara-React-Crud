@@ -23,6 +23,11 @@ class ProductController extends Controller
             $query->whereHas('category', fn($q) => $q->where('slug', $request->category));
         }
 
+        // Section split: a men/women shopper sees their gender plus unisex products.
+        if (in_array($request->gender, ['men', 'women'], true)) {
+            $query->whereIn('gender', [$request->gender, 'unisex']);
+        }
+
         if ($request->filled('search')) {
             $term = '%' . $request->search . '%';
             $query->where(function ($q) use ($term) {
@@ -183,6 +188,7 @@ class ProductController extends Controller
             'description'           => 'nullable|string',
             'price'                 => 'required|numeric|min:1',
             'category_id'           => 'required|exists:categories,id',
+            'gender'                => 'nullable|in:men,women,unisex',
             'images'                => 'nullable|array',
             'images.*'              => 'nullable|string|url',
             'colors'                => 'nullable|array',
@@ -202,6 +208,7 @@ class ProductController extends Controller
         $product = Product::create([
             'tailor_id'             => $user->id,
             'category_id'           => $data['category_id'],
+            'gender'                => $data['gender'] ?? 'unisex',
             'name'                  => $data['name'],
             'slug'                  => $slug,
             'description'           => $data['description'] ?? null,
@@ -235,6 +242,7 @@ class ProductController extends Controller
             'description'             => 'nullable|string',
             'price'                   => 'sometimes|required|numeric|min:1',
             'category_id'             => 'sometimes|required|exists:categories,id',
+            'gender'                  => 'sometimes|required|in:men,women,unisex',
             'images'                  => 'nullable|array',
             'images.*'                => 'nullable|string|url',
             'colors'                  => 'nullable|array',
@@ -295,6 +303,7 @@ class ProductController extends Controller
             'name'                  => $p->name,
             'category'              => $p->category->name ?? '—',
             'category_id'           => $p->category_id,
+            'gender'                => $p->gender ?? 'unisex',
             'price'                 => $p->price,
             'description'           => $p->description,
             'images'                => $p->images ?? [],

@@ -361,15 +361,20 @@
   "howItWorks": {
     "eyebrow": "Process",
     "heroTitle": "How Kere Works",
-    "heroDesc": "From choosing your design to receiving your custom garment — here's exactly how it works.",
-    "s1Title": "Browse & Choose",
-    "s1Desc": "Explore hundreds of clothing items crafted by Tbilisi-based tailors. Filter by category, price, or fabric. Each listing shows the tailor's profile and past work.",
-    "s2Title": "Customize Your Fit",
-    "s2Desc": "Select your color, size, and fabric. Enter your exact measurements — chest, waist, hips, and length — for a truly tailored piece that fits you perfectly.",
-    "s3Title": "Tailor Gets to Work",
-    "s3Desc": "Your order goes directly to a verified local tailor. They cut, stitch, and finish your garment by hand. You'll receive updates as your order progresses.",
-    "s4Title": "Delivered to Your Door",
-    "s4Desc": "Once complete, your custom garment is carefully packaged and delivered. Not satisfied? Our quality guarantee means we'll make it right."
+    "heroDesc": "From choosing your design to receiving your finished garment.",
+    "s1Title": "Discover a Design You Love",
+    "s1Desc": "Browse the work of tailors and small ateliers, or upload a design of your own. Filter offers by category, price, and fabric, and explore tailors' profiles, portfolios, and reviews.",
+    "s2Title": "Make It Your Own",
+    "s2Desc": "Choose your color, fabric, and design details. Adjust the sleeve length, collar, garment length, or other elements so the final piece is exactly as you imagine it.",
+    "s3Title": "Enter Your Measurements",
+    "s3Desc": "Add the required measurements with the help of simple instructions. Accurate details help the tailor create a garment that fits your body correctly and comfortably.",
+    "s4Title": "Place Your Order",
+    "s4Desc": "Review the chosen design, material, measurements, price, and estimated production time. Enter your delivery address and pay for your order securely.",
+    "s5Title": "The Tailor Starts Creating",
+    "s5Desc": "A matching professional tailor takes on your order and begins crafting your garment to your requirements. Track the progress and status of your order easily on Kere.",
+    "s6Title": "Receive Your Made-for-You Garment",
+    "s6Desc": "The finished garment passes inspection and is delivered to your address. You receive a piece created with your measurements, style, and wishes in mind.",
+    "closing": "You choose. The tailor creates. Kere connects you."
   },
   "contact": {
     "title": "Contact Us",
@@ -496,6 +501,17 @@
     "optional": "optional",
     "verifyPhoneTitle": "Verify your phone",
     "verifyPhoneDesc": "We sent a 6-digit code via SMS to {{phone}}"
+  },
+  "section": {
+    "pageTitle": "Choose your section | Kere",
+    "title": "Who are you shopping for?",
+    "subtitle": "Pick a section to see designs made for you. You can switch anytime.",
+    "women": "Women",
+    "men": "Men",
+    "womenDesc": "Explore women's designs",
+    "menDesc": "Explore men's designs",
+    "back": "Back to home",
+    "shoppingFor": "Shopping for"
   },
   "marketplace": {
     "title": "Marketplace",
@@ -1020,6 +1036,9 @@
     "rejectReasonPlaceholder": "Optional: reason for rejection (included in the notification email)"
   },
   "tailorComponents": {
+    "genderLabel": "Section",
+    "genderBoth": "Both",
+    "genderHint": "Choose which section this product appears in. \"Both\" shows it to everyone.",
     "totalEarnings": "Total Earnings",
     "myProfile": "My Profile",
     "signOut": "Sign Out",
