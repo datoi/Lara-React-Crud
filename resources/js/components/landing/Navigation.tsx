@@ -86,6 +86,11 @@ export function Navigation() {
     const navTextClass = isOverDark ? 'text-white' : 'text-[#111111]';
     const navDividerClass = isOverDark ? 'border-white/25' : 'border-black/15';
 
+    // Mobile menu items: 2-column grid cell with soft dividers (bottom on every
+    // item, left on the right-hand column) so each entry reads distinctly.
+    const menuLinkClass =
+        'border-b border-black/[0.08] py-4 pr-5 text-[clamp(1.05rem,4vw,1.5rem)] font-light lowercase leading-[1.2] tracking-[0.03em] text-[#111111] transition-opacity hover:opacity-45 even:border-l even:border-black/[0.08] even:pl-6';
+
     return (
         <header
             data-nav-tone={isOverDark ? 'dark' : 'light'}
@@ -167,7 +172,7 @@ export function Navigation() {
                         </>
                     )}
 
-                    <div className={`hidden h-5 items-center border-l pl-5 lg:flex ${navDividerClass}`}>
+                    <div className={`flex h-5 items-center lg:border-l lg:pl-5 ${navDividerClass}`}>
                         <LanguageToggle isOverDark={isOverDark} />
                     </div>
                 </div>
@@ -230,38 +235,37 @@ export function Navigation() {
                                 />
                             </div>
 
-                            <nav className="mx-auto mt-10 flex w-full max-w-[620px] flex-1 flex-col gap-5 sm:mt-12 sm:gap-6 lg:mt-10 lg:grid lg:grid-cols-2 lg:gap-x-14 lg:gap-y-5">
+                            <nav className="mx-auto mt-10 grid w-full max-w-[620px] flex-1 grid-cols-2 content-start sm:mt-12 lg:mt-10">
                                 {showSiteAnchors && (
-                                    <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                    <a href="#how-it-works" onClick={() => setMobileOpen(false)} className={menuLinkClass}>
                                         {t('nav.howItWorks')}
                                     </a>
                                 )}
-                                <Link to="/marketplace" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                <Link to="/marketplace" onClick={() => setMobileOpen(false)} className={menuLinkClass}>
                                     {t('marketplace.title')}
                                 </Link>
-                                <Link to="/design" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                <Link to="/design" onClick={() => setMobileOpen(false)} className={menuLinkClass}>
                                     {t('nav.startDesigning')}
                                 </Link>
-                                <Link to="/partners" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                <Link to="/partners" onClick={() => setMobileOpen(false)} className={menuLinkClass}>
                                     {t('nav.forTailors')}
                                 </Link>
                                 {showSiteAnchors && (
-                                    <a href="#faq" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                    <a href="#faq" onClick={() => setMobileOpen(false)} className={menuLinkClass}>
                                         {t('nav.faq')}
                                     </a>
                                 )}
                                 <Link
                                     to={user ? (user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard') : '/signin'}
                                     onClick={() => setMobileOpen(false)}
-                                    className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45"
+                                    className={menuLinkClass}
                                 >
                                     {user ? `${user.first_name} ${user.last_name}` : t('nav.signIn')}
                                 </Link>
                             </nav>
 
-                            <div className="mx-auto mt-10 flex w-full max-w-[620px] items-center justify-between border-t border-black/10 pt-5">
-                                <LanguageToggle isOverDark={false} />
-                                {!user && (
+                            {!user && (
+                                <div className="mx-auto mt-10 flex w-full max-w-[620px] items-center justify-end border-t border-black/[0.08] pt-5">
                                     <Link
                                         to="/signin"
                                         onClick={() => setMobileOpen(false)}
@@ -270,8 +274,8 @@ export function Navigation() {
                                         <User className="h-4 w-4" />
                                         {t('nav.signIn')}
                                     </Link>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </motion.aside>
                     </motion.div>
                 )}

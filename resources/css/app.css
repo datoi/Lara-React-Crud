@@ -318,21 +318,6 @@
   width: max-content;
   padding: 0 18px;
   will-change: transform;
-  animation: kere-gallery-motion 40s linear infinite;
-}
-
-.kere-gallery:hover .kere-gallery-track {
-  animation-play-state: paused;
-}
-
-@keyframes kere-gallery-motion {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
 }
 
 .kere-gallery-image {
@@ -491,7 +476,6 @@
     top: 39px;
     gap: 12px;
     padding: 0 12px;
-    animation-duration: 32s;
   }
 
   .kere-gallery-image {

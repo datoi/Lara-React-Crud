@@ -20,12 +20,16 @@ interface Product {
 
 export function MarketplaceCarousel() {
   const { t } = useTranslation();
-  const [products, setProducts] = useState<Product[]>([]);
+  // null = not decided yet; keeps the strip hidden until then so the fallback
+  // products never flash-swap to real ones on load.
+  const [products, setProducts] = useState<Product[] | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const pressRef = useRef<{ pointerId: number; startX: number; scrollStart: number } | null>(null);
   const stripRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let active = true;
+
     fetch('/api/products?per_page=20')
       .then((response) => {
         if (!response.ok) {
@@ -35,10 +39,17 @@ export function MarketplaceCarousel() {
         return response.json();
       })
       .then((data) => {
+        if (!active) return;
         const list: Product[] = data.data ?? [];
         setProducts(list.slice(0, 12));
       })
-      .catch(() => {});
+      .catch(() => {
+        if (active) setProducts([]);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const fallbackProducts: Product[] = [
@@ -100,9 +111,13 @@ export function MarketplaceCarousel() {
     },
   ];
 
-  const displayedProducts = products.length > 0 ? products.slice(0, 8) : fallbackProducts;
+  const ready = products !== null;
+  const displayedProducts = products && products.length > 0 ? products.slice(0, 8) : fallbackProducts;
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    // Touch uses the browser's native horizontal scroll (with momentum); the
+    // click-drag below is for mouse only, so the two never fight each other.
+    if (event.pointerType !== 'mouse') return;
     if (!stripRef.current) return;
 
     pressRef.current = {
@@ -162,7 +177,12 @@ export function MarketplaceCarousel() {
             style={{
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
-              touchAction: 'pan-y',
+              // 'auto' lets the browser scroll this strip horizontally on touch
+              // while still letting a vertical swipe scroll the page.
+              touchAction: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              opacity: ready ? 1 : 0,
+              transition: 'opacity 0.4s ease',
             }}
           >
             {displayedProducts.map((product) => {

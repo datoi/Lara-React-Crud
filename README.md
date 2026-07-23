@@ -1381,4 +1381,16 @@ Applied a batch of Georgian copy corrections to the landing page (from `corectio
 
 Note: per the request ("Georgian texts"), the EN `cta`/`guarantee` strings were left unchanged, so they now differ in wording from the updated Georgian — revisit if EN parity is wanted. Verified in headless Chrome (KA): all four sections render correctly, 6-step grid + closing line land as intended. Build + typecheck clean.
 
+### 2026-07-23 — Fix hero/marketplace image flash on load
+
+The landing hero gallery (and the marketplace strip below it) rendered the local fallback images immediately, then hard-swapped to real products once `/api/products` resolved (~300ms) — a visible bait-and-switch on every load/refresh, made more noticeable by the hero's 40s marquee. Fixed by gating on a decided state: `productImages`/`products` start as `null` and the gallery is held at `opacity: 0` (space reserved, no layout jump) until the fetch settles, then fades in once with the final image set. Fallback now shows only when it *is* the decided set (no products with images / fetch error). Verified in-browser: fallback opacity stays 0 until content is already the real set, then fades 0→1.
+
+### 2026-07-23 — Mobile navbar + touch/drag interactions
+
+Mobile UX pass on the landing:
+- **Navbar (mobile):** language toggle moved into the always-visible top navbar (was buried in the drawer); the drawer's redundant copy was removed (its sign-in CTA now shows for logged-out visitors only).
+- **Drawer menu:** switched from a single column to a 2-column grid with soft dividers (bottom line on every item + a vertical line between the columns) so each entry reads distinctly; item type scales for the narrower cells.
+- **Marketplace carousel:** was `touch-action: pan-y`, which blocked horizontal finger scrolling on phones. Now `touch-action: auto` for native horizontal touch scroll, and the click-drag handler is gated to `pointerType === 'mouse'` so touch and mouse never fight — finger-swipe on phone, click-drag on desktop.
+- **Hero gallery:** replaced the CSS `@keyframes` marquee (paused via `:hover`, which stuck on mobile) with a rAF-driven transform. It auto-slides, **pauses while pressed and resumes the instant you release**, and is draggable left/right by finger (touch, `touch-action: pan-y` so vertical page scroll still works) or mouse (hold + drag). Respects `prefers-reduced-motion` (no auto-advance, drag still works); a post-drag click is swallowed so dragging never navigates. Verified in-browser: auto-slide moves, press freezes it, a drag translates it, release resumes.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*
