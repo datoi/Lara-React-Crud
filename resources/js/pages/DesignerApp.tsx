@@ -21,6 +21,9 @@ const CATEGORY_KEYS = [
     { key: 'coat',     tKey: 'design.cat_coat',     emoji: '🧤' },
 ];
 
+// Garment types that only belong in the women's section — never shown for men.
+const WOMEN_ONLY_CATEGORIES = new Set(['dress', 'skirt']);
+
 const CATEGORY_VISUALS: Record<string, { image: string; note: string; rotation: string; position: string; offset?: string }> = {
     shirt: {
         image: '/assets/design-categories/shirt-cutout.png',
@@ -91,11 +94,16 @@ interface Product {
 function CategoryStep({
     onSelectDesign,
     onSelectUpload,
+    gender,
 }: {
     onSelectDesign: (key: string) => void;
     onSelectUpload: () => void;
+    gender: Section;
 }) {
     const { t } = useTranslation();
+    const categories = gender === 'men'
+        ? CATEGORY_KEYS.filter(c => !WOMEN_ONLY_CATEGORIES.has(c.key))
+        : CATEGORY_KEYS;
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -131,7 +139,7 @@ function CategoryStep({
             </motion.button>
 
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3 lg:gap-5">
-                {CATEGORY_KEYS.map((cat, i) => (
+                {categories.map((cat, i) => (
                     <motion.button
                         key={cat.key}
                         onClick={() => onSelectDesign(cat.key)}
@@ -718,6 +726,7 @@ export default function DesignerApp() {
                     {flow.step === 'category' && (
                         <CategoryStep
                             key="category"
+                            gender={section}
                             onSelectDesign={key => setFlow({ step: 'design', category: key })}
                             onSelectUpload={() => setFlow({ step: 'upload-type' })}
                         />

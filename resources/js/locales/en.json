@@ -684,9 +684,9 @@
     "tailorFallback": "Tailor",
     "pendingTitle": "Application Under Review",
     "pendingDesc": "Your application has been submitted. Our team will review it within 1–2 business days and you'll receive an email notification with the result.",
-    "pendingContact": "In the meantime, feel free to reach us at hello@kere.ge",
+    "pendingContact": "In the meantime, feel free to reach us at kereforyou@gmail.com",
     "rejectedTitle": "Application Not Approved",
-    "rejectedDesc": "Unfortunately, your application was not approved at this time. Please contact us at hello@kere.ge if you have any questions."
+    "rejectedDesc": "Unfortunately, your application was not approved at this time. Please contact us at kereforyou@gmail.com if you have any questions."
   },
   "productCustomization": {
     "backToMarketplace": "Back to Marketplace",
@@ -881,7 +881,7 @@
     "s9b1": "These terms are governed by the laws of Georgia.",
     "s9b2": "Disputes shall be resolved in the courts of Tbilisi, Georgia.",
     "s10Title": "10. Contact",
-    "s10b1": "For questions about these terms, contact: info@kereforyou.com"
+    "s10b1": "For questions about these terms, contact: kereforyou@gmail.com"
   },
   "privacy": {
     "eyebrow": "Legal",
@@ -922,7 +922,7 @@
     "s7b4": "Clarity masks the text you enter into forms.",
     "s7b5": "You can decline analytics from the consent banner at any time; declining keeps only the essential cookies.",
     "s8Title": "8. Contact",
-    "s8b1": "For privacy-related enquiries, contact us at: info@kereforyou.com",
+    "s8b1": "For privacy-related enquiries, contact us at: kereforyou@gmail.com",
     "s8b2": "Kere — Custom Clothing Marketplace, Tbilisi, Georgia."
   },
   "refund": {
@@ -945,12 +945,12 @@
     "cancellationText": "You may cancel an order without charge within 24 hours of placement, provided the tailor has not yet begun work. After production starts, a partial cancellation fee may apply.",
     "cancellationDesc": "You may cancel an order without charge within 24 hours of placement, provided the tailor has not yet begun work. After production starts, a partial cancellation fee may apply.",
     "processTitle": "Refund Process",
-    "p1": "Contact us within 7 days of delivery at info@kereforyou.com with your order number and photos of the issue.",
+    "p1": "Contact us within 7 days of delivery at kereforyou@gmail.com with your order number and photos of the issue.",
     "p2": "We will review your case within 3 business days.",
     "p3": "If approved, refunds are processed within 5–10 business days to your original payment method.",
     "p4": "In some cases, we may offer a free alteration instead of a refund.",
     "step1Title": "Contact Support",
-    "step1Desc": "Email us at info@kereforyou.com within 7 days of receiving your order. Include your order number, a description of the issue, and photographs.",
+    "step1Desc": "Email us at kereforyou@gmail.com within 7 days of receiving your order. Include your order number, a description of the issue, and photographs.",
     "step2Title": "Review",
     "step2Desc": "Our team reviews your request within 3 business days. We may ask additional questions or request additional photos.",
     "step3Title": "Resolution",

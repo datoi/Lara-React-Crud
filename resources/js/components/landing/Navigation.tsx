@@ -138,7 +138,7 @@ export function Navigation() {
                 <div className="flex min-w-0 items-center justify-end gap-4 sm:gap-7">
                     <Link
                         to="/partners"
-                        className={`hidden text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 md:inline ${navTextClass}`}
+                        className={`hidden text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 lg:inline ${navTextClass}`}
                     >
                         {t('nav.forTailors')}
                     </Link>
@@ -147,7 +147,7 @@ export function Navigation() {
                         <>
                             <Link
                                 to={user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
-                                className={`hidden items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 sm:inline-flex ${navTextClass}`}
+                                className={`hidden items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 lg:inline-flex ${navTextClass}`}
                             >
                                 <User className="h-[18px] w-[18px] stroke-[1.5]" />
                                 <span>{user.first_name} {user.last_name}</span>
@@ -158,18 +158,12 @@ export function Navigation() {
                             </div>
                         </>
                     ) : (
-                        <>
-                            <Link
-                                to="/signin"
-                                className={`hidden text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 sm:inline ${navTextClass}`}
-                            >
-                                {t('nav.signIn')}
-                            </Link>
-
-                            <Link to="/signin" aria-label={t('nav.signIn')} className={`inline-flex transition-opacity hover:opacity-55 sm:hidden ${navTextClass}`}>
-                                <User className="h-[18px] w-[18px] stroke-[1.5]" />
-                            </Link>
-                        </>
+                        <Link
+                            to="/signin"
+                            className={`hidden text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 lg:inline ${navTextClass}`}
+                        >
+                            {t('nav.signIn')}
+                        </Link>
                     )}
 
                     <div className={`flex h-5 items-center lg:border-l lg:pl-5 ${navDividerClass}`}>

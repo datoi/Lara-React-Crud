@@ -15,6 +15,10 @@ const USER_KEY  = 'kere_user';
 const TOKEN_KEY = 'kere_token';
 
 export function getAuthUser(): AuthUser | null {
+    // The user object lives in localStorage and outlives the session token (which
+    // sits in sessionStorage and clears on tab close). No token = not signed in,
+    // so don't surface a stale user.
+    if (!getAuthToken()) return null;
     try {
         const raw = localStorage.getItem(USER_KEY);
         return raw ? (JSON.parse(raw) as AuthUser) : null;

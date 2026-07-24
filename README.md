@@ -1388,9 +1388,18 @@ The landing hero gallery (and the marketplace strip below it) rendered the local
 ### 2026-07-23 — Mobile navbar + touch/drag interactions
 
 Mobile UX pass on the landing:
-- **Navbar (mobile):** language toggle moved into the always-visible top navbar (was buried in the drawer); the drawer's redundant copy was removed (its sign-in CTA now shows for logged-out visitors only).
+- **Navbar (mobile):** language toggle moved into the always-visible top navbar (was buried in the drawer); the drawer's redundant copy was removed (its sign-in CTA now shows for logged-out visitors only). The "for tailors" and "sign in"/account links are all gated to `lg` (matching the burger's `lg:hidden`), so they appear together on desktop and disappear together the moment the burger shows — previously they used `md`/`sm` and lingered at tablet widths.
 - **Drawer menu:** switched from a single column to a 2-column grid with soft dividers (bottom line on every item + a vertical line between the columns) so each entry reads distinctly; item type scales for the narrower cells.
 - **Marketplace carousel:** was `touch-action: pan-y`, which blocked horizontal finger scrolling on phones. Now `touch-action: auto` for native horizontal touch scroll, and the click-drag handler is gated to `pointerType === 'mouse'` so touch and mouse never fight — finger-swipe on phone, click-drag on desktop.
 - **Hero gallery:** replaced the CSS `@keyframes` marquee (paused via `:hover`, which stuck on mobile) with a rAF-driven transform. It auto-slides, **pauses while pressed and resumes the instant you release**, and is draggable left/right by finger (touch, `touch-action: pan-y` so vertical page scroll still works) or mouse (hold + drag). Respects `prefers-reduced-motion` (no auto-advance, drag still works); a post-drag click is swallowed so dragging never navigates. Verified in-browser: auto-slide moves, press freezes it, a drag translates it, release resumes.
+
+### 2026-07-23 — Men-section garment filtering + stale-user fix
+
+- **No women's garments in the men's section:** the custom-design category picker (`DesignerApp`) now hides `dress` and `skirt` when the section is `men` (women still see all six), and the marketplace category filter hides the `dresses` category for men. Products themselves were already gender-filtered server-side; this covers the *options*.
+- **Stale signed-out user:** `getAuthUser()` returned the `localStorage` user even after the `sessionStorage` token had cleared (tab close), so a leftover user (e.g. a QA account) showed as signed in across the app. `getAuthUser()` now returns `null` when there's no session token — fixes the marketplace navbar and every other consumer at the source.
+
+### 2026-07-24 — Men-section filter symmetry (skirts)
+
+- **Marketplace/design-studio parity:** the design studio hid both `dress` *and* `skirt` garment keys for men, but the marketplace's women-only category list only had `dresses`. Added `skirts` to `WOMEN_ONLY_CATEGORY_SLUGS` so the two surfaces stay in sync — no live bug today (no `skirts` category exists yet), but prevents men from seeing a skirts category in the marketplace while the studio hides it, if one is ever added. Found in QA (asymmetric hardcoded lists).
 
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

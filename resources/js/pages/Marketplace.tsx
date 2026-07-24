@@ -37,7 +37,11 @@ export default function Marketplace() {
     const { t } = useTranslation();
     const [searchParams, setSearchParams] = useSearchParams();
     const token = getAuthToken();
-    const user  = getAuthUser();
+    const user  = getAuthUser(); // null unless a valid session token exists
+
+    // Category slugs that only belong in the women's section.
+    // Mirror the design studio's WOMEN_ONLY_CATEGORIES ({dress, skirt}) so both surfaces stay in sync.
+    const WOMEN_ONLY_CATEGORY_SLUGS = ['dresses', 'skirts'];
 
     // Section split — explicit ?gender= wins, else the remembered choice.
     const genderParam = searchParams.get('gender');
@@ -352,7 +356,9 @@ export default function Marketplace() {
                                             >
                                                 {t('marketplace.allCategories')}
                                             </button>
-                                            {categories.map(c => (
+                                            {categories
+                                                .filter(c => section !== 'men' || !WOMEN_ONLY_CATEGORY_SLUGS.includes(c.slug))
+                                                .map(c => (
                                                 <button
                                                     key={c.id}
                                                     onClick={() => handleCategoryChange(c.slug)}

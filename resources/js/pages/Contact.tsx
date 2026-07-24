@@ -55,8 +55,8 @@ export default function Contact() {
                                     </div>
                                     <div>
                                         <p className="font-medium text-slate-900">{t('contact.emailLabel')}</p>
-                                        <a href="mailto:dato.tadiashvili13@gmail.com" className="text-slate-500 hover:text-slate-700 transition-colors text-sm">
-                                            dato.tadiashvili13@gmail.com
+                                        <a href="mailto:kereforyou@gmail.com" className="text-slate-500 hover:text-slate-700 transition-colors text-sm">
+                                            kereforyou@gmail.com
                                         </a>
                                         <button
                                             onClick={() => setSupportOpen(true)}

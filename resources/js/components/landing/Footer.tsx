@@ -129,11 +129,8 @@ export function Footer() {
 
                             <div className="mt-5 flex flex-col gap-2 text-xs uppercase tracking-[0.02em] text-black/55">
                                 <span>{t('footer.location')}</span>
-                                <a href="tel:+995571139539" className="w-fit transition-opacity hover:opacity-45">
-                                    +995 571139539
-                                </a>
-                                <a href="mailto:Kereforyou@gmail.com" className="w-fit transition-opacity hover:opacity-45">
-                                    Kereforyou@gmail.com
+                                <a href="mailto:kereforyou@gmail.com" className="w-fit transition-opacity hover:opacity-45">
+                                    kereforyou@gmail.com
                                 </a>
                             </div>
                         </div>
@@ -152,16 +149,15 @@ export function Footer() {
                             <h3 className="text-sm font-medium uppercase tracking-normal">Social</h3>
 
                             <div className="mt-5 flex flex-col gap-3">
-                                {['Instagram', 'Facebook', 'X / Twitter'].map((label) => (
-                                    <button
-                                        key={label}
-                                        type="button"
-                                        aria-label={label}
-                                        className="w-fit text-xs uppercase tracking-[0.02em] text-black/60 transition-opacity hover:opacity-45"
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
+                                <a
+                                    href="https://www.instagram.com/kereforyou?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label="Instagram"
+                                    className="w-fit text-xs uppercase tracking-[0.02em] text-black/60 transition-opacity hover:opacity-45"
+                                >
+                                    Instagram
+                                </a>
                             </div>
                         </div>
                     </div>
