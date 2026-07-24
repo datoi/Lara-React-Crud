@@ -1407,4 +1407,8 @@ Mobile UX pass on the landing:
 - **Sizes only for individual orders:** size selection now appears only when a product's "Allow Customization" (`is_customizable`) toggle is on. In the tailor `AddProductModal`, the *Available Sizes* block is gated on the toggle and sits directly beneath it (cause and effect adjacent); on the customer product page (`ProductCustomization`), the size picker is hidden unless the product is customizable *and* has sizes. When hidden, the order submits `size: null` (nullable server-side; `SpecRow` skips empty values) so a non-individual order never carries a phantom standard size into the tailor's order view. Reused the existing toggle — no new field/migration.
 - **Invariant enforced on write, not just read:** saving a product with customization off now persists `sizes: []` rather than leaving stale chips selected, so stored data can't contradict the "sizes belong only to customizable products" rule.
 
+### 2026-07-24 — Marketplace carousel centers on mobile
+
+- **Products snap to center on phones:** the landing `MarketplaceCarousel` cards used `snap-start`, so on mobile a card snapped flush-left and the next product's lopsided sliver showed on the right. Cards now `snap-center` below `sm`, and the strip goes full-bleed with an 11vw inset (78vw card + 11vw each side = 100vw) so every card — including the first and last — rests dead-center with a small symmetric peek. Tablet/desktop (2-up `sm`, 4-up `lg`) keep the original left-aligned layout.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

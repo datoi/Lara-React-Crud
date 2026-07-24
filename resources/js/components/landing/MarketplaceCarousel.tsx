@@ -171,7 +171,10 @@ export function MarketplaceCarousel() {
             onPointerCancel={stopDragging}
             onPointerLeave={stopDragging}
             className={[
-              'marketplace-scrollbar-none flex snap-x snap-mandatory gap-6 overflow-x-auto pb-5 select-none',
+              // On phones the strip goes full-bleed with an 11vw inset so each 78vw
+              // card snaps dead-center (with a small symmetric peek); sm+ keeps the
+              // original left-aligned multi-column layout.
+              'marketplace-scrollbar-none -mx-4 flex snap-x snap-mandatory gap-6 overflow-x-auto px-[11vw] pb-5 select-none sm:mx-0 sm:px-0',
               isDragging ? 'cursor-grabbing' : 'cursor-grab',
             ].join(' ')}
             style={{
@@ -193,7 +196,7 @@ export function MarketplaceCarousel() {
                   key={product.id}
                   to={product.isFallback ? '/marketplace' : `/product/${product.id}`}
                   draggable={false}
-                  className="group block w-[78vw] shrink-0 snap-start sm:w-[46vw] lg:w-[calc((100%_-_72px)/4)]"
+                  className="group block w-[78vw] shrink-0 snap-center sm:w-[46vw] sm:snap-start lg:w-[calc((100%_-_72px)/4)]"
                   onClick={(event) => {
                     if (isDragging) {
                       event.preventDefault();
