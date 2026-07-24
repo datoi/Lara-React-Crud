@@ -1402,4 +1402,9 @@ Mobile UX pass on the landing:
 
 - **Marketplace/design-studio parity:** the design studio hid both `dress` *and* `skirt` garment keys for men, but the marketplace's women-only category list only had `dresses`. Added `skirts` to `WOMEN_ONLY_CATEGORY_SLUGS` so the two surfaces stay in sync — no live bug today (no `skirts` category exists yet), but prevents men from seeing a skirts category in the marketplace while the studio hides it, if one is ever added. Found in QA (asymmetric hardcoded lists).
 
+### 2026-07-24 — Size options gated on customization ("individual order")
+
+- **Sizes only for individual orders:** size selection now appears only when a product's "Allow Customization" (`is_customizable`) toggle is on. In the tailor `AddProductModal`, the *Available Sizes* block is gated on the toggle and sits directly beneath it (cause and effect adjacent); on the customer product page (`ProductCustomization`), the size picker is hidden unless the product is customizable *and* has sizes. When hidden, the order submits `size: null` (nullable server-side; `SpecRow` skips empty values) so a non-individual order never carries a phantom standard size into the tailor's order view. Reused the existing toggle — no new field/migration.
+- **Invariant enforced on write, not just read:** saving a product with customization off now persists `sizes: []` rather than leaving stale chips selected, so stored data can't contradict the "sizes belong only to customizable products" rule.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

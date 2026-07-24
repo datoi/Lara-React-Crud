@@ -276,7 +276,7 @@ export function AddProductModal({ onClose, onCreated, editProduct, onUpdated }: 
                     gender:                form.gender,
                     images:                form.images,
                     colors:                form.colors,
-                    sizes:                 form.sizes,
+                    sizes:                 form.is_customizable ? form.sizes : [],
                     fabric:                form.fabric || null,
                     texture:               form.texture || null,
                     required_measurements: form.required_measurements,
@@ -598,25 +598,6 @@ export function AddProductModal({ onClose, onCreated, editProduct, onUpdated }: 
                             )}
                         </div>
 
-                        {/* Available Sizes */}
-                        <div>
-                            <Label>{t('tailorComponents.availableSizes')}</Label>
-                            <div className="flex flex-wrap gap-2">
-                                {SIZES.map(s => (
-                                    <button
-                                        key={s}
-                                        onClick={() => toggleSize(s)}
-                                        className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-                                            form.sizes.includes(s)
-                                                ? 'bg-slate-900 text-white border-slate-900'
-                                                : 'border-slate-200 text-slate-600 hover:border-slate-400 bg-white'
-                                        }`}
-                                    >
-                                        {s}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
                     </div>
 
                     {/* ── Measurement Requirements ── */}
@@ -652,8 +633,8 @@ export function AddProductModal({ onClose, onCreated, editProduct, onUpdated }: 
                         </div>
                     </div>
 
-                    {/* ── Customizable Toggle ── */}
-                    <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5">
+                    {/* ── Customizable Toggle + Available Sizes ── */}
+                    <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5 space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-semibold text-slate-700">{t('tailorComponents.allowCustomization')}</p>
@@ -673,6 +654,28 @@ export function AddProductModal({ onClose, onCreated, editProduct, onUpdated }: 
                                 />
                             </button>
                         </div>
+
+                        {/* Available Sizes — only for individual (customizable) orders */}
+                        {form.is_customizable && (
+                            <div className="pt-4 border-t border-slate-200">
+                                <Label>{t('tailorComponents.availableSizes')}</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {SIZES.map(s => (
+                                        <button
+                                            key={s}
+                                            onClick={() => toggleSize(s)}
+                                            className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                                                form.sizes.includes(s)
+                                                    ? 'bg-slate-900 text-white border-slate-900'
+                                                    : 'border-slate-200 text-slate-600 hover:border-slate-400 bg-white'
+                                            }`}
+                                        >
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 

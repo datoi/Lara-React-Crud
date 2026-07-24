@@ -132,6 +132,9 @@ export default function ProductCustomization({ customize = false }: { customize?
     const shipping = shippingCost;
     const total = subtotal + shipping;
 
+    // Sizes are offered only on individual (customizable) orders.
+    const showSizePicker = product.is_customizable && (product.sizes?.length ?? 0) > 0;
+
     const handleOrder = async () => {
         const token = getAuthToken();
         if (!token) {
@@ -165,7 +168,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                     order_type: 'marketplace',
                     product_id: product!.id,
                     color: selectedColor,
-                    size: selectedSize,
+                    size: showSizePicker ? selectedSize : null,
                     quantity,
                     cm_measurements: customize
                         ? Object.fromEntries(Object.entries(measurements).filter(([, v]) => v !== ''))
@@ -360,7 +363,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                             )}
 
                             {/* Size */}
-                            {product.sizes?.length > 0 && (
+                            {showSizePicker && (
                                 <div className="bg-white rounded-2xl border border-slate-200 p-5">
                                     <div className="text-sm font-semibold text-slate-700 mb-3">
                                         {t('productCustomization.sizeLabel')} <span className="font-normal text-slate-500">{selectedSize}</span>
