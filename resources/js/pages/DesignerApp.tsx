@@ -92,13 +92,13 @@ interface Product {
 // ─── Step: Category picker ────────────────────────────────────────────────────
 
 function CategoryStep({
+    gender,
     onSelectDesign,
     onSelectUpload,
-    gender,
 }: {
+    gender: Section;
     onSelectDesign: (key: string) => void;
     onSelectUpload: () => void;
-    gender: Section;
 }) {
     const { t } = useTranslation();
     const categories = gender === 'men'
@@ -124,7 +124,7 @@ function CategoryStep({
                 onClick={onSelectUpload}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: CATEGORY_KEYS.length * 0.07 }}
+                transition={{ duration: 0.5, delay: categories.length * 0.07 }}
                 className="group relative mx-auto mb-8 block w-full max-w-[300px] text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6F1D24] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7] sm:max-w-[340px] lg:rotate-[1deg]"
             >
                 <span className="pointer-events-none absolute -top-2 left-1/2 z-20 h-4 w-16 -translate-x-1/2 rotate-[2deg] bg-white/60 shadow-sm" />
@@ -171,44 +171,74 @@ function CategoryStep({
 // ─── Step: Pick garment type for upload ───────────────────────────────────────
 
 function UploadTypeStep({
+    gender,
     onSelect,
     onBack,
 }: {
+    gender: Section;
     onSelect: (key: string) => void;
     onBack: () => void;
 }) {
     const { t } = useTranslation();
+    const uploadCategories = CATEGORY_KEYS.filter(cat => gender !== 'men' || !['dress', 'skirt'].includes(cat.key));
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="relative mx-auto max-w-[920px]"
+            className="relative mx-auto max-w-[760px]"
         >
             <button
                 onClick={onBack}
-                className="mb-8 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6F1D24]/55 transition-opacity hover:opacity-60"
+                className="mb-8 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#776158] transition-opacity hover:opacity-60"
             >
                 <ArrowLeft className="w-4 h-4" />
                 {t('design.back')}
             </button>
 
-            <h1 className="font-serif text-[clamp(2.45rem,5vw,4.7rem)] font-medium leading-[0.92] tracking-[-0.055em] text-[#6F1D24]">{t('design.uploadTypeTitle')}</h1>
-            <p className="mb-10 mt-5 max-w-[560px] text-sm leading-7 text-[#776158]">{t('design.uploadTypeSubtitle')}</p>
+            <div className="mx-auto mb-8 max-w-[620px] text-center">
+                <h1 className="font-serif text-[clamp(2.05rem,4vw,3.45rem)] font-medium leading-[0.92] tracking-[-0.05em] text-[#111111]">
+                    {t('design.uploadTypeTitle')}
+                </h1>
+                <p className="mx-auto mt-3 max-w-[500px] text-sm leading-6 text-[#776158]">
+                    {t('design.uploadTypeSubtitle')}
+                </p>
+            </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {CATEGORY_KEYS.map((cat, i) => (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5">
+                {uploadCategories.map((cat, i) => (
                     <motion.button
                         key={cat.key}
                         onClick={() => onSelect(cat.key)}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: i * 0.07 }}
-                        whileHover={{ scale: 1.03 }}
-                        className="group flex flex-col items-center gap-3 bg-[#FDFBF5] p-6 text-center shadow-[0_18px_45px_rgba(72,54,45,0.12)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_28px_65px_rgba(72,54,45,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6F1D24] focus-visible:ring-offset-4 focus-visible:ring-offset-[#F4EBD4]"
+                        className="group relative block text-left transition-transform duration-500 hover:z-10 hover:-translate-y-2 hover:scale-[1.045] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7]"
                     >
-                        <span className="text-4xl">{cat.emoji}</span>
-                        <span className="font-serif text-xl font-medium tracking-[-0.035em] text-[#6F1D24]">{t(cat.tKey)}</span>
+                        <article className="transition-shadow duration-500 group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)]">
+                            <div className="mb-2 flex items-start justify-between gap-3">
+                                <p className="text-[10px] font-semibold leading-none tracking-[-0.02em] text-[#111111] sm:text-[11px]">
+                                    {t(cat.tKey)}
+                                </p>
+                            </div>
+
+                            {gender === 'women' ? (
+                                <div className="flex h-[132px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-3 sm:h-[156px] sm:p-4 lg:h-[178px]">
+                                    <img
+                                        src={CATEGORY_VISUALS[cat.key]?.image}
+                                        alt={t(cat.tKey)}
+                                        className="h-full w-full object-contain mix-blend-multiply transition-transform duration-700 group-hover:scale-[1.03]"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="flex h-[112px] items-end border border-[#111111]/45 bg-[#E4E0D7] p-4 sm:h-[132px] sm:p-5 lg:h-[150px]">
+                                    <p className="font-serif text-[clamp(1.35rem,3vw,2rem)] font-medium leading-[0.95] tracking-[-0.04em] text-[#111111]">
+                                        {t(cat.tKey)}
+                                    </p>
+                                </div>
+                            )}
+                        </article>
                     </motion.button>
                 ))}
             </div>
@@ -324,20 +354,24 @@ function UploadPanel({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="relative mx-auto max-w-[820px]"
+            className="relative mx-auto max-w-[760px]"
         >
             <button
                 onClick={onBack}
-                className="mb-8 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6F1D24]/55 transition-opacity hover:opacity-60"
+                className="mb-8 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#776158] transition-opacity hover:opacity-60"
             >
                 <ArrowLeft className="w-4 h-4" />
                 {t('design.back')}
             </button>
 
-            <h1 className="font-serif text-[clamp(2.45rem,5vw,4.7rem)] font-medium leading-[0.92] tracking-[-0.055em] text-[#6F1D24]">{t('design.uploadTitle')}</h1>
-            <p className="mb-10 mt-5 text-sm leading-7 text-[#776158]">
-                {t('design.uploadGarmentType')} <span className="font-medium text-[#6F1D24]">{catLabel}</span>
-            </p>
+            <div className="mx-auto mb-8 max-w-[620px] text-center">
+                <h1 className="font-serif text-[clamp(2.05rem,4vw,3.45rem)] font-medium leading-[0.92] tracking-[-0.05em] text-[#111111]">
+                    {t('design.uploadTitle')}
+                </h1>
+                <p className="mx-auto mt-3 max-w-[500px] text-sm leading-6 text-[#776158]">
+                    {t('design.uploadGarmentType')} <span className="font-medium text-[#111111]">{catLabel}</span>
+                </p>
+            </div>
 
             <div className="space-y-5">
                 {/* Drop zone */}
@@ -348,7 +382,7 @@ function UploadPanel({
                         const file = e.dataTransfer.files[0];
                         if (file) handleFile(file);
                     }}
-                    className="cursor-pointer border border-dashed border-[#6F1D24]/25 bg-[#FDFBF5] p-10 text-center shadow-[0_18px_45px_rgba(72,54,45,0.10)] transition-all duration-500 hover:-translate-y-1 hover:border-[#6F1D24]/45"
+                    className="cursor-pointer border border-dashed border-[#111111]/45 bg-[#E4E0D7] p-10 text-center transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(17,17,17,0.12)]"
                     onClick={() => inputRef.current?.click()}
                 >
                     <input
@@ -364,32 +398,32 @@ function UploadPanel({
 
                     {uploading ? (
                         <div className="flex flex-col items-center gap-2">
-                            <Loader2 className="w-8 h-8 animate-spin text-[#6F1D24]/55" />
+                            <Loader2 className="w-8 h-8 animate-spin text-[#111111]/55" />
                             <p className="text-sm text-[#776158]">{t('design.uploading')}</p>
                         </div>
                     ) : fileName ? (
                         <div className="flex flex-col items-center gap-3">
                             {previewUrl ? (
-                                <img src={previewUrl} alt="Design preview" className="max-h-40 object-contain border border-[#6F1D24]/15" />
+                                <img src={previewUrl} alt="Design preview" className="max-h-40 object-contain border border-[#111111]/20" />
                             ) : (
-                                <div className="flex h-12 w-12 items-center justify-center border border-[#6F1D24]/15 bg-[#F4EBD4]">
-                                    <FileText className="h-6 w-6 text-[#6F1D24]/45" />
+                                <div className="flex h-12 w-12 items-center justify-center border border-[#111111]/20 bg-[#E4E0D7]">
+                                    <FileText className="h-6 w-6 text-[#111111]/45" />
                                 </div>
                             )}
                             <p className="max-w-xs truncate text-sm font-medium text-[#261D1B]">{fileName}</p>
-                            {fileUrl && <p className="text-xs text-[#6F1D24]">{t('design.uploadedSuccess')}</p>}
+                            {fileUrl && <p className="text-xs text-[#111111]">{t('design.uploadedSuccess')}</p>}
                             <button
                                 type="button"
                                 onClick={e => { e.stopPropagation(); clearFile(); }}
-                                className="flex items-center gap-1 text-xs text-[#92615E] hover:text-[#6F1D24]"
+                                className="flex items-center gap-1 text-xs text-[#776158] hover:text-[#111111]"
                             >
                                 <X className="w-3 h-3" /> {t('design.remove')}
                             </button>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#6F1D24]/15 bg-[#F4EBD4]">
-                                <Upload className="h-6 w-6 text-[#6F1D24]/50" />
+                            <div className="flex h-12 w-12 items-center justify-center border border-[#111111]/25 bg-[#E4E0D7]">
+                                <Upload className="h-6 w-6 text-[#111111]/50" />
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-[#261D1B]">{t('design.dropZoneLabel')}</p>
@@ -400,21 +434,21 @@ function UploadPanel({
                 </div>
 
                 {uploadError && (
-                    <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg px-4 py-2.5">
+                    <p className="border border-[#6F1D24]/15 bg-[#FDFBF5] px-4 py-2.5 text-sm text-[#6F1D24]">
                         {uploadError}
                     </p>
                 )}
 
                 {/* Measurements */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        {t('design.sizesLabel')} <span className="text-slate-400 font-normal">{t('design.notesOptional')}</span>
+                    <label className="mb-1.5 block text-sm font-medium text-[#261D1B]">
+                        {t('design.sizesLabel')} <span className="font-normal text-[#776158]">{t('design.notesOptional')}</span>
                     </label>
-                    <p className="text-xs text-slate-400 mb-3">{t('design.sizesHint')}</p>
+                    <p className="mb-3 text-xs text-[#776158]">{t('design.sizesHint')}</p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {MEASUREMENT_FIELDS.map(field => (
                             <div key={field.key}>
-                                <label className="block text-xs text-slate-500 mb-1">{t(field.tKey)}</label>
+                                <label className="mb-1 block text-xs text-[#776158]">{t(field.tKey)}</label>
                                 <div className="relative">
                                     <input
                                         type="text"
@@ -422,9 +456,9 @@ function UploadPanel({
                                         value={measurements[field.key] ?? ''}
                                         onChange={e => setMeasurement(field.key, e.target.value)}
                                         placeholder="—"
-                                        className="w-full border border-slate-200 rounded-lg pl-3 pr-9 py-2.5 text-sm text-slate-900 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                                        className="w-full border border-[#111111]/25 bg-[#E4E0D7] py-2.5 pl-3 pr-9 text-sm text-[#111111] placeholder:text-[#111111]/30 focus:outline-none focus:ring-2 focus:ring-[#111111]"
                                     />
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">{t('design.cmUnit')}</span>
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#776158]">{t('design.cmUnit')}</span>
                                 </div>
                             </div>
                         ))}
@@ -438,11 +472,11 @@ function UploadPanel({
                             type="checkbox"
                             checked={wantsCustomization}
                             onChange={e => setWantsCustomization(e.target.checked)}
-                            className="mt-0.5 w-4 h-4 rounded border-slate-300 accent-slate-900 cursor-pointer"
+                            className="mt-0.5 h-4 w-4 cursor-pointer border-[#111111]/35 bg-[#E4E0D7] accent-[#111111]"
                         />
                         <span>
-                            <span className="block text-sm font-medium text-slate-700">{t('design.customizeLabel')}</span>
-                            <span className="block text-xs text-slate-400 mt-0.5">{t('design.customizeHint')}</span>
+                            <span className="block text-sm font-medium text-[#261D1B]">{t('design.customizeLabel')}</span>
+                            <span className="mt-0.5 block text-xs text-[#776158]">{t('design.customizeHint')}</span>
                         </span>
                     </label>
                     {wantsCustomization && (
@@ -458,9 +492,9 @@ function UploadPanel({
                                 placeholder={t('design.customizePlaceholder')}
                                 rows={4}
                                 maxLength={1000}
-                                className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
+                                className="w-full resize-none border border-[#111111]/25 bg-[#E4E0D7] px-4 py-3 text-sm text-[#111111] placeholder:text-[#776158] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                             />
-                            <p className={`text-xs mt-1 text-right ${customizationRequest.length > 900 ? 'text-slate-600' : 'text-slate-400'}`}>{customizationRequest.length} / 1000</p>
+                            <p className={`mt-1 text-right text-xs ${customizationRequest.length > 900 ? 'text-[#111111]' : 'text-[#776158]'}`}>{customizationRequest.length} / 1000</p>
                         </motion.div>
                     )}
                 </div>
@@ -468,7 +502,7 @@ function UploadPanel({
                 {/* Additional information */}
                 <div>
                     <label className="mb-1.5 block text-sm font-medium text-[#261D1B]">
-                        {t('design.notesLabel')} <span className="font-normal text-[#92615E]">{t('design.notesOptional')}</span>
+                        {t('design.notesLabel')} <span className="font-normal text-[#776158]">{t('design.notesOptional')}</span>
                     </label>
                     <textarea
                         value={notes}
@@ -476,9 +510,9 @@ function UploadPanel({
                         placeholder={t('design.notesPlaceholder')}
                         rows={2}
                         maxLength={500}
-                        className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
+                        className="w-full resize-none border border-[#111111]/25 bg-[#E4E0D7] px-4 py-2.5 text-sm text-[#111111] placeholder:text-[#776158] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                     />
-                    <p className={`mt-1 text-right text-xs ${notes.length > 450 ? 'text-[#6F1D24]' : 'text-[#92615E]'}`}>{notes.length} / 500</p>
+                    <p className={`mt-1 text-right text-xs ${notes.length > 450 ? 'text-[#111111]' : 'text-[#776158]'}`}>{notes.length} / 500</p>
                 </div>
 
                 <Button
@@ -490,7 +524,7 @@ function UploadPanel({
                         customizationRequest: wantsCustomization ? customizationRequest : '',
                         notes,
                     })}
-                    className="w-full"
+                    className="w-full rounded-none bg-[#111111] text-white hover:bg-[#333333]"
                 >
                     {t('design.continueToTailor')}
                     <ArrowRight className="w-4 h-4 ml-1.5" />
@@ -703,13 +737,13 @@ export default function DesignerApp() {
             <main className="relative overflow-hidden px-5 pb-8 pt-10 sm:px-8 sm:pt-12 md:pb-10 md:pt-14 lg:px-12">
                 <div className="relative z-10 mx-auto mb-4 flex max-w-[1050px] items-center justify-end gap-2">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#776158]">{t('section.shoppingFor')}</span>
-                    <div className="flex items-center rounded-full border border-[#6F1D24]/25 p-0.5">
+                    <div className="flex items-center rounded-full border border-[#111111]/25 p-0.5">
                         {(['women', 'men'] as Section[]).map(s => (
                             <button
                                 key={s}
                                 onClick={() => switchSection(s)}
                                 className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${
-                                    section === s ? 'bg-[#6F1D24] text-white' : 'text-[#6F1D24]/70 hover:text-[#6F1D24]'
+                                    section === s ? 'bg-[#111111] text-white' : 'text-[#111111]/70 hover:text-[#111111]'
                                 }`}
                             >
                                 {t(`section.${s}`)}
@@ -744,6 +778,7 @@ export default function DesignerApp() {
                     {flow.step === 'upload-type' && (
                         <UploadTypeStep
                             key="upload-type"
+                            gender={section}
                             onSelect={key => setFlow({ step: 'upload-file', category: key })}
                             onBack={() => searchParams.get('upload') === '1' ? navigate(-1) : setFlow({ step: 'category' })}
                         />
