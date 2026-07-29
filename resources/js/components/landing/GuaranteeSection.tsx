@@ -91,10 +91,6 @@ export function GuaranteeSection() {
             <div className="mx-auto max-w-[1180px]">
                 <div className="mb-8 flex flex-col gap-4 border-b border-[#F4EBD4]/25 pb-6 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.22em] text-[#C3A69A]">
-                            Kere Stories
-                        </p>
-
                         <h2 className="font-serif text-[clamp(1.45rem,2.7vw,2.45rem)] font-medium leading-[1.02] tracking-normal text-[#F4EBD4]">
                             {t('guarantee.title')}
                         </h2>
@@ -131,7 +127,7 @@ export function GuaranteeSection() {
 
                             <div className="absolute right-4 bottom-4 left-4 flex items-end justify-between text-white">
                                 <div>
-                                    <p className="text-xs font-bold uppercase tracking-[0.1em]">
+                                    <p className="text-xs font-bold">
                                         {current.reviewer}
                                     </p>
 
@@ -184,13 +180,7 @@ export function GuaranteeSection() {
 
                         <div className="mt-8 flex flex-col gap-5 border-t border-[#F4EBD4]/20 pt-5 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                {!current.location && current.id > 0 && (
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#C3A69A]">
-                                        {t('guarantee.verifiedPurchase')}
-                                    </p>
-                                )}
-
-                                <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#C3A69A]">
+                                <p className="mt-1 text-[10px] text-[#C3A69A]">
                                     {active + 1} / {reviews.length}
                                 </p>
                             </div>
@@ -247,15 +237,9 @@ export function GuaranteeSection() {
                         })}
                     </div>
 
-                    <div className="text-left sm:text-right">
-                        <p className="text-[10px] uppercase tracking-[0.12em] text-[#C3A69A]">
-                            {t('guarantee.shareStyle')}
-                        </p>
-
-                        <p className="mt-1 text-sm font-bold uppercase tracking-[0.04em] text-[#F4EBD4]">
-                            {t('guarantee.hashtag')}
-                        </p>
-                    </div>
+                    <p className="text-left text-sm font-bold text-[#F4EBD4] sm:text-right">
+                        {t('guarantee.hashtag')}
+                    </p>
                 </div>
             </div>
         </section>

@@ -41,10 +41,6 @@ export function FeaturesSection() {
           <div className="relative z-10 px-6 py-10 sm:px-10 sm:py-12 lg:px-14 lg:py-14">
             <div className="grid gap-6 border-b border-white/20 pb-8 md:grid-cols-[1.25fr_0.75fr] md:items-end md:pb-10">
               <div>
-                <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.3em] text-white/55">
-                  {t('features.sectionTitle')}
-                </p>
-
                 <h2 className="max-w-[680px] font-serif text-[clamp(1.9rem,3.8vw,4rem)] font-medium leading-[0.98] tracking-normal text-white">
                   {t('features.sectionTitle')}
                 </h2>
@@ -94,12 +90,7 @@ export function FeaturesSection() {
                 {t('features.sectionSubtitle')}
               </p>
 
-              <div className="flex items-center gap-3">
-                <span className="h-2 w-2 rounded-full bg-white" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/60">
-                  {t('features.sectionTitle')}
-                </span>
-              </div>
+              <span className="h-2 w-2 rounded-full bg-white" />
             </div>
           </div>
         </div>

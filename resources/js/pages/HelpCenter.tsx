@@ -77,7 +77,6 @@ export default function HelpCenter() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">{t('helpCenter.eyebrow')}</p>
                         <h1 className="text-4xl md:text-6xl font-black mb-6">{t('helpCenter.heroTitle')}</h1>
                         <p className="text-slate-300 max-w-xl mx-auto">{t('helpCenter.heroDesc')}</p>
                     </motion.div>

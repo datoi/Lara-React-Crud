@@ -16,7 +16,6 @@ export function CTASection() {
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
                 >
-                    <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.28em] text-[#8c8c8c]">{t('cta.tagline')}</p>
                     <h2 className="mx-auto max-w-3xl font-serif text-[clamp(1.65rem,3.1vw,3rem)] font-medium uppercase leading-[1] tracking-normal text-[#111111]">
                         {t('cta.title')}<br className="hidden sm:block" /> {t('cta.titleLine2')}
                     </h2>

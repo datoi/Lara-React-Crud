@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { ArrowRight, Check, ChevronDown, FileText, PencilRuler, Ruler } from 'lucide-react';
+import { ArrowRight, Check, FileText, PencilRuler, Ruler } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
 
@@ -13,7 +13,6 @@ interface GalleryImage {
 export function SizeFitSection() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
-  const [activeDetail, setActiveDetail] = useState<number | null>(0);
   const { t } = useTranslation();
 
   const galleryImages: GalleryImage[] = [
@@ -57,11 +56,6 @@ export function SizeFitSection() {
     },
   ];
 
-  const details = instructions.map((instruction) => ({
-    label: instruction.title,
-    value: instruction.description,
-  }));
-
   return (
     <section className="overflow-hidden bg-[#f7f6f3] px-4 py-20 sm:px-6 md:py-28 lg:px-8">
       <div className="mx-auto max-w-[1500px]">
@@ -97,10 +91,6 @@ export function SizeFitSection() {
                     objectPosition: image.position ?? 'center',
                   }}
                 />
-
-                <span className="absolute bottom-2 left-2 text-[9px] font-bold tracking-[0.16em] text-black/55">
-                  0{index + 1}
-                </span>
               </button>
             ))}
           </div>
@@ -125,29 +115,17 @@ export function SizeFitSection() {
 
               <div className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-black/55 via-black/10 to-transparent px-5 pb-5 pt-24 text-white sm:px-7 sm:pb-7">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/65">
-                    {t('sizeFit.badgeTop')}
-                  </p>
-
                   <p className="mt-2 font-serif text-xl font-medium tracking-normal sm:text-2xl">
                     {t('sizeFit.badgeBottom')}
                   </p>
                 </div>
-
-                <span className="hidden text-[10px] font-bold uppercase tracking-[0.2em] text-white/65 sm:block">
-                  Image 0{activeImage + 1}
-                </span>
               </div>
             </div>
           </div>
 
           <div className="order-3 flex flex-col lg:pl-5 xl:pl-10">
             <div className="border-b border-black/15 pb-8">
-              <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-[#8b8b8b]">
-                {t('sizeFit.badgeTop')}
-              </p>
-
-              <h3 className="mt-5 font-serif text-[clamp(1.45rem,2.25vw,2.25rem)] font-medium leading-[1.04] tracking-normal text-[#111111]">
+              <h3 className="font-serif text-[clamp(1.45rem,2.25vw,2.25rem)] font-medium leading-[1.04] tracking-normal text-[#111111]">
                 {t('sizeFit.title')}
               </h3>
 
@@ -155,7 +133,7 @@ export function SizeFitSection() {
             </div>
 
             <div className="divide-y divide-black/15 border-b border-black/15">
-              {instructions.map((instruction, index) => (
+              {instructions.map((instruction) => (
                 <div key={instruction.title} className="group grid grid-cols-[46px_1fr] gap-4 py-6">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full border border-black/20 text-[#111111] transition-colors duration-200 group-hover:bg-[#111111] group-hover:text-white">
                     <instruction.icon className="h-[18px] w-[18px] stroke-[1.5]" />
@@ -167,43 +145,12 @@ export function SizeFitSection() {
                         {instruction.title}
                       </h4>
 
-                      <span className="font-serif text-xl text-black/25">0{index + 1}</span>
                     </div>
 
                     <p className="mt-2 text-xs leading-6 text-[#777777] sm:text-sm">{instruction.description}</p>
                   </div>
                 </div>
               ))}
-            </div>
-
-            <div className="mt-7 border-y border-black/15">
-              <p className="py-4 text-[10px] font-bold uppercase tracking-[0.24em] text-[#777777]">
-                {t('sizeFit.viewGuide')}
-              </p>
-
-              {details.map((detail, index) => {
-                const isOpen = activeDetail === index;
-
-                return (
-                  <div key={detail.label} className="border-t border-black/15">
-                    <button
-                      type="button"
-                      onClick={() => setActiveDetail(isOpen ? null : index)}
-                      className="flex w-full items-center justify-between gap-5 py-4 text-left"
-                    >
-                      <span className="text-xs font-bold uppercase tracking-[0.1em] text-[#111111]">{detail.label}</span>
-
-                      <ChevronDown className={['h-4 w-4 transition-transform duration-200', isOpen ? 'rotate-180' : ''].join(' ')} />
-                    </button>
-
-                    <div className={['grid transition-all duration-300', isOpen ? 'grid-rows-[1fr] pb-4' : 'grid-rows-[0fr]'].join(' ')}>
-                      <div className="overflow-hidden">
-                        <p className="text-sm leading-6 text-[#777777]">{detail.value}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
             </div>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
@@ -226,9 +173,6 @@ export function SizeFitSection() {
               </button>
             </div>
 
-            <p className="mt-auto pt-10 text-[10px] uppercase leading-5 tracking-[0.15em] text-[#999999]">
-              {t('sizeFit.subtitle')}
-            </p>
           </div>
         </div>
       </div>

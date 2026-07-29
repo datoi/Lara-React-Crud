@@ -29,7 +29,6 @@ export default function AboutUs() {
             <section className="pt-24 pb-16 md:pt-28 md:pb-24 bg-slate-900 text-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="max-w-3xl">
-                        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">{t('aboutUs.eyebrow')}</p>
                         <h1 className="text-4xl md:text-6xl font-black mb-6">{t('aboutUs.heroTitle')}</h1>
                         <p className="text-lg text-slate-300 leading-relaxed">{t('aboutUs.heroDesc')}</p>
                     </motion.div>

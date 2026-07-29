@@ -56,7 +56,6 @@ export default function OurTailors() {
             <section className="pt-24 pb-16 md:pt-28 md:pb-24 bg-slate-900 text-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">{t('ourTailors.eyebrow')}</p>
                         <h1 className="text-4xl md:text-6xl font-black mb-6">{t('ourTailors.heroTitle')}</h1>
                         <p className="text-lg text-slate-300 max-w-2xl mx-auto">{t('ourTailors.heroDesc')}</p>
                     </motion.div>

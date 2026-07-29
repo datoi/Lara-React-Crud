@@ -76,20 +76,20 @@ export default function SectionSelect() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: 0.1 + i * 0.08 }}
-                            className="group relative block text-left transition-transform duration-500 hover:z-10 hover:-translate-y-2 hover:scale-[1.045] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7]"
+                            className="group relative block text-left focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7]"
                         >
-                            <article className="transition-shadow duration-500 group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)]">
+                            <article>
                                 <div className="mb-2 flex items-start justify-between gap-3">
                                     <p className="text-[10px] font-semibold leading-none tracking-[-0.02em] text-[#111111] sm:text-[11px]">
                                         {t(opt.tKey)}
                                     </p>
                                 </div>
 
-                                <div className="flex h-[178px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-4 sm:h-[230px] sm:p-5">
+                                <div className="flex h-[178px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-4 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[230px] sm:p-5">
                                     <img
                                         src={opt.image}
                                         alt={t(opt.tKey)}
-                                        className="h-full w-full object-contain mix-blend-multiply transition-transform duration-700 group-hover:scale-[1.03]"
+                                        className="h-full w-full object-contain mix-blend-multiply"
                                     />
                                 </div>
 
@@ -99,9 +99,6 @@ export default function SectionSelect() {
                                     </p>
                                     <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-[#111111] transition-transform duration-500 group-hover:translate-x-1" />
                                 </div>
-                                <p className="mt-2 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#111111]/45">
-                                    {opt.note}
-                                </p>
                             </article>
                         </motion.button>
                     ))}
