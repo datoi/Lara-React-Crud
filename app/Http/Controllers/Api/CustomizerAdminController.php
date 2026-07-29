@@ -16,6 +16,7 @@ use App\Models\LayerOption;
 use App\Models\LayerOptionColor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -318,6 +319,31 @@ class CustomizerAdminController extends Controller
         }
 
         return response()->json(['color' => new LayerOptionColorResource($color->fresh())]);
+    }
+
+    public function reorderOptionColors(Request $request, int $id): JsonResponse
+    {
+        $option = LayerOption::findOrFail($id);
+
+        $data = $request->validate([
+            'order' => ['required', 'array', 'min:1'],
+            'order.*' => ['integer'],
+        ]);
+
+        $ownIds = $option->colors()->pluck('id')->all();
+        if (count($data['order']) !== count($ownIds) || array_diff($data['order'], $ownIds)) {
+            return response()->json(['message' => "Order must be a permutation of this style's colours."], 422);
+        }
+
+        DB::transaction(function () use ($data) {
+            foreach ($data['order'] as $position => $colorId) {
+                LayerOptionColor::where('id', $colorId)->update(['display_order' => $position]);
+            }
+        });
+
+        return response()->json([
+            'colors' => LayerOptionColorResource::collection($option->colors()->get()),
+        ]);
     }
 
     public function destroyOptionColor(int $colorId): JsonResponse

@@ -11,10 +11,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router';
-import { motion } from 'motion/react';
+import { motion, Reorder, useDragControls } from 'motion/react';
 import {
     Plus, Trash2, Loader2, ChevronDown, ChevronUp,
-    Upload, ArrowLeft, X,
+    Upload, ArrowLeft, X, GripVertical,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { getAuthToken, getAuthUser } from '../hooks/useAuth';
@@ -584,9 +584,10 @@ function ViewImageSlot({
     );
 }
 
-function ColorVariantRow({ color, token, onRefresh }: { color: OptionColor; token: string; onRefresh: () => void }) {
+function ColorVariantRow({ color, token, onRefresh, onReorderEnd }: { color: OptionColor; token: string; onRefresh: () => void; onReorderEnd: () => void }) {
     const [busyField, setBusyField] = useState<string | null>(null);
     const [error, setError]         = useState<string | null>(null);
+    const dragControls = useDragControls();
 
     const uploadImage = async (field: 'image' | 'back_image' | 'left_image' | 'right_image', file: File) => {
         setBusyField(field);
@@ -629,8 +630,25 @@ function ColorVariantRow({ color, token, onRefresh }: { color: OptionColor; toke
     };
 
     return (
-        <div className="border border-slate-200 rounded-lg p-2.5 bg-white">
+        <Reorder.Item
+            as="div"
+            value={color}
+            dragListener={false}
+            dragControls={dragControls}
+            onDragEnd={onReorderEnd}
+            transition={{ duration: 0.2 }}
+            className="border border-slate-200 rounded-lg p-2.5 bg-white"
+        >
             <div className="flex items-center gap-3">
+                <button
+                    type="button"
+                    onPointerDown={e => dragControls.start(e)}
+                    className="cursor-grab touch-none p-0.5 text-slate-300 hover:text-slate-500 active:cursor-grabbing shrink-0"
+                    title="Drag to reorder"
+                    aria-label={`Drag to reorder ${color.name}`}
+                >
+                    <GripVertical className="w-4 h-4" />
+                </button>
                 <span
                     className="w-6 h-6 rounded-full border border-slate-200 shrink-0"
                     style={{ backgroundColor: color.color_hex }}
@@ -654,7 +672,7 @@ function ColorVariantRow({ color, token, onRefresh }: { color: OptionColor; toke
             </div>
 
             {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
-        </div>
+        </Reorder.Item>
     );
 }
 
@@ -787,6 +805,24 @@ function StyleCard({
     const [saveError, setSaveError]           = useState<string | null>(null);
     const subFileRef = useRef<HTMLInputElement>(null);
 
+    // Local, drag-reorderable copy of the colours; re-synced whenever the server data changes.
+    const [colors, setColors] = useState<OptionColor[]>(option.colors ?? []);
+    const colorsRef = useRef(colors);
+    useEffect(() => { setColors(option.colors ?? []); }, [option.colors]);
+    useEffect(() => { colorsRef.current = colors; }, [colors]);
+
+    const persistColorOrder = async () => {
+        setSaveError(null);
+        try {
+            const res = await fetch(`/api/admin/customizer/options/${option.id}/colors/reorder`, {
+                method: 'PUT',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({ order: colorsRef.current.map(c => c.id) }),
+            });
+            if (!res.ok) throw new Error();
+        } catch { setSaveError('Could not save colour order.'); }
+    };
+
     const children: LayerOption[] = option.children ?? [];
 
     const handleUploadView = async (field: 'back_image' | 'left_image' | 'right_image', file: File) => {
@@ -867,9 +903,17 @@ function StyleCard({
                     </p>
 
                     <div className="mt-2 space-y-2">
-                        {(option.colors ?? []).map(color => (
-                            <ColorVariantRow key={color.id} color={color} token={token} onRefresh={onRefresh} />
-                        ))}
+                        <Reorder.Group as="div" axis="y" values={colors} onReorder={setColors} className="space-y-2">
+                            {colors.map(color => (
+                                <ColorVariantRow
+                                    key={color.id}
+                                    color={color}
+                                    token={token}
+                                    onRefresh={onRefresh}
+                                    onReorderEnd={persistColorOrder}
+                                />
+                            ))}
+                        </Reorder.Group>
 
                         <AddColorForm optionId={option.id} token={token} onRefresh={onRefresh} />
                     </div>

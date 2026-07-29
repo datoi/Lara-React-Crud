@@ -140,6 +140,7 @@ Route::middleware(['auth.bearer', 'auth.admin', 'throttle:30,1,api-admin'])->pre
         Route::delete('/options/{id}', [CustomizerAdminController::class, 'destroyOption']);
 
         Route::post('/options/{id}/colors', [CustomizerAdminController::class, 'storeOptionColor']);
+        Route::put('/options/{id}/colors/reorder', [CustomizerAdminController::class, 'reorderOptionColors']);
         Route::put('/options/colors/{colorId}', [CustomizerAdminController::class, 'updateOptionColor']);
         Route::delete('/options/colors/{colorId}', [CustomizerAdminController::class, 'destroyOptionColor']);
         // Fabrics
