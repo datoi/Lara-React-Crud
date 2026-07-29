@@ -15,7 +15,6 @@ export default function PrivacyPolicy() {
             <section className="pt-24 pb-16 md:pt-28 md:pb-24 bg-slate-900 text-white">
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">{t('privacy.eyebrow')}</p>
                         <h1 className="text-4xl md:text-5xl font-black mb-4">{doc.title}</h1>
                         <p className="text-slate-400 text-sm">{doc.version}</p>
                     </motion.div>

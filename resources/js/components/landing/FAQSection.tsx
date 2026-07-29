@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, Plus, X, Loader2, CheckCircle } from 'lucide-react';
+import { Plus, X, Loader2, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
@@ -183,23 +183,14 @@ export function FAQSection() {
         <section id="faq" className="overflow-hidden bg-[#f7f6f3] px-4 py-20 sm:px-6 md:py-28 lg:px-8">
             <div className="mx-auto max-w-[1500px]">
                 <div className="border-b border-black/20 pb-8 sm:pb-10">
-                    <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.28em] text-[#8c8c8c]">
-                        {t('faq.emailSupport')}
-                    </p>
-
                     <h2 className="font-serif text-[clamp(1.65rem,3.1vw,3rem)] font-medium uppercase leading-[1] tracking-normal text-[#111111]">
                         {t('faq.sectionTitle')}
                     </h2>
-
-                    <p className="mt-8 max-w-xl text-sm leading-7 text-[#717171] sm:text-base">
-                        {t('faq.sectionSubtitle')}
-                    </p>
                 </div>
 
                 <div className="mx-auto max-w-5xl">
                     {faqs.map((faq, i) => {
                         const isOpen = open === i;
-                        const number = String(i + 1).padStart(2, '0');
                         const panelId = `faq-panel-${i}`;
                         const buttonId = `faq-button-${i}`;
 
@@ -211,14 +202,8 @@ export function FAQSection() {
                                     onClick={() => setOpen(isOpen ? null : i)}
                                     aria-expanded={isOpen}
                                     aria-controls={panelId}
-                                    className="group grid w-full grid-cols-[52px_minmax(0,1fr)_36px] items-center gap-4 py-6 text-left sm:grid-cols-[84px_minmax(0,1fr)_46px] sm:py-8 lg:grid-cols-[110px_minmax(0,1fr)_50px] lg:py-9"
+                                    className="group grid w-full grid-cols-[minmax(0,1fr)_36px] items-center gap-4 py-6 text-left sm:grid-cols-[minmax(0,1fr)_46px] sm:py-8 lg:grid-cols-[minmax(0,1fr)_50px] lg:py-9"
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-xs font-bold tracking-[0.12em] text-[#333333]">{number}</span>
-
-                                        <ArrowRight className="h-3.5 w-3.5 text-[#444444] transition-transform duration-300 group-hover:translate-x-1" />
-                                    </div>
-
                                     <h3 className="justify-self-start text-sm font-semibold leading-6 tracking-normal text-[#111111] sm:text-base">
                                         {faq.q}
                                     </h3>
@@ -243,9 +228,7 @@ export function FAQSection() {
                                     ].join(' ')}
                                 >
                                     <div className="overflow-hidden">
-                                        <div className="grid grid-cols-[52px_minmax(0,1fr)_36px] gap-4 pb-7 sm:grid-cols-[84px_minmax(0,1fr)_46px] sm:pb-9 lg:grid-cols-[110px_minmax(0,1fr)_50px] lg:pb-10">
-                                            <div />
-
+                                        <div className="grid grid-cols-[minmax(0,1fr)_36px] gap-4 pb-7 sm:grid-cols-[minmax(0,1fr)_46px] sm:pb-9 lg:grid-cols-[minmax(0,1fr)_50px] lg:pb-10">
                                             <p className="max-w-2xl text-xs leading-6 text-[#707070] sm:text-sm">
                                                 {faq.a}
                                             </p>
@@ -275,7 +258,6 @@ export function FAQSection() {
                         className="inline-flex min-h-[50px] w-fit items-center justify-center gap-3 border border-black/30 px-7 text-[11px] font-bold uppercase tracking-[0.14em] text-[#111111] transition-colors duration-200 hover:bg-[#111111] hover:text-white"
                     >
                         {t('faq.emailSupport')}
-                        <ArrowRight className="h-4 w-4" />
                     </button>
                 </div>
             </div>

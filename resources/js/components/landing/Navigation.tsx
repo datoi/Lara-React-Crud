@@ -95,7 +95,7 @@ export function Navigation() {
                 <div className="flex min-w-0 items-center gap-4 sm:gap-7">
                     <button
                         onClick={() => setMobileOpen(!mobileOpen)}
-                        className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 lg:hidden ${navTextClass}`}
+                        className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 ${navTextClass}`}
                         aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
                     >
                         {mobileOpen ? <X className="h-[18px] w-[18px] stroke-[1.5]" /> : <Menu className="h-[18px] w-[18px] stroke-[1.5]" />}
@@ -105,7 +105,7 @@ export function Navigation() {
                     </button>
 
                     {showSiteAnchors && (
-                        <div className="hidden items-center gap-7 lg:flex">
+                        <div className="hidden items-center gap-7 xl:flex">
                             <a
                                 href="#how-it-works"
                                 className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
@@ -137,6 +137,10 @@ export function Navigation() {
                     >
                         {t('nav.forTailors')}
                     </Link>
+
+                    <div className="inline-flex sm:hidden">
+                        <LanguageToggle isOverDark={isOverDark} />
+                    </div>
 
                     {user ? (
                         <>
@@ -179,7 +183,7 @@ export function Navigation() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[130] bg-white lg:hidden"
+                        className="fixed inset-0 z-[1000] bg-[#E4E0D7]"
                         onMouseDown={(event) => {
                             if (event.target === event.currentTarget) {
                                 setMobileOpen(false);
@@ -191,7 +195,7 @@ export function Navigation() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -12 }}
                             transition={{ duration: 0.5 }}
-                            className="flex min-h-[100dvh] w-full flex-col overflow-y-auto bg-white px-6 pb-8 pt-6 text-[#111111] sm:px-10 lg:px-16"
+                            className="flex min-h-[100dvh] w-full flex-col overflow-y-auto bg-[#E4E0D7] px-5 pb-7 pt-5 text-[#111111] sm:px-8 sm:pb-9 sm:pt-7 lg:px-12"
                         >
                             <div className="grid grid-cols-[1fr_auto_1fr] items-center">
                                 <button
@@ -205,62 +209,65 @@ export function Navigation() {
                                 <Link
                                     to="/"
                                     onClick={() => setMobileOpen(false)}
-                                    className="justify-self-center text-center text-[clamp(1.5rem,5vw,2.4rem)] font-semibold uppercase leading-none tracking-[0.1em] text-[#111111]"
+                                    className="justify-self-center text-center text-[clamp(1.45rem,4vw,2.15rem)] font-medium leading-none tracking-normal text-[#111111]"
                                 >
                                     Kere
                                 </Link>
 
-                                <Link
-                                    to="/marketplace"
-                                    onClick={() => setMobileOpen(false)}
-                                    aria-label="Marketplace"
-                                    className="justify-self-end text-[#111111] transition-opacity hover:opacity-55"
-                                >
-                                    <ShoppingBag className="h-7 w-7 stroke-[1.6] sm:h-8 sm:w-8" />
-                                </Link>
+                                <div className="flex items-center justify-end gap-4">
+                                    <LanguageToggle isOverDark={false} />
+
+                                    <Link
+                                        to="/marketplace"
+                                        onClick={() => setMobileOpen(false)}
+                                        aria-label="Marketplace"
+                                        className="text-[#111111] transition-opacity hover:opacity-55"
+                                    >
+                                        <ShoppingBag className="h-6 w-6 stroke-[1.6] sm:h-7 sm:w-7" />
+                                    </Link>
+                                </div>
                             </div>
 
-                            <div className="mx-auto mt-14 flex w-full max-w-[620px] items-center gap-4 border-b border-black/14 pb-3 sm:mt-16 sm:gap-5">
-                                <Search className="h-6 w-6 shrink-0 text-black/22 sm:h-7 sm:w-7" />
+                            <div className="mx-auto mt-10 flex w-full max-w-[720px] items-center gap-4 border-b border-black/14 pb-3 sm:mt-12 sm:gap-5">
+                                <Search className="h-5 w-5 shrink-0 text-black/28 sm:h-6 sm:w-6" />
                                 <input
                                     readOnly
                                     aria-label={t('marketplace.searchPlaceholder')}
                                     placeholder={t('marketplace.searchPlaceholder')}
-                                    className="w-full border-0 bg-transparent p-0 text-[clamp(0.95rem,3vw,1.35rem)] font-light tracking-[0.03em] text-[#111111] placeholder:text-black/48 focus:outline-none focus:ring-0"
+                                    className="w-full border-0 bg-transparent p-0 text-[clamp(0.9rem,2.1vw,1.12rem)] font-light tracking-normal text-[#111111] placeholder:text-black/50 focus:outline-none focus:ring-0"
                                 />
                             </div>
 
-                            <nav className="mx-auto mt-10 flex w-full max-w-[620px] flex-1 flex-col gap-5 sm:mt-12 sm:gap-6 lg:mt-10 lg:grid lg:grid-cols-2 lg:gap-x-14 lg:gap-y-5">
+                            <nav className="mx-auto mt-8 grid w-full max-w-[720px] flex-1 gap-0 border-t border-black/10 sm:mt-10 md:grid-cols-2">
                                 {showSiteAnchors && (
-                                    <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                    <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
                                         {t('nav.howItWorks')}
                                     </a>
                                 )}
-                                <Link to="/marketplace" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                <Link to="/marketplace" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
                                     {t('marketplace.title')}
                                 </Link>
-                                <Link to="/design" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                <Link to="/design" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
                                     {t('nav.startDesigning')}
                                 </Link>
-                                <Link to="/partners" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                <Link to="/partners" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
                                     {t('nav.forTailors')}
                                 </Link>
                                 {showSiteAnchors && (
-                                    <a href="#faq" onClick={() => setMobileOpen(false)} className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45">
+                                    <a href="#faq" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
                                         {t('nav.faq')}
                                     </a>
                                 )}
                                 <Link
                                     to={user ? (user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard') : '/signin'}
                                     onClick={() => setMobileOpen(false)}
-                                    className="text-[clamp(1.1rem,3.2vw,1.8rem)] font-light lowercase leading-[1.25] tracking-[0.04em] text-[#111111] transition-opacity hover:opacity-45"
+                                    className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5"
                                 >
                                     {user ? `${user.first_name} ${user.last_name}` : t('nav.signIn')}
                                 </Link>
                             </nav>
 
-                            <div className="mx-auto mt-10 flex w-full max-w-[620px] items-center justify-between border-t border-black/10 pt-5">
-                                <LanguageToggle isOverDark={false} />
+                            <div className="mx-auto mt-6 flex w-full max-w-[720px] items-center justify-end pt-2">
                                 {!user && (
                                     <Link
                                         to="/signin"

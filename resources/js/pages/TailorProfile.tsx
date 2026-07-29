@@ -111,7 +111,7 @@ export default function TailorProfile() {
                                 </span>
                             )}
                         </div>
-                        {tailor.specialty && <p className="mb-5 max-w-xl text-sm font-semibold uppercase tracking-[0.14em] text-[#92615E]">{tailor.specialty}</p>}
+                        {tailor.specialty && <p className="mb-5 max-w-xl text-sm font-medium text-[#92615E]">{tailor.specialty}</p>}
 
                         <div className="mb-6 grid gap-3 border-y border-[#631E26]/15 py-5 text-sm sm:grid-cols-3">
                             {tailor.avg_rating !== null && (

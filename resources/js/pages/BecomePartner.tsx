@@ -104,10 +104,6 @@ function ProcessExperience({ title, subtitle, steps }: ProcessExperienceProps) {
         <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
             <div>
                 <div className="mb-9">
-                    <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.22em] text-[#6F1D24]/45">
-                        Process
-                    </p>
-
                     <h2 className="max-w-[650px] font-serif text-[clamp(2.6rem,5vw,5rem)] font-medium leading-[0.92] tracking-[-0.05em] text-[#6F1D24]">
                         {title}
                     </h2>
@@ -216,11 +212,7 @@ function ProcessExperience({ title, subtitle, steps }: ProcessExperienceProps) {
 
                     <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between text-white">
                         <div>
-                            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/60">
-                                Step {current.number}
-                            </p>
-
-                            <p className="mt-2 max-w-sm font-serif text-2xl font-medium leading-tight tracking-[-0.03em]">
+                            <p className="max-w-sm font-serif text-2xl font-medium leading-tight tracking-[-0.03em]">
                                 {current.title}
                             </p>
                         </div>
@@ -421,11 +413,7 @@ export default function BecomePartner() {
                                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                                 className="border-b border-white/25 pb-5 text-white"
                             >
-                                <p className="text-[8px] font-semibold uppercase tracking-[0.22em] text-white/60">
-                                    Kere Partner Program
-                                </p>
-
-                                <h2 className="mt-3 max-w-[520px] font-serif text-[clamp(1.8rem,2.6vw,3.05rem)] font-normal leading-[1.03] tracking-[-0.01em] text-white">
+                                <h2 className="max-w-[520px] font-serif text-[clamp(1.8rem,2.6vw,3.05rem)] font-normal leading-[1.03] tracking-[-0.01em] text-white">
                                     {t('partners.whyTitle')}
                                 </h2>
 
@@ -521,11 +509,7 @@ export default function BecomePartner() {
                         subtitle={t('partners.howSubtitle')}
                     />
 
-                    <div className="mt-9 flex flex-col gap-5 border-t border-[#6F1D24]/15 pt-7 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-[9px] font-medium uppercase tracking-[0.18em] text-[#6F1D24]/45">
-                            Kere partner process
-                        </p>
-
+                    <div className="mt-9 flex flex-col gap-5 border-t border-[#6F1D24]/15 pt-7 sm:flex-row sm:items-center sm:justify-end">
                         <PartnerCTA
                             label={t('partners.getStarted')}
                             className="group inline-flex min-h-[46px] items-center justify-center gap-3 rounded-full bg-[#1D1D1D] px-7 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#333333]"

@@ -144,16 +144,16 @@ function CategoryStep({
                         transition={{ duration: 0.5, delay: i * 0.07 }}
                         className="group block text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7]"
                     >
-                        <article className="transition-transform duration-500 group-hover:-translate-y-1">
+                        <article>
                             <p className="mb-2 text-[10px] font-semibold leading-none tracking-[-0.02em] text-[#111111] sm:text-[11px]">
                                 {t(cat.tKey)}
                             </p>
 
-                            <div className="flex h-[132px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-3 sm:h-[156px] sm:p-4 lg:h-[178px]">
+                            <div className="flex h-[132px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-3 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[156px] sm:p-4 lg:h-[178px]">
                                 <img
                                     src={CATEGORY_VISUALS[cat.key]?.image}
                                     alt={t(cat.tKey)}
-                                    className="h-full w-full object-contain mix-blend-multiply transition-transform duration-700 group-hover:scale-[1.035]"
+                                    className="h-full w-full object-contain mix-blend-multiply"
                                 />
                             </div>
                         </article>
@@ -210,9 +210,9 @@ function UploadTypeStep({
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: i * 0.07 }}
-                        className="group relative block text-left transition-transform duration-500 hover:z-10 hover:-translate-y-2 hover:scale-[1.045] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7]"
+                        className="group relative block text-left focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7]"
                     >
-                        <article className="transition-shadow duration-500 group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)]">
+                        <article>
                             <div className="mb-2 flex items-start justify-between gap-3">
                                 <p className="text-[10px] font-semibold leading-none tracking-[-0.02em] text-[#111111] sm:text-[11px]">
                                     {t(cat.tKey)}
@@ -220,15 +220,15 @@ function UploadTypeStep({
                             </div>
 
                             {gender === 'women' ? (
-                                <div className="flex h-[132px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-3 sm:h-[156px] sm:p-4 lg:h-[178px]">
+                                <div className="flex h-[132px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-3 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[156px] sm:p-4 lg:h-[178px]">
                                     <img
                                         src={CATEGORY_VISUALS[cat.key]?.image}
                                         alt={t(cat.tKey)}
-                                        className="h-full w-full object-contain mix-blend-multiply transition-transform duration-700 group-hover:scale-[1.03]"
+                                        className="h-full w-full object-contain mix-blend-multiply"
                                     />
                                 </div>
                             ) : (
-                                <div className="flex h-[112px] items-end border border-[#111111]/45 bg-[#E4E0D7] p-4 sm:h-[132px] sm:p-5 lg:h-[150px]">
+                                <div className="flex h-[112px] items-end border border-[#111111]/45 bg-[#E4E0D7] p-4 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[132px] sm:p-5 lg:h-[150px]">
                                     <p className="font-serif text-[clamp(1.35rem,3vw,2rem)] font-medium leading-[0.95] tracking-[-0.04em] text-[#111111]">
                                         {t(cat.tKey)}
                                     </p>
