@@ -609,6 +609,16 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-07-29] SMS Live via SMSOffice.ge + Silent-Rejection Fix
+
+**What was done:** Took the SMSOffice.ge SMS gateway from configured-but-dormant to confirmed live delivery, and fixed a silent-failure bug that had masked a rejected send.
+
+- **SMS confirmed live:** `SMSOFFICE_KEY` is set and funded; the "Kere" sender name is now activated on the SMSOffice account. A real OTP-style SMS was delivered end-to-end to a +995 number with "Kere" as the sender. This supersedes the 2026-07-22 note that SMS was "logged, not delivered."
+- **Silent-rejection fix (`SmsService`):** SMSOffice returns **HTTP 200 even when it rejects a message** (real status is in the JSON body: `{"Success":false,"Message":"...","ErrorCode":N}`). The old code only checked `$response->failed()` (HTTP ≥ 400), so rejections like `sender is not active` (ErrorCode 165) / `invalid sender` (150) passed as success with no log. `SmsService::send` now parses the body and `Log::error`s `SMS rejected for {phone}: {Message} (ErrorCode {code})` when `Success` is false. Successful sends stay silent.
+- **Not changed:** tailor auth is still phone-identified **with a password** (SMS OTP is registration-verification only, not passwordless login).
+
+**Prod note:** ensure `SMSOFFICE_KEY`/`SMSOFFICE_SENDER=Kere` are set on Railway and the SMSOffice balance stays funded — a depleted balance will now surface as a logged rejection rather than a silent no-op.
+
 ### [2026-07-22] Tailor Phone Verification + Dual-Channel (SMS + Email) Notifications
 
 **What was done:** Finished the phone-first tailor flow so Georgian tailors (who often have no email) verify and get notified by SMS, with email as an optional bonus channel.

@@ -38,6 +38,17 @@ class SmsService
 
             if ($response->failed()) {
                 Log::error("SMS gateway HTTP {$response->status()} for {$phone}: ".$response->body());
+
+                return;
+            }
+
+            // SMSOffice returns HTTP 200 even on rejection; the real status is in
+            // the body ({"Success":false,"Message":"...","ErrorCode":N}).
+            $body = $response->json();
+            if (! ($body['Success'] ?? false)) {
+                $reason = $body['Message'] ?? 'unknown';
+                $code = $body['ErrorCode'] ?? '?';
+                Log::error("SMS rejected for {$phone}: {$reason} (ErrorCode {$code})");
             }
         } catch (\Throwable $e) {
             Log::error("SMS failed for {$phone}: ".$e->getMessage());
