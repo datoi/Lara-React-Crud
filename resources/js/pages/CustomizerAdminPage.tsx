@@ -788,6 +788,45 @@ function AddColorForm({ optionId, token, onRefresh }: { optionId: number; token:
     );
 }
 
+function SubStyleRow({ child, onDelete, onReorderEnd }: { child: LayerOption; onDelete: () => void; onReorderEnd: () => void }) {
+    const dragControls = useDragControls();
+    return (
+        <Reorder.Item
+            as="div"
+            value={child}
+            dragListener={false}
+            dragControls={dragControls}
+            onDragEnd={onReorderEnd}
+            transition={{ duration: 0.2 }}
+            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-1.5"
+        >
+            <button
+                type="button"
+                onPointerDown={e => dragControls.start(e)}
+                className="cursor-grab touch-none p-0.5 text-slate-300 hover:text-slate-500 active:cursor-grabbing shrink-0"
+                title="Drag to reorder"
+                aria-label={`Drag to reorder ${child.name}`}
+            >
+                <GripVertical className="w-4 h-4" />
+            </button>
+            <div
+                className="w-8 h-10 rounded overflow-hidden shrink-0 border border-slate-200"
+                style={{ backgroundImage: 'repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%)', backgroundSize: '8px 8px' }}
+            >
+                <img src={child.thumbnail_url} alt={child.name} className="w-full h-full object-contain" />
+            </div>
+            <span className="flex-1 text-[11px] font-medium text-slate-600 truncate">{child.name}</span>
+            <button
+                onClick={onDelete}
+                className="text-slate-400 hover:text-slate-700 transition-colors p-1 shrink-0"
+                title="Delete sub-style"
+            >
+                <X className="w-3 h-3" />
+            </button>
+        </Reorder.Item>
+    );
+}
+
 function StyleCard({
     option, categoryId, token, onDelete, onRefresh, onReorderEnd,
 }: {
@@ -825,7 +864,22 @@ function StyleCard({
         } catch { setSaveError('Could not save colour order.'); }
     };
 
-    const children: LayerOption[] = option.children ?? [];
+    // Local, drag-reorderable copy of this style's sub-styles; re-synced from the server.
+    const [children, setChildren] = useState<LayerOption[]>(option.children ?? []);
+    const childrenRef = useRef(children);
+    useEffect(() => { setChildren(option.children ?? []); }, [option.children]);
+    useEffect(() => { childrenRef.current = children; }, [children]);
+
+    const persistChildOrder = async () => {
+        try {
+            const res = await fetch(`/api/admin/customizer/options/${option.id}/children/reorder`, {
+                method: 'PUT',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({ order: childrenRef.current.map(c => c.id) }),
+            });
+            if (!res.ok) throw new Error();
+        } catch { onRefresh(); }
+    };
 
     const handleUploadView = async (field: 'back_image' | 'left_image' | 'right_image', file: File) => {
         setUploadingView(field);
@@ -974,29 +1028,18 @@ function StyleCard({
                     <span className="text-slate-400 font-normal ml-1">(e.g. collar variants)</span>
                 </p>
 
-                {/* Existing sub-styles */}
+                {/* Existing sub-styles — drag the grip handle to reorder */}
                 {children.length > 0 && (
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <Reorder.Group as="div" axis="y" values={children} onReorder={setChildren} className="space-y-1.5">
                         {children.map(child => (
-                            <div key={child.id} className="relative group/sub rounded-lg overflow-hidden border border-slate-200 bg-white">
-                                <div
-                                    className="aspect-[3/4] w-full overflow-hidden"
-                                    style={{ backgroundImage: 'repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%)', backgroundSize: '8px 8px' }}
-                                >
-                                    <img src={child.thumbnail_url} alt={child.name} className="w-full h-full object-contain" />
-                                </div>
-                                <div className="px-1.5 py-1 text-center">
-                                    <p className="text-[10px] font-medium text-slate-600 truncate">{child.name}</p>
-                                </div>
-                                <button
-                                    onClick={() => handleDeleteSubStyle(child.id)}
-                                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/80 border border-slate-200 flex items-center justify-center opacity-0 group-hover/sub:opacity-100 transition-opacity hover:bg-slate-100"
-                                >
-                                    <X className="w-2.5 h-2.5 text-slate-500" />
-                                </button>
-                            </div>
+                            <SubStyleRow
+                                key={child.id}
+                                child={child}
+                                onDelete={() => handleDeleteSubStyle(child.id)}
+                                onReorderEnd={persistChildOrder}
+                            />
                         ))}
-                    </div>
+                    </Reorder.Group>
                 )}
 
                 {/* Add sub-style */}

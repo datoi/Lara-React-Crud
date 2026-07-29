@@ -321,6 +321,29 @@ class CustomizerAdminController extends Controller
         return response()->json(['color' => new LayerOptionColorResource($color->fresh())]);
     }
 
+    public function reorderOptionChildren(Request $request, int $id): JsonResponse
+    {
+        $option = LayerOption::findOrFail($id);
+
+        $data = $request->validate([
+            'order' => ['required', 'array', 'min:1'],
+            'order.*' => ['integer'],
+        ]);
+
+        $ownIds = $option->children()->pluck('id')->all();
+        if (count($data['order']) !== count($ownIds) || array_diff($data['order'], $ownIds)) {
+            return response()->json(['message' => "Order must be a permutation of this style's sub-styles."], 422);
+        }
+
+        DB::transaction(function () use ($data) {
+            foreach ($data['order'] as $position => $childId) {
+                LayerOption::where('id', $childId)->update(['display_order' => $position]);
+            }
+        });
+
+        return response()->json(['message' => 'Order saved.']);
+    }
+
     public function reorderCategoryOptions(Request $request, int $id): JsonResponse
     {
         $category = LayerCategory::findOrFail($id);
