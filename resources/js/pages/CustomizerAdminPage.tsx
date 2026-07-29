@@ -789,14 +789,16 @@ function AddColorForm({ optionId, token, onRefresh }: { optionId: number; token:
 }
 
 function StyleCard({
-    option, categoryId, token, onDelete, onRefresh,
+    option, categoryId, token, onDelete, onRefresh, onReorderEnd,
 }: {
     option: LayerOption;
     categoryId: number;
     token: string;
     onDelete: () => void;
     onRefresh: () => void;
+    onReorderEnd: () => void;
 }) {
+    const dragControls = useDragControls();
     const [addingSubStyle, setAddingSubStyle] = useState(false);
     const [subName, setSubName]               = useState('');
     const [subFile, setSubFile]               = useState<File | null>(null);
@@ -878,9 +880,26 @@ function StyleCard({
     };
 
     return (
-        <div className="border border-slate-200 rounded-xl overflow-hidden">
+        <Reorder.Item
+            as="div"
+            value={option}
+            dragListener={false}
+            dragControls={dragControls}
+            onDragEnd={onReorderEnd}
+            transition={{ duration: 0.2 }}
+            className="border border-slate-200 rounded-xl overflow-hidden"
+        >
             {/* Top-level option header */}
             <div className="flex items-center gap-3 p-3 bg-slate-50 border-b border-slate-100">
+                <button
+                    type="button"
+                    onPointerDown={e => dragControls.start(e)}
+                    className="cursor-grab touch-none p-0.5 text-slate-300 hover:text-slate-500 active:cursor-grabbing shrink-0"
+                    title="Drag to reorder"
+                    aria-label={`Drag to reorder ${option.name}`}
+                >
+                    <GripVertical className="w-4 h-4" />
+                </button>
                 <div
                     className="w-12 h-14 rounded-lg overflow-hidden shrink-0 border border-slate-200"
                     style={{ backgroundImage: 'repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%)', backgroundSize: '8px 8px' }}
@@ -1032,7 +1051,7 @@ function StyleCard({
                     </button>
                 )}
             </div>
-        </div>
+        </Reorder.Item>
     );
 }
 
@@ -1057,6 +1076,23 @@ function OptionGroupCard({
     const [savingGroupName, setSavingGroupName]   = useState(false);
     const groupNameRef = useRef<HTMLInputElement>(null);
     const fileRef = useRef<HTMLInputElement>(null);
+
+    // Local, drag-reorderable copy of this category's styles; re-synced from the server.
+    const [styles, setStyles] = useState<LayerOption[]>(group.options);
+    const stylesRef = useRef(styles);
+    useEffect(() => { setStyles(group.options); }, [group.options]);
+    useEffect(() => { stylesRef.current = styles; }, [styles]);
+
+    const persistStyleOrder = async () => {
+        try {
+            const res = await fetch(`/api/admin/customizer/categories/${group.id}/options/reorder`, {
+                method: 'PUT',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({ order: stylesRef.current.map(s => s.id) }),
+            });
+            if (!res.ok) throw new Error();
+        } catch { onRefresh(); }
+    };
 
     const handleSaveGroupName = async () => {
         const trimmed = groupNameValue.trim();
@@ -1167,17 +1203,20 @@ function OptionGroupCard({
             </div>
 
             <div className="p-4 space-y-4">
-                {/* Existing styles — each with its own sub-styles section */}
-                {group.options.map(opt => (
-                    <StyleCard
-                        key={opt.id}
-                        option={opt}
-                        categoryId={group.id}
-                        token={token}
-                        onDelete={() => handleDeleteStyle(opt.id)}
-                        onRefresh={onRefresh}
-                    />
-                ))}
+                {/* Existing styles — each with its own sub-styles section; drag the grip handle to reorder */}
+                <Reorder.Group as="div" axis="y" values={styles} onReorder={setStyles} className="space-y-4">
+                    {styles.map(opt => (
+                        <StyleCard
+                            key={opt.id}
+                            option={opt}
+                            categoryId={group.id}
+                            token={token}
+                            onDelete={() => handleDeleteStyle(opt.id)}
+                            onRefresh={onRefresh}
+                            onReorderEnd={persistStyleOrder}
+                        />
+                    ))}
+                </Reorder.Group>
 
                 {/* Add style form */}
                 {addingStyle ? (

@@ -609,14 +609,17 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
-### [2026-07-29] Drag-to-Reorder Colours in Customizer Admin
+### [2026-07-29] Drag-to-Reorder Colours & Styles in Customizer Admin
 
-**What was done:** Admins can now reorder a style's colour variants by drag-and-drop; the order persists and is the order customers see (colour dots render in `display_order`).
+**What was done:** Admins can drag-and-drop to reorder both a style's **colour variants** and a category's **styles**; the order persists and is what customers see (both render in `display_order`).
 
-- **Backend:** new `PUT /api/admin/customizer/options/{id}/colors/reorder` (`CustomizerAdminController::reorderOptionColors`) takes `{ order: [colorId, …] }`, validates it's a permutation of *that option's own* colours (422 otherwise), and writes each colour's `display_order` to its index inside a `DB::transaction`. The `display_order` column and `LayerOption::colors()->orderBy('display_order')` already existed — only the write path was missing.
-- **Frontend (`CustomizerAdminPage`):** each `ColorVariantRow` is now a `Reorder.Item` (Motion) with a `GripVertical` drag handle; `dragListener={false}` + `useDragControls` means only the handle starts a drag, so the inline edit/upload/delete controls still work. `StyleCard` holds a local `colors` order (re-synced from server via `useEffect`), and persists to the endpoint on drag end. Reorder transition is a 0.2s tween (no spring) — a functional admin interaction, not one of the branded entrance animations.
+- **Backend:** two endpoints, each validating the payload is a permutation of the parent's own children (422 otherwise) and writing each `display_order` to its index inside a `DB::transaction`:
+  - `PUT /api/admin/customizer/options/{id}/colors/reorder` (`reorderOptionColors`) — colours of a style.
+  - `PUT /api/admin/customizer/categories/{id}/options/reorder` (`reorderCategoryOptions`) — top-level styles of a category.
+  - The `display_order` columns and the `orderBy('display_order')` relations (`LayerOption::colors()`, `LayerCategory::options()`) already existed — only the write path was missing.
+- **Frontend (`CustomizerAdminPage`):** `ColorVariantRow` and `StyleCard` are each now a `Reorder.Item` (Motion) with a `GripVertical` handle; `dragListener={false}` + `useDragControls` means only the handle starts a drag, so the inline edit/upload/delete controls (and nested colour reordering inside a style) still work. `StyleCard` holds a local `colors` order and `OptionGroupCard` a local `styles` order, each re-synced from the server via `useEffect` and persisted on drag end. Reorder transition is a 0.2s tween (no spring) — a functional admin interaction, not one of the branded entrance animations.
 
-**Verified:** route registered; PHP lint + `tsc`/`vite build` clean; backend round-trip confirmed via tinker (reversing a 9-colour style's order persisted and restored correctly). Drag gesture itself still needs a real-browser pass.
+**Verified:** both routes registered; PHP lint + `tsc`/`vite build` clean; backend round-trips confirmed via tinker (reversing a 9-colour style and a 3-style category both persisted and restored correctly). Drag gesture itself still needs a real-browser pass.
 
 ### [2026-07-29] SMS Live via SMSOffice.ge + Silent-Rejection Fix
 

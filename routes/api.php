@@ -133,6 +133,7 @@ Route::middleware(['auth.bearer', 'auth.admin', 'throttle:30,1,api-admin'])->pre
         // Layer categories
         Route::post('/categories', [CustomizerAdminController::class, 'storeCategory']);
         Route::put('/categories/{id}', [CustomizerAdminController::class, 'updateCategory']);
+        Route::put('/categories/{id}/options/reorder', [CustomizerAdminController::class, 'reorderCategoryOptions']);
         Route::delete('/categories/{id}', [CustomizerAdminController::class, 'destroyCategory']);
         // Layer options (with image upload — use POST + _method=PUT for multipart)
         Route::post('/options', [CustomizerAdminController::class, 'storeOption']);
