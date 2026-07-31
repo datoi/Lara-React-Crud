@@ -210,24 +210,24 @@ export default function Marketplace() {
     if (!section) return null; // awaiting redirect to the section chooser
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="marketplace-catalog-page min-h-screen bg-[#E4E0D7] text-[#111111]">
             <Helmet>
                 <title>{t('marketplace.pageTitle')}</title>
                 <meta name="description" content="Browse handcrafted designs from local Georgian tailors. Find the perfect garment or customize one to your exact measurements." />
             </Helmet>
-            <nav className="sticky top-0 z-50 bg-white border-b border-slate-100">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
-                    <Link to="/" className="text-xl font-bold text-slate-900 hover:text-slate-700 transition-colors">
+            <nav className="sticky top-0 z-50 border-b border-white/12 bg-[#1c1c1c] text-white">
+                <div className="mx-auto flex h-12 max-w-[1180px] items-center justify-between px-4 sm:px-6 lg:px-8">
+                    <Link to="/" className="text-xl font-semibold text-white transition-colors hover:text-white/75">
                         Kere
                     </Link>
                     <div className="flex items-center gap-2">
-                        <div className="flex items-center rounded-lg border border-slate-200 p-0.5">
+                        <div className="flex items-center border border-white/20 p-0.5">
                             {(['women', 'men'] as Section[]).map(s => (
                                 <button
                                     key={s}
                                     onClick={() => switchSection(s)}
-                                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                                        section === s ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-900'
+                                    className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                        section === s ? 'bg-white text-[#111111]' : 'text-white/65 hover:text-white'
                                     }`}
                                 >
                                     {t(`section.${s}`)}
@@ -237,10 +237,10 @@ export default function Marketplace() {
                         {user && (
                             <Link
                                 to={user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
-                                className="flex items-center gap-2 text-sm text-slate-700 hover:text-slate-900 transition-colors"
+                                className="flex items-center gap-2 text-sm text-white/75 transition-colors hover:text-white"
                             >
-                                <div className="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center">
-                                    <User className="w-4 h-4 text-slate-600" />
+                                <div className="flex h-7 w-7 items-center justify-center border border-white/20">
+                                    <User className="h-4 w-4 text-white" />
                                 </div>
                                 <span className="font-medium hidden sm:inline">{user.first_name} {user.last_name}</span>
                             </Link>
@@ -248,7 +248,7 @@ export default function Marketplace() {
                         {token && <NotificationBell />}
                         <Link
                             to={section ? `/design?gender=${section}` : '/design'}
-                            className="flex items-center gap-2 border border-slate-300 text-slate-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"
+                            className="hidden items-center gap-2 border border-white/25 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white hover:text-[#111111] sm:flex"
                         >
                             <Palette className="w-4 h-4" />
                             {t('marketplace.createCustomDesign')}
@@ -257,13 +257,54 @@ export default function Marketplace() {
                 </div>
             </nav>
 
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-slate-900">{t('marketplace.title')}</h1>
-                    <p className="text-slate-500 mt-1">{t('marketplace.subtitle')}</p>
+            <div className="mx-auto max-w-[1180px] px-4 py-8 sm:px-6 lg:px-8">
+                <div className="mb-7 grid gap-4 border-b border-[#111111]/14 pb-6 lg:grid-cols-[1fr_340px] lg:items-end">
+                    <div>
+                        <h1 className="font-serif text-[clamp(2rem,4vw,4rem)] font-medium leading-[0.95] text-[#111111]">{t('marketplace.title')}</h1>
+                        <p className="mt-3 max-w-[560px] text-sm leading-6 text-[#6c625b]">{t('marketplace.subtitle')}</p>
+                    </div>
+                    <p className="hidden text-right text-xs leading-5 text-[#6c625b] lg:block">
+                        {products.length === 1 ? t('marketplace.showingOne') : t('marketplace.showingMany', { n: products.length })}
+                    </p>
                 </div>
 
-<div className="flex gap-3 mb-3">
+                <div className="mb-5 grid items-start gap-3 lg:grid-cols-[230px_1fr_auto_auto]">
+                    <div className="hidden border border-[#111111]/15 bg-[#EEEAE0] p-4 lg:block">
+                        <p className="mb-3 text-[10px] font-bold uppercase text-[#111111]">{t('marketplace.categoryLabel')}</p>
+                        <div className="space-y-1">
+                            <button
+                                onClick={() => handleCategoryChange('')}
+                                className={`block w-full px-2 py-1.5 text-left text-xs transition-colors ${!selectedCategory ? 'bg-[#111111] text-white' : 'text-[#514843] hover:bg-[#111111]/5'}`}
+                            >
+                                {t('marketplace.allCategories')}
+                            </button>
+                            {categories.map(c => (
+                                <button
+                                    key={c.id}
+                                    onClick={() => handleCategoryChange(c.slug)}
+                                    className={`block w-full px-2 py-1.5 text-left text-xs transition-colors ${selectedCategory === c.slug ? 'bg-[#111111] text-white' : 'text-[#514843] hover:bg-[#111111]/5'}`}
+                                >
+                                    {c.name}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="mt-6 border-t border-[#111111]/12 pt-4">
+                            <p className="mb-2 text-[10px] font-bold uppercase text-[#111111]">
+                                {t('marketplace.maxPrice')} {priceMax < 500 ? `₾${priceMax}` : t('marketplace.maxPriceAny')}
+                            </p>
+                            <input
+                                type="range" min={50} max={500} step={10} value={priceMax}
+                                onChange={e => setPriceMax(+e.target.value)}
+                                className="w-full accent-[#111111]"
+                            />
+                            <div className="mt-1 flex justify-between text-[10px] text-[#6c625b]">
+                                <span>₾50</span><span>₾500+</span>
+                            </div>
+                        </div>
+                        <button onClick={clearFilters} className="mt-5 w-full bg-[#111111] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#333333]">
+                            {t('marketplace.clearFilters')}
+                        </button>
+                    </div>
                     <div className="relative flex-1">
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
@@ -271,20 +312,20 @@ export default function Marketplace() {
                             value={search}
                             onChange={e => handleSearchChange(e.target.value)}
                             placeholder={t('marketplace.searchPlaceholder')}
-                            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
+                            className="w-full border border-[#111111]/15 bg-[#EEEAE0] py-2.5 pl-10 pr-4 text-sm text-[#111111] placeholder:text-[#6c625b]/60 focus:outline-none focus:ring-1 focus:ring-[#111111]"
                         />
                         {search && (
-                            <button onClick={() => handleSearchChange('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
+                            <button onClick={() => handleSearchChange('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6c625b] hover:text-[#111111]">
                                 <X className="w-4 h-4" />
                             </button>
                         )}
                     </div>
 
-                    <div className="relative">
+                    <div className="relative h-fit">
                         <button
                             onClick={() => { setShowSort(v => !v); setShowFilters(false); }}
-                            className={`flex items-center gap-1.5 px-4 py-2.5 border rounded-xl text-sm font-medium transition-colors ${
-                                sort ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                            className={`flex items-center gap-1.5 border px-4 py-2.5 text-sm font-medium transition-colors ${
+                                sort ? 'border-[#111111] bg-[#111111] text-white' : 'border-[#111111]/15 bg-[#EEEAE0] text-[#514843] hover:bg-[#111111]/5'
                             }`}
                         >
                             <span className="hidden sm:inline">{sortLabel}</span>
@@ -298,14 +339,14 @@ export default function Marketplace() {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 6, scale: 0.97 }}
                                     transition={{ duration: 0.15 }}
-                                    className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-lg p-2 z-20"
+                                    className="absolute right-0 top-full z-20 mt-2 w-48 border border-[#111111]/15 bg-[#EEEAE0] p-2 shadow-lg"
                                 >
                                     {sortOptions.map(opt => (
                                         <button
                                             key={opt.value}
                                             onClick={() => handleSortChange(opt.value)}
                                             className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                                                sort === opt.value ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'
+                                                sort === opt.value ? 'bg-[#111111] text-white' : 'text-[#514843] hover:bg-[#111111]/5'
                                             }`}
                                         >
                                             {opt.label}
@@ -316,11 +357,11 @@ export default function Marketplace() {
                         </AnimatePresence>
                     </div>
 
-                    <div className="relative">
+                    <div className="relative h-fit">
                         <button
                             onClick={() => { setShowFilters(v => !v); setShowSort(false); }}
-                            className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-medium transition-colors ${
-                                hasActiveFilters ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                            className={`flex items-center gap-2 border px-4 py-2.5 text-sm font-medium transition-colors lg:hidden ${
+                                hasActiveFilters ? 'border-[#111111] bg-[#111111] text-white' : 'border-[#111111]/15 bg-[#EEEAE0] text-[#514843] hover:bg-[#111111]/5'
                             }`}
                         >
                             <SlidersHorizontal className="w-4 h-4" />
@@ -339,7 +380,7 @@ export default function Marketplace() {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 6, scale: 0.97 }}
                                     transition={{ duration: 0.15 }}
-                                    className="absolute right-0 top-full mt-2 w-full sm:w-64 max-w-[90vw] bg-white border border-slate-200 rounded-2xl shadow-lg p-5 z-20 space-y-5"
+                                    className="absolute right-0 top-full z-20 mt-2 w-full max-w-[90vw] space-y-5 border border-[#111111]/15 bg-[#EEEAE0] p-5 shadow-lg sm:w-64"
                                 >
                                     <div>
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('marketplace.categoryLabel')}</p>
@@ -395,7 +436,7 @@ export default function Marketplace() {
                 </div>
 
                 {(hasActiveFilters || sort) && (
-                    <div className="flex flex-wrap gap-2 mb-4">
+                    <div className="mb-4 flex flex-wrap gap-2 lg:pl-[245px]">
                         {selectedCategory && (
                             <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-medium px-3 py-1.5 rounded-full">
                                 {categories.find(c => c.slug === selectedCategory)?.name ?? selectedCategory}
@@ -421,31 +462,31 @@ export default function Marketplace() {
                 )}
 
                 {!loading && (
-                    <p className="text-sm text-slate-500 mb-5">
+                    <p className="mb-5 text-sm text-[#6c625b] lg:pl-[245px]">
                         {products.length === 1 ? t('marketplace.showingOne') : t('marketplace.showingMany', { n: products.length })}
-                        {debouncedSearch && <> {t('marketplace.forSearch')} "<span className="text-slate-900 font-medium">{debouncedSearch}</span>"</>}
+                        {debouncedSearch && <> {t('marketplace.forSearch')} "<span className="font-medium text-[#111111]">{debouncedSearch}</span>"</>}
                     </p>
                 )}
 
                 {fetchError ? (
                     <ErrorFallback message={t('marketplace.errorLoad')} onRetry={() => { setFetchError(false); setLoading(true); setPage(1); setRetryKey(k => k + 1); }} />
                 ) : loading ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:ml-[245px]">
                         {[...Array(8)].map((_, i) => <ProductCardSkeleton key={i} />)}
                     </div>
                 ) : products.length === 0 ? (
-                    <div className="text-center py-32">
-                        <p className="text-slate-500 font-medium mb-1">{t('marketplace.noProducts')}</p>
-                        <p className="text-slate-400 text-sm mb-4">{t('marketplace.noProductsHint')}</p>
+                    <div className="py-32 text-center lg:ml-[245px]">
+                        <p className="mb-1 font-medium text-[#514843]">{t('marketplace.noProducts')}</p>
+                        <p className="mb-4 text-sm text-[#6c625b]">{t('marketplace.noProductsHint')}</p>
                         <button
                             onClick={() => { handleSearchChange(''); clearFilters(); }}
-                            className="text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
+                            className="bg-[#111111] px-4 py-2 text-sm text-white transition-colors hover:bg-[#333333]"
                         >
                             {t('marketplace.clearAllFilters')}
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:ml-[245px]">
                         {products.map((product, i) => {
                             const isNew = newProductIdsRef.current === null || newProductIdsRef.current.has(product.id);
                             const newBatchIndex = newProductIdsRef.current
@@ -457,36 +498,36 @@ export default function Marketplace() {
                                 initial={isNew ? { opacity: 0, y: 16 } : false}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: isNew ? 0.4 : 0, delay: isNew ? newBatchIndex * 0.04 : 0 }}
-                                className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                                className="group cursor-pointer overflow-hidden border border-[#111111]/18 bg-transparent transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(17,17,17,0.14)]"
                                 onClick={() => navigate(`/product/${product.id}`)}
                             >
-                                <div className="aspect-[3/4] overflow-hidden bg-slate-100 relative">
+                                <div className="relative aspect-[4/5] overflow-hidden bg-[#EEEAE0]">
                                     {product.is_customizable && (
-                                        <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 bg-white/90 backdrop-blur text-slate-800 text-[10px] font-semibold px-2 py-1 rounded-full shadow-sm">
+                                        <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 bg-white/90 px-2 py-1 text-[10px] font-semibold text-[#111111] shadow-sm backdrop-blur">
                                             <Palette className="w-3 h-3" />
                                             {t('marketplace.customizableBadge')}
                                         </span>
                                     )}
                                     {product.images?.[0] ? (
-                                        <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                                        <img src={product.images[0]} alt={product.name} className="h-full w-full object-contain p-5 transition-transform duration-500 group-hover:scale-105" />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-slate-300 text-5xl">👗</div>
+                                        <div className="flex h-full w-full items-center justify-center text-5xl text-[#6c625b]/28">□</div>
                                     )}
                                 </div>
 
-                                <div className="p-4">
-                                    <h3 className="font-semibold text-slate-900 leading-tight mb-0.5">{product.name}</h3>
-                                    <p className="text-xs text-slate-400 mb-2 flex items-center gap-1 flex-wrap">
+                                <div className="border-t border-[#111111]/12 px-3 py-3">
+                                    <h3 className="mb-0.5 text-xs font-bold leading-tight text-[#111111] sm:text-sm">{product.name}</h3>
+                                    <p className="mb-2 flex flex-wrap items-center gap-1 text-[10px] text-[#6c625b]">
                                         <span>{t('marketplace.by')}{' '}
                                         {product.tailor_id ? (
-                                            <Link to={`/tailor/${product.tailor_id}`} onClick={e => e.stopPropagation()} className="hover:text-slate-700 hover:underline transition-colors">
+                                            <Link to={`/tailor/${product.tailor_id}`} onClick={e => e.stopPropagation()} className="transition-colors hover:text-[#111111] hover:underline">
                                                 {product.tailor_name ?? ''}
                                             </Link>
                                         ) : (
                                             product.tailor_name ?? ''
                                         )}</span>
                                         {product.reviews_count > 0 && (
-                                            <span className="inline-flex items-center gap-0.5 text-slate-500">
+                                            <span className="inline-flex items-center gap-0.5 text-[#6c625b]">
                                                 <BadgeCheck className="w-3.5 h-3.5" />
                                                 <span className="text-[10px] font-medium">{t('marketplace.verified')}</span>
                                             </span>
@@ -495,20 +536,20 @@ export default function Marketplace() {
                                     {product.reviews_count > 0 ? (
                                         <div className="flex items-center gap-1 mb-2">
                                             {[1,2,3,4,5].map(i => (
-                                                <Star key={i} className={`w-3 h-3 ${i <= Math.round(product.average_rating ?? 0) ? 'fill-slate-700 text-slate-700' : 'text-slate-300'}`} />
+                                                <Star key={i} className={`h-3 w-3 ${i <= Math.round(product.average_rating ?? 0) ? 'fill-[#111111] text-[#111111]' : 'text-[#6c625b]/35'}`} />
                                             ))}
-                                            <span className="text-xs text-slate-500 ml-1">({product.reviews_count})</span>
+                                            <span className="ml-1 text-xs text-[#6c625b]">({product.reviews_count})</span>
                                         </div>
                                     ) : (
-                                        <p className="text-xs text-slate-400 mb-2">{t('marketplace.noReviews')}</p>
+                                        <p className="mb-2 text-[10px] text-[#6c625b]">{t('marketplace.noReviews')}</p>
                                     )}
                                     <div className="flex items-center justify-between">
-                                        <span className="text-lg font-bold text-slate-900">₾{product.price}</span>
+                                        <span className="text-sm font-bold text-[#111111]">₾{product.price}</span>
                                         {product.is_customizable ? (
                                             <Button
                                                 size="sm"
                                                 onClick={e => { e.stopPropagation(); navigate(`/product/${product.id}/customize`); }}
-                                                className="gap-1.5 rounded-lg bg-slate-900 px-4 text-white hover:bg-slate-700 active:scale-95"
+                                                className="gap-1.5 rounded-none bg-[#111111] px-3 text-[10px] text-white hover:bg-[#333333] active:scale-95 sm:px-4"
                                             >
                                                 <Palette className="w-3.5 h-3.5" />
                                                 {t('marketplace.customize')}
@@ -517,7 +558,7 @@ export default function Marketplace() {
                                             <Button
                                                 size="sm"
                                                 onClick={e => { e.stopPropagation(); navigate(`/product/${product.id}`); }}
-                                                className="rounded-lg bg-slate-900 px-4 text-white hover:bg-slate-700 active:scale-95"
+                                                className="rounded-none bg-[#111111] px-3 text-[10px] text-white hover:bg-[#333333] active:scale-95 sm:px-4"
                                             >
                                                 {t('marketplace.checkProduct')}
                                             </Button>
@@ -535,7 +576,7 @@ export default function Marketplace() {
                         <button
                             onClick={handleLoadMore}
                             disabled={loadingMore}
-                            className="px-6 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
+                            className="border border-[#111111]/18 px-6 py-2.5 text-sm font-medium text-[#111111] transition-colors hover:bg-[#111111] hover:text-white disabled:opacity-50"
                         >
                             {loadingMore ? t('marketplace.loading') : t('marketplace.loadMore', { n: total - products.length })}
                         </button>

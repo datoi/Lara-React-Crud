@@ -35,7 +35,7 @@ export function HeroSection() {
         setProductImages(
           list
             .filter((product) => product.images?.[0])
-            .slice(0, 6)
+            .slice(0, 4)
             .map((product) => ({
               src: product.images![0],
               alt: product.name,
@@ -54,7 +54,6 @@ export function HeroSection() {
           alt: t(image.altKey),
           productId: null,
         }));
-
   const movingImages = [...heroImages, ...heroImages];
 
   return (

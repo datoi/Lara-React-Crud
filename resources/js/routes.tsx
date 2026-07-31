@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router';
-import { type ReactElement } from 'react';
+import { useEffect, type ReactElement } from 'react';
+import { useLocation } from 'react-router';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { RouteGuard } from './components/RouteGuard';
 import Landing from './pages/Landing';
@@ -31,8 +32,18 @@ import TailorSelectStep from './pages/TailorSelectStep';
 import OrderReview from './pages/OrderReview';
 import SectionSelect from './pages/SectionSelect';
 
+function ScrollToTop({ children }: { children: ReactElement }) {
+    const { pathname, search } = useLocation();
+
+    useEffect(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }, [pathname, search]);
+
+    return children;
+}
+
 function wrap(el: ReactElement) {
-    return <ErrorBoundary>{el}</ErrorBoundary>;
+    return <ErrorBoundary><ScrollToTop>{el}</ScrollToTop></ErrorBoundary>;
 }
 
 function guard(el: ReactElement, role?: 'customer' | 'tailor' | 'admin') {
