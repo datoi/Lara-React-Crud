@@ -64,9 +64,7 @@ export function SizeFitSection() {
             {t('sizeFit.title')}
           </h2>
 
-          <p className="max-w-lg text-sm leading-7 text-[#6f6f6f] sm:text-base md:justify-self-end">
-            {t('sizeFit.subtitle')}
-          </p>
+          <div />
         </div>
 
         <div className="grid gap-10 lg:grid-cols-[110px_minmax(0,1.15fr)_minmax(360px,0.85fr)] lg:gap-8 xl:grid-cols-[125px_minmax(0,1.2fr)_minmax(400px,0.8fr)]">
@@ -129,7 +127,6 @@ export function SizeFitSection() {
                 {t('sizeFit.title')}
               </h3>
 
-              <p className="mt-6 text-sm leading-7 text-[#707070] sm:text-base">{t('sizeFit.subtitle')}</p>
             </div>
 
             <div className="divide-y divide-black/15 border-b border-black/15">

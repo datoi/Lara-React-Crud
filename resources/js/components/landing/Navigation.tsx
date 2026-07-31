@@ -30,6 +30,7 @@ function LanguageToggle({ isOverDark }: { isOverDark: boolean }) {
 export function Navigation() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [isOverDark, setIsOverDark] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
     const { t } = useTranslation();
     const user  = getAuthToken() ? getAuthUser() : null;
     const { pathname } = useLocation();
@@ -71,6 +72,7 @@ export function Navigation() {
             const probeY = Math.min(92, window.innerHeight - 1);
             const probeX = Math.floor(window.innerWidth / 2);
             setIsOverDark(isDarkElement(document.elementFromPoint(probeX, probeY)));
+            setIsScrolled(window.scrollY > 8);
         }
 
         updateTone();
@@ -83,23 +85,24 @@ export function Navigation() {
         };
     }, []);
 
-    const navTextClass = isOverDark ? 'text-white' : 'text-[#111111]';
-    const navDividerClass = isOverDark ? 'border-white/25' : 'border-black/15';
+    const navTextClass = 'text-white';
+    const navDividerClass = 'border-white/20';
 
     return (
         <header
             data-nav-tone={isOverDark ? 'dark' : 'light'}
-            className="kere-site-header fixed inset-x-0 top-0 z-[100] bg-transparent transition-colors duration-300"
+            data-scrolled={isScrolled ? 'true' : 'false'}
+            className="kere-site-header fixed inset-x-0 top-0 z-[100] bg-[#1c1c1c] text-white shadow-[0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl transition-all duration-500"
         >
-            <div className="kere-site-header-bar mx-auto grid h-14 max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:h-16 sm:px-6 lg:h-[68px] lg:px-10">
+            <div className="kere-site-header-bar mx-auto grid h-10 max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:h-11 sm:px-6 lg:h-11 lg:px-10">
                 <div className="flex min-w-0 items-center gap-4 sm:gap-7">
                     <button
                         onClick={() => setMobileOpen(!mobileOpen)}
                         className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 ${navTextClass}`}
                         aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
                     >
-                        {mobileOpen ? <X className="h-[18px] w-[18px] stroke-[1.5]" /> : <Menu className="h-[18px] w-[18px] stroke-[1.5]" />}
-                        <span className="hidden text-[11px] font-semibold uppercase tracking-[0.08em] sm:inline">
+                        {mobileOpen ? <X className="h-4 w-4 stroke-[1.5]" /> : <Menu className="h-4 w-4 stroke-[1.5]" />}
+                        <span className="hidden text-[10px] font-semibold uppercase tracking-[0.08em] sm:inline">
                             {mobileOpen ? 'Close' : 'Menu'}
                         </span>
                     </button>
@@ -108,13 +111,13 @@ export function Navigation() {
                         <div className="hidden items-center gap-7 xl:flex">
                             <a
                                 href="#how-it-works"
-                                className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                                className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
                             >
                                 {t('nav.howItWorks')}
                             </a>
                             <a
                                 href="#faq"
-                                className={`text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                                className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
                             >
                                 {t('nav.faq')}
                             </a>
@@ -125,7 +128,7 @@ export function Navigation() {
                 <Link
                     to="/"
                     onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                    className={`justify-self-center text-[22px] font-medium leading-none tracking-normal transition-opacity hover:opacity-70 sm:text-[24px] lg:text-[26px] ${navTextClass}`}
+                    className={`justify-self-center text-[18px] font-medium leading-none tracking-normal transition-opacity hover:opacity-70 sm:text-[19px] lg:text-[20px] ${navTextClass}`}
                 >
                     Kere
                 </Link>
@@ -133,22 +136,22 @@ export function Navigation() {
                 <div className="flex min-w-0 items-center justify-end gap-4 sm:gap-7">
                     <Link
                         to="/partners"
-                        className={`hidden text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 lg:inline ${navTextClass}`}
+                        className={`hidden text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 md:inline ${navTextClass}`}
                     >
                         {t('nav.forTailors')}
                     </Link>
 
                     <div className="inline-flex sm:hidden">
-                        <LanguageToggle isOverDark={isOverDark} />
+                        <LanguageToggle isOverDark />
                     </div>
 
                     {user ? (
                         <>
                             <Link
                                 to={user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
-                                className={`hidden items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 lg:inline-flex ${navTextClass}`}
+                                className={`hidden items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 sm:inline-flex ${navTextClass}`}
                             >
-                                <User className="h-[18px] w-[18px] stroke-[1.5]" />
+                                <User className="h-4 w-4 stroke-[1.5]" />
                                 <span>{user.first_name} {user.last_name}</span>
                             </Link>
 
@@ -157,16 +160,22 @@ export function Navigation() {
                             </div>
                         </>
                     ) : (
-                        <Link
-                            to="/signin"
-                            className={`hidden text-[11px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 lg:inline ${navTextClass}`}
-                        >
-                            {t('nav.signIn')}
-                        </Link>
+                        <>
+                            <Link
+                                to="/signin"
+                                className={`hidden text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 sm:inline ${navTextClass}`}
+                            >
+                                {t('nav.signIn')}
+                            </Link>
+
+                            <Link to="/signin" aria-label={t('nav.signIn')} className={`inline-flex transition-opacity hover:opacity-55 sm:hidden ${navTextClass}`}>
+                                <User className="h-4 w-4 stroke-[1.5]" />
+                            </Link>
+                        </>
                     )}
 
-                    <div className={`flex h-5 items-center lg:border-l lg:pl-5 ${navDividerClass}`}>
-                        <LanguageToggle isOverDark={isOverDark} />
+                    <div className={`hidden h-5 items-center border-l pl-5 lg:flex ${navDividerClass}`}>
+                        <LanguageToggle isOverDark />
                     </div>
                 </div>
             </div>
