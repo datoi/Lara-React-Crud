@@ -32,11 +32,13 @@ import OrderReview from './pages/OrderReview';
 import SectionSelect from './pages/SectionSelect';
 
 function ScrollToTop({ children }: { children: ReactElement }) {
-    const { pathname, search } = useLocation();
+    const { pathname } = useLocation();
 
+    // Scroll to top on route change only — not on query-param updates, so
+    // in-page filters/sorting (e.g. Marketplace) don't yank the view to the top.
     useEffect(() => {
         window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    }, [pathname, search]);
+    }, [pathname]);
 
     return children;
 }

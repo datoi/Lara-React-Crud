@@ -609,6 +609,27 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-01] Integrate Mariami's Design Pass + Light Adaptive Navbar
+
+**What was done:** Landed the design updates from the `mariami` branch (PR #5) onto `main` and reworked the site navbar from always-dark to a light, tone-adaptive surface.
+
+- **Design integration:** rather than merging the whole diverged `mariami` branch (stale backend duplicates + 10 conflicts), only her three genuinely-new design commits were cherry-picked on top of `main`. Net: 25 frontend files (landing components, pages, `app.css`, locales, routes); **zero** backend/migration/config changes. Conflicts resolved as *main's logic + her design* — notably the marketplace gallery kept main's drag/touch behaviour (her old 40s CSS auto-scroll marquee was dropped, since main deliberately removed it in the draggable-hero work).
+- **Navbar colour:** header is now `#F4F0E9` (light warm cream, a touch lighter than the `#E4E0D7` body) with `#111111` text, replacing her `#1c1c1c`/white. Applied in `Navigation.tsx` and the `.kere-landing` / `.design-page` `!important` blocks in `app.css`.
+- **Adaptive tone restored:** her redesign had hard-coded `navTextClass`/`isOverDark` to always-white; restored main's `isOverDark` probe so dark-themed pages (Login `#111111`, Register `#050505`) keep a dark navbar while cream pages stay light. Branded pages (`.kere-landing`/`.design-page`) are pinned light via CSS; the JSX `isOverDark` branch drives the ~9 unwrapped pages.
+- **Burger scope:** MENU button restored to `lg:hidden` (mobile/tablet only) with desktop anchors at `lg:flex` and the mobile overlay guarded `lg:hidden` — matching pre-redesign behaviour.
+- **Bug fixed:** `<LanguageToggle isOverDark />` (JSX shorthand for `={true}`) was rendering the EN/ქართ toggle white on ~8 light unwrapped pages (AboutUs, Contact, HelpCenter, OurTailors, Privacy/Refund/Terms, RoleSelection) — invisible on the new cream bar. Restored main's `isOverDark={isOverDark}`.
+- **Cleanup:** removed a dead duplicate white-text CSS block her merge left behind; merged a duplicate `react-router` import in `routes.tsx`.
+- **Desktop nav:** added Marketplace + Start Designing links to the desktop top bar (they were previously only in the mobile slide-out); How It Works / FAQ stay gated to landing & partners.
+
+**QA round (fixes):**
+- `ScrollToTop` (routes.tsx) keyed on `search` as well as `pathname`, so Marketplace category/sort filters (which sync to the query string) yanked the page to the top mid-browse. Now keyed on `pathname` only.
+- Marketplace empty-image placeholder was a bare `□` (tofu glyph); replaced with a Lucide `<ImageOff>` icon.
+- Removed orphaned i18n keys after the copy trim: `signIn.loginSubtitleCustomer/Tailor` (Login subtitle dropped) and `howItWorks.eyebrow/closing/s1Desc/s2*/s3Desc/s4*/s5*/s6Desc` (HowItWorks went 6→3 steps, titles only) — from both `en.json` and `ka.json`, kept in sync.
+
+**Intentional design exceptions (signed off):** HowItWorks uses a scroll-linked timeline line (`scrollYProgress`) that isn't one of the 5 approved animation patterns; Marketplace product images use `object-contain` (letterboxed) rather than `object-cover`. Both are deliberate choices from the design pass.
+
+**Verified:** `vite build` clean throughout; phone-OTP registration (25 refs), Login auth submit, and Marketplace gender filtering confirmed intact vs `main`; both locales parse and stay key-for-key in sync. Full cross-page browser pass of the light navbar (esp. Partners over its dark benefits section, and the toggle on unwrapped pages) still pending user eyeball.
+
 ### [2026-07-29] Drag-to-Reorder Colours, Styles & Sub-styles in Customizer Admin
 
 **What was done:** Admins can drag-and-drop to reorder a style's **colour variants**, a category's **styles**, and a style's **sub-styles**; the order persists and is what customers see (all render in `display_order`).

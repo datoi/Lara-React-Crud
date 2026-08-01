@@ -85,20 +85,20 @@ export function Navigation() {
         };
     }, []);
 
-    const navTextClass = 'text-white';
-    const navDividerClass = 'border-white/20';
+    const navTextClass = isOverDark ? 'text-white' : 'text-[#111111]';
+    const navDividerClass = isOverDark ? 'border-white/25' : 'border-black/15';
 
     return (
         <header
             data-nav-tone={isOverDark ? 'dark' : 'light'}
             data-scrolled={isScrolled ? 'true' : 'false'}
-            className="kere-site-header fixed inset-x-0 top-0 z-[100] bg-[#1c1c1c] text-white shadow-[0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl transition-all duration-500"
+            className={`kere-site-header fixed inset-x-0 top-0 z-[100] backdrop-blur-xl transition-all duration-500 ${isOverDark ? 'bg-[#1c1c1c] text-white shadow-[0_1px_0_rgba(255,255,255,0.08)]' : 'bg-[#F4F0E9] text-[#111111] shadow-[0_1px_0_rgba(0,0,0,0.06)]'}`}
         >
             <div className="kere-site-header-bar mx-auto grid h-10 max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:h-11 sm:px-6 lg:h-11 lg:px-10">
                 <div className="flex min-w-0 items-center gap-4 sm:gap-7">
                     <button
                         onClick={() => setMobileOpen(!mobileOpen)}
-                        className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 ${navTextClass}`}
+                        className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 lg:hidden ${navTextClass}`}
                         aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
                     >
                         {mobileOpen ? <X className="h-4 w-4 stroke-[1.5]" /> : <Menu className="h-4 w-4 stroke-[1.5]" />}
@@ -107,22 +107,36 @@ export function Navigation() {
                         </span>
                     </button>
 
-                    {showSiteAnchors && (
-                        <div className="hidden items-center gap-7 xl:flex">
+                    <div className="hidden items-center gap-7 lg:flex">
+                        {showSiteAnchors && (
                             <a
                                 href="#how-it-works"
                                 className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
                             >
                                 {t('nav.howItWorks')}
                             </a>
+                        )}
+                        <Link
+                            to="/marketplace"
+                            className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                        >
+                            {t('marketplace.title')}
+                        </Link>
+                        <Link
+                            to="/design"
+                            className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                        >
+                            {t('nav.startDesigning')}
+                        </Link>
+                        {showSiteAnchors && (
                             <a
                                 href="#faq"
                                 className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
                             >
                                 {t('nav.faq')}
                             </a>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
 
                 <Link
@@ -142,7 +156,7 @@ export function Navigation() {
                     </Link>
 
                     <div className="inline-flex sm:hidden">
-                        <LanguageToggle isOverDark />
+                        <LanguageToggle isOverDark={isOverDark} />
                     </div>
 
                     {user ? (
@@ -175,7 +189,7 @@ export function Navigation() {
                     )}
 
                     <div className={`hidden h-5 items-center border-l pl-5 lg:flex ${navDividerClass}`}>
-                        <LanguageToggle isOverDark />
+                        <LanguageToggle isOverDark={isOverDark} />
                     </div>
                 </div>
             </div>
@@ -186,7 +200,7 @@ export function Navigation() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[1000] bg-[#E4E0D7]"
+                        className="fixed inset-0 z-[1000] bg-[#E4E0D7] lg:hidden"
                         onMouseDown={(event) => {
                             if (event.target === event.currentTarget) {
                                 setMobileOpen(false);

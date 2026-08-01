@@ -145,7 +145,7 @@ export function GuaranteeSection() {
                         </motion.div>
                     </AnimatePresence>
 
-                    <div className="flex min-h-[280px] flex-col justify-between border-y border-[#F4EBD4]/25 bg-[#631E26]/72 py-6 shadow-[0_24px_70px_rgba(31,8,12,0.28)] backdrop-blur-[1px] sm:min-h-[340px] md:min-h-[390px] md:px-6 md:py-8 lg:px-8">
+                    <div className="flex min-h-[280px] flex-col justify-between border-y border-[#F4EBD4]/25 bg-[#631E26]/72 px-5 py-6 shadow-[0_24px_70px_rgba(31,8,12,0.28)] backdrop-blur-[1px] sm:min-h-[340px] md:min-h-[390px] md:px-6 md:py-8 lg:px-8">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={`quote-${current.id}`}

@@ -359,22 +359,11 @@
     "joinAsTailor": "Join as Tailor"
   },
   "howItWorks": {
-    "eyebrow": "Process",
     "heroTitle": "How Kere Works",
     "heroDesc": "From choosing your design to receiving your finished garment.",
     "s1Title": "Discover a Design You Love",
-    "s1Desc": "Browse the work of tailors and small ateliers, or upload a design of your own. Filter offers by category, price, and fabric, and explore tailors' profiles, portfolios, and reviews.",
-    "s2Title": "Make It Your Own",
-    "s2Desc": "Choose your color, fabric, and design details. Adjust the sleeve length, collar, garment length, or other elements so the final piece is exactly as you imagine it.",
     "s3Title": "Enter Your Measurements",
-    "s3Desc": "Add the required measurements with the help of simple instructions. Accurate details help the tailor create a garment that fits your body correctly and comfortably.",
-    "s4Title": "Place Your Order",
-    "s4Desc": "Review the chosen design, material, measurements, price, and estimated production time. Enter your delivery address and pay for your order securely.",
-    "s5Title": "The Tailor Starts Creating",
-    "s5Desc": "A matching professional tailor takes on your order and begins crafting your garment to your requirements. Track the progress and status of your order easily on Kere.",
     "s6Title": "Receive Your Made-for-You Garment",
-    "s6Desc": "The finished garment passes inspection and is delivered to your address. You receive a piece created with your measurements, style, and wishes in mind.",
-    "closing": "You choose. The tailor creates. Kere connects you.",
     "seeMore": "See more"
   },
   "contact": {
@@ -819,8 +808,6 @@
     "privacyPolicy": "Privacy Policy",
     "loginTitleCustomer": "Sign in as Customer",
     "loginTitleTailor": "Sign in as Tailor",
-    "loginSubtitleCustomer": "Welcome back. Browse and order custom clothing.",
-    "loginSubtitleTailor": "Welcome back. Manage your orders and products.",
     "emailLabel": "Email Address",
     "emailPlaceholder": "you@example.com",
     "passwordLabel": "Password",
