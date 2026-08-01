@@ -1,6 +1,5 @@
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, useLocation } from 'react-router';
 import { useEffect, type ReactElement } from 'react';
-import { useLocation } from 'react-router';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { RouteGuard } from './components/RouteGuard';
 import Landing from './pages/Landing';
