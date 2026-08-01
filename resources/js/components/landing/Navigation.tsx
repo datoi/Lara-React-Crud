@@ -109,12 +109,21 @@ export function Navigation() {
 
                     <div className="hidden items-center gap-7 lg:flex">
                         {showSiteAnchors && (
-                            <a
-                                href="#how-it-works"
-                                className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
-                            >
-                                {t('nav.howItWorks')}
-                            </a>
+                            <>
+                                <a
+                                    href="#how-it-works"
+                                    className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                                >
+                                    {t('nav.howItWorks')}
+                                </a>
+                                <a
+                                    href="#faq"
+                                    className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                                >
+                                    {t('nav.faq')}
+                                </a>
+                                <span aria-hidden className={`h-3.5 w-px ${isOverDark ? 'bg-white/25' : 'bg-black/20'}`} />
+                            </>
                         )}
                         <Link
                             to="/marketplace"
@@ -128,14 +137,6 @@ export function Navigation() {
                         >
                             {t('nav.startDesigning')}
                         </Link>
-                        {showSiteAnchors && (
-                            <a
-                                href="#faq"
-                                className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
-                            >
-                                {t('nav.faq')}
-                            </a>
-                        )}
                     </div>
                 </div>
 
