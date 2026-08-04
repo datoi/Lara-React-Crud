@@ -501,16 +501,15 @@
 
   .kere-actions {
     padding: 8px 12px 12px;
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
   }
 
   .kere-button {
-    width: 100%;
-    min-height: 40px;
-    padding: 0 14px;
-    font-size: 11px;
-    white-space: nowrap;
+    width: 50%;
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 10px;
   }
 
   .kere-button svg {
@@ -604,7 +603,7 @@
 }
 
 .kere-landing .kere-site-header .kere-site-header-bar .border-l {
-  border-color: rgba(0, 0, 0, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 .design-page .kere-site-header .kere-site-header-bar,
@@ -612,11 +611,11 @@
 .design-page .kere-site-header .kere-site-header-bar button,
 .design-page .kere-site-header .kere-site-header-bar span,
 .design-page .kere-site-header .kere-site-header-bar svg {
-  color: #111111 !important;
+  color: #ffffff !important;
 }
 
 .design-page .kere-site-header .kere-site-header-bar .border-l {
-  border-color: rgba(0, 0, 0, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 .design-page .kere-site-header {

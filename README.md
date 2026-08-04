@@ -609,6 +609,16 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-04] Merge Mariami's Newer Design Commits (design wins, main's logic/fixes kept)
+
+**What was done:** Merged the three genuinely-new commits from `origin/mariami` (`ce46811`, `1d7f2fc`, `df88783`) that landed after the 08-01 integration. `git cherry` confirmed the other 21 branch commits already had equivalents in `main`. Resolution rule (per owner): **Mariam's design wins on conflict; the navbar is untouched; main's logic and shipped fixes are preserved.**
+
+- **Taken from Mariam (design):** `app.css` product-card action buttons go row/50%-width on mobile (`.kere-actions`/`.kere-button`); `DesignerApp`/`SectionSelect` design pass (auto-merged); `Marketplace` header gains a right-aligned "showing count" on `lg` and switches to a margin-offset content layout.
+- **Kept from main (not design — would have regressed):** navbar left exactly as-is per instruction (`Navigation.tsx` + all `.kere-site-header` CSS stay light/adaptive, `#F4F0E9`); `SmsService` SMSOffice rejection-logging; `routes.tsx` `ScrollToTop` (pathname-only) + merged `react-router` import; the full README Evolution Log; `DesignerApp` gender filter via the shared `WOMEN_ONLY_CATEGORIES` set; locales kept at main's 3-key `howItWorks` (the shared component only references `s1/s3/s6Title` — her extra keys were orphans).
+- **Marketplace surgical merge:** started from her file, re-injected main's `ImageOff` empty-image placeholder (her side regressed to a `□` tofu glyph) and the `WOMEN_ONLY_CATEGORY_SLUGS` gender filter on both category lists. Her old 40s CSS gallery marquee was again dropped (main uses the JS draggable hero).
+
+**Verified:** `vite build` clean (exit 0, 2125 modules); no conflict markers; Marketplace `section`/`switchSection` single-declared; gender filter present on both category maps. Backup branch `backup/main-before-mariami-merge` retained. Browser pass still pending.
+
 ### [2026-08-01] Integrate Mariami's Design Pass + Light Adaptive Navbar
 
 **What was done:** Landed the design updates from the `mariami` branch (PR #5) onto `main` and reworked the site navbar from always-dark to a light, tone-adaptive surface.
