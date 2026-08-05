@@ -354,10 +354,18 @@
   z-index: 40;
   padding: clamp(10px, 1.6vh, 16px) 24px clamp(12px, 1.8vh, 18px);
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--white);
+}
+
+.kere-actions-row {
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: var(--white);
 }
 
 .kere-button {
@@ -501,15 +509,27 @@
 
   .kere-actions {
     padding: 8px 12px 12px;
-    flex-direction: row;
+    flex-direction: column;
     gap: 8px;
   }
 
-  .kere-button {
+  .kere-actions-row {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .kere-actions-row .kere-button {
     width: 50%;
+  }
+
+  .kere-button {
     min-height: 38px;
     padding: 0 10px;
     font-size: 10px;
+  }
+
+  .kere-button-remodel {
+    width: 100%;
   }
 
   .kere-button svg {
@@ -603,7 +623,7 @@
 }
 
 .kere-landing .kere-site-header .kere-site-header-bar .border-l {
-  border-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
 }
 
 .design-page .kere-site-header .kere-site-header-bar,
@@ -611,17 +631,36 @@
 .design-page .kere-site-header .kere-site-header-bar button,
 .design-page .kere-site-header .kere-site-header-bar span,
 .design-page .kere-site-header .kere-site-header-bar svg {
-  color: #ffffff !important;
+  color: #111111 !important;
 }
 
 .design-page .kere-site-header .kere-site-header-bar .border-l {
-  border-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
 }
 
 .design-page .kere-site-header {
   position: relative !important;
   background: #F4F0E9 !important;
   background-color: #F4F0E9 !important;
+}
+
+/* Remodel page: a standard form page — keep the shared navbar fixed (not
+   relative like the design studio) with the default light surface + dark text. */
+.remodel-page .kere-site-header {
+  background: #F4F0E9 !important;
+  background-color: #F4F0E9 !important;
+}
+
+.remodel-page .kere-site-header .kere-site-header-bar,
+.remodel-page .kere-site-header .kere-site-header-bar a,
+.remodel-page .kere-site-header .kere-site-header-bar button,
+.remodel-page .kere-site-header .kere-site-header-bar span,
+.remodel-page .kere-site-header .kere-site-header-bar svg {
+  color: #111111 !important;
+}
+
+.remodel-page .kere-site-header .kere-site-header-bar .border-l {
+  border-color: rgba(0, 0, 0, 0.15) !important;
 }
 
 .kere-landing .kere-hero {

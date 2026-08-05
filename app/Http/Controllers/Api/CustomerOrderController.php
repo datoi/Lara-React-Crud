@@ -56,6 +56,7 @@ class CustomerOrderController extends Controller
                 'tailor_id' => $order->tailor_id,
                 'tailor_name' => $tailorName,
                 'custom_design_data' => $order->custom_design_data,
+                'expected_price' => $order->expected_price,
                 'items' => $items,
                 'created_at' => $order->created_at->toISOString(),
                 'has_review' => $reviewedOrderIds->has($order->id),
@@ -93,6 +94,7 @@ class CustomerOrderController extends Controller
                 'id' => $tr->id,
                 'status' => $tr->status,
                 'message' => $tr->message,
+                'offered_price' => $tr->offered_price,
                 'created_at' => $tr->created_at?->toISOString(),
                 'tailor' => [
                     'id' => $tr->tailor->id,
@@ -142,7 +144,17 @@ class CustomerOrderController extends Controller
         }
 
         $declinedTailorIds = DB::transaction(function () use ($order, $chosen) {
-            $order->update(['tailor_id' => $chosen->tailor_id, 'status' => 'pending']);
+            $update = ['tailor_id' => $chosen->tailor_id, 'status' => 'pending'];
+
+            // A remodel settles on the accepted price: fold the tailor's quote into the
+            // order total so the headline reflects the real cost (quote + shipping),
+            // not just shipping. Custom orders keep their existing price handling.
+            if ($order->order_type === 'remodel' && $chosen->offered_price !== null) {
+                $update['subtotal'] = $chosen->offered_price;
+                $update['total'] = $chosen->offered_price + $order->shipping;
+            }
+
+            $order->update($update);
             $chosen->update(['status' => 'accepted']);
 
             $declined = TailorRequest::where('order_id', $order->id)

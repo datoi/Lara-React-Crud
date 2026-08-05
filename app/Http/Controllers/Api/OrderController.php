@@ -53,6 +53,10 @@ class OrderController extends Controller
             return $this->storeCustomOrder($request, $request->user());
         }
 
+        if ($type === 'remodel') {
+            return $this->storeRemodelOrder($request, $request->user());
+        }
+
         return $this->storeMarketplaceOrder($request, $request->user());
     }
 
@@ -314,6 +318,82 @@ class OrderController extends Controller
         ], 201);
     }
 
+    // ─── POST /api/orders (order_type=remodel) ────────────────────────────────
+    // Customer sends an existing garment to be altered/remodeled. Broadcast to the
+    // open pool; tailors send a priced offer; the customer picks one (chooseTailor).
+
+    private function storeRemodelOrder(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'expected_price' => 'nullable|numeric|min:0|max:99999',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'phone' => 'required|string|max:40',
+            'address' => 'required|string|max:255',
+            'city' => 'required|string|max:120',
+            'zip' => 'nullable|string|max:20',
+            'custom_design_data' => 'required|array|max:50',
+            'custom_design_data.garment_type' => 'nullable|string|max:100',
+            'custom_design_data.change_request' => 'required|string|max:2000',
+            'custom_design_data.remodel_images' => 'required|array|min:1|max:6',
+            'custom_design_data.remodel_images.*' => 'required|url|max:2000',
+        ]);
+
+        $shipping = (int) config('app.shipping_cost', 15);
+
+        $order = DB::transaction(function () use ($data, $user, $shipping) {
+            $order = Order::create([
+                'user_id' => $user->id,
+                'tailor_id' => null,
+                'order_number' => 'RMD-'.strtoupper(Str::random(8)),
+                'order_type' => 'remodel',
+                'tailor_assignment_mode' => 'manual',
+                'status' => 'pending_assignment',
+                'subtotal' => 0,
+                'shipping' => $shipping,
+                'total' => $shipping,
+                'expected_price' => $data['expected_price'] ?? null,
+                'custom_design_data' => $data['custom_design_data'],
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'] ?? '',
+                'email' => $user->email,
+                'phone' => $data['phone'],
+                'address' => $data['address'],
+                'city' => $data['city'],
+                'zip' => $data['zip'] ?? '',
+                'country' => 'GE',
+            ]);
+
+            // Open pool: every approved, non-suspended tailor is invited to offer
+            User::where('role', 'tailor')
+                ->where(fn ($q) => $q->where('approval_status', 'approved')->orWhereNull('approval_status'))
+                ->where(fn ($q) => $q->where('is_suspended', false)->orWhereNull('is_suspended'))
+                ->pluck('id')
+                ->each(fn ($tailorId) => $this->notify(
+                    $tailorId,
+                    'open_order',
+                    'New Remodel Request Available',
+                    "A customer wants a garment altered. Send a priced offer from your dashboard if you want the job.",
+                    $order->id,
+                    ['order_type' => 'remodel']
+                ));
+
+            return $order;
+        });
+
+        try {
+            Mail::to($user->email)->send(new OrderConfirmation($order));
+        } catch (\Throwable $e) {
+            Log::error('OrderConfirmation email failed (remodel): '.$e->getMessage());
+        }
+
+        return response()->json([
+            'order_number' => $order->order_number,
+            'total' => $order->total,
+            'status' => $order->status,
+        ], 201);
+    }
+
     // ─── GET /api/tailor/orders ───────────────────────────────────────────────
 
     public function tailorOrders(Request $request)
@@ -352,7 +432,7 @@ class OrderController extends Controller
 
         $orders = Order::with('user')
             ->withCount('tailorRequests')
-            ->where('order_type', 'custom')
+            ->whereIn('order_type', ['custom', 'remodel'])
             ->where('status', 'pending_assignment')
             ->whereNull('tailor_id')
             ->latest()
@@ -365,8 +445,10 @@ class OrderController extends Controller
         return response()->json(['orders' => $orders->map(fn ($o) => [
             'id' => $o->id,
             'order_number' => $o->order_number,
+            'order_type' => $o->order_type,
             'created_at' => $o->created_at?->toISOString(),
             'custom_design_data' => $o->custom_design_data,
+            'expected_price' => $o->expected_price,
             'customer' => ['name' => $o->user->getFullName()],
             'requests_count' => $o->tailor_requests_count,
             'my_request_status' => $myRequests[$o->id] ?? null,
@@ -387,13 +469,9 @@ class OrderController extends Controller
             return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
         }
 
-        $data = $request->validate([
-            'message' => 'nullable|string|max:500',
-        ]);
-
         $order = Order::with('user')
             ->where('id', $id)
-            ->where('order_type', 'custom')
+            ->whereIn('order_type', ['custom', 'remodel'])
             ->where('status', 'pending_assignment')
             ->whereNull('tailor_id')
             ->first();
@@ -401,6 +479,17 @@ class OrderController extends Controller
         if (! $order) {
             return response()->json(['message' => 'This order is no longer open for offers.'], 409);
         }
+
+        // A remodel is a priced job — the tailor must quote a price. Custom orders
+        // keep price optional (settled later), so the rule depends on the order type.
+        $priceRule = $order->order_type === 'remodel'
+            ? 'required|numeric|min:0|max:99999'
+            : 'nullable|numeric|min:0|max:99999';
+
+        $data = $request->validate([
+            'message' => 'nullable|string|max:500',
+            'offered_price' => $priceRule,
+        ]);
 
         if (TailorRequest::where('order_id', $order->id)->where('tailor_id', $user->id)->exists()) {
             return response()->json(['message' => 'You already sent an offer for this order.'], 409);
@@ -411,6 +500,7 @@ class OrderController extends Controller
                 'order_id' => $order->id,
                 'tailor_id' => $user->id,
                 'message' => $data['message'] ?? null,
+                'offered_price' => $data['offered_price'] ?? null,
                 'status' => 'pending',
             ]);
         } catch (QueryException) {
@@ -418,20 +508,28 @@ class OrderController extends Controller
             return response()->json(['message' => 'You already sent an offer for this order.'], 409);
         }
 
+        $isRemodel = $order->order_type === 'remodel';
+        $title = $isRemodel ? 'A Tailor Offered on Your Remodel!' : 'A Tailor Wants to Make Your Design!';
+        $verb = $isRemodel ? 'offered to remodel your garment for order' : 'offered to make your order';
+
         $this->notify(
             $order->user_id,
             'tailor_request',
-            'A Tailor Wants to Make Your Design!',
-            "{$user->getFullName()} offered to make your order #{$order->order_number}. Compare offers on your dashboard and choose your tailor.",
+            $title,
+            "{$user->getFullName()} {$verb} #{$order->order_number}. Compare offers on your dashboard and choose your tailor.",
             $order->id,
             ['tailor_id' => $user->id, 'tailor_request_id' => $tailorRequest->id]
         );
+
+        $smsBody = $isRemodel
+            ? "Kere: მკერავმა შემოგთავაზათ თქვენი სამოსის გადაკეთება — შეკვეთა #{$order->order_number}. აირჩიეთ მკერავი თქვენს პანელზე."
+            : "Kere: მკერავს სურს თქვენი დიზაინის შეკერვა — შეკვეთა #{$order->order_number}. აირჩიეთ მკერავი თქვენს პანელზე.";
 
         try {
             if ($order->user->email) {
                 Mail::to($order->user->email)->send(new TailorRequestReceived($order, $user));
             } elseif ($order->user->phone) {
-                (new SmsService)->send($order->user->phone, "Kere: მკერავს სურს თქვენი დიზაინის შეკერვა — შეკვეთა #{$order->order_number}. აირჩიეთ მკერავი თქვენს პანელზე.");
+                (new SmsService)->send($order->user->phone, $smsBody);
             }
         } catch (\Throwable $e) {
             Log::error('TailorRequestReceived notification failed: '.$e->getMessage());
@@ -440,6 +538,7 @@ class OrderController extends Controller
         return response()->json(['request' => [
             'id' => $tailorRequest->id,
             'status' => $tailorRequest->status,
+            'offered_price' => $tailorRequest->offered_price,
         ]], 201);
     }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Loader2, Check, FileText, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { Loader2, Check, FileText, ChevronDown, ChevronUp, Sparkles, Scissors } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { getAuthToken } from '../../hooks/useAuth';
@@ -12,13 +12,17 @@ interface OpenOrderDesign {
     tailor_notes?: string;
     customization_request?: string;
     measurements?: Record<string, number | string>;
+    change_request?: string;
+    remodel_images?: string[];
 }
 
 interface OpenOrder {
     id: number;
     order_number: string;
+    order_type?: string;
     created_at: string;
     custom_design_data: OpenOrderDesign | null;
+    expected_price?: number | null;
     customer: { name: string };
     requests_count: number;
     my_request_status: 'pending' | 'accepted' | 'declined' | null;
@@ -40,14 +44,17 @@ function OpenOrderCard({ order, onRequested }: { order: OpenOrder; onRequested: 
 
     const [expanded,   setExpanded]   = useState(false);
     const [message,    setMessage]    = useState('');
+    const [price,      setPrice]      = useState('');
     const [sending,    setSending]    = useState(false);
     const [sendError,  setSendError]  = useState<string | null>(null);
 
     const design      = order.custom_design_data;
+    const isRemodel   = order.order_type === 'remodel';
     const garmentKey  = design?.garment_type ?? design?.clothingType ?? '';
     const garmentName = GARMENT_KEYS[garmentKey] ? t(GARMENT_KEYS[garmentKey]) : garmentKey;
     const fileUrl     = design?.design_file_url;
     const isImage     = !!fileUrl?.match(/\.(jpg|jpeg|png|svg)$/i);
+    const remodelImages = design?.remodel_images ?? [];
     const measurements = Object.entries(design?.measurements ?? {}).filter(([, v]) => v !== '' && v !== null);
     const alreadyRequested = order.my_request_status === 'pending';
     const dateLabel = new Date(order.created_at).toLocaleDateString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB');
@@ -60,7 +67,10 @@ function OpenOrderCard({ order, onRequested }: { order: OpenOrder; onRequested: 
             const res = await fetch(`/api/tailor/orders/${order.id}/request`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
-                body: JSON.stringify({ message: message.trim() || null }),
+                body: JSON.stringify({
+                    message: message.trim() || null,
+                    offered_price: price.trim() !== '' ? Number(price) : null,
+                }),
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error((data as { message?: string }).message ?? t('tailorComponents.offerFailed'));
@@ -78,7 +88,11 @@ function OpenOrderCard({ order, onRequested }: { order: OpenOrder; onRequested: 
             <div className="flex gap-4">
                 {/* Design preview */}
                 <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
-                    {fileUrl && isImage ? (
+                    {isRemodel && remodelImages[0] ? (
+                        <img src={remodelImages[0]} alt={t('tailorComponents.remodelBadge')} className="w-full h-full object-cover" loading="lazy" />
+                    ) : isRemodel ? (
+                        <Scissors className="w-6 h-6 text-slate-400" />
+                    ) : fileUrl && isImage ? (
                         <img src={fileUrl} alt={garmentName} className="w-full h-full object-cover" loading="lazy" />
                     ) : fileUrl ? (
                         <FileText className="w-6 h-6 text-slate-400" />
@@ -90,7 +104,10 @@ function OpenOrderCard({ order, onRequested }: { order: OpenOrder; onRequested: 
                 <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 text-sm capitalize truncate">{garmentName || t('tailorComponents.customDesignBadge')}</p>
+                            <p className="font-semibold text-slate-900 text-sm capitalize truncate flex items-center gap-1.5">
+                                {isRemodel && <Scissors className="w-3.5 h-3.5 text-[#6F1D24] shrink-0" />}
+                                {isRemodel ? t('tailorComponents.remodelBadge') : (garmentName || t('tailorComponents.customDesignBadge'))}
+                            </p>
                             <p className="text-xs text-slate-400 mt-0.5 truncate">
                                 {order.customer.name} · {dateLabel} · <span className="font-mono">{order.order_number}</span>
                             </p>
@@ -99,6 +116,28 @@ function OpenOrderCard({ order, onRequested }: { order: OpenOrder; onRequested: 
                             {t('tailorComponents.offersSoFar', { count: order.requests_count })}
                         </span>
                     </div>
+
+                    {isRemodel && design?.change_request && (
+                        <p className="mt-2 text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
+                            <span className="font-semibold text-slate-500">{t('tailorComponents.remodelChangeLabel')}:</span> {design.change_request}
+                        </p>
+                    )}
+
+                    {isRemodel && remodelImages.length > 1 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                            {remodelImages.slice(1).map((src, idx) => (
+                                <a key={idx} href={src} target="_blank" rel="noopener noreferrer" className="block w-12 h-12 rounded-lg overflow-hidden border border-slate-200">
+                                    <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                </a>
+                            ))}
+                        </div>
+                    )}
+
+                    {isRemodel && order.expected_price != null && (
+                        <p className="mt-2 text-xs text-slate-600">
+                            <span className="font-semibold text-slate-500">{t('tailorComponents.remodelExpectedPrice')}:</span> ₾{order.expected_price}
+                        </p>
+                    )}
 
                     {measurements.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
@@ -145,6 +184,25 @@ function OpenOrderCard({ order, onRequested }: { order: OpenOrder; onRequested: 
                                 transition={{ duration: 0.5 }}
                                 className="mt-3 space-y-2"
                             >
+                                {isRemodel && (
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                                            {t('tailorComponents.offerPriceLabel')}
+                                        </label>
+                                        <div className="relative max-w-[180px]">
+                                            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">₾</span>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                inputMode="decimal"
+                                                value={price}
+                                                onChange={e => setPrice(e.target.value)}
+                                                placeholder={t('tailorComponents.offerPricePlaceholder')}
+                                                className="w-full border border-slate-200 rounded-lg py-2 pl-7 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                                 <label className="block text-xs font-medium text-slate-600">
                                     {t('tailorComponents.offerMessageLabel')}
                                 </label>
@@ -157,7 +215,10 @@ function OpenOrderCard({ order, onRequested }: { order: OpenOrder; onRequested: 
                                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
                                 />
                                 {sendError && <p className="text-xs text-destructive">{sendError}</p>}
-                                <Button variant="default" size="sm" onClick={handleSend} disabled={sending} className="text-xs">
+                                {isRemodel && price.trim() === '' && (
+                                    <p className="text-xs text-slate-400">{t('tailorComponents.offerPriceRequired')}</p>
+                                )}
+                                <Button variant="default" size="sm" onClick={handleSend} disabled={sending || (isRemodel && price.trim() === '')} className="text-xs">
                                     {sending
                                         ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />{t('tailorComponents.offerSending')}</>
                                         : t('tailorComponents.offerSendBtn')}

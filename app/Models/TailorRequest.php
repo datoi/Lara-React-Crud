@@ -11,7 +11,12 @@ class TailorRequest extends Model
         'order_id',
         'tailor_id',
         'message',
+        'offered_price',
         'status',
+    ];
+
+    protected $casts = [
+        'offered_price' => 'float',
     ];
 
     public function order(): BelongsTo

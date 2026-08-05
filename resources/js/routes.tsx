@@ -30,6 +30,7 @@ import AdminLogin from './pages/AdminLogin';
 import TailorSelectStep from './pages/TailorSelectStep';
 import OrderReview from './pages/OrderReview';
 import SectionSelect from './pages/SectionSelect';
+import RemodelRequest from './pages/RemodelRequest';
 
 function ScrollToTop({ children }: { children: ReactElement }) {
     const { pathname } = useLocation();
@@ -58,6 +59,7 @@ export const router = createBrowserRouter([
     { path: '/design/tailor-select', element: wrap(<TailorSelectStep />) },
     { path: '/design/review',        element: wrap(<OrderReview />) },
     { path: '/marketplace',         element: wrap(<Marketplace />) },
+    { path: '/remodel',              element: wrap(<RemodelRequest />) },
     { path: '/product/:id',          element: wrap(<ProductCustomization />) },
     { path: '/product/:id/customize', element: wrap(<ProductCustomization customize />) },
     { path: '/signin',              element: wrap(<RoleSelection />) },

@@ -137,6 +137,12 @@ export function Navigation() {
                         >
                             {t('nav.startDesigning')}
                         </Link>
+                        <Link
+                            to="/remodel"
+                            className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                        >
+                            {t('nav.remodel')}
+                        </Link>
                     </div>
                 </div>
 
@@ -267,6 +273,9 @@ export function Navigation() {
                                 </Link>
                                 <Link to="/design" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
                                     {t('nav.startDesigning')}
+                                </Link>
+                                <Link to="/remodel" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
+                                    {t('nav.remodel')}
                                 </Link>
                                 <Link to="/partners" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
                                     {t('nav.forTailors')}

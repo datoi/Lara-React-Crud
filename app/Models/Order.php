@@ -11,7 +11,7 @@ class Order extends Model
     protected $fillable = [
         'user_id', 'tailor_id', 'order_number', 'order_type', 'status', 'delivered_at',
         'tailor_assignment_mode',
-        'subtotal', 'shipping', 'total',
+        'subtotal', 'shipping', 'total', 'expected_price',
         'custom_design_data',
         'first_name', 'last_name', 'email', 'phone',
         'address', 'city', 'state', 'zip', 'country', 'notes',
@@ -21,6 +21,7 @@ class Order extends Model
         'subtotal'           => 'float',
         'shipping'           => 'float',
         'total'              => 'float',
+        'expected_price'     => 'float',
         'custom_design_data' => 'array',
         'delivered_at'       => 'datetime',
     ];

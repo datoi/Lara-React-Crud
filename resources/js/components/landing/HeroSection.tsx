@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { ArrowRight, Scissors, Upload } from 'lucide-react';
+import { ArrowRight, Scissors, Upload, Ruler } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface HeroImage {
@@ -211,15 +211,23 @@ export function HeroSection() {
         </div>
 
         <div className="kere-actions">
-          <Link to="/design" className="kere-button kere-button-primary">
-            <Scissors />
-            {t('hero.startYourDesign')}
-            <ArrowRight />
-          </Link>
+          <div className="kere-actions-row">
+            <Link to="/design" className="kere-button kere-button-primary">
+              <Scissors />
+              {t('hero.startYourDesign')}
+              <ArrowRight />
+            </Link>
 
-          <Link to="/design?upload=1" className="kere-button kere-button-secondary">
-            <Upload />
-            {t('hero.uploadYourDesign')}
+            <Link to="/design?upload=1" className="kere-button kere-button-secondary">
+              <Upload />
+              {t('hero.uploadYourDesign')}
+            </Link>
+          </div>
+
+          <Link to="/remodel" className="kere-button kere-button-primary kere-button-remodel">
+            <Ruler />
+            {t('hero.remodelGarment')}
+            <ArrowRight />
           </Link>
         </div>
       </div>

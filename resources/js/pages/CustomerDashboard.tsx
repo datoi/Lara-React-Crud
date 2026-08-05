@@ -52,13 +52,16 @@ interface DesignData {
     measurements?: Record<string, number | string>;
     customization_request?: string;
     tailor_notes?: string;
+    change_request?: string;
+    remodel_images?: string[];
 }
 
 interface CustomerOrder {
     id: number;
-    order_type: 'marketplace' | 'custom';
+    order_type: 'marketplace' | 'custom' | 'remodel';
     status: string;
     total: number;
+    expected_price?: number | null;
     tailor_id: number | null;
     tailor_name: string | null;
     custom_design_data: DesignData | null;
@@ -72,6 +75,7 @@ interface TailorOffer {
     id: number;
     status: string;
     message: string | null;
+    offered_price: number | null;
     created_at: string;
     tailor: {
         id: number;
@@ -191,6 +195,11 @@ function TailorOffers({ orderId, onChosen }: { orderId: number; onChosen: (tailo
                                             offer.tailor.turnaround_days && t('customerDashboard.offerTurnaround', { n: offer.tailor.turnaround_days }),
                                         ].filter(Boolean).join(' · ')}
                                     </p>
+                                    {offer.offered_price != null && (
+                                        <p className="mt-2 text-sm font-semibold text-[#6F1D24]">
+                                            {t('customerDashboard.offerPriceLabel')}: ₾{offer.offered_price}
+                                        </p>
+                                    )}
                                     {offer.message && (
                                         <p className="text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 mt-2">
                                             “{offer.message}”
@@ -224,6 +233,7 @@ function TailorOffers({ orderId, onChosen }: { orderId: number; onChosen: (tailo
 function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initialTab = 'details' }: { order: CustomerOrder; currentUserId: number; onClose: () => void; onTailorChosen: (orderId: number, tailorId: number, tailorName: string) => void; initialTab?: 'details' | 'messages' }) {
     const { t } = useTranslation();
     const isCustom = order.order_type === 'custom';
+    const isRemodel = order.order_type === 'remodel';
     const design = order.custom_design_data;
     const [activeTab, setActiveTab] = useState<'details' | 'messages'>(initialTab);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -303,7 +313,31 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                             />
                         )}
 
-                        {isCustom && design ? (
+                        {isRemodel && design ? (
+                            <div className="space-y-4">
+                                {(design.remodel_images?.length ?? 0) > 0 && (
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {design.remodel_images!.map((src, i) => (
+                                            <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="block aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                                <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
+                                {design.change_request && (
+                                    <div className="bg-slate-50 rounded-xl p-4">
+                                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('customerDashboard.remodelChangeLabel')}</p>
+                                        <p className="text-sm text-slate-700 whitespace-pre-line">{design.change_request}</p>
+                                    </div>
+                                )}
+                                {order.expected_price != null && (
+                                    <div className="bg-slate-50 rounded-xl p-4 flex items-center justify-between">
+                                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('customerDashboard.remodelExpectedPrice')}</span>
+                                        <span className="text-sm font-semibold text-slate-900">₾{order.expected_price}</span>
+                                    </div>
+                                )}
+                            </div>
+                        ) : isCustom && design ? (
                             <div className="space-y-4">
                                 {design.design_file_url?.match(/\.(jpg|jpeg|png|svg)$/i) && (
                                     <img
@@ -417,7 +451,9 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                         <div className="border-t border-slate-100 pt-4 flex justify-between items-center">
                             <span className="text-sm text-slate-500">{t('customerDashboard.totalLabel')}</span>
                             <span className="text-lg font-bold text-slate-900">
-                                {order.total > 0 ? `₾${order.total}` : t('customerDashboard.quotedByTailor')}
+                                {order.status === 'pending_assignment'
+                                    ? t('customerDashboard.quotedByTailor')
+                                    : order.total > 0 ? `₾${order.total}` : t('customerDashboard.quotedByTailor')}
                             </span>
                         </div>
                     </div>
@@ -626,7 +662,7 @@ export default function CustomerDashboard() {
                                 >
                                     {/* Icon */}
                                     <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                        {order.order_type === 'custom'
+                                        {order.order_type === 'custom' || order.order_type === 'remodel'
                                             ? <Scissors className="w-4 h-4 text-slate-600" />
                                             : <Package className="w-4 h-4 text-slate-600" />
                                         }
@@ -635,7 +671,9 @@ export default function CustomerDashboard() {
                                     {/* Info — name, date/tailor, status, review */}
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium text-slate-900 text-sm truncate">
-                                            {order.order_type === 'custom'
+                                            {order.order_type === 'remodel'
+                                                ? t('customerDashboard.remodelLabel')
+                                                : order.order_type === 'custom'
                                                 ? `${t('customerDashboard.customPrefix')} ${String(order.custom_design_data?.garmentType ?? order.custom_design_data?.garment_type ?? order.custom_design_data?.clothingType ?? t('customerDashboard.customDesignLabel'))}`
                                                 : order.items[0]?.product_name ?? t('customerDashboard.orderFallback')
                                             }
