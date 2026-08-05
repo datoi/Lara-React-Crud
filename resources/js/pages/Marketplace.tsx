@@ -470,7 +470,7 @@ export default function Marketplace() {
                 )}
 
                 {!loading && (
-                    <p className="mb-5 text-sm text-[#6c625b] lg:pl-[245px]">
+                    <p className="mb-5 text-sm text-[#6c625b] lg:hidden">
                         {products.length === 1 ? t('marketplace.showingOne') : t('marketplace.showingMany', { n: products.length })}
                         {debouncedSearch && <> {t('marketplace.forSearch')} "<span className="font-medium text-[#111111]">{debouncedSearch}</span>"</>}
                     </p>
