@@ -1,12 +1,12 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router';
-import { Helmet } from 'react-helmet-async';
+import { ImagePlus, Loader2, Upload, X } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Upload, X, Loader2, ImagePlus } from 'lucide-react';
-import { Navigation } from '../components/landing/Navigation';
-import { getAuthUser, getAuthToken, saveReturnTo } from '../hooks/useAuth';
-import { Button } from '../components/ui/button';
+import { useRef, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
+import { Navigation } from '../components/landing/Navigation';
+import { Button } from '../components/ui/button';
+import { getAuthToken, getAuthUser, saveReturnTo } from '../hooks/useAuth';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -18,7 +18,7 @@ interface UploadedImage {
 }
 
 const inputClass =
-    'w-full border border-[#111111]/25 bg-[#E4E0D7] px-4 py-2.5 text-sm text-[#111111] placeholder:text-[#776158] focus:outline-none focus:ring-2 focus:ring-[#111111]';
+    'w-full border-0 border-b border-[#261D1B]/35 bg-transparent px-0 py-3 text-sm text-[#111111] placeholder:text-[#665A50] transition-colors focus:border-[#261D1B] focus:outline-none focus:ring-0';
 
 export default function RemodelRequest() {
     const navigate = useNavigate();
@@ -82,7 +82,7 @@ export default function RemodelRequest() {
                     throw new Error((err as { message?: string }).message ?? t('remodel.errorUploadFailed'));
                 }
                 const data = (await res.json()) as { file_url: string };
-                setImages(prev => [...prev, { url: data.file_url, preview: URL.createObjectURL(file) }]);
+                setImages((prev) => [...prev, { url: data.file_url, preview: URL.createObjectURL(file) }]);
             }
         } catch (err: unknown) {
             setUploadError(err instanceof Error ? err.message : t('remodel.errorUploadFailed'));
@@ -93,7 +93,7 @@ export default function RemodelRequest() {
     };
 
     const removeImage = (index: number) => {
-        setImages(prev => prev.filter((_, i) => i !== index));
+        setImages((prev) => prev.filter((_, i) => i !== index));
     };
 
     const canSubmit =
@@ -129,7 +129,7 @@ export default function RemodelRequest() {
             zip: zip.trim(),
             custom_design_data: {
                 change_request: changeRequest.trim(),
-                remodel_images: images.map(i => i.url),
+                remodel_images: images.map((i) => i.url),
             },
         };
 
@@ -159,133 +159,183 @@ export default function RemodelRequest() {
 
             <Navigation />
 
-            <main className="relative overflow-hidden px-5 pb-16 pt-24 sm:px-8 sm:pt-28 lg:px-12">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="mx-auto max-w-[720px]"
-                >
-                    <div className="mb-8 text-center">
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6F1D24]">{t('remodel.eyebrow')}</span>
-                        <h1 className="mt-3 font-serif text-[clamp(2.15rem,4vw,3.4rem)] font-medium leading-[0.95] tracking-[-0.04em] text-[#111111]">
+            <main className="relative overflow-hidden px-5 pt-28 pb-20 sm:px-8 sm:pt-36 lg:px-12 lg:pt-40 lg:pb-28">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full">
+                    <div className="mx-auto mb-16 max-w-[760px] text-center sm:mb-20">
+                        <h1 className="font-serif text-[clamp(2.75rem,5vw,5rem)] leading-[0.95] font-normal tracking-[-0.035em] text-[#17130F]">
                             {t('remodel.heroTitle')}
                         </h1>
-                        <p className="mx-auto mt-3 max-w-[520px] text-sm leading-6 text-[#776158]">
+                        <p className="mx-auto mt-6 max-w-[600px] text-sm leading-6 text-[#4F463E] sm:text-base sm:leading-7">
                             {t('remodel.subtitle')}
                         </p>
                     </div>
 
-                    {/* Garment photos */}
-                    <section className="mb-8">
-                        <h2 className="mb-1 text-xs font-bold uppercase tracking-[0.08em] text-[#111111]">{t('remodel.photosLabel')}</h2>
-                        <p className="mb-3 text-xs text-[#776158]">{t('remodel.photosHint', { max: MAX_IMAGES })}</p>
+                    <div className="relative left-1/2 w-screen -translate-x-1/2 bg-[#E4E0D7] px-2 py-8 sm:px-3 sm:py-10 lg:px-4 lg:py-12">
+                        <div className="relative mx-auto w-full border border-[#261D1B]/15 bg-[#F2EAD7] px-6 py-10 shadow-[0_24px_70px_rgba(38,29,27,0.20)] sm:px-12 sm:py-14 lg:px-16 lg:py-16">
+                            {/* Garment photos */}
+                            <section className="mb-14">
+                                <h2 className="mb-2 text-lg font-semibold tracking-normal text-[#17130F]">{t('remodel.photosLabel')}</h2>
+                                <p className="mb-6 text-sm leading-5 text-[#5C5148]">{t('remodel.photosHint', { max: MAX_IMAGES })}</p>
 
-                        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                            {images.map((img, i) => (
-                                <div key={i} className="group relative aspect-square overflow-hidden border border-[#111111]/20 bg-[#EEEAE0]">
-                                    <img src={img.preview} alt="" className="h-full w-full object-cover" />
-                                    <button
-                                        type="button"
-                                        onClick={() => removeImage(i)}
-                                        aria-label={t('remodel.removePhoto')}
-                                        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition-opacity hover:bg-black/80"
-                                    >
-                                        <X className="h-3.5 w-3.5" />
-                                    </button>
+                                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                                    {images.map((img, i) => (
+                                        <div key={i} className="group relative aspect-square overflow-hidden border border-[#261D1B]/25 bg-[#E8DECA]">
+                                            <img src={img.preview} alt="" className="h-full w-full object-cover" />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeImage(i)}
+                                                aria-label={t('remodel.removePhoto')}
+                                                className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition-opacity hover:bg-black/80"
+                                            >
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    ))}
+
+                                    {images.length < MAX_IMAGES && (
+                                        <button
+                                            type="button"
+                                            onClick={() => inputRef.current?.click()}
+                                            disabled={uploading}
+                                            className="flex aspect-square flex-col items-center justify-center gap-2 border border-dashed border-[#261D1B]/45 bg-transparent text-[#4F463E] transition-colors hover:border-[#261D1B] hover:bg-[#EAE0CC] disabled:opacity-50"
+                                        >
+                                            {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+                                            <span className="text-xs font-semibold tracking-normal">{t('remodel.addPhoto')}</span>
+                                        </button>
+                                    )}
                                 </div>
-                            ))}
 
-                            {images.length < MAX_IMAGES && (
-                                <button
-                                    type="button"
-                                    onClick={() => inputRef.current?.click()}
-                                    disabled={uploading}
-                                    className="flex aspect-square flex-col items-center justify-center gap-1.5 border border-dashed border-[#111111]/40 bg-[#E4E0D7] text-[#776158] transition-colors hover:border-[#6F1D24] hover:text-[#6F1D24] disabled:opacity-50"
-                                >
-                                    {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
-                                    <span className="text-[10px] font-semibold uppercase tracking-wide">{t('remodel.addPhoto')}</span>
-                                </button>
+                                <input
+                                    ref={inputRef}
+                                    type="file"
+                                    accept={ALLOWED_TYPES.join(',')}
+                                    multiple
+                                    className="hidden"
+                                    onChange={(e) => handleFiles(e.target.files)}
+                                />
+                                {uploadError && <p className="mt-2 text-xs text-[#6F1D24]">{uploadError}</p>}
+                            </section>
+
+                            {/* What to change */}
+                            <section className="mb-14">
+                                <label htmlFor="change" className="mb-2 block text-lg font-semibold tracking-normal text-[#17130F]">
+                                    {t('remodel.changeLabel')}
+                                </label>
+                                <p className="mb-5 text-sm leading-5 text-[#5C5148]">{t('remodel.changeHint')}</p>
+                                <textarea
+                                    id="change"
+                                    value={changeRequest}
+                                    onChange={(e) => setChangeRequest(e.target.value)}
+                                    rows={2}
+                                    maxLength={2000}
+                                    placeholder={t('remodel.changePlaceholder')}
+                                    className={`${inputClass} max-w-[900px] resize-none`}
+                                />
+                            </section>
+
+                            {/* Pickup / return address */}
+                            <section className="mb-14">
+                                <h2 className="mb-2 text-lg font-semibold tracking-normal text-[#17130F]">{t('remodel.addressLabel')}</h2>
+                                <p className="mb-5 text-sm leading-5 text-[#5C5148]">{t('remodel.addressHint')}</p>
+
+                                <div className="grid max-w-[1100px] grid-cols-1 gap-3 sm:grid-cols-6">
+                                    <input
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        placeholder={t('remodel.firstName')}
+                                        className={`${inputClass} sm:col-span-3`}
+                                    />
+                                    <input
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        placeholder={t('remodel.lastName')}
+                                        className={`${inputClass} sm:col-span-3`}
+                                    />
+                                    <input
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        placeholder={t('remodel.phone')}
+                                        className={`${inputClass} sm:col-span-6`}
+                                    />
+                                    <input
+                                        value={city}
+                                        onChange={(e) => setCity(e.target.value)}
+                                        placeholder={t('remodel.city')}
+                                        className={`${inputClass} sm:col-span-6`}
+                                    />
+                                    <input
+                                        value={address}
+                                        onChange={(e) => setAddress(e.target.value)}
+                                        placeholder={t('remodel.address')}
+                                        className={`${inputClass} sm:col-span-4`}
+                                    />
+                                    <input
+                                        value={zip}
+                                        onChange={(e) => setZip(e.target.value)}
+                                        placeholder={t('remodel.zip')}
+                                        className={`${inputClass} sm:col-span-2`}
+                                    />
+                                </div>
+                            </section>
+
+                            {/* Optional expected price */}
+                            <section className="mb-10">
+                                <label htmlFor="price" className="mb-2 block text-lg font-semibold tracking-normal text-[#17130F]">
+                                    {t('remodel.priceLabel')}
+                                </label>
+                                <p className="mb-5 text-sm leading-5 text-[#5C5148]">{t('remodel.priceHint')}</p>
+                                <div className="relative max-w-[220px]">
+                                    <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-sm font-medium text-[#574945]">
+                                        ₾
+                                    </span>
+                                    <input
+                                        id="price"
+                                        type="number"
+                                        min="0"
+                                        inputMode="decimal"
+                                        value={expectedPrice}
+                                        onChange={(e) => setExpectedPrice(e.target.value)}
+                                        placeholder={t('remodel.pricePlaceholder')}
+                                        className={`${inputClass} pl-8`}
+                                    />
+                                </div>
+                            </section>
+
+                            {submitError && (
+                                <p className="mb-4 border border-[#6F1D24]/30 bg-[#FDFBF5] px-4 py-2.5 text-sm text-[#6F1D24]">{submitError}</p>
                             )}
+
+                            <Button
+                                onClick={handleSubmit}
+                                disabled={!canSubmit}
+                                className="mx-auto flex min-h-11 w-fit rounded-none bg-[#292317] px-10 text-[11px] font-semibold tracking-[0.12em] text-[#F5EEDC] uppercase hover:bg-[#443B29]"
+                            >
+                                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                                {t('remodel.submit')}
+                            </Button>
+                            <p className="mx-auto mt-4 max-w-[520px] text-center text-xs leading-5 text-[#5C5148]">{t('remodel.submitHint')}</p>
                         </div>
+                    </div>
 
-                        <input
-                            ref={inputRef}
-                            type="file"
-                            accept={ALLOWED_TYPES.join(',')}
-                            multiple
-                            className="hidden"
-                            onChange={e => handleFiles(e.target.files)}
-                        />
-                        {uploadError && <p className="mt-2 text-xs text-[#6F1D24]">{uploadError}</p>}
-                    </section>
-
-                    {/* What to change */}
-                    <section className="mb-8">
-                        <label htmlFor="change" className="mb-1 block text-xs font-bold uppercase tracking-[0.08em] text-[#111111]">
-                            {t('remodel.changeLabel')}
-                        </label>
-                        <p className="mb-3 text-xs text-[#776158]">{t('remodel.changeHint')}</p>
-                        <textarea
-                            id="change"
-                            value={changeRequest}
-                            onChange={e => setChangeRequest(e.target.value)}
-                            rows={5}
-                            maxLength={2000}
-                            placeholder={t('remodel.changePlaceholder')}
-                            className={`${inputClass} resize-none`}
-                        />
-                    </section>
-
-                    {/* Pickup / return address */}
-                    <section className="mb-8">
-                        <h2 className="mb-1 text-xs font-bold uppercase tracking-[0.08em] text-[#111111]">{t('remodel.addressLabel')}</h2>
-                        <p className="mb-3 text-xs text-[#776158]">{t('remodel.addressHint')}</p>
-
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder={t('remodel.firstName')} className={inputClass} />
-                            <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder={t('remodel.lastName')} className={inputClass} />
-                            <input value={phone} onChange={e => setPhone(e.target.value)} placeholder={t('remodel.phone')} className={inputClass} />
-                            <input value={city} onChange={e => setCity(e.target.value)} placeholder={t('remodel.city')} className={inputClass} />
-                            <input value={address} onChange={e => setAddress(e.target.value)} placeholder={t('remodel.address')} className={`${inputClass} sm:col-span-2`} />
-                            <input value={zip} onChange={e => setZip(e.target.value)} placeholder={t('remodel.zip')} className={inputClass} />
-                        </div>
-                    </section>
-
-                    {/* Optional expected price */}
-                    <section className="mb-8">
-                        <label htmlFor="price" className="mb-1 block text-xs font-bold uppercase tracking-[0.08em] text-[#111111]">
-                            {t('remodel.priceLabel')}
-                        </label>
-                        <p className="mb-3 text-xs text-[#776158]">{t('remodel.priceHint')}</p>
-                        <div className="relative max-w-[220px]">
-                            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[#776158]">₾</span>
-                            <input
-                                id="price"
-                                type="number"
-                                min="0"
-                                inputMode="decimal"
-                                value={expectedPrice}
-                                onChange={e => setExpectedPrice(e.target.value)}
-                                placeholder={t('remodel.pricePlaceholder')}
-                                className={`${inputClass} pl-8`}
-                            />
-                        </div>
-                    </section>
-
-                    {submitError && (
-                        <p className="mb-4 border border-[#6F1D24]/30 bg-[#FDFBF5] px-4 py-2.5 text-sm text-[#6F1D24]">{submitError}</p>
-                    )}
-
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={!canSubmit}
-                        className="w-full rounded-none bg-[#111111] text-white hover:bg-[#333333]"
+                    <div
+                        className="relative left-1/2 flex h-[460px] w-screen -translate-x-1/2 items-center justify-center overflow-hidden bg-[#E8E5DE] sm:h-[580px] lg:h-[720px]"
+                        style={{
+                            backgroundImage: "url('/assets/backgrounds/kere-concrete.jpg')",
+                            backgroundRepeat: 'repeat',
+                            backgroundSize: '275px 484px',
+                        }}
                     >
-                        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                        {t('remodel.submit')}
-                    </Button>
-                    <p className="mt-3 text-center text-xs text-[#776158]">{t('remodel.submitHint')}</p>
+                        <div className="absolute inset-0 bg-black/25" aria-hidden="true" />
+                        <span
+                            className="relative font-serif text-[clamp(5rem,14vw,13rem)] leading-none font-normal tracking-[-0.07em] text-[#FFFDF3]"
+                            style={{
+                                textShadow:
+                                    '0 0 2px rgba(255,255,255,1), 0 0 10px rgba(255,255,245,0.95), 0 0 28px rgba(255,255,240,0.65), 0 0 70px rgba(255,255,235,0.35)',
+                            }}
+                        >
+                            Kere
+                        </span>
+                    </div>
                 </motion.div>
             </main>
         </div>
