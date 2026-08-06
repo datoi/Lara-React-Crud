@@ -48,6 +48,9 @@ if (\$exists) {
 echo "==> Seeding categories and products..."
 php artisan db:seed --force --class=ClothingSeeder
 
+echo "==> Seeding men's customiser garments..."
+php artisan db:seed --force --class=MensGarmentsSeeder
+
 echo "==> Creating storage symlink..."
 php artisan storage:link --force
 

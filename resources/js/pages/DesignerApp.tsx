@@ -619,12 +619,12 @@ function ProductStep({
                             transition={{ duration: 0.5, delay: i * 0.1 }}
                             className="group bg-[#FDFBF5] p-3 pb-0 text-left shadow-[0_18px_45px_rgba(72,54,45,0.12)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_28px_65px_rgba(72,54,45,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6F1D24] focus-visible:ring-offset-4 focus-visible:ring-offset-[#F4EBD4]"
                         >
-                            <div className="w-full aspect-[4/3] overflow-hidden bg-[#E9E6E1]">
+                            <div className={`w-full overflow-hidden bg-[#EAE6E4] ${product.category === 'trousers' ? 'aspect-[3/4]' : 'aspect-[4/3]'}`}>
                                 {product.preview_image_url ? (
                                     <img
                                         src={product.preview_image_url}
                                         alt={product.name}
-                                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]"
+                                        className="h-full w-full object-contain transition-transform duration-700 group-hover:scale-[1.035]"
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center">

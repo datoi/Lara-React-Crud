@@ -609,6 +609,25 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-07] Fix CustomizerSeeder broken image references
+
+**What was done:** The classic-shirt / woman-shirt / womens-top customiser products pointed at garment images that had been deleted from the working tree (`maxi-base.png`, `necklines_*`, `sleeves_long*`, `sleeveless.jpg`, `short sleeeves.jpg`, `long sleeves.jpg`, `Colar1.jpg`, `colar 2.jpg`, all `maika *`, plus their variants) — a fresh `DatabaseSeeder` run or a prod deploy would have rendered those products with broken images.
+
+- **Restored 20 images** that were unstaged deletions, straight from `HEAD` (`git restore --source=HEAD`) — the assets still existed in git, only the working tree had dropped them.
+- **Removed a broken-since-birth layer:** the classic-shirt z=5 "Body Buttons" overlay referenced `body+button_close_standard.png`, which **never existed in git history** and is on no disk — so that required layer has been a broken/empty overlay since the product was created. With no asset to point it at, the dead `body-buttons` `LayerCategory` + option were removed (no frontend references the `body-buttons` slug).
+
+**Verified:** re-seeded all three products; a full audit of every image path across **all** customiser products (`preview_image_path` + every option/child/colour `image/thumbnail/alt/back/left/right`) now resolves on disk for the seeded products — 0 missing of 105 checked. The only remaining misses are 4 files on `witeli maika`, an **admin-uploaded** product (`product-previews/…`, `layers/…` UUIDs) whose upload files aren't present locally — unrelated to seeders, flagged separately.
+
+### [2026-08-07] Men's Section Customiser Garments (2 shirts + 4 trousers)
+
+**What was done:** Wired six new men's garments into the customiser catalogue from raw image drops in `public/assets/garments/`. Each is a `CustomizerProduct` with `gender='men'`, following the Sleeveless Tank shape (single `style` layer whose colour variants each carry their own photos), so they surface in the men's section (`whereIn('gender',['men','unisex'])`) with live colour swatches.
+
+- **New seeder (`MensGarmentsSeeder`):** one parameterised `seedColorGarment()` + a shared `PALETTE` slug→[name,hex] map, so adding a garment is a folder + colour-slug list, no per-product boilerplate. White is the only colour shot from other angles; those view files (`{slug}-back/left/right.png`) are picked up automatically via a `file_exists`-guarded `viewPath()`, so trousers (white has back+left, Cargo also right) need no special-casing vs shirts (back+left+right). Registered in `DatabaseSeeder` alongside a now-registered `SleevelessTankSeeder`.
+- **Products:** Men's Elbow-Sleeve Shirt (`shirt`, 95₾, 9 colours), Men's Short-Sleeve Tee (`shirt`, 45₾, 8 colours), and Chino / Corduroy / Dress / Cargo trousers (`trousers`, 120₾; 9 colours each, Cargo 10 incl. Sand). Unified 10-colour men's palette (white, black, charcoal, grey, slate blue, navy, olive, khaki, sand, brown) plus light-/dark-blue on the shirts.
+- **Assets:** the drop shipped white views with descriptive names but every colour variant as `unnamed (N).png` (and trousers had no named front at all). Each unnamed file was visually identified and renamed to the `{colour-slug}-front.png` convention. Redundant `TankTops/` folder (byte-identical to the existing `shirts/` behind the unisex Sleeveless Tank) deleted; the tank seeder now sets `gender='unisex'` explicitly so it already appears to men.
+
+**Verified:** all six seeded on SQLite with **zero missing image files** (every `image/back/left/right` path checked against `public_path`); gender/category/price/colour counts confirmed. Real HTTP: `GET /api/customizer/products?gender=men` → 200 with all six present (and hidden from women); `GET /api/customizer/products/mens-cargo-trousers` → 200 with the `Cargo` style option carrying 10 colours, each with `color_hex` + an `image_url` resolving to a real file. **Browser-verified** (Playwright + system Chrome against the running dev server): the Cargo and Elbow-Sleeve customisers render with the full swatch row (10 / 9 colours), price in ₾ (120 / 95) and the wine order button; clicking a swatch swaps the preview to the exact `{colour}-front.png` (White→Navy→Olive→Sand confirmed); the view switcher cycles white front→back→left→right (each a real photo); zero broken images and zero console errors on load.
+
 ### [2026-08-04] Remodel / Alter-My-Garment Service (4th entry point, priced reverse-marketplace)
 
 **What was done:** Added a third customer offering alongside Marketplace / Create Design / Upload Design — a **remodel** flow where a customer sends an existing garment to be altered, tailors bid with a price, and the customer picks one. Built as a new `order_type='remodel'` reusing the existing open-order → offer → choose-tailor → chat pipeline, not a parallel system.
@@ -1483,5 +1502,10 @@ Mobile UX pass on the landing:
 ### 2026-07-24 — Marketplace carousel centers on mobile
 
 - **Products snap to center on phones:** the landing `MarketplaceCarousel` cards used `snap-start`, so on mobile a card snapped flush-left and the next product's lopsided sliver showed on the right. Cards now `snap-center` below `sm`, and the strip goes full-bleed with an 11vw inset (78vw card + 11vw each side = 100vw) so every card — including the first and last — rests dead-center with a small symmetric peek. Tablet/desktop (2-up `sm`, 4-up `lg`) keep the original left-aligned layout.
+
+### 2026-08-07 — Men's garment card previews fit + colored defaults
+
+- **Preview pictures fit the card:** the custom-design product card (`DesignerApp`) rendered previews with `object-cover` in an `aspect-[4/3]` box, which cropped the portrait trouser shots (heads/feet cut off). Switched to `object-contain` on an `#EAE6E4` panel — sampled from the product photos' own studio background — so the whole garment shows regardless of shot aspect and the letterbox space blends seamlessly into the shot instead of framing it as a lighter rectangle. The image box is also aspect-aware: `trousers` products use a portrait `aspect-[3/4]` box (the shots are tall/narrow, so a landscape box left wide empty margins), everything else keeps `aspect-[4/3]`. Verified in-browser across the men's shirt and trouser grids.
+- **No more all-white default previews:** every men's garment (`MensGarmentsSeeder`) previously used `white-front.png` for both its card preview and its opening customizer view, which looked flat on the grid. Each garment's colour list now *leads* with a hero colour — Elbow/Short-Sleeve shirts → Navy, Chino/Cargo → Olive, Corduroy → Khaki, Dress → Charcoal — which becomes the default swatch, the card preview, and the base image (all derived from `$colorSlugs[0]` instead of a hardcoded white path). White stays selectable, just no longer the face of each product. Verified end-to-end: API serves the colored `preview_image_url`, images resolve 200, and the customizer opens on the colored default.
 
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*
