@@ -27,7 +27,7 @@
         <meta property="og:url"              content="https://kereforyou.com">
         <meta property="og:locale"           content="ka_GE">
         <meta property="og:locale:alternate" content="en_US">
-        <meta property="og:image"            content="https://kereforyou.com/assets/og-image.jpg">
+        <meta property="og:image"            content="https://kereforyou.com/assets/og-image.jpg?v=2">
         <meta property="og:image:width"      content="1200">
         <meta property="og:image:height"     content="630">
         <meta property="og:image:alt"        content="Kere — Custom Clothing Marketplace">
@@ -36,7 +36,7 @@
         <meta name="twitter:card"        content="summary_large_image">
         <meta name="twitter:title"       content="Kere — Custom Clothing Marketplace | Tbilisi, Georgia">
         <meta name="twitter:description" content="Connect with expert Georgian tailors for bespoke clothing. Handcrafted in Tbilisi.">
-        <meta name="twitter:image"       content="https://kereforyou.com/assets/og-image.jpg">
+        <meta name="twitter:image"       content="https://kereforyou.com/assets/og-image.jpg?v=2">
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/App.tsx'])
