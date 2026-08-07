@@ -1552,4 +1552,10 @@ Mobile UX pass on the landing:
 - **Dead gap below the hero on tall phones:** the mobile hero forced `min-height: calc(100vh - 40px)` with `align-items: flex-start`, so on tall devices (e.g. iPhone 16 Pro Max, 956px) the leftover height dumped as a large empty gap between the action buttons and the marketplace section. Changed the mobile `.kere-hero` to `min-height: auto` so the hero hugs its content and the next section follows immediately (desktop/tablet full-height hero unchanged).
 - **Removed the dead search bar from the mobile nav drawer:** the mobile menu opened with a `readOnly`, non-functional search input (placeholder only, went nowhere). Removed it (and its now-unused `Search` import) so the drawer opens straight to the nav links; nudged the nav's top margin to keep the spacing under the header.
 
+### 2026-08-07 — Compress garment images (design/customizer load speed)
+
+- **Garment preview/customizer images loaded slowly.** The `/design` category previews (and customizer layers) are the PNGs under `public/assets/garments/`. They were small in dimensions (~250×370) but hugely over-weight — 24-bit PNGs with no optimization, 90–670KB each (11.83MB total across 90 files). Recompressed every garment PNG in place with palette quantization (`sharp` `png({ palette: true, quality: 85 })`), preserving filenames, dimensions and per-image alpha — **11.83MB → 3.62MB (~69% smaller)** with no visible quality loss (verified the white-shirt worst case for banding). No code/reference changes since filenames are unchanged.
+- Added `loading="lazy"` + `decoding="async"` to the `DesignerApp` preview `<img>` so off-screen category previews defer.
+- **Note (infra, not code):** every garment asset was serving `cf-cache-status: EXPIRED` (Cloudflare's 4h TTL lapsing and re-hitting the `php artisan serve` origin). These files never change, so a Cloudflare Cache Rule setting a long/immutable edge TTL for `/assets/*` would keep them served from the edge — worth doing in the Cloudflare dashboard.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*
