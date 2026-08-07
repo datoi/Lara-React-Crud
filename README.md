@@ -1558,4 +1558,9 @@ Mobile UX pass on the landing:
 - Added `loading="lazy"` + `decoding="async"` to the `DesignerApp` preview `<img>` so off-screen category previews defer.
 - **Note (infra, not code):** every garment asset was serving `cf-cache-status: EXPIRED` (Cloudflare's 4h TTL lapsing and re-hitting the `php artisan serve` origin). These files never change, so a Cloudflare Cache Rule setting a long/immutable edge TTL for `/assets/*` would keep them served from the edge — worth doing in the Cloudflare dashboard.
 
+### 2026-08-07 — Compress the rest of the site's image assets
+
+- **Swept every non-garment image under `public/`** (backgrounds, design-category cutouts, auth/partner art, hero, size-fit): downscaled anything over 2000px and recompressed (JPEG mozjpeg q80 / palette PNG q90), preserving filenames + per-image alpha → **23.5MB → 5.7MB (~76% smaller)** across 32 files. Worst offender: `guarantee-texture.jpg` was a **5159×6878 (35MP) 12.4MB** background → **746KB**.
+- **Upload-card background** (`DesignerApp` "ჩემი ესკიზის ატვირთვა"): the `gold-upload-bg` was a 2.7MB photographic PNG with no transparency. Converted to a downscaled JPEG (`gold-upload-bg.jpg`, **148KB**, 95% smaller) and updated its single `bg-[url(...)]` reference; removed the PNG. (Favicon, og-image and source logos were deliberately excluded from the sweep.)
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

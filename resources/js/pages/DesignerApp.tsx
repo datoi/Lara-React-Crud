@@ -128,7 +128,7 @@ function CategoryStep({
                 className="group relative mx-auto mb-8 block w-full max-w-[300px] text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6F1D24] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7] sm:max-w-[340px] lg:rotate-[1deg]"
             >
                 <span className="pointer-events-none absolute -top-2 left-1/2 z-20 h-4 w-16 -translate-x-1/2 rotate-[2deg] bg-white/60 shadow-sm" />
-                <article className="border border-[#8A6A2B]/45 bg-[url('/assets/design-categories/gold-upload-bg.png')] bg-cover bg-center px-4 py-4 text-center text-white shadow-[0_12px_28px_rgba(88,68,29,0.18)] transition-all duration-500 group-hover:-translate-y-1.5 group-hover:rotate-[-1deg]">
+                <article className="border border-[#8A6A2B]/45 bg-[url('/assets/design-categories/gold-upload-bg.jpg')] bg-cover bg-center px-4 py-4 text-center text-white shadow-[0_12px_28px_rgba(88,68,29,0.18)] transition-all duration-500 group-hover:-translate-y-1.5 group-hover:rotate-[-1deg]">
                     <span className="mx-auto flex h-8 w-8 items-center justify-center rounded-full border border-white/35 bg-black/10 text-white">
                         <Upload className="h-3.5 w-3.5 stroke-[1.4]" />
                     </span>
