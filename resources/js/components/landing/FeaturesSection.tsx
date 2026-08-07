@@ -90,7 +90,7 @@ export function FeaturesSection() {
                 {t('features.sectionSubtitle')}
               </p>
 
-              <span className="h-2 w-2 rounded-full bg-white" />
+              <span className="hidden h-2 w-2 rounded-full bg-white sm:block" />
             </div>
           </div>
         </div>

@@ -1548,5 +1548,6 @@ Mobile UX pass on the landing:
 ### 2026-08-07 — Mobile hero action buttons stack full-width
 
 - On phones (`max-width:640px`) the two primary hero buttons were forced to `width:50%` at `font-size:10px`, so the longer Georgian label ("შექმენი შენი დიზაინი") wrapped to two lines and sat unbalanced next to its sibling. Switched `.kere-actions-row` to `flex-direction:column` with full-width buttons (matching the remodel button), single-line labels, and bumped the button to `min-height:44px` / `font-size:12px` / `16px` icons for a proper touch target and legibility.
+- **Orphaned dot in FeaturesSection on mobile:** the decorative dot in the "Kere-ს გარანტია" card footer sits at the right end of the subtitle row on desktop (`sm:flex-row sm:justify-between`), but on mobile the row is `flex-col`, dropping the dot below the text as a stray bottom-left circle. Hid it on mobile (`hidden sm:block`) since it only reads as an accent in the horizontal layout.
 
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*
