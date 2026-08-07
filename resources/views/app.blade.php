@@ -28,6 +28,8 @@
         <meta property="og:locale"           content="ka_GE">
         <meta property="og:locale:alternate" content="en_US">
         <meta property="og:image"            content="https://kereforyou.com/assets/og-image.jpg?v=3">
+        <meta property="og:image:secure_url" content="https://kereforyou.com/assets/og-image.jpg?v=3">
+        <meta property="og:image:type"       content="image/jpeg">
         <meta property="og:image:width"      content="1200">
         <meta property="og:image:height"     content="630">
         <meta property="og:image:alt"        content="Kere — Custom Clothing Marketplace">
