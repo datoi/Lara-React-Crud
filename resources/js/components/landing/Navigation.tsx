@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router';
-import { Menu, Search, ShoppingBag, X, User } from 'lucide-react';
+import { Menu, ShoppingBag, X, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
@@ -252,17 +252,7 @@ export function Navigation() {
                                 </div>
                             </div>
 
-                            <div className="mx-auto mt-10 flex w-full max-w-[720px] items-center gap-4 border-b border-black/14 pb-3 sm:mt-12 sm:gap-5">
-                                <Search className="h-5 w-5 shrink-0 text-black/28 sm:h-6 sm:w-6" />
-                                <input
-                                    readOnly
-                                    aria-label={t('marketplace.searchPlaceholder')}
-                                    placeholder={t('marketplace.searchPlaceholder')}
-                                    className="w-full border-0 bg-transparent p-0 text-[clamp(0.9rem,2.1vw,1.12rem)] font-light tracking-normal text-[#111111] placeholder:text-black/50 focus:outline-none focus:ring-0"
-                                />
-                            </div>
-
-                            <nav className="mx-auto mt-8 grid w-full max-w-[720px] flex-1 gap-0 border-t border-black/10 sm:mt-10 md:grid-cols-2">
+                            <nav className="mx-auto mt-10 grid w-full max-w-[720px] flex-1 gap-0 border-t border-black/10 sm:mt-12 md:grid-cols-2">
                                 {showSiteAnchors && (
                                     <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
                                         {t('nav.howItWorks')}
