@@ -58,6 +58,14 @@ Route::get('/sitemap.xml', function () {
     return response($xml, 200)->header('Content-Type', 'application/xml');
 });
 
+// ─── Product pages: real 404 for deleted products ───────────────────────────
+// The SPA otherwise renders its "product not found" state with a 200, a soft-404
+// that keeps stale/deleted product URLs indexed. Serve the same app shell but
+// with a 404 status when the product is gone so crawlers drop the URL.
+Route::get('/product/{id}', function (string $id) {
+    return response()->view('app', [], Product::whereKey($id)->exists() ? 200 : 404);
+})->where('id', '[0-9]+');
+
 // ─── SPA catch-all ───────────────────────────────────────────────────────────
 Route::get('/{any}', function () {
     return view('app');
