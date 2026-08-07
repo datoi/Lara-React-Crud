@@ -16,6 +16,7 @@ class SleevelessTankSeeder extends Seeder
             [
                 'name' => 'Sleeveless Tank',
                 'category' => 'shirt',
+                'gender' => 'unisex',
                 'description' => 'Classic sleeveless tank — pick your colour.',
                 'base_price' => 90,
                 'is_active' => true,
