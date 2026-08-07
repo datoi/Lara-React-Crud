@@ -440,7 +440,7 @@
 
 @media (max-width: 640px) {
   .kere-hero {
-    min-height: calc(100vh - 40px);
+    min-height: auto;
     padding: 58px 8px 12px;
     align-items: flex-start;
   }
