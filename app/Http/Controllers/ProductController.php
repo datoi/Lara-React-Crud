@@ -203,7 +203,7 @@ class ProductController extends Controller
             'stock'                 => 'nullable|integer|min:0|max:9999',
         ]);
 
-        $slug = Str::slug($data['name']) . '-' . Str::random(6);
+        $slug = Str::slug($data['name']) . '-' . Str::lower(Str::random(6));
 
         $product = Product::create([
             'tailor_id'             => $user->id,
