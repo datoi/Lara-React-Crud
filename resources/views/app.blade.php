@@ -16,8 +16,8 @@
         <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&family=Noto+Sans+Georgian:wght@400;500;600;700&family=Noto+Serif+Georgian:wght@500;600;700&display=swap" rel="stylesheet">
 
         <!-- Favicon -->
-        <link rel="icon" type="image/png" href="/favicon.png?v=2">
-        <link rel="shortcut icon" type="image/png" href="/favicon.png?v=2">
+        <link rel="icon" type="image/png" href="/favicon.png?v=3">
+        <link rel="shortcut icon" type="image/png" href="/favicon.png?v=3">
 
         <!-- Open Graph -->
         <meta property="og:type"             content="website">
