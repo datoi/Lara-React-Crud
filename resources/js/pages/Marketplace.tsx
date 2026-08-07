@@ -272,7 +272,7 @@ export default function Marketplace() {
                     </p>
                 </div>
 
-                <div className="mb-5 grid items-start gap-3 lg:grid-cols-[230px_1fr_auto_auto]">
+                <div className="lg:grid lg:grid-cols-[230px_1fr] lg:gap-6 lg:items-start">
                     <div className="hidden border border-[#111111]/15 bg-[#EEEAE0] p-4 lg:block">
                         <p className="mb-3 text-[10px] font-bold uppercase text-[#111111]">{t('marketplace.categoryLabel')}</p>
                         <div className="space-y-1">
@@ -311,6 +311,9 @@ export default function Marketplace() {
                             {t('marketplace.clearFilters')}
                         </button>
                     </div>
+
+                    <div className="min-w-0">
+                    <div className="mb-5 grid items-start gap-3 lg:grid-cols-[1fr_auto_auto]">
                     <div className="relative flex-1">
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         <input
@@ -444,7 +447,7 @@ export default function Marketplace() {
                 </div>
 
                 {(hasActiveFilters || sort) && (
-                    <div className="mb-4 flex flex-wrap gap-2 lg:pl-[245px]">
+                    <div className="mb-4 flex flex-wrap gap-2">
                         {selectedCategory && (
                             <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-medium px-3 py-1.5 rounded-full">
                                 {categories.find(c => c.slug === selectedCategory)?.name ?? selectedCategory}
@@ -479,11 +482,11 @@ export default function Marketplace() {
                 {fetchError ? (
                     <ErrorFallback message={t('marketplace.errorLoad')} onRetry={() => { setFetchError(false); setLoading(true); setPage(1); setRetryKey(k => k + 1); }} />
                 ) : loading ? (
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:ml-[245px]">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
                         {[...Array(8)].map((_, i) => <ProductCardSkeleton key={i} />)}
                     </div>
                 ) : products.length === 0 ? (
-                    <div className="py-32 text-center lg:ml-[245px]">
+                    <div className="py-32 text-center">
                         <p className="mb-1 font-medium text-[#514843]">{t('marketplace.noProducts')}</p>
                         <p className="mb-4 text-sm text-[#6c625b]">{t('marketplace.noProductsHint')}</p>
                         <button
@@ -494,7 +497,7 @@ export default function Marketplace() {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:ml-[245px]">
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                         {products.map((product, i) => {
                             const isNew = newProductIdsRef.current === null || newProductIdsRef.current.has(product.id);
                             const newBatchIndex = newProductIdsRef.current
@@ -592,6 +595,8 @@ export default function Marketplace() {
                         </button>
                     </div>
                 )}
+                    </div>
+                </div>
             </div>
 
             {(showFilters || showSort) && (

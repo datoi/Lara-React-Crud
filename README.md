@@ -1512,4 +1512,13 @@ Mobile UX pass on the landing:
 
 - **Favicon and social share card refreshed:** replaced the browser-tab icon (`public/favicon.jpg`) and the Open Graph / Twitter share image (`public/assets/og-image.jpg`, referenced in `app.blade.php`) with the new KERE wordmark on the wine brand background. The favicon is the clean `KERE` mark cropped to a 256×256 square; the share card is a purpose-built **1200×630** landscape (matching the declared `og:image` dimensions) with the tagline logo (`KERE — DESIGN IT, WEAR IT, OWN IT.`) centered on a flat wine canvas whose colour was sampled from the source logo (`rgb(99,32,39)`) so there's no seam. Both filenames were kept, so no markup changed and no scraper-cache churn beyond a re-scrape. The in-app brand logo (`assets/brand/kere-logo.png`, used in `MarketplaceCarousel`) was already byte-identical to the new plain mark, so it needed no update.
 
+### 2026-08-07 — Fix Marketplace dead space above the product grid
+
+- **Root cause:** the desktop filter sidebar (category + price, ~220px tall) shared a single grid row with the search bar (`grid lg:grid-cols-[230px_1fr_auto_auto]`), and the product grid was a *separate* block below it nudged rightward with `lg:ml-[245px]`. Because the row stretched to the sidebar's height, the products couldn't rise up beside it — they began below the full sidebar, leaving a large empty rectangle to the right of the sidebar and under the search bar.
+- **Fix:** restructured into a real two-column layout (`lg:grid-cols-[230px_1fr]`) — sidebar in the left column, and a right column that stacks the search/sort row, active-filter chips, result count and product grid so they flow from the top directly under the search bar. Removed the fragile `ml-[245px]` / `pl-[245px]` magic-number offsets that the old sibling layout depended on. Mobile is unchanged (sidebar stays `hidden lg:block`; the search row keeps its stacked-below-`lg` behaviour).
+
+### 2026-08-07 — Taller hero gallery band
+
+- **Landing hero curved carousel was too short.** The garment images in the hero arc (`.kere-gallery` / `.kere-gallery-image` in `app.css`) showed only a thin horizontal strip because the white curve masks (`kere-ellipse-top`/`bottom`) each intrude a fixed ~95px over the top and bottom, and the gallery was only `clamp(330px, 42vh, 430px)` tall — leaving a visible band of ~200px. Raised the desktop gallery height and image height to `clamp(430px, 52vh, 540px)`, growing the visible band to ~240–350px (~60% taller) while keeping the same curve. Tablet/mobile (`max-width:991px`/`640px`) values are untouched.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*
