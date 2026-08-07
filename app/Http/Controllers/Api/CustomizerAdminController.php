@@ -46,7 +46,7 @@ class CustomizerAdminController extends Controller
             'preview' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
         ]);
 
-        $data['slug'] = $data['slug'] ?? $this->uniqueProductSlug($data['name']);
+        $data['slug'] = $this->uniqueProductSlug($data['slug'] ?? $data['name']);
 
         if ($request->hasFile('preview')) {
             $data['preview_image_path'] = $request->file('preview')
@@ -59,14 +59,16 @@ class CustomizerAdminController extends Controller
         return response()->json(['product' => new CustomizerProductResource($product)], 201);
     }
 
-    /** Slugify the product name, appending -2, -3, … until unique. */
-    private function uniqueProductSlug(string $name): string
+    /** Normalise a name/slug to a URL-safe slug, appending -2, -3, … until unique. */
+    private function uniqueProductSlug(string $source, ?int $ignoreId = null): string
     {
-        $base = Str::slug($name) ?: 'product';
+        $base = Str::slug($source) ?: 'product';
         $slug = $base;
         $n = 2;
 
-        while (CustomizerProduct::where('slug', $slug)->exists()) {
+        while (CustomizerProduct::where('slug', $slug)
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->exists()) {
             $slug = "{$base}-{$n}";
             $n++;
         }
@@ -88,6 +90,10 @@ class CustomizerAdminController extends Controller
             'is_active' => ['nullable', 'boolean'],
             'preview' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:4096'],
         ]);
+
+        if (array_key_exists('slug', $data)) {
+            $data['slug'] = $this->uniqueProductSlug($data['slug'], $product->id);
+        }
 
         if ($request->hasFile('preview')) {
             if ($product->preview_image_path) {

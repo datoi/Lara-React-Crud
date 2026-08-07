@@ -1527,4 +1527,10 @@ Mobile UX pass on the landing:
 
 - **Landing hero curved carousel was too short.** The garment images in the hero arc (`.kere-gallery` / `.kere-gallery-image` in `app.css`) showed only a thin horizontal strip because the white curve masks (`kere-ellipse-top`/`bottom`) each intrude a fixed ~95px over the top and bottom, and the gallery was only `clamp(330px, 42vh, 430px)` tall — leaving a visible band of ~200px. Raised the desktop gallery height and image height to `clamp(430px, 52vh, 540px)`, growing the visible band to ~240–350px (~60% taller) while keeping the same curve. Tablet/mobile (`max-width:991px`/`640px`) values are untouched.
 
+### 2026-08-07 — Normalize customizer-product slugs + admin slug guard
+
+- **Bad slugs fixed:** two admin-created products had raw slugs (`Red Shirt`, `Tank-Top`) because `CustomizerAdminController::createProduct` only ran `Str::slug` when *no* slug was supplied — a hand-typed slug was stored verbatim, and `updateProduct` applied it unmodified too. Spaces/capitals in a slug are fragile in URLs.
+- **Guard added:** the supplied slug now always flows through `uniqueProductSlug()` (which slugifies **and** de-duplicates with `-2`, `-3`, …) on both create and update; `uniqueProductSlug` gained an `$ignoreId` param so an update doesn't collide with the product's own row.
+- **Existing rows normalized:** a data migration (`2026_08_07_000002_normalize_customizer_product_slugs`) re-slugs any non-normalized slug (`Red Shirt` → `red-shirt`, `Tank-Top` → `tank-top`, local `witeli maika` → `witeli-maika`), skipping already-clean ones and guarding against collisions. `saved_designs` reference the product by id and orders keep a `garment_type` string snapshot, so the change is safe.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*
