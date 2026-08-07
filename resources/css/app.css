@@ -515,17 +515,18 @@
 
   .kere-actions-row {
     width: 100%;
+    flex-direction: column;
     gap: 8px;
   }
 
   .kere-actions-row .kere-button {
-    width: 50%;
+    width: 100%;
   }
 
   .kere-button {
-    min-height: 38px;
-    padding: 0 10px;
-    font-size: 10px;
+    min-height: 44px;
+    padding: 0 18px;
+    font-size: 12px;
   }
 
   .kere-button-remodel {
@@ -533,8 +534,8 @@
   }
 
   .kere-button svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
   }
 }
 
