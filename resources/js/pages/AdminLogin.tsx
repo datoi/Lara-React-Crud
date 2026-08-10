@@ -57,7 +57,7 @@ export default function AdminLogin() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+        <div className="kere-workflow-page min-h-screen bg-slate-950 flex items-center justify-center px-4">
             <Helmet>
                 <title>Admin Login | Kere</title>
                 <meta name="robots" content="noindex" />

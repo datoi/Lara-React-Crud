@@ -23,7 +23,7 @@ export default function Contact() {
     };
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="kere-info-page min-h-screen bg-white">
             <EmailSupportModal open={supportOpen} onClose={() => setSupportOpen(false)} />
             <Navigation />
             <div className="h-16" />

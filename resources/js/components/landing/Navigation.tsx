@@ -1,10 +1,24 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router';
-import { Menu, Search, ShoppingBag, X, User } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { Menu, Search, ShoppingBag, User, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
+import { Link, useLocation } from 'react-router';
+import { getAuthToken, getAuthUser } from '../../hooks/useAuth';
 import { NotificationBell } from '../NotificationBell';
+
+function AnimatedNavText({ children }: { children: ReactNode }) {
+    return (
+        <span className="relative inline-grid overflow-hidden align-middle">
+            <span className="col-start-1 row-start-1 transition-transform duration-300 ease-out group-hover:-translate-y-full">{children}</span>
+            <span
+                aria-hidden="true"
+                className="absolute inset-0 translate-y-full transition-transform duration-300 ease-out group-hover:translate-y-0"
+            >
+                {children}
+            </span>
+        </span>
+    );
+}
 
 function LanguageToggle({ isOverDark }: { isOverDark: boolean }) {
     const { i18n } = useTranslation();
@@ -19,7 +33,7 @@ function LanguageToggle({ isOverDark }: { isOverDark: boolean }) {
     return (
         <button
             onClick={toggle}
-            className={`text-[10px] font-bold uppercase tracking-[0.12em] transition-opacity hover:opacity-55 ${isOverDark ? 'text-white' : 'text-[#111111]'}`}
+            className={`text-[10px] font-bold tracking-[0.12em] uppercase transition-opacity hover:opacity-55 ${isOverDark ? 'text-white' : 'text-[#111111]'}`}
             title={isKa ? 'Switch to English' : 'ქართულზე გადართვა'}
         >
             {isKa ? 'EN' : 'ქართ'}
@@ -32,7 +46,7 @@ export function Navigation() {
     const [isOverDark, setIsOverDark] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const { t } = useTranslation();
-    const user  = getAuthToken() ? getAuthUser() : null;
+    const user = getAuthToken() ? getAuthUser() : null;
     const { pathname } = useLocation();
     // The #how-it-works / #faq sections exist on the landing and "for tailors" pages,
     // so the navbar anchors show there (and scroll to whichever page you're on).
@@ -47,11 +61,7 @@ export function Navigation() {
                 return false;
             }
 
-            if (
-                section.matches(
-                    '[data-nav-theme="dark"], .partners-benefits-design, .kere-brand-dark-section, .bg-slate-900, .bg-slate-800',
-                )
-            ) {
+            if (section.matches('[data-nav-theme="dark"], .partners-benefits-design, .kere-brand-dark-section, .bg-slate-900, .bg-slate-800')) {
                 return true;
             }
 
@@ -102,7 +112,7 @@ export function Navigation() {
                         aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
                     >
                         {mobileOpen ? <X className="h-4 w-4 stroke-[1.5]" /> : <Menu className="h-4 w-4 stroke-[1.5]" />}
-                        <span className="hidden text-[10px] font-semibold uppercase tracking-[0.08em] sm:inline">
+                        <span className="hidden text-[10px] font-semibold tracking-[0.08em] uppercase sm:inline">
                             {mobileOpen ? 'Close' : 'Menu'}
                         </span>
                     </button>
@@ -112,36 +122,36 @@ export function Navigation() {
                             <>
                                 <a
                                     href="#how-it-works"
-                                    className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                                    className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
                                 >
-                                    {t('nav.howItWorks')}
+                                    <AnimatedNavText>{t('nav.howItWorks')}</AnimatedNavText>
                                 </a>
                                 <a
                                     href="#faq"
-                                    className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                                    className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
                                 >
-                                    {t('nav.faq')}
+                                    <AnimatedNavText>{t('nav.faq')}</AnimatedNavText>
                                 </a>
                                 <span aria-hidden className={`h-3.5 w-px ${isOverDark ? 'bg-white/25' : 'bg-black/20'}`} />
                             </>
                         )}
                         <Link
                             to="/marketplace"
-                            className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                            className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
                         >
-                            {t('marketplace.title')}
+                            <AnimatedNavText>{t('marketplace.title')}</AnimatedNavText>
                         </Link>
                         <Link
                             to="/design"
-                            className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                            className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
                         >
-                            {t('nav.startDesigning')}
+                            <AnimatedNavText>{t('nav.startDesigning')}</AnimatedNavText>
                         </Link>
                         <Link
                             to="/remodel"
-                            className={`text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 ${navTextClass}`}
+                            className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
                         >
-                            {t('nav.remodel')}
+                            <AnimatedNavText>{t('nav.remodel')}</AnimatedNavText>
                         </Link>
                     </div>
                 </div>
@@ -149,17 +159,17 @@ export function Navigation() {
                 <Link
                     to="/"
                     onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                    className={`justify-self-center text-[18px] font-medium leading-none tracking-normal transition-opacity hover:opacity-70 sm:text-[19px] lg:text-[20px] ${navTextClass}`}
+                    className={`group justify-self-center text-[18px] leading-none font-medium tracking-normal sm:text-[19px] lg:text-[20px] ${navTextClass}`}
                 >
-                    Kere
+                    <AnimatedNavText>Kere</AnimatedNavText>
                 </Link>
 
                 <div className="flex min-w-0 items-center justify-end gap-4 sm:gap-7">
                     <Link
                         to="/partners"
-                        className={`hidden text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 md:inline ${navTextClass}`}
+                        className={`group hidden text-[10px] font-semibold tracking-[0.08em] uppercase md:inline ${navTextClass}`}
                     >
-                        {t('nav.forTailors')}
+                        <AnimatedNavText>{t('nav.forTailors')}</AnimatedNavText>
                     </Link>
 
                     <div className="inline-flex sm:hidden">
@@ -170,10 +180,10 @@ export function Navigation() {
                         <>
                             <Link
                                 to={user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
-                                className={`hidden items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 sm:inline-flex ${navTextClass}`}
+                                className={`group hidden items-center gap-2 text-[10px] font-semibold tracking-[0.08em] uppercase sm:inline-flex ${navTextClass}`}
                             >
                                 <User className="h-4 w-4 stroke-[1.5]" />
-                                <span>{user.first_name} {user.last_name}</span>
+                                <AnimatedNavText>{user.first_name} {user.last_name}</AnimatedNavText>
                             </Link>
 
                             <div>
@@ -184,12 +194,16 @@ export function Navigation() {
                         <>
                             <Link
                                 to="/signin"
-                                className={`hidden text-[10px] font-semibold uppercase tracking-[0.08em] transition-opacity hover:opacity-55 sm:inline ${navTextClass}`}
+                                className="kere-sign-in-link group hidden min-h-9 items-center bg-[#111111] px-4 text-sm font-normal !text-white transition-colors hover:bg-[#2b2b2b] hover:!text-white sm:inline-flex"
                             >
-                                {t('nav.signIn')}
+                                <AnimatedNavText>{t('nav.signIn')}</AnimatedNavText>
                             </Link>
 
-                            <Link to="/signin" aria-label={t('nav.signIn')} className={`inline-flex transition-opacity hover:opacity-55 sm:hidden ${navTextClass}`}>
+                            <Link
+                                to="/signin"
+                                aria-label={t('nav.signIn')}
+                                className={`inline-flex transition-opacity hover:opacity-55 sm:hidden ${navTextClass}`}
+                            >
                                 <User className="h-4 w-4 stroke-[1.5]" />
                             </Link>
                         </>
@@ -219,7 +233,7 @@ export function Navigation() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -12 }}
                             transition={{ duration: 0.5 }}
-                            className="flex min-h-[100dvh] w-full flex-col overflow-y-auto bg-[#E4E0D7] px-5 pb-7 pt-5 text-[#111111] sm:px-8 sm:pb-9 sm:pt-7 lg:px-12"
+                            className="flex min-h-[100dvh] w-full flex-col overflow-y-auto bg-[#E4E0D7] px-5 pt-5 pb-7 text-[#111111] sm:px-8 sm:pt-7 sm:pb-9 lg:px-12"
                         >
                             <div className="grid grid-cols-[1fr_auto_1fr] items-center">
                                 <button
@@ -233,7 +247,7 @@ export function Navigation() {
                                 <Link
                                     to="/"
                                     onClick={() => setMobileOpen(false)}
-                                    className="justify-self-center text-center text-[clamp(1.45rem,4vw,2.15rem)] font-medium leading-none tracking-normal text-[#111111]"
+                                    className="justify-self-center text-center text-[clamp(1.45rem,4vw,2.15rem)] leading-none font-medium tracking-normal text-[#111111]"
                                 >
                                     Kere
                                 </Link>
@@ -258,37 +272,69 @@ export function Navigation() {
                                     readOnly
                                     aria-label={t('marketplace.searchPlaceholder')}
                                     placeholder={t('marketplace.searchPlaceholder')}
-                                    className="w-full border-0 bg-transparent p-0 text-[clamp(0.9rem,2.1vw,1.12rem)] font-light tracking-normal text-[#111111] placeholder:text-black/50 focus:outline-none focus:ring-0"
+                                    className="w-full border-0 bg-transparent p-0 text-[clamp(0.9rem,2.1vw,1.12rem)] font-light tracking-normal text-[#111111] placeholder:text-black/50 focus:ring-0 focus:outline-none"
                                 />
                             </div>
 
                             <nav className="mx-auto mt-8 grid w-full max-w-[720px] flex-1 gap-0 border-t border-black/10 sm:mt-10 md:grid-cols-2">
                                 {showSiteAnchors && (
-                                    <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
+                                    <a
+                                        href="#how-it-works"
+                                        onClick={() => setMobileOpen(false)}
+                                        className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] leading-none font-light tracking-normal text-[#111111] lowercase transition-opacity hover:opacity-45 md:px-5"
+                                    >
                                         {t('nav.howItWorks')}
                                     </a>
                                 )}
-                                <Link to="/marketplace" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
+                                <Link
+                                    to="/marketplace"
+                                    onClick={() => setMobileOpen(false)}
+                                    className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] leading-none font-light tracking-normal text-[#111111] lowercase transition-opacity hover:opacity-45 md:px-5"
+                                >
                                     {t('marketplace.title')}
                                 </Link>
-                                <Link to="/design" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
+                                <Link
+                                    to="/design"
+                                    onClick={() => setMobileOpen(false)}
+                                    className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] leading-none font-light tracking-normal text-[#111111] lowercase transition-opacity hover:opacity-45 md:px-5"
+                                >
                                     {t('nav.startDesigning')}
                                 </Link>
-                                <Link to="/remodel" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
+                                <Link
+                                    to="/remodel"
+                                    onClick={() => setMobileOpen(false)}
+                                    className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] leading-none font-light tracking-normal text-[#111111] lowercase transition-opacity hover:opacity-45 md:px-5"
+                                >
                                     {t('nav.remodel')}
                                 </Link>
-                                <Link to="/partners" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
+                                <Link
+                                    to="/partners"
+                                    onClick={() => setMobileOpen(false)}
+                                    className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] leading-none font-light tracking-normal text-[#111111] lowercase transition-opacity hover:opacity-45 md:px-5"
+                                >
                                     {t('nav.forTailors')}
                                 </Link>
                                 {showSiteAnchors && (
-                                    <a href="#faq" onClick={() => setMobileOpen(false)} className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5">
+                                    <a
+                                        href="#faq"
+                                        onClick={() => setMobileOpen(false)}
+                                        className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] leading-none font-light tracking-normal text-[#111111] lowercase transition-opacity hover:opacity-45 md:px-5"
+                                    >
                                         {t('nav.faq')}
                                     </a>
                                 )}
                                 <Link
-                                    to={user ? (user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard') : '/signin'}
+                                    to={
+                                        user
+                                            ? user.role === 'admin'
+                                                ? '/admin-dashboard'
+                                                : user.role === 'tailor'
+                                                  ? '/tailor-dashboard'
+                                                  : '/customer-dashboard'
+                                            : '/signin'
+                                    }
                                     onClick={() => setMobileOpen(false)}
-                                    className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] font-light lowercase leading-none tracking-normal text-[#111111] transition-opacity hover:opacity-45 md:px-5"
+                                    className="border-b border-black/10 py-5 text-[clamp(1.05rem,2.5vw,1.55rem)] leading-none font-light tracking-normal text-[#111111] lowercase transition-opacity hover:opacity-45 md:px-5"
                                 >
                                     {user ? `${user.first_name} ${user.last_name}` : t('nav.signIn')}
                                 </Link>
@@ -299,7 +345,7 @@ export function Navigation() {
                                     <Link
                                         to="/signin"
                                         onClick={() => setMobileOpen(false)}
-                                        className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#111111] transition-opacity hover:opacity-55"
+                                        className="inline-flex items-center gap-2 text-[12px] font-semibold tracking-[0.14em] text-[#111111] uppercase transition-opacity hover:opacity-55"
                                     >
                                         <User className="h-4 w-4" />
                                         {t('nav.signIn')}

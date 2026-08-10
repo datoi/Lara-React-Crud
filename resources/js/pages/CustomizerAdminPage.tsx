@@ -41,7 +41,7 @@ export default function CustomizerAdminPage() {
     const [tab, setTab] = useState<'products' | 'fabrics'>('products');
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="kere-workflow-page min-h-screen bg-slate-50">
             <Helmet><title>Customizer Admin | Kere</title></Helmet>
 
             {/* Nav */}

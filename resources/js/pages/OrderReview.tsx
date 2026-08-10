@@ -123,7 +123,7 @@ export default function OrderReview() {
     const isAutoMatch  = draft.assignment_mode === 'random' || draft.tailor_id === null;
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="kere-workflow-page min-h-screen bg-slate-50">
             <Helmet><title>Review Your Order | Kere</title></Helmet>
 
             <nav className="sticky top-0 z-50 bg-white border-b border-slate-200">

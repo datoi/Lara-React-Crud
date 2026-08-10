@@ -3,7 +3,8 @@ import { motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
+import { Footer } from '../components/landing/Footer';
 import { Navigation } from '../components/landing/Navigation';
 import { Button } from '../components/ui/button';
 import { getAuthToken, getAuthUser, saveReturnTo } from '../hooks/useAuth';
@@ -159,19 +160,30 @@ export default function RemodelRequest() {
 
             <Navigation />
 
-            <main className="relative overflow-hidden px-5 pt-28 pb-20 sm:px-8 sm:pt-36 lg:px-12 lg:pt-40 lg:pb-28">
+            <main className="relative overflow-hidden px-5 pt-11 pb-20 sm:px-8 lg:px-12 lg:pb-28">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full">
-                    <div className="mx-auto mb-16 max-w-[760px] text-center sm:mb-20">
-                        <h1 className="font-serif text-[clamp(2.75rem,5vw,5rem)] leading-[0.95] font-normal tracking-[-0.035em] text-[#17130F]">
-                            {t('remodel.heroTitle')}
-                        </h1>
-                        <p className="mx-auto mt-6 max-w-[600px] text-sm leading-6 text-[#4F463E] sm:text-base sm:leading-7">
-                            {t('remodel.subtitle')}
-                        </p>
+                    <div
+                        className="relative left-1/2 flex h-[52svh] min-h-[430px] w-screen -translate-x-1/2 items-center justify-center overflow-hidden bg-cover bg-center px-5 text-center sm:min-h-[500px] sm:px-8 lg:h-[58svh] lg:px-12"
+                        style={{ backgroundImage: "url('/assets/backgrounds/remodel-gold-texture.png')" }}
+                    >
+                        <div className="absolute inset-0 bg-[#261D1B]/32" aria-hidden="true" />
+                        <div className="relative mx-auto w-full">
+                            <p className="mb-4 text-[10px] font-semibold tracking-[0.16em] text-[#FFF8E8] uppercase sm:text-xs">{t('remodel.eyebrow')}</p>
+                            <h1 className="font-serif text-[clamp(3.25rem,9vw,9.5rem)] leading-[0.82] font-normal tracking-[-0.055em] text-[#FFF8E8] drop-shadow-[0_4px_30px_rgba(38,29,27,0.28)]">
+                                {t('nav.remodel')}
+                            </h1>
+                        </div>
                     </div>
 
-                    <div className="relative left-1/2 w-screen -translate-x-1/2 bg-[#E4E0D7] px-2 py-8 sm:px-3 sm:py-10 lg:px-4 lg:py-12">
-                        <div className="relative mx-auto w-full border border-[#261D1B]/15 bg-[#F2EAD7] px-6 py-10 shadow-[0_24px_70px_rgba(38,29,27,0.20)] sm:px-12 sm:py-14 lg:px-16 lg:py-16">
+                    <div className="relative left-1/2 w-screen -translate-x-1/2 bg-[#E4E0D7] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+                        <div className="mx-auto mb-14 w-full max-w-[1050px] text-center sm:mb-20">
+                            <p className="mb-5 text-left text-[10px] font-semibold tracking-[0.12em] text-[#111111] uppercase">
+                                <Link to="/" className="transition-opacity hover:opacity-55">Kere</Link> / {t('nav.remodel')}
+                            </p>
+                            <p className="mx-auto max-w-[620px] text-sm leading-6 text-[#4F463E] sm:text-base sm:leading-7">{t('remodel.subtitle')}</p>
+                        </div>
+
+                        <div className="relative mx-auto w-full max-w-[1050px] border border-[#261D1B]/12 bg-[#F2EAD7] px-6 py-10 sm:px-12 sm:py-14 lg:px-16 lg:py-16">
                             {/* Garment photos */}
                             <section className="mb-14">
                                 <h2 className="mb-2 text-lg font-semibold tracking-normal text-[#17130F]">{t('remodel.photosLabel')}</h2>
@@ -308,7 +320,7 @@ export default function RemodelRequest() {
                             <Button
                                 onClick={handleSubmit}
                                 disabled={!canSubmit}
-                                className="mx-auto flex min-h-11 w-fit rounded-none bg-[#292317] px-10 text-[11px] font-semibold tracking-[0.12em] text-[#F5EEDC] uppercase hover:bg-[#443B29]"
+                                className="mx-auto flex min-h-11 w-fit rounded-none bg-[#111111] px-10 text-[11px] font-semibold tracking-[0.12em] text-white uppercase hover:bg-[#2B2B2B] disabled:bg-[#111111] disabled:text-white disabled:opacity-100"
                             >
                                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                                 {t('remodel.submit')}
@@ -317,27 +329,10 @@ export default function RemodelRequest() {
                         </div>
                     </div>
 
-                    <div
-                        className="relative left-1/2 flex h-[460px] w-screen -translate-x-1/2 items-center justify-center overflow-hidden bg-[#E8E5DE] sm:h-[580px] lg:h-[720px]"
-                        style={{
-                            backgroundImage: "url('/assets/backgrounds/kere-concrete.jpg')",
-                            backgroundRepeat: 'repeat',
-                            backgroundSize: '275px 484px',
-                        }}
-                    >
-                        <div className="absolute inset-0 bg-black/25" aria-hidden="true" />
-                        <span
-                            className="relative font-serif text-[clamp(5rem,14vw,13rem)] leading-none font-normal tracking-[-0.07em] text-[#FFFDF3]"
-                            style={{
-                                textShadow:
-                                    '0 0 2px rgba(255,255,255,1), 0 0 10px rgba(255,255,245,0.95), 0 0 28px rgba(255,255,240,0.65), 0 0 70px rgba(255,255,235,0.35)',
-                            }}
-                        >
-                            Kere
-                        </span>
-                    </div>
                 </motion.div>
             </main>
+
+            <Footer />
         </div>
     );
 }

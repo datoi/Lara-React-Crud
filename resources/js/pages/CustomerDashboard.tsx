@@ -538,7 +538,7 @@ export default function CustomerDashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="kere-workflow-page min-h-screen bg-slate-50">
             <Helmet>
                 <title>{t('customerDashboard.pageTitle')}</title>
                 <meta name="robots" content="noindex" />

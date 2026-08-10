@@ -1,21 +1,23 @@
-import { useState, useEffect } from 'react';
-import { Helmet } from 'react-helmet-async';
-import { Link, useParams, useNavigate } from 'react-router';
+import { Check, HelpCircle, Info, Loader2, Minus, Palette, Pencil, Plus, Star, User } from 'lucide-react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Star, Minus, Plus, Check, Loader2, HelpCircle, User, Info, Palette } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../components/ui/button';
+import { Link, useNavigate, useParams } from 'react-router';
 import { MeasurementGuideModal, type MeasurementKey } from '../components/MeasurementGuideModal';
-import { measurementWarning } from '../utils/measurementSanity';
+import { Footer } from '../components/landing/Footer';
+import { Navigation } from '../components/landing/Navigation';
+import { Button } from '../components/ui/button';
 import {
+    clearPendingOrder,
     getAuthToken,
     getAuthUser,
-    saveReturnTo,
-    savePendingOrder,
     getPendingOrder,
-    clearPendingOrder,
+    savePendingOrder,
+    saveReturnTo,
     type PendingMarketplaceOrder,
 } from '../hooks/useAuth';
+import { measurementWarning } from '../utils/measurementSanity';
 
 interface ApiProduct {
     id: number;
@@ -37,21 +39,22 @@ export default function ProductCustomization({ customize = false }: { customize?
     const navigate = useNavigate();
 
     const [product, setProduct] = useState<ApiProduct | null>(null);
+    const [relatedProducts, setRelatedProducts] = useState<ApiProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedColor, setSelectedColor] = useState('');
     const [selectedSize, setSelectedSize] = useState('M');
     const [measurements, setMeasurements] = useState({ chest: '', waist: '', hips: '', length: '' });
     const [customizationNote, setCustomizationNote] = useState('');
     const [quantity, setQuantity] = useState(1);
-    const [shippingCost, setShippingCost]         = useState(15);
-    const [assignedTailor, setAssignedTailor]     = useState('');
+    const [shippingCost, setShippingCost] = useState(15);
+    const [assignedTailor, setAssignedTailor] = useState('');
     const [selectedTailorId, setSelectedTailorId] = useState<number | null>(null);
-    const [ordered, setOrdered]       = useState(false);
-    const [placing, setPlacing]       = useState(false);
+    const [ordered, setOrdered] = useState(false);
+    const [placing, setPlacing] = useState(false);
     const [orderError, setOrderError] = useState('');
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
     const [guideStep, setGuideStep] = useState<MeasurementKey | null>(null);
-    const [reviews, setReviews]     = useState<{ id: number; rating: number; comment: string; reviewer: string; created_at: string }[]>([]);
+    const [reviews, setReviews] = useState<{ id: number; rating: number; comment: string; reviewer: string; created_at: string }[]>([]);
     const [avgRating, setAvgRating] = useState<number | null>(null);
 
     const authUser = getAuthUser();
@@ -63,8 +66,8 @@ export default function ProductCustomization({ customize = false }: { customize?
     useEffect(() => {
         if (!id) return;
         fetch(`/api/products/${id}/reviews`)
-            .then(r => r.json())
-            .then(d => {
+            .then((r) => r.json())
+            .then((d) => {
                 setReviews(d.reviews ?? []);
                 setAvgRating(d.average_rating ?? null);
             })
@@ -73,15 +76,19 @@ export default function ProductCustomization({ customize = false }: { customize?
 
     useEffect(() => {
         fetch(`/api/products/${id}`)
-            .then(r => {
-                if (r.status === 404) { setLoading(false); return null; }
+            .then((r) => {
+                if (r.status === 404) {
+                    setLoading(false);
+                    return null;
+                }
                 if (!r.ok) throw new Error(`HTTP ${r.status}`);
                 return r.json();
             })
-            .then(data => {
+            .then((data) => {
                 if (!data) return;
                 const p: ApiProduct = data.product;
                 setProduct(p);
+                setRelatedProducts(data.related ?? []);
                 if (typeof data.shipping_cost === 'number') setShippingCost(data.shipping_cost);
 
                 // Auto-assign the product's tailor for marketplace orders
@@ -90,13 +97,13 @@ export default function ProductCustomization({ customize = false }: { customize?
                 // ── Thaw: restore selections saved before login redirect ──
                 const pending = getPendingOrder();
                 if (pending?.type === 'marketplace' && pending.productId === p.id) {
-                    setSelectedColor(pending.color  || (p.colors?.[0] ?? ''));
-                    setSelectedSize(pending.size    || 'M');
-                    setQuantity(pending.quantity    || 1);
+                    setSelectedColor(pending.color || (p.colors?.[0] ?? ''));
+                    setSelectedSize(pending.size || 'M');
+                    setQuantity(pending.quantity || 1);
                     setMeasurements({
-                        chest:  pending.measurements?.chest  ?? '',
-                        waist:  pending.measurements?.waist  ?? '',
-                        hips:   pending.measurements?.hips   ?? '',
+                        chest: pending.measurements?.chest ?? '',
+                        waist: pending.measurements?.waist ?? '',
+                        hips: pending.measurements?.hips ?? '',
                         length: pending.measurements?.length ?? '',
                     });
                     setCustomizationNote(pending.customizationNote ?? '');
@@ -113,17 +120,19 @@ export default function ProductCustomization({ customize = false }: { customize?
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
+            <div className="flex min-h-screen items-center justify-center bg-[#E4E0D7]">
+                <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
         );
     }
 
     if (!product) {
         return (
-            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
+            <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#E4E0D7]">
                 <p className="text-slate-500">{t('productCustomization.productNotFound')}</p>
-                <Link to="/marketplace" className="text-slate-900 underline text-sm">{t('productCustomization.backToMarketplace')}</Link>
+                <Link to="/marketplace" className="text-sm text-slate-900 underline">
+                    {t('productCustomization.backToMarketplace')}
+                </Link>
             </div>
         );
     }
@@ -161,8 +170,8 @@ export default function ProductCustomization({ customize = false }: { customize?
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/json',
                 },
                 body: JSON.stringify({
                     order_type: 'marketplace',
@@ -170,9 +179,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                     color: selectedColor,
                     size: showSizePicker ? selectedSize : null,
                     quantity,
-                    cm_measurements: customize
-                        ? Object.fromEntries(Object.entries(measurements).filter(([, v]) => v !== ''))
-                        : {},
+                    cm_measurements: customize ? Object.fromEntries(Object.entries(measurements).filter(([, v]) => v !== '')) : {},
                     customization_note: customize ? customizationNote.trim() || null : null,
                     tailor_id: selectedTailorId,
                 }),
@@ -204,97 +211,73 @@ export default function ProductCustomization({ customize = false }: { customize?
     };
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-[#E4E0D7] text-[#111111]">
             <Helmet>
-                <title>{product.name} — Custom {product.category?.name ?? 'Garment'} | Kere</title>
-                <meta name="description" content={product.description ? product.description.slice(0, 160) : `Order a custom ${product.name.toLowerCase()} handcrafted by a local Georgian tailor on Kere.`} />
-                <script type="application/ld+json">{JSON.stringify({
-                    "@context": "https://schema.org",
-                    "@type": "Product",
-                    "name": product.name,
-                    "description": product.description ?? undefined,
-                    "image": product.images?.[0] ?? undefined,
-                    "offers": {
-                        "@type": "Offer",
-                        "price": product.price,
-                        "priceCurrency": "GEL",
-                        "availability": "https://schema.org/InStock"
+                <title>
+                    {product.name} — Custom {product.category?.name ?? 'Garment'} | Kere
+                </title>
+                <meta
+                    name="description"
+                    content={
+                        product.description
+                            ? product.description.slice(0, 160)
+                            : `Order a custom ${product.name.toLowerCase()} handcrafted by a local Georgian tailor on Kere.`
                     }
-                })}</script>
+                />
+                <script type="application/ld+json">
+                    {JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'Product',
+                        name: product.name,
+                        description: product.description ?? undefined,
+                        image: product.images?.[0] ?? undefined,
+                        offers: {
+                            '@type': 'Offer',
+                            price: product.price,
+                            priceCurrency: 'GEL',
+                            availability: 'https://schema.org/InStock',
+                        },
+                    })}
+                </script>
             </Helmet>
-            {/* Navbar */}
-            <nav className="sticky top-0 z-50 bg-white border-b border-slate-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">
-                        Kere
-                    </Link>
-                    <div className="flex items-center gap-4">
-                        {authUser && (
-                            <div className="flex items-center gap-2 text-sm text-slate-700">
-                                <div className="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center">
-                                    <User className="w-4 h-4 text-slate-600" />
-                                </div>
-                                <span className="font-medium hidden sm:inline">{authUser.first_name} {authUser.last_name}</span>
-                            </div>
-                        )}
-                        <Link
-                            to="/marketplace"
-                            className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 transition-colors"
-                        >
-                            <ArrowLeft className="w-4 h-4" />
-                            {t('productCustomization.backToMarketplace')}
-                        </Link>
-                    </div>
-                </div>
-            </nav>
+            <Navigation />
+            <div className="h-11" />
 
             {ordered ? (
-                <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+                <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
                     <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ duration: 0.6 }}
-                        className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6"
+                        className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100"
                     >
-                        <Check className="w-10 h-10 text-slate-600" />
+                        <Check className="h-10 w-10 text-slate-600" />
                     </motion.div>
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                    >
-                        <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('productCustomization.orderSuccess')}</h2>
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
+                        <h2 className="mb-2 text-2xl font-bold text-slate-900">{t('productCustomization.orderSuccess')}</h2>
                         <p className="text-slate-500">{t('productCustomization.orderSuccessSent', { tailor: assignedTailor })}</p>
-                        <p className="text-sm text-slate-400 mt-4">{t('productCustomization.orderSuccessRedirect')}</p>
+                        <p className="mt-4 text-sm text-slate-400">{t('productCustomization.orderSuccessRedirect')}</p>
                     </motion.div>
                 </div>
             ) : (
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="grid lg:grid-cols-2 gap-10">
+                <div className="w-full">
+                    <div className="grid items-start lg:grid-cols-[55%_45%]">
                         {/* Product image */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <div className="rounded-2xl overflow-hidden aspect-[3/4] bg-slate-100">
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+                            <div className="aspect-[3/4] overflow-hidden bg-[#F2F1ED] lg:aspect-auto lg:h-[calc(100vh-3rem)]">
                                 {product.images?.[0] ? (
-                                    <img
-                                        src={product.images[0]}
-                                        alt={product.name}
-                                        className="w-full h-full object-cover"
-                                    />
+                                    <img src={product.images[0]} alt={product.name} className="h-full w-full object-contain" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-slate-300 text-6xl">👗</div>
+                                    <div className="flex h-full w-full items-center justify-center text-6xl text-slate-300">👗</div>
                                 )}
                             </div>
-                            <div className="mt-4 p-4 bg-white rounded-xl border border-slate-200">
-                                <p className="text-sm text-slate-500 mb-1">
+                            <div className="border-b border-[#111111]/15 bg-[#E4E0D7] px-4 py-3 sm:px-6">
+                                <p className="mb-1 text-sm text-slate-500">
                                     by{' '}
                                     {product.tailor_id ? (
                                         <Link
                                             to={`/tailor/${product.tailor_id}`}
-                                            className="font-medium text-slate-800 hover:text-slate-600 hover:underline transition-colors"
+                                            className="font-medium text-slate-800 transition-colors hover:text-slate-600 hover:underline"
                                         >
                                             {product.tailor_name}
                                         </Link>
@@ -305,9 +288,15 @@ export default function ProductCustomization({ customize = false }: { customize?
                                 <div className="flex items-center gap-1">
                                     {avgRating !== null ? (
                                         <>
-                                            <Star className="w-4 h-4 fill-slate-400 text-slate-400" />
+                                            <Star className="h-4 w-4 fill-slate-400 text-slate-400" />
                                             <span className="text-sm font-medium text-slate-700">{avgRating.toFixed(1)}</span>
-                                            <span className="text-sm text-slate-400">({reviews.length} {reviews.length === 1 ? t('productCustomization.reviewCount_one') : t('productCustomization.reviewCount_other')})</span>
+                                            <span className="text-sm text-slate-400">
+                                                ({reviews.length}{' '}
+                                                {reviews.length === 1
+                                                    ? t('productCustomization.reviewCount_one')
+                                                    : t('productCustomization.reviewCount_other')}
+                                                )
+                                            </span>
                                         </>
                                     ) : (
                                         <span className="text-sm text-slate-400">{t('productCustomization.noReviewsYet')}</span>
@@ -321,29 +310,37 @@ export default function ProductCustomization({ customize = false }: { customize?
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: 0.1 }}
-                            className="space-y-6"
+                            className="bg-[#E4E0D7] px-5 py-8 sm:px-8 lg:min-h-[calc(100vh-3rem)] lg:px-12 lg:py-10"
                         >
-                            <div>
-                                <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">{product.category?.name}</div>
-                                <h1 className="text-3xl font-bold text-slate-900 mb-2">{product.name}</h1>
-                                <p className="text-slate-500 leading-relaxed">{product.description}</p>
+                            <div className="border-b border-[#111111]/20 pb-6">
+                                <div className="mb-2 text-[10px] font-medium tracking-[0.08em] text-[#6c625b] uppercase">
+                                    {product.category?.name}
+                                </div>
+                                <h1 className="text-lg leading-tight font-medium text-[#111111] uppercase">{product.name}</h1>
+                                <p className="mt-2 text-sm font-medium text-[#111111]">₾{product.price}</p>
+                                <p className="mt-5 max-w-xl text-xs leading-5 text-[#514843]">{product.description}</p>
                             </div>
 
                             {/* Color */}
                             {product.colors?.length > 0 && (
-                                <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                                    <div className="text-sm font-semibold text-slate-700 mb-3">
+                                <div className="border-b border-[#111111]/20 py-6">
+                                    <div className="mb-3 text-sm font-semibold text-slate-700">
                                         {t('productCustomization.colorLabel')} <span className="font-normal text-slate-500">{selectedColor}</span>
                                     </div>
                                     <div className="flex flex-wrap gap-3">
-                                        {product.colors.map(hex => (
+                                        {product.colors.map((hex) => (
                                             <button
                                                 key={hex}
                                                 onClick={() => setSelectedColor(hex)}
-                                                onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setSelectedColor(hex); } }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === ' ' || e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        setSelectedColor(hex);
+                                                    }
+                                                }}
                                                 tabIndex={0}
                                                 title={hex}
-                                                className="relative w-8 h-8 rounded-full border-2 transition-all hover:scale-110"
+                                                className="relative h-7 w-7 rounded-full border transition-all hover:scale-105"
                                                 style={{
                                                     backgroundColor: hex,
                                                     borderColor: selectedColor === hex ? '#0F172A' : '#E2E8F0',
@@ -352,7 +349,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                                             >
                                                 {selectedColor === hex && (
                                                     <Check
-                                                        className="absolute inset-0 m-auto w-4 h-4"
+                                                        className="absolute inset-0 m-auto h-4 w-4"
                                                         style={{ color: isLight(hex) ? '#1a1a1a' : 'white' }}
                                                     />
                                                 )}
@@ -364,20 +361,20 @@ export default function ProductCustomization({ customize = false }: { customize?
 
                             {/* Size */}
                             {showSizePicker && (
-                                <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                                    <div className="text-sm font-semibold text-slate-700 mb-3">
+                                <div className="border-b border-[#111111]/20 py-6">
+                                    <div className="mb-3 text-sm font-semibold text-slate-700">
                                         {t('productCustomization.sizeLabel')} <span className="font-normal text-slate-500">{selectedSize}</span>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
-                                        {product.sizes.map(s => (
+                                        {product.sizes.map((s) => (
                                             <Button
                                                 key={s}
                                                 type="button"
                                                 variant={selectedSize === s ? 'default' : 'outline'}
                                                 onClick={() => setSelectedSize(s)}
-                                                className={`h-auto rounded-lg px-4 py-2 ${
+                                                className={`h-auto rounded-none px-4 py-2 ${
                                                     selectedSize === s
-                                                        ? 'bg-slate-900 text-white border border-slate-900 hover:bg-slate-900'
+                                                        ? 'border border-slate-900 bg-slate-900 text-white hover:bg-slate-900'
                                                         : 'border-slate-200 text-slate-600 hover:border-slate-400 hover:bg-transparent hover:text-slate-600'
                                                 }`}
                                             >
@@ -390,66 +387,67 @@ export default function ProductCustomization({ customize = false }: { customize?
 
                             {/* Customization details — only when customizing */}
                             {customize && (
-                                <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                                    <div className="text-sm font-semibold text-slate-700 mb-1">{t('productCustomization.customizationDetails')}</div>
-                                    <p className="text-xs text-slate-500 mb-3">{t('productCustomization.customizationDetailsHint')}</p>
+                                <div className="border-b border-[#111111]/20 py-6">
+                                    <div className="mb-1 text-sm font-semibold text-slate-700">{t('productCustomization.customizationDetails')}</div>
+                                    <p className="mb-3 text-xs text-slate-500">{t('productCustomization.customizationDetailsHint')}</p>
                                     <textarea
                                         value={customizationNote}
-                                        onChange={e => setCustomizationNote(e.target.value.slice(0, 1000))}
+                                        onChange={(e) => setCustomizationNote(e.target.value.slice(0, 1000))}
                                         rows={4}
                                         maxLength={1000}
                                         placeholder={t('productCustomization.customizationPlaceholder')}
-                                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
+                                        className="w-full resize-none border border-[#111111]/25 px-3 py-2 text-sm text-[#111111] placeholder:text-[#6c625b]/60 focus:ring-1 focus:ring-[#111111] focus:outline-none"
                                     />
-                                    <p className="text-[10px] text-slate-400 mt-1 text-right">{customizationNote.length}/1000</p>
+                                    <p className="mt-1 text-right text-[10px] text-slate-400">{customizationNote.length}/1000</p>
                                 </div>
                             )}
 
                             {/* Measurements — only when customizing */}
                             {customize && (
-                            <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                                <div className="text-sm font-semibold text-slate-700 mb-1">{t('productCustomization.customMeasurements')} <span className="font-normal text-slate-400">{t('productCustomization.measurementsOptional')}</span></div>
-                                <p className="text-xs text-slate-500 mb-4">{t('productCustomization.measurementsHint')}</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {[
-                                        { key: 'chest',  label: t('productCustomization.measureChest') },
-                                        { key: 'waist',  label: t('productCustomization.measureWaist') },
-                                        { key: 'hips',   label: t('productCustomization.measureHips') },
-                                        { key: 'length', label: t('productCustomization.measureLength') },
-                                    ].map(({ key, label }) => {
-                                        const val = measurements[key as keyof typeof measurements];
-                                        const warning = measurementWarning(key, val);
-                                        return (
-                                            <div key={key}>
-                                                <div className="flex items-center gap-1 mb-1">
-                                                    <label className="text-xs text-slate-500">{label}</label>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openGuide(key)}
-                                                        className="text-slate-300 hover:text-slate-600 transition-colors"
-                                                        aria-label={t('productCustomization.helpFor', { label })}
-                                                    >
-                                                        <HelpCircle className="w-3 h-3" />
-                                                    </button>
+                                <div className="border-b border-[#111111]/20 py-6">
+                                    <div className="mb-1 text-sm font-semibold text-slate-700">
+                                        {t('productCustomization.customMeasurements')}{' '}
+                                        <span className="font-normal text-slate-400">{t('productCustomization.measurementsOptional')}</span>
+                                    </div>
+                                    <p className="mb-4 text-xs text-slate-500">{t('productCustomization.measurementsHint')}</p>
+                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                        {[
+                                            { key: 'chest', label: t('productCustomization.measureChest') },
+                                            { key: 'waist', label: t('productCustomization.measureWaist') },
+                                            { key: 'hips', label: t('productCustomization.measureHips') },
+                                            { key: 'length', label: t('productCustomization.measureLength') },
+                                        ].map(({ key, label }) => {
+                                            const val = measurements[key as keyof typeof measurements];
+                                            const warning = measurementWarning(key, val);
+                                            return (
+                                                <div key={key}>
+                                                    <div className="mb-1 flex items-center gap-1">
+                                                        <label className="text-xs text-slate-500">{label}</label>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openGuide(key)}
+                                                            className="text-slate-300 transition-colors hover:text-slate-600"
+                                                            aria-label={t('productCustomization.helpFor', { label })}
+                                                        >
+                                                            <HelpCircle className="h-3 w-3" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="relative">
+                                                        <input
+                                                            type="number"
+                                                            placeholder="0"
+                                                            value={val}
+                                                            onChange={(e) => setMeasurements((m) => ({ ...m, [key]: e.target.value }))}
+                                                            className={`w-full border px-3 py-2 pr-8 text-sm focus:ring-1 focus:ring-[#111111] focus:outline-none ${warning ? 'border-[#111111]/50' : 'border-[#111111]/20'}`}
+                                                        />
+                                                        <span className="absolute top-1/2 right-3 -translate-y-1/2 text-xs text-slate-400">cm</span>
+                                                    </div>
+                                                    {warning && <p className="mt-1 text-[10px] leading-tight text-slate-500">{warning}</p>}
                                                 </div>
-                                                <div className="relative">
-                                                    <input
-                                                        type="number"
-                                                        placeholder="0"
-                                                        value={val}
-                                                        onChange={e => setMeasurements(m => ({ ...m, [key]: e.target.value }))}
-                                                        className={`w-full border rounded-lg px-3 py-2 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-slate-900 ${warning ? 'border-slate-400' : 'border-slate-200'}`}
-                                                    />
-                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">cm</span>
-                                                </div>
-                                                {warning && (
-                                                    <p className="text-[10px] text-slate-500 mt-1 leading-tight">{warning}</p>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            </div>
                             )}
 
                             {/* Customize CTA — shown on the plain product view for customizable products */}
@@ -457,67 +455,68 @@ export default function ProductCustomization({ customize = false }: { customize?
                                 <Button
                                     variant="outline"
                                     onClick={() => navigate(`/product/${product.id}/customize`)}
-                                    className="w-full h-auto rounded-xl border-slate-900 py-3.5 font-semibold text-slate-900 hover:bg-slate-900 hover:text-white active:scale-[0.98]"
+                                    className="my-6 h-auto w-full rounded-none border-[#111111] py-3 text-xs font-semibold tracking-[0.08em] text-[#111111] uppercase hover:bg-[#111111] hover:text-white active:scale-[0.99]"
                                 >
-                                    <Palette className="w-4 h-4" />
+                                    <Palette className="h-4 w-4" />
                                     {t('productCustomization.customizeThis')}
                                 </Button>
                             )}
 
                             {/* Quantity */}
-                            <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                                <div className="text-sm font-semibold text-slate-700 mb-3">{t('productCustomization.quantity')}</div>
+                            <div className="border-b border-[#111111]/20 py-6">
+                                <div className="mb-3 text-sm font-semibold text-slate-700">{t('productCustomization.quantity')}</div>
                                 <div className="flex items-center gap-4">
                                     <Button
                                         variant="outline"
                                         size="icon"
-                                        onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                                         disabled={quantity === 1}
-                                        className="w-10 h-10 rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="h-9 w-9 rounded-none border-[#111111]/25 text-[#514843] hover:bg-[#111111] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                                     >
-                                        <Minus className="w-4 h-4" />
+                                        <Minus className="h-4 w-4" />
                                     </Button>
                                     <input
                                         type="number"
                                         min={1}
                                         max={1000}
                                         value={quantity}
-                                        onChange={e => {
+                                        onChange={(e) => {
                                             const v = parseInt(e.target.value, 10);
                                             if (!isNaN(v) && v >= 1 && v <= 1000) setQuantity(v);
                                         }}
-                                        className="text-lg font-bold text-slate-900 w-14 text-center border border-slate-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                                        className="w-14 border border-[#111111]/25 py-1 text-center text-sm font-medium text-[#111111] focus:ring-1 focus:ring-[#111111] focus:outline-none"
                                     />
                                     <Button
                                         variant="outline"
                                         size="icon"
-                                        onClick={() => setQuantity(q => Math.min(q + 1, 1000))}
+                                        onClick={() => setQuantity((q) => Math.min(q + 1, 1000))}
                                         disabled={quantity >= 1000}
-                                        className="w-10 h-10 rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="h-9 w-9 rounded-none border-[#111111]/25 text-[#514843] hover:bg-[#111111] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                                     >
-                                        <Plus className="w-4 h-4" />
+                                        <Plus className="h-4 w-4" />
                                     </Button>
                                 </div>
                             </div>
 
                             {/* Tailor review notice */}
-                            <div className="flex items-start gap-2.5 bg-slate-50 border border-slate-200 rounded-xl p-4">
-                                <Info className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
-                                <p className="text-sm text-slate-600 leading-relaxed">
-                                    {t('productCustomization.tailorReviewNotice')}
-                                </p>
+                            <div className="flex items-start gap-2.5 border-b border-[#111111]/20 py-5">
+                                <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                                <p className="text-sm leading-relaxed text-slate-600">{t('productCustomization.tailorReviewNotice')}</p>
                             </div>
 
                             {/* Tailor — fixed to the product's tailor */}
                             {product.tailor_name && (
-                                <div className="flex items-center gap-3 bg-white rounded-2xl border border-slate-200 p-4">
-                                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                                        <User className="w-4 h-4 text-slate-500" />
+                                <div className="flex items-center gap-3 border-b border-[#111111]/20 py-5">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100">
+                                        <User className="h-4 w-4 text-slate-500" />
                                     </div>
                                     <div>
                                         <p className="text-xs text-slate-400">{t('productCustomization.madeby')}</p>
                                         {product.tailor_id ? (
-                                            <Link to={`/tailor/${product.tailor_id}`} className="text-sm font-semibold text-slate-900 hover:underline">
+                                            <Link
+                                                to={`/tailor/${product.tailor_id}`}
+                                                className="text-sm font-semibold text-slate-900 hover:underline"
+                                            >
                                                 {product.tailor_name}
                                             </Link>
                                         ) : (
@@ -528,65 +527,102 @@ export default function ProductCustomization({ customize = false }: { customize?
                             )}
 
                             {/* Measurement sanity banner */}
-                            {Object.values(measurements).some(v => {
+                            {Object.values(measurements).some((v) => {
                                 const n = parseFloat(v);
                                 return v !== '' && !isNaN(n) && (n > 150 || n < 30);
                             }) && (
-                                <div className="flex items-start gap-2.5 bg-slate-50 border border-slate-200 rounded-xl p-4">
-                                    <Info className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
-                                    <p className="text-sm text-slate-700 leading-relaxed">
-                                        {t('productCustomization.measurementWarning')}
-                                    </p>
+                                <div className="flex items-start gap-2.5 border-b border-[#111111]/20 py-5">
+                                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                                    <p className="text-sm leading-relaxed text-slate-700">{t('productCustomization.measurementWarning')}</p>
                                 </div>
                             )}
 
                             {/* Order summary */}
-                            <div className="bg-slate-900 rounded-2xl p-5 text-white">
-                                <div className="space-y-2 mb-4 text-sm">
-                                    <div className="flex justify-between text-slate-400">
+                            <div className="mt-6 border border-[#111111] bg-[#E4E0D7] p-5 text-[#111111]">
+                                <div className="mb-4 space-y-2 text-sm">
+                                    <div className="flex justify-between text-[#6c625b]">
                                         <span>{t('productCustomization.subtotal')}</span>
                                         <span>₾{subtotal}</span>
                                     </div>
-                                    <div className="flex justify-between text-slate-400">
+                                    <div className="flex justify-between text-[#6c625b]">
                                         <span>{t('productCustomization.delivery')}</span>
                                         <span>₾{shipping}</span>
                                     </div>
-                                    <div className="flex justify-between font-bold text-white text-base pt-2 border-t border-slate-700">
+                                    <div className="flex justify-between border-t border-[#111111]/20 pt-2 text-base font-semibold text-[#111111]">
                                         <span>{t('productCustomization.total')}</span>
                                         <span>₾{total}</span>
                                     </div>
                                 </div>
-                                {orderError && (
-                                    <p className="text-xs text-destructive text-center mb-2">{orderError}</p>
-                                )}
+                                {orderError && <p className="text-destructive mb-2 text-center text-xs">{orderError}</p>}
                                 <Button
                                     onClick={handleOrder}
                                     disabled={placing}
-                                    className="w-full h-auto rounded-xl bg-white py-3.5 font-semibold text-slate-900 hover:bg-slate-100 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="h-auto w-full rounded-none bg-[#111111] py-3 text-xs font-semibold tracking-[0.08em] text-white uppercase hover:bg-[#333333] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                    {placing && <Loader2 className="w-4 h-4 animate-spin" />}
+                                    {placing && <Loader2 className="h-4 w-4 animate-spin" />}
                                     {placing ? t('productCustomization.placingOrder') : t('productCustomization.placeOrder')}
                                 </Button>
-                                <p className="text-xs text-slate-400 text-center mt-3">
-                                    {t('productCustomization.noPaymentNow')}
-                                </p>
+                                <p className="mt-3 text-center text-xs text-[#6c625b]">{t('productCustomization.noPaymentNow')}</p>
                             </div>
                         </motion.div>
                     </div>
                 </div>
             )}
 
+            {relatedProducts.length > 0 && (
+                <section className="border-t border-[#111111]/15 bg-[#F4F1E7] py-12 sm:py-16">
+                    <h2 className="mb-9 text-center text-lg font-semibold tracking-[0.04em] text-[#111111] uppercase sm:text-xl">
+                        {t('productCustomization.customersAlsoViewed')}
+                    </h2>
+                    <div className="flex snap-x overflow-x-auto">
+                        {relatedProducts.map((related) => (
+                            <Link
+                                key={related.id}
+                                to={`/product/${related.id}`}
+                                className="group w-[78vw] max-w-[460px] min-w-[260px] shrink-0 snap-start border-r border-[#111111]/15 sm:w-[46vw] lg:w-[32vw]"
+                            >
+                                <div className="aspect-[3/4] overflow-hidden bg-[#E4E0D7]">
+                                    {related.images?.[0] ? (
+                                        <img
+                                            src={related.images[0]}
+                                            alt={related.name}
+                                            className="h-full w-full object-contain p-5 transition-transform duration-500 group-hover:scale-[1.03]"
+                                        />
+                                    ) : (
+                                        <div className="flex h-full items-center justify-center text-[#111111]/20">Kere</div>
+                                    )}
+                                </div>
+                                <div className="min-h-28 bg-[#F4F1E7] px-5 py-4">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <h3 className="text-sm font-semibold text-[#111111] uppercase">{related.name}</h3>
+                                        <span className="shrink-0 text-sm font-semibold text-[#111111]">₾{related.price}</span>
+                                    </div>
+                                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#6c625b]">{related.description}</p>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </section>
+            )}
+
             {/* ── Reviews ── */}
-            {(reviews.length > 0 || avgRating !== null) && (
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-12">
-                    <div className="bg-white rounded-2xl border border-slate-100 p-6">
-                        <div className="flex items-center gap-3 mb-5">
-                            <h3 className="font-bold text-slate-900 text-lg">{t('productCustomization.customerReviews')}</h3>
+            <section className="border-t border-[#111111]/15 bg-[#F4F1E7] px-5 py-16 sm:px-8 sm:py-20">
+                <div className="mx-auto max-w-[1100px]">
+                    {reviews.length > 0 ? (
+                        <div>
+                        <div className="mb-5 flex items-center gap-3">
+                            <h2 className="text-xl font-semibold text-[#111111] uppercase">{t('productCustomization.customerReviews')}</h2>
                             {avgRating !== null && (
                                 <div className="flex items-center gap-1.5">
                                     <div className="flex">
-                                        {[1,2,3,4,5].map(n => (
-                                            <Star key={n} className="w-4 h-4" fill={avgRating >= n ? '#fbbf24' : 'none'} stroke={avgRating >= n ? '#fbbf24' : '#cbd5e1'} strokeWidth={1.5} />
+                                        {[1, 2, 3, 4, 5].map((n) => (
+                                            <Star
+                                                key={n}
+                                                className="h-4 w-4"
+                                                fill={avgRating >= n ? '#fbbf24' : 'none'}
+                                                stroke={avgRating >= n ? '#fbbf24' : '#cbd5e1'}
+                                                strokeWidth={1.5}
+                                            />
                                         ))}
                                     </div>
                                     <span className="text-sm font-semibold text-slate-700">{avgRating}</span>
@@ -594,7 +630,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                                 </div>
                             )}
                         </div>
-                        <div className="space-y-4">
+                        <div className="mt-8 grid gap-6 sm:grid-cols-2">
                             {reviews.map((r, i) => (
                                 <motion.div
                                     key={r.id}
@@ -602,56 +638,69 @@ export default function ProductCustomization({ customize = false }: { customize?
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true }}
                                     transition={{ duration: 0.5, delay: i * 0.05 }}
-                                    className="border-b border-slate-50 last:border-0 pb-4 last:pb-0"
+                                    className="border-t border-[#111111]/20 py-5"
                                 >
-                                    <div className="flex items-center gap-2 mb-1.5">
+                                    <div className="mb-1.5 flex items-center gap-2">
                                         <div className="flex">
-                                            {[1,2,3,4,5].map(n => (
-                                                <Star key={n} className="w-3.5 h-3.5" fill={r.rating >= n ? '#fbbf24' : 'none'} stroke={r.rating >= n ? '#fbbf24' : '#cbd5e1'} strokeWidth={1.5} />
+                                            {[1, 2, 3, 4, 5].map((n) => (
+                                                <Star
+                                                    key={n}
+                                                    className="h-3.5 w-3.5"
+                                                    fill={r.rating >= n ? '#fbbf24' : 'none'}
+                                                    stroke={r.rating >= n ? '#fbbf24' : '#cbd5e1'}
+                                                    strokeWidth={1.5}
+                                                />
                                             ))}
                                         </div>
                                         <span className="text-sm font-medium text-slate-900">{r.reviewer}</span>
                                         <span className="text-xs text-slate-400">{t('productCustomization.verifiedPurchase')}</span>
                                     </div>
-                                    <p className="text-sm text-slate-600 leading-relaxed">{r.comment}</p>
+                                    <p className="text-sm leading-relaxed text-slate-600">{r.comment}</p>
                                 </motion.div>
                             ))}
                         </div>
-                    </div>
+                        </div>
+                    ) : (
+                        <div className="py-8 text-center">
+                            <p className="text-lg text-[#111111]">{t('productCustomization.noReviewsWriteOne')}</p>
+                            <Link
+                                to={authUser ? '/customer-dashboard' : '/signin'}
+                                className="mt-8 inline-flex min-h-12 items-center justify-center gap-3 border border-[#111111] px-8 py-3 text-sm font-semibold text-[#111111] uppercase transition-colors hover:bg-[#111111] hover:text-white"
+                            >
+                                <Pencil className="h-4 w-4" />
+                                {t('productCustomization.writeReview')}
+                            </Link>
+                        </div>
+                    )}
                 </div>
-            )}
+            </section>
+
+            <Footer />
 
             {/* ── Login required prompt ── */}
             {showLoginPrompt && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div
-                        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
-                        onClick={() => setShowLoginPrompt(false)}
-                    />
+                    <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowLoginPrompt(false)} />
                     <motion.div
                         initial={{ opacity: 0, scale: 0.96, y: 12 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="relative z-10 bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-sm p-8 text-center"
+                        className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xl"
                     >
-                        <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-5 text-2xl">
-                            🔒
-                        </div>
-                        <h3 className="text-lg font-bold text-slate-900 mb-2">{t('productCustomization.signInToOrder')}</h3>
-                        <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-                            {t('productCustomization.signInHint')}
-                        </p>
+                        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl">🔒</div>
+                        <h3 className="mb-2 text-lg font-bold text-slate-900">{t('productCustomization.signInToOrder')}</h3>
+                        <p className="mb-6 text-sm leading-relaxed text-slate-500">{t('productCustomization.signInHint')}</p>
                         <div className="flex flex-col gap-3">
                             <Button
                                 onClick={() => navigate('/login/customer')}
-                                className="w-full h-auto rounded-xl bg-slate-900 py-3 font-semibold text-white hover:bg-slate-700"
+                                className="h-auto w-full rounded-xl bg-slate-900 py-3 font-semibold text-white hover:bg-slate-700"
                             >
                                 {t('productCustomization.signIn')}
                             </Button>
                             <Button
                                 variant="outline"
                                 onClick={() => navigate('/register')}
-                                className="w-full h-auto rounded-xl border-slate-200 py-3 font-medium text-slate-700 hover:bg-slate-50"
+                                className="h-auto w-full rounded-xl border-slate-200 py-3 font-medium text-slate-700 hover:bg-slate-50"
                             >
                                 {t('productCustomization.createAccount')}
                             </Button>
@@ -667,11 +716,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                 </div>
             )}
 
-            <MeasurementGuideModal
-                open={guideStep !== null}
-                onClose={() => setGuideStep(null)}
-                initialStep={guideStep ?? 'chest'}
-            />
+            <MeasurementGuideModal open={guideStep !== null} onClose={() => setGuideStep(null)} initialStep={guideStep ?? 'chest'} />
         </div>
     );
 }

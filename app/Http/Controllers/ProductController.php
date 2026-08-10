@@ -23,6 +23,33 @@ class ProductController extends Controller
             $query->whereHas('category', fn($q) => $q->where('slug', $request->category));
         }
 
+        $sizes = array_filter((array) $request->input('size', []));
+        if ($sizes) {
+            $query->where(function ($q) use ($sizes) {
+                foreach ($sizes as $size) {
+                    $q->orWhereJsonContains('sizes', $size);
+                }
+            });
+        }
+
+        $colours = array_filter((array) $request->input('colour', []));
+        if ($colours) {
+            $query->where(function ($q) use ($colours) {
+                foreach ($colours as $colour) {
+                    $q->orWhereJsonContains('colors', $colour);
+                }
+            });
+        }
+
+        $fabrics = array_filter((array) $request->input('fabric', []));
+        if ($fabrics) {
+            $query->where(function ($q) use ($fabrics) {
+                foreach ($fabrics as $fabric) {
+                    $q->orWhere('fabric', 'like', '%' . $fabric . '%');
+                }
+            });
+        }
+
         // Section split: a men/women shopper sees their gender plus unisex products.
         if (in_array($request->gender, ['men', 'women'], true)) {
             $query->whereIn('gender', [$request->gender, 'unisex']);

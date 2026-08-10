@@ -19,7 +19,7 @@ export default function RefundPolicy() {
     ];
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="kere-info-page min-h-screen bg-white">
             <Navigation />
 
             <section className="pt-24 pb-16 md:pt-28 md:pb-24 bg-slate-900 text-white">
