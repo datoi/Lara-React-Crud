@@ -609,6 +609,28 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-11] Merge Mariam's August Design Pass (`mariam-changes`) — design in, regressions out
+
+**What was done:** Merged `origin/mariam-changes` (2 commits by `mbadzaghua`, latest 08-10) into `main`. The branch forked at `028990e` on 08-05 and so predated the twenty 08-07 commits, meaning three of its changes would have silently reverted shipped work. Resolution rule (per owner): **her design wins on layout/CSS; anything that reverts a deliberate main commit does not.** Note `origin/mariami` is now fully stale (0 ahead / 60 behind) — `mariam-changes` supersedes it.
+
+- **Taken from Mariam (design):** the Marketplace redesign — section tabs (All / Women / Men), a centred result count, and a proper filter-bar system (`category` / `colour` / `size` / `fabric` / `more`) replacing the old left sidebar; `xl:grid-cols-4` on the product and skeleton grids; the shopping-bag slide-in drawer; `HeroSection`, `ProductCustomization` (525 lines), `RemodelRequest` (305), `NotFound`, +175 lines of `app.css`; +20 i18n keys per locale.
+- **Kept from main (would have regressed):**
+  - `Navigation.tsx` — she still carried the mobile-drawer search that `9d1fb00` deliberately removed (still `readOnly`, still non-functional). Dropped; main's `mt-10 sm:mt-12` drawer spacing restored since the bar above it is gone. Her sorted import block was kept, minus the now-unused `Search`.
+  - `Marketplace.tsx` — her branch wrapped the **working** text search in `className="hidden"`. Restored as a live control in the free `1fr` column of her new bar (search left · count centre · sort right), so the bar reads as designed with search intact.
+  - The superseded sidebar block, which she had hidden rather than deleted, was removed outright — her filter menus already cover category **and** price, so keeping it would have been dead code. All of `clearFilters` / `priceMax` / `categories` / `WOMEN_ONLY_CATEGORY_SLUGS` remain live through those menus.
+  - Main's dead-space fix (`3b71385`) needed no re-injection: her restructure removes the sidebar and the `ml-[245px]`/`pl-[245px]` magic offsets independently, and reintroduces neither.
+- **Asset weight (undid a regression against `1b4d7c1`/`0dbb20b`):** the branch added ~13 MB of images days after the ~69% / ~76% compression passes. **10 of its 12 new assets were never referenced** — design iterations left in the tree — and the 2 live ones were uncompressed PNG exports of opaque photographs. Deleted the 9 orphans; converted the two live ones to mozjpeg q82 (`remodel-gold-texture` 3031 KB → 273 KB, −91%; `landing-red-hanger` 1854 KB → 204 KB, −89%) and repointed `RemodelRequest`/`HeroSection` at the `.jpg`, matching the `gold-upload-bg.png` → `.jpg` convention. **Net: 13.1 MB never enters the tree.** (Her `remodel-gold-texture.jpg` was *not* a smaller copy of the PNG — a 736×736 square crop vs the 1672×941 wide original — so it was regenerated from the PNG rather than swapped in.)
+
+**Verified:** `vite build` clean (exit 0, 2126 modules); zero conflict markers; both locales parse and stay key-for-key in sync (1281/1281). Over real HTTP against `php artisan serve`: `/`, `/marketplace`, `/remodel` and `/api/products` → 200, and both new `.jpg` assets serve at their compressed sizes. Bundle grep confirms no reference to any deleted asset survives. Convention sweep of her diff: no blue/indigo/purple, no `$` (₾ preserved on the price filter and chips), no new spring/bounce. Pre-merge `main` is recoverable at `0dbb20b`; the in-flight Flitt payment work was parked on branch `flitt-payments` (`738fe71`) first.
+
+**Not verified / flagged:**
+- **No browser pass** — no browser automation in this session. Her Marketplace bar is a 3-column grid whose first cell now holds the restored search; the centred count is `hidden sm:block`, so the **narrow-viewport layout of that bar needs a real eyeball**, as do the two recompressed backgrounds at full-bleed.
+- **Off-spec animation (hers, left as-is):** `Marketplace.tsx` bag drawer uses `transition={{ type: 'tween', duration: 0.28 }}` — not one of the 5 approved patterns at 0.5/0.6s. It is a tween (no spring/bounce) and retiming a drawer to 0.5s would make it feel sluggish, so it is flagged for a design call rather than silently changed.
+- **Pre-existing, not from this merge:** `npx tsc --noEmit` fails at `tsconfig.json:110` (`Invalid value for '--ignoreDeprecations'` under TS 5.7.3) — typechecking is broken repo-wide independent of this change. Off-spec `0.15`/`0.2`/`0.4` durations in `Marketplace`/`ProductCustomization`/`NotFound` were already on `main`.
+- **Recurring noise:** `en.json`/`ka.json` diffed as ~2730 changed lines each that were **pure CRLF churn** — the real change was +20 keys, no deletions. A `.gitattributes` `text eol=lf` rule would stop this recurring on every push from her machine; not added here as it is outside the merge.
+
+---
+
 ### [2026-08-07] Fix CustomizerSeeder broken image references
 
 **What was done:** The classic-shirt / woman-shirt / womens-top customiser products pointed at garment images that had been deleted from the working tree (`maxi-base.png`, `necklines_*`, `sleeves_long*`, `sleeveless.jpg`, `short sleeeves.jpg`, `long sleeves.jpg`, `Colar1.jpg`, `colar 2.jpg`, all `maika *`, plus their variants) — a fresh `DatabaseSeeder` run or a prod deploy would have rendered those products with broken images.

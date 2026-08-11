@@ -66,7 +66,7 @@ export default function HelpCenter() {
     ];
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="kere-info-page min-h-screen bg-white">
             <Navigation />
 
             {/* Hero */}

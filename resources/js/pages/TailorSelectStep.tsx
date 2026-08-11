@@ -58,7 +58,7 @@ export default function TailorSelectStep() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="kere-workflow-page min-h-screen bg-slate-50">
             <Helmet><title>Select Your Tailor | Kere</title></Helmet>
 
             <nav className="sticky top-0 z-50 bg-white border-b border-slate-200">

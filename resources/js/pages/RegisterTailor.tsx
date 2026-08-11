@@ -205,7 +205,7 @@ export default function RegisterTailor() {
 
     if (pendingApproval) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-[#F3F2EF] px-5 py-10">
+            <div className="kere-workflow-page flex min-h-screen items-center justify-center bg-[#F3F2EF] px-5 py-10">
                 <motion.main
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -237,7 +237,7 @@ export default function RegisterTailor() {
     }
 
     return (
-        <div className="min-h-screen bg-[#F3F2EF] px-4 py-6 text-[#181818] sm:px-6 md:py-10">
+        <div className="kere-workflow-page min-h-screen bg-[#F3F2EF] px-4 py-6 text-[#181818] sm:px-6 md:py-10">
             <motion.main
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}

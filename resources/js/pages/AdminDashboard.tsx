@@ -287,7 +287,7 @@ export default function AdminDashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="kere-workflow-page min-h-screen bg-slate-50">
             <Helmet>
                 <title>{t('adminDashboard.pageTitle')}</title>
                 <meta name="robots" content="noindex" />

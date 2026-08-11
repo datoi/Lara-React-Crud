@@ -1,236 +1,47 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router';
-import { ArrowRight, Scissors, Upload, Ruler } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
-interface HeroImage {
-  src: string;
-  alt: string;
-  productId: number | null;
-}
-
-const fallbackImages = [
-  { src: '/assets/hero/kere-look-3.jpeg', altKey: 'carousel.productBlueSuit' },
-  { src: '/assets/hero/kere-look-2.jpeg', altKey: 'carousel.productBlueDress' },
-  { src: '/assets/hero/kere-look-1.jpeg', altKey: 'carousel.productPinkDress' },
-  { src: '/assets/hero/kere-look-4.jpeg', altKey: 'carousel.productGreenDress' },
-];
+import { Link } from 'react-router';
 
 export function HeroSection() {
-  const { t } = useTranslation();
-  // null = the image set hasn't been decided yet; we keep the gallery hidden
-  // until then so the fallback images never flash-swap to real products on load.
-  const [productImages, setProductImages] = useState<HeroImage[] | null>(null);
+    const { t } = useTranslation();
 
-  // Marquee is JS-driven so it can auto-slide, pause while pressed, and be
-  // dragged left/right by finger (touch) or mouse.
-  const trackRef = useRef<HTMLDivElement>(null);
-  const offsetRef = useRef(0);
-  const dragRef = useRef<{ startX: number; lastX: number; pointerId: number; active: boolean } | null>(null);
-  const draggedRef = useRef(false);
-  const reduceMotionRef = useRef(false);
+    return (
+        <section
+            data-nav-theme="dark"
+            className="kere-landing-editorial-hero relative flex h-[88svh] min-h-[540px] w-full flex-col overflow-hidden bg-[#191919] bg-cover bg-center text-white sm:h-[90svh]"
+            style={{ backgroundImage: "url('/assets/hero/landing-red-hanger.jpg')" }}
+        >
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/65" />
 
-  useEffect(() => {
-    let active = true;
+            <h1 className="kere-editorial-hero-title absolute inset-x-0 top-[clamp(7rem,24svh,12rem)] z-10 mx-auto w-full max-w-[800px] px-5 text-center font-serif text-[clamp(1.8rem,7vw,2.5rem)] leading-[1.02] font-normal tracking-[-0.03em] sm:top-1/2 sm:-translate-y-1/2 sm:text-[clamp(2rem,3.7vw,4.25rem)] sm:leading-[0.98] sm:tracking-[-0.035em]">
+                {t('hero.headline')}
+            </h1>
 
-    fetch('/api/products?per_page=12')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Failed to load products');
-        }
+            <div className="relative z-10 mx-auto mt-auto flex w-full flex-col items-center px-5 pb-20 text-center text-white sm:pb-24 lg:pb-28">
+                <div className="flex w-full max-w-[760px] flex-col justify-center gap-2.5 sm:flex-row">
+                    <Link
+                        to="/design"
+                        className="kere-editorial-hero-action inline-flex min-h-11 w-full items-center justify-center border px-5 py-3 text-[10px] font-semibold tracking-[0.1em] uppercase transition-colors sm:flex-1"
+                    >
+                        {t('hero.startYourDesign')}
+                    </Link>
+                    <Link
+                        to="/design?upload=1"
+                        className="kere-editorial-hero-action inline-flex min-h-11 w-full items-center justify-center border px-5 py-3 text-[10px] font-semibold tracking-[0.1em] uppercase transition-colors sm:flex-1"
+                    >
+                        {t('hero.uploadYourDesign')}
+                    </Link>
+                    <Link
+                        to="/remodel"
+                        className="kere-editorial-hero-action inline-flex min-h-11 w-full items-center justify-center border px-5 py-3 text-[10px] font-semibold tracking-[0.1em] uppercase transition-colors sm:flex-1"
+                    >
+                        {t('hero.remodelGarment')}
+                    </Link>
+                </div>
 
-        return response.json();
-      })
-      .then((data) => {
-        if (!active) return;
-        const list: { id: number; name: string; images?: string[] }[] = data.data ?? [];
-
-        setProductImages(
-          list
-            .filter((product) => product.images?.[0])
-            .slice(0, 4)
-            .map((product) => ({
-              src: product.images![0],
-              alt: product.name,
-              productId: product.id,
-            })),
-        );
-      })
-      .catch(() => {
-        if (active) setProductImages([]);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const ready = productImages !== null;
-
-  const heroImages: HeroImage[] =
-    productImages && productImages.length >= 4
-      ? productImages
-      : fallbackImages.map((image) => ({
-          src: image.src,
-          alt: t(image.altKey),
-          productId: null,
-        }));
-  const movingImages = [...heroImages, ...heroImages];
-
-  // ── Continuous marquee + drag ────────────────────────────────────────────
-  useEffect(() => {
-    if (!ready) return;
-    const track = trackRef.current;
-    if (!track) return;
-
-    reduceMotionRef.current = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-
-    // Width of one image set; the track renders two identical sets so wrapping
-    // by this amount is seamless.
-    let half = track.scrollWidth / 2 || 1;
-    const measure = () => { half = track.scrollWidth / 2 || 1; };
-    window.addEventListener('resize', measure);
-
-    const SPEED = 42; // px per second
-    let last = performance.now();
-    let raf = requestAnimationFrame(function loop(now) {
-      const dt = Math.min(now - last, 50);
-      last = now;
-
-      // Pause auto-advance whenever the gallery is being pressed/dragged.
-      if (!dragRef.current && !reduceMotionRef.current) {
-        offsetRef.current -= (dt / 1000) * SPEED;
-      }
-
-      if (offsetRef.current <= -half) offsetRef.current += half;
-      else if (offsetRef.current > 0) offsetRef.current -= half;
-
-      track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
-      raf = requestAnimationFrame(loop);
-    });
-
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', measure);
-    };
-  }, [ready, heroImages.length]);
-
-  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    draggedRef.current = false;
-    dragRef.current = { startX: event.clientX, lastX: event.clientX, pointerId: event.pointerId, active: false };
-  };
-
-  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const drag = dragRef.current;
-    if (!drag) return;
-
-    if (!drag.active) {
-      // Only treat it as a drag once the finger/mouse clearly moves sideways,
-      // so vertical page scrolling and taps still work.
-      if (Math.abs(event.clientX - drag.startX) < 6) return;
-      drag.active = true;
-      draggedRef.current = true;
-      try { trackRef.current?.setPointerCapture(event.pointerId); } catch { /* noop */ }
-      drag.lastX = event.clientX;
-    }
-
-    offsetRef.current += event.clientX - drag.lastX;
-    drag.lastX = event.clientX;
-  };
-
-  const endDrag = () => {
-    const drag = dragRef.current;
-    if (drag?.active) {
-      try { trackRef.current?.releasePointerCapture(drag.pointerId); } catch { /* noop */ }
-    }
-    dragRef.current = null;
-  };
-
-  const onPointerLeave = () => {
-    // A press that wandered off without becoming a drag — let it resume.
-    if (dragRef.current && !dragRef.current.active) dragRef.current = null;
-  };
-
-  const onImageClick = (event: React.MouseEvent) => {
-    // Swallow the click that follows a drag so it doesn't navigate.
-    if (draggedRef.current) {
-      event.preventDefault();
-      draggedRef.current = false;
-    }
-  };
-
-  return (
-    <section className="kere-hero">
-      <div className="kere-hero-card">
-        <div className="kere-hero-copy">
-          <h1>{t('hero.headline')}</h1>
-
-          <p>
-            {t('hero.subtitle')}
-          </p>
-        </div>
-
-        <div className="kere-gallery">
-          <div className="kere-ellipse-top" />
-          <div className="kere-depth-ellipse" />
-          <div className="kere-ellipse-bottom" />
-
-          <div className="kere-gallery-fade-left" />
-          <div className="kere-gallery-fade-right" />
-
-          <div
-            ref={trackRef}
-            className="kere-gallery-track"
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={endDrag}
-            onPointerCancel={endDrag}
-            onPointerLeave={onPointerLeave}
-            style={{
-              opacity: ready ? 1 : 0,
-              transition: 'opacity 0.5s ease',
-              touchAction: 'pan-y',
-              cursor: 'grab',
-              userSelect: 'none',
-            }}
-          >
-            {movingImages.map((image, index) => (
-              <Link
-                to={image.productId != null ? `/product/${image.productId}` : '/marketplace'}
-                className="kere-gallery-image"
-                key={`${image.src}-${index}`}
-                tabIndex={index >= heroImages.length ? -1 : undefined}
-                aria-hidden={index >= heroImages.length}
-                draggable={false}
-                onClick={onImageClick}
-              >
-                <img src={image.src} alt={index < heroImages.length ? image.alt : ''} draggable={false} />
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        <div className="kere-actions">
-          <div className="kere-actions-row">
-            <Link to="/design" className="kere-button kere-button-primary">
-              <Scissors />
-              {t('hero.startYourDesign')}
-              <ArrowRight />
-            </Link>
-
-            <Link to="/design?upload=1" className="kere-button kere-button-secondary">
-              <Upload />
-              {t('hero.uploadYourDesign')}
-            </Link>
-          </div>
-
-          <Link to="/remodel" className="kere-button kere-button-primary kere-button-remodel">
-            <Ruler />
-            {t('hero.remodelGarment')}
-            <ArrowRight />
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
+                <Link to="/marketplace" className="kere-editorial-hero-shop mt-7 pb-2 text-xs font-bold tracking-[0.09em] uppercase transition-opacity hover:opacity-60">
+                    {t('hero.shopNow')}
+                </Link>
+            </div>
+        </section>
+    );
 }

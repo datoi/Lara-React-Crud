@@ -570,12 +570,12 @@
 }
 
 .kere-landing .kere-site-header {
-  background: #F4F0E9 !important;
-  background-color: #F4F0E9 !important;
-  -webkit-backdrop-filter: blur(18px) saturate(1.1) !important;
-  backdrop-filter: blur(18px) saturate(1.1) !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: none !important;
 }
 
 .kere-landing .kere-site-header-bar {
@@ -588,6 +588,9 @@
   background-color: #F4F0E9 !important;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.1) !important;
   transform: translateY(0);
+  -webkit-backdrop-filter: blur(18px) saturate(1.1) !important;
+  backdrop-filter: blur(18px) saturate(1.1) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.1) !important;
 }
 
 .kere-landing .kere-site-header::after {
@@ -620,11 +623,28 @@
 .kere-landing .kere-site-header[data-nav-tone="dark"] .kere-site-header-bar button,
 .kere-landing .kere-site-header[data-nav-tone="dark"] .kere-site-header-bar span,
 .kere-landing .kere-site-header[data-nav-tone="dark"] .kere-site-header-bar svg {
-  color: #111111 !important;
+  color: #ffffff !important;
 }
 
 .kere-landing .kere-site-header .kere-site-header-bar .border-l {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.kere-landing .kere-site-header[data-scrolled="true"] .kere-site-header-bar,
+.kere-landing .kere-site-header[data-scrolled="true"] .kere-site-header-bar a,
+.kere-landing .kere-site-header[data-scrolled="true"] .kere-site-header-bar button,
+.kere-landing .kere-site-header[data-scrolled="true"] .kere-site-header-bar span,
+.kere-landing .kere-site-header[data-scrolled="true"] .kere-site-header-bar svg {
+  color: #111111 !important;
+}
+
+.kere-landing .kere-site-header[data-scrolled="true"] .kere-site-header-bar .border-l {
   border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+.kere-landing .kere-site-header:not([data-scrolled="true"]) .kere-site-header-bar a.bg-\[\#111111\] {
+  background: transparent !important;
+  border: 0;
 }
 
 .design-page .kere-site-header .kere-site-header-bar,
@@ -662,6 +682,16 @@
 
 .remodel-page .kere-site-header .kere-site-header-bar .border-l {
   border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+.kere-site-header .kere-site-header-bar a.kere-sign-in-link,
+.kere-site-header .kere-site-header-bar a.kere-sign-in-link span {
+  color: #ffffff !important;
+}
+
+.remodel-page footer {
+  background: #E4E0D7;
+  background-color: #E4E0D7;
 }
 
 .kere-landing .kere-hero {
@@ -773,6 +803,31 @@
   background-color: transparent;
   color: var(--kere-brand);
   opacity: 0.72;
+}
+
+/* Editorial landing hero must remain monochrome over the photograph. These
+   selectors intentionally outrank the landing page's burgundy button theme. */
+.kere-landing section.kere-landing-editorial-hero,
+.kere-landing .kere-landing-editorial-hero .kere-editorial-hero-title {
+  color: #f4f0e9 !important;
+}
+
+.kere-landing .kere-landing-editorial-hero .kere-editorial-hero-action {
+  border-color: rgba(244, 240, 233, 0.82) !important;
+  background: transparent !important;
+  color: #f4f0e9 !important;
+}
+
+.kere-landing .kere-landing-editorial-hero .kere-editorial-hero-action:hover {
+  border-color: #f4f0e9 !important;
+  background: #f4f0e9 !important;
+  color: #111111 !important;
+}
+
+.kere-landing .kere-landing-editorial-hero .kere-editorial-hero-shop {
+  border-bottom: 1px solid #f4f0e9 !important;
+  background: transparent !important;
+  color: #f4f0e9 !important;
 }
 
 .kere-landing .shadow-\[0_24px_70px_rgba\(39\,25\,16\,0\.18\)\],
@@ -1342,8 +1397,114 @@
   box-shadow: 0 0 0 1000px #111111 inset;
 }
 
+/* The sign-in CTA is always a black button, regardless of the page-level
+   navigation tone. Keep both layers of its rolling text animation white. */
+.kere-site-header .kere-site-header-bar a.kere-sign-in-link[class~="kere-sign-in-link"],
+.kere-site-header .kere-site-header-bar a.kere-sign-in-link[class~="kere-sign-in-link"] span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
 .customer-register-page [class*="border-slate-200"] {
   border-color: rgba(255, 255, 255, 0.32) !important;
+}
+
+/* Shared Kere treatment for the remaining editorial and utility pages. */
+.kere-info-page,
+.kere-workflow-page {
+  --kere-page: #E4E0D7;
+  --kere-panel: #F2EAD7;
+  --kere-panel-soft: #ECE6DA;
+  --kere-ink: #111111;
+  --kere-muted: #655D55;
+  --kere-burgundy: #6F1D24;
+  background-color: var(--kere-page) !important;
+  color: var(--kere-ink);
+}
+
+.kere-info-page > section:not([class*="bg-slate-900"]),
+.kere-info-page main,
+.kere-workflow-page main {
+  background-color: var(--kere-page);
+}
+
+.kere-info-page [class~="bg-white"],
+.kere-workflow-page [class~="bg-white"] {
+  background-color: var(--kere-panel) !important;
+}
+
+.kere-info-page [class~="bg-slate-50"],
+.kere-info-page [class~="bg-slate-100"],
+.kere-workflow-page [class~="bg-slate-50"],
+.kere-workflow-page [class~="bg-slate-100"] {
+  background-color: var(--kere-panel-soft) !important;
+}
+
+.kere-info-page [class~="bg-slate-900"],
+.kere-workflow-page [class~="bg-slate-900"],
+.kere-workflow-page[class~="bg-slate-950"],
+.kere-workflow-page [class~="bg-slate-950"] {
+  background-color: var(--kere-ink) !important;
+}
+
+.kere-info-page [class~="text-slate-900"],
+.kere-workflow-page [class~="text-slate-900"] {
+  color: var(--kere-ink) !important;
+}
+
+.kere-info-page [class~="text-slate-800"],
+.kere-info-page [class~="text-slate-700"],
+.kere-info-page [class~="text-slate-600"],
+.kere-info-page [class~="text-slate-500"],
+.kere-workflow-page [class~="text-slate-800"],
+.kere-workflow-page [class~="text-slate-700"],
+.kere-workflow-page [class~="text-slate-600"],
+.kere-workflow-page [class~="text-slate-500"] {
+  color: var(--kere-muted) !important;
+}
+
+.kere-info-page [class*="border-slate-"],
+.kere-workflow-page [class*="border-slate-"] {
+  border-color: rgba(17, 17, 17, 0.18) !important;
+}
+
+.kere-info-page h1,
+.kere-workflow-page h1 {
+  font-family: 'Newsreader', 'Noto Serif Georgian', Georgia, serif;
+  font-weight: 400 !important;
+  letter-spacing: -0.035em;
+}
+
+.kere-info-page footer {
+  background-color: var(--kere-page) !important;
+}
+
+.kere-info-page input,
+.kere-info-page textarea,
+.kere-info-page select,
+.kere-workflow-page input,
+.kere-workflow-page textarea,
+.kere-workflow-page select {
+  border-radius: 0 !important;
+}
+
+.kere-info-page button,
+.kere-info-page a[class*="bg-"],
+.kere-workflow-page button,
+.kere-workflow-page a[class*="bg-"] {
+  border-radius: 0 !important;
+}
+
+.kere-workflow-page > nav {
+  background-color: #F4F0E9 !important;
+  border-color: rgba(17, 17, 17, 0.15) !important;
+}
+
+.kere-workflow-page [class~="shadow-sm"],
+.kere-workflow-page [class~="shadow-md"],
+.kere-info-page [class~="shadow-sm"],
+.kere-info-page [class~="shadow-md"] {
+  box-shadow: none !important;
 }
 
 .customer-register-page [class*="text-slate-"] {
