@@ -609,6 +609,29 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-11] Hero gallery was half an image below its own band — JS transform clobbered the CSS centring
+
+**What was done:** The reported "big unnecessary gap between the header and the slideshow" was not spacing at all. `.kere-gallery-track` is centred in the stylesheet with `top: 50%` + `transform: translateY(-50%)`, but the marquee RAF loop in `HeroSection.tsx` assigned `track.style.transform = translate3d(Xpx, 0, 0)` every frame, **replacing** that transform and destroying the vertical centring. The track therefore sat exactly half an image-height (276px) below the gallery, hung the same distance out of the bottom, and left a 276px band of empty ellipse-masked white on top.
+
+Measured in Chrome at 1280×920, before → after:
+
+| element | before | after |
+| --- | --- | --- |
+| `.kere-gallery` | top 185.7, h 552, bottom 737.7 | unchanged |
+| `.kere-gallery-track` | **top 461.7, bottom 1013.7** | **top 185.7, bottom 737.7** |
+| visible band (between the ellipse masks) | **181px** | **362px** |
+| copy bottom → first visible pixel | **276px** | **95px** |
+
+- **Fix:** the loop now writes `translate3d(${offset}px, -50%, 0)`, keeping the marquee offset *and* the centring in the one transform the JS owns. One line, plus a comment so the `-50%` is not "tidied away" later.
+- **This bug is why the band always looked short.** `3b71385` had raised the gallery/image height to `clamp(430px, 52vh, 540px)` to compensate — with the offset bug the visible strip was only ~139px at that size. Now that the track centres properly the current `clamp(500px, 60vh, 620px)` yields a 362px band, so the height bump can be revisited later if it ever reads as too tall; it looks right as-is.
+- The gap that remains above the images (~95px) is the `.kere-ellipse-top` / `.kere-depth-ellipse` curve that shapes the band, exactly as intended — no longer 276px of nothing.
+
+**Header nudged down.** `.kere-site-header` gained `pt-1.5` (6px), so the bar's contents sit lower instead of hugging the viewport edge; the header is now 51px and `.kere-hero`'s `min-height` was updated from `calc(100vh - 44px)` to `calc(100vh - 51px)` to match. Implemented as padding rather than a real `top` offset deliberately: the header is a full-width opaque bar, so an actual gap above it would let scrolled page content show through the strip.
+
+**Verified — browser, not just build.** `playwright-core` (installed in the scratchpad, not the project) driving system Chrome against the dev server: geometry re-measured post-fix confirming track and gallery now share `top` and `bottom` to the pixel, plus a full screenshot showing the band filled edge to edge with both ellipse curves reading correctly. `vite build` clean.
+
+---
+
 ### [2026-08-11] Hero: halve the gap above the gallery, grow the band; nav wordmark becomes the brand logo
 
 **Hero spacing + band height (desktop only).** The gallery sat a long way below the header and the visible strip was short.

@@ -107,7 +107,7 @@ export function Navigation() {
         <header
             data-nav-tone={isOverDark ? 'dark' : 'light'}
             data-scrolled={isScrolled ? 'true' : 'false'}
-            className={`kere-site-header fixed inset-x-0 top-0 z-[100] backdrop-blur-xl transition-all duration-500 ${isOverDark ? 'bg-[#1c1c1c] text-white shadow-[0_1px_0_rgba(255,255,255,0.08)]' : 'bg-[#F4F0E9] text-[#111111] shadow-[0_1px_0_rgba(0,0,0,0.06)]'}`}
+            className={`kere-site-header fixed inset-x-0 top-0 z-[100] pt-1.5 backdrop-blur-xl transition-all duration-500 ${isOverDark ? 'bg-[#1c1c1c] text-white shadow-[0_1px_0_rgba(255,255,255,0.08)]' : 'bg-[#F4F0E9] text-[#111111] shadow-[0_1px_0_rgba(0,0,0,0.06)]'}`}
         >
             <div className="kere-site-header-bar mx-auto grid h-10 max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:h-11 sm:px-6 lg:h-11 lg:px-10">
                 <div className="flex min-w-0 items-center gap-4 sm:gap-7">

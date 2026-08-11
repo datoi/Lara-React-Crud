@@ -105,7 +105,10 @@ export function HeroSection() {
       if (offsetRef.current <= -half) offsetRef.current += half;
       else if (offsetRef.current > 0) offsetRef.current -= half;
 
-      track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
+      // Keep the -50% from the stylesheet's `top: 50%` centring — assigning
+      // transform here replaces it wholesale, which drops the track half an
+      // image-height below the gallery and leaves dead space above it.
+      track.style.transform = `translate3d(${offsetRef.current}px, -50%, 0)`;
       raf = requestAnimationFrame(loop);
     });
 

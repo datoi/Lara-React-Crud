@@ -211,7 +211,7 @@
   --border: rgba(17, 17, 17, 0.13);
 
   width: 100%;
-  min-height: calc(100vh - 44px);
+  min-height: calc(100vh - 51px);
   padding: 36px 16px 16px;
   display: flex;
   align-items: center;
