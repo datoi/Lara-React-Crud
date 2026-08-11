@@ -570,12 +570,12 @@
 }
 
 .kere-landing .kere-site-header {
-  background: transparent !important;
-  background-color: transparent !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: none !important;
+  background: #F4F0E9 !important;
+  background-color: #F4F0E9 !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.1) !important;
+  backdrop-filter: blur(18px) saturate(1.1) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04) !important;
 }
 
 .kere-landing .kere-site-header-bar {
@@ -588,9 +588,6 @@
   background-color: #F4F0E9 !important;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.1) !important;
   transform: translateY(0);
-  -webkit-backdrop-filter: blur(18px) saturate(1.1) !important;
-  backdrop-filter: blur(18px) saturate(1.1) !important;
-  border-bottom-color: rgba(0, 0, 0, 0.1) !important;
 }
 
 .kere-landing .kere-site-header::after {
@@ -623,28 +620,11 @@
 .kere-landing .kere-site-header[data-nav-tone="dark"] .kere-site-header-bar button,
 .kere-landing .kere-site-header[data-nav-tone="dark"] .kere-site-header-bar span,
 .kere-landing .kere-site-header[data-nav-tone="dark"] .kere-site-header-bar svg {
-  color: #ffffff !important;
-}
-
-.kere-landing .kere-site-header .kere-site-header-bar .border-l {
-  border-color: rgba(255, 255, 255, 0.3) !important;
-}
-
-.kere-landing .kere-site-header[data-scrolled="true"] .kere-site-header-bar,
-.kere-landing .kere-site-header[data-scrolled="true"] .kere-site-header-bar a,
-.kere-landing .kere-site-header[data-scrolled="true"] .kere-site-header-bar button,
-.kere-landing .kere-site-header[data-scrolled="true"] .kere-site-header-bar span,
-.kere-landing .kere-site-header[data-scrolled="true"] .kere-site-header-bar svg {
   color: #111111 !important;
 }
 
-.kere-landing .kere-site-header[data-scrolled="true"] .kere-site-header-bar .border-l {
+.kere-landing .kere-site-header .kere-site-header-bar .border-l {
   border-color: rgba(0, 0, 0, 0.15) !important;
-}
-
-.kere-landing .kere-site-header:not([data-scrolled="true"]) .kere-site-header-bar a.bg-\[\#111111\] {
-  background: transparent !important;
-  border: 0;
 }
 
 .design-page .kere-site-header .kere-site-header-bar,
@@ -803,31 +783,6 @@
   background-color: transparent;
   color: var(--kere-brand);
   opacity: 0.72;
-}
-
-/* Editorial landing hero must remain monochrome over the photograph. These
-   selectors intentionally outrank the landing page's burgundy button theme. */
-.kere-landing section.kere-landing-editorial-hero,
-.kere-landing .kere-landing-editorial-hero .kere-editorial-hero-title {
-  color: #f4f0e9 !important;
-}
-
-.kere-landing .kere-landing-editorial-hero .kere-editorial-hero-action {
-  border-color: rgba(244, 240, 233, 0.82) !important;
-  background: transparent !important;
-  color: #f4f0e9 !important;
-}
-
-.kere-landing .kere-landing-editorial-hero .kere-editorial-hero-action:hover {
-  border-color: #f4f0e9 !important;
-  background: #f4f0e9 !important;
-  color: #111111 !important;
-}
-
-.kere-landing .kere-landing-editorial-hero .kere-editorial-hero-shop {
-  border-bottom: 1px solid #f4f0e9 !important;
-  background: transparent !important;
-  color: #f4f0e9 !important;
 }
 
 .kere-landing .shadow-\[0_24px_70px_rgba\(39\,25\,16\,0\.18\)\],
