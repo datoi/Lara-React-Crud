@@ -638,6 +638,10 @@ All features and fixes are logged here in reverse chronological order.
 
 **Verified:** burger present and drawer populated (10 links) at 1024/1200/1279, hidden at 1280 where the row takes over — clean handoff, no width with neither. Hover unchanged (0.0px shift, 10→11px, decoration `rgb(17,17,17)`). Screenshots at 1024 `ka` and 390 confirm both fixes visually. `vite build` clean.
 
+**🔴 Blocker 4 (owner-reported, follow-up) — right nav cluster sat mid-bar at every width below `xl`.** The language toggle and profile icon rendered in the middle of the header instead of against the right edge. Cause is a CSS Grid subtlety introduced by the `d635cb3` restructure: the bar is `grid-cols-[1fr_auto_1fr]` and its middle child (the link row) is `hidden` below `xl`. A `display: none` child is **not placed in the grid at all**, so with only two children left the right cluster was auto-placed into column *2* — the `auto` track — and column 3 stayed empty. Widening the link row's breakpoint from `lg` to `xl` in Blocker 2 extended the broken range rather than causing it.
+
+- **Fix:** pin each child to its track with `col-start-1` / `col-start-2` / `col-start-3`, so a hidden sibling can no longer re-flow the others. Measured gap from the right cluster to the bar's right edge, before → after: 375px **163.6 → 16**, 768px **277.8 → 24**, 1024px **373.4 → 40**, 1280px 40 → 40 — i.e. it now lands exactly on `px-4` / `sm:px-6` / `lg:px-10`, with the middle track collapsing to 0 when the links are hidden. Confirmed visually at 375 and 890.
+
 **Flagged, not fixed (pre-existing):** the header bar has **no language toggle between 640px and 1023px** — the mobile one is `sm:hidden`, the desktop one `lg:flex`. Still reachable inside the burger drawer, so not a break, and it predates this diff. Also still open from earlier: drawer link order differs from desktop, and `npx tsc --noEmit` fails on `tsconfig.json:110`, so typecheck gates nothing for anyone.
 
 ---

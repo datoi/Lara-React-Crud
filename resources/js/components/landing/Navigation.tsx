@@ -112,7 +112,7 @@ export function Navigation() {
             className={`kere-site-header fixed inset-x-0 top-0 z-[100] pt-1.5 backdrop-blur-xl transition-all duration-500 ${isOverDark ? 'bg-[#1c1c1c] text-white shadow-[0_1px_0_rgba(255,255,255,0.08)]' : 'bg-[#F4F0E9] text-[#111111] shadow-[0_1px_0_rgba(0,0,0,0.06)]'}`}
         >
             <div className="kere-site-header-bar mx-auto grid h-10 max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:h-11 sm:px-6 lg:h-11 lg:px-10">
-                <div className="flex min-w-0 items-center gap-4 sm:gap-7">
+                <div className="col-start-1 flex min-w-0 items-center gap-4 sm:gap-7">
                     <button
                         onClick={() => setMobileOpen(!mobileOpen)}
                         className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 xl:hidden ${navTextClass}`}
@@ -134,7 +134,7 @@ export function Navigation() {
                     </Link>
                 </div>
 
-                <div className="hidden items-center gap-7 xl:flex">
+                <div className="col-start-2 hidden items-center gap-7 xl:flex">
                     <Link
                         to="/marketplace"
                         className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
@@ -171,7 +171,7 @@ export function Navigation() {
                     )}
                 </div>
 
-                <div className="flex min-w-0 items-center justify-end gap-4 sm:gap-7">
+                <div className="col-start-3 flex min-w-0 items-center justify-end gap-4 sm:gap-7">
                     <Link
                         to="/partners"
                         className={`group hidden text-[10px] font-semibold tracking-[0.08em] uppercase md:inline ${navTextClass}`}
