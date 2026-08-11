@@ -125,9 +125,10 @@ export function Navigation() {
                     <Link
                         to="/"
                         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                        className={`text-[18px] leading-none font-medium tracking-normal sm:text-[19px] lg:text-[20px] ${navTextClass}`}
+                        aria-label="Kere"
+                        className={`inline-flex items-center ${navTextClass}`}
                     >
-                        Kere
+                        <span aria-hidden className="kere-nav-logo h-[14px] sm:h-[15px] lg:h-4" />
                     </Link>
                 </div>
 
@@ -251,9 +252,10 @@ export function Navigation() {
                                 <Link
                                     to="/"
                                     onClick={() => setMobileOpen(false)}
-                                    className="justify-self-center text-center text-[clamp(1.45rem,4vw,2.15rem)] leading-none font-medium tracking-normal text-[#111111]"
+                                    aria-label="Kere"
+                                    className="inline-flex justify-self-center text-[#111111]"
                                 >
-                                    Kere
+                                    <span aria-hidden className="kere-nav-logo h-[clamp(17px,2.9vw,26px)]" />
                                 </Link>
 
                                 <div className="flex items-center justify-end gap-4">

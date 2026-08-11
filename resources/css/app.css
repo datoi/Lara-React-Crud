@@ -175,6 +175,18 @@
   font-family: 'Instrument Sans', 'Noto Sans Georgian', ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Nav wordmark. The brand asset is cream-on-wine, which would read as a solid
+   tile in the bar, so it ships as an alpha mask and takes its colour from
+   `currentColor` — that keeps it right on both the light and the dark nav tone
+   from one file, exactly as the text it replaced did. */
+.kere-nav-logo {
+  display: block;
+  aspect-ratio: 221 / 49;
+  background-color: currentColor;
+  -webkit-mask: url('/assets/brand/kere-wordmark.png') center / contain no-repeat;
+  mask: url('/assets/brand/kere-wordmark.png') center / contain no-repeat;
+}
+
 .kere-hero-title {
   font-family: 'Newsreader', 'Noto Serif Georgian', 'Noto Sans Georgian', Georgia, serif;
   color: transparent;
@@ -200,7 +212,7 @@
 
   width: 100%;
   min-height: calc(100vh - 44px);
-  padding: 72px 16px 16px;
+  padding: 36px 16px 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -226,7 +238,7 @@
 .kere-hero-copy {
   position: relative;
   z-index: 40;
-  padding: clamp(58px, 7vh, 82px) 24px clamp(12px, 1.8vh, 18px);
+  padding: clamp(29px, 3.5vh, 41px) 24px clamp(12px, 1.8vh, 18px);
   text-align: center;
   background: var(--white);
 }
@@ -254,7 +266,7 @@
 .kere-gallery {
   position: relative;
   height: 100%;
-  min-height: clamp(430px, 52vh, 540px);
+  min-height: clamp(500px, 60vh, 620px);
   overflow: hidden;
   background: var(--white);
 }
@@ -336,7 +348,7 @@
   position: relative;
   flex: 0 0 auto;
   width: clamp(205px, 17vw, 260px);
-  height: clamp(430px, 52vh, 540px);
+  height: clamp(500px, 60vh, 620px);
   overflow: hidden;
   border-radius: 6px;
   background: #ddd9d5;

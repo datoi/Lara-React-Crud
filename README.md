@@ -609,6 +609,27 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-11] Hero: halve the gap above the gallery, grow the band; nav wordmark becomes the brand logo
+
+**Hero spacing + band height (desktop only).** The gallery sat a long way below the header and the visible strip was short.
+
+- `.kere-hero` `padding-top` **72px → 36px** and `.kere-hero-copy` `padding-top` **`clamp(58px, 7vh, 82px)` → `clamp(29px, 3.5vh, 41px)`** — both literally halved.
+- `.kere-gallery` `min-height` and `.kere-gallery-image` `height` **`clamp(430px, 52vh, 540px)` → `clamp(500px, 60vh, 620px)`**, kept identical to each other so the images still exactly fill the band.
+- Net effect at a ~900px viewport: ~68px of dead space removed above the band, while the **visible** strip goes ~278px → ~350px (+26%). The two roughly cancel, so the hero's overall height is within ~5px of before and nothing below it moves.
+- The `≤991px` and `≤640px` blocks already carry their own gallery/hero values and were deliberately left alone, matching how `3b71385` scoped its change.
+- **Still ~95px of the space above the images is the `.kere-ellipse-top` / `.kere-depth-ellipse` mask**, not padding — that white curve is what shapes the band. It was left intact, so the gap is *not* halved end-to-end; cutting it further means a shallower curve and losing the top/bottom symmetry, which is a design call rather than a spacing fix.
+
+**Nav wordmark → real logo.** The header's text "Kere" is replaced by the brand mark from `public/assets/garments/Logos/Kere 1.png`.
+
+- The source is **cream glyphs on a solid wine tile** (all three copies — the two in `garments/Logos/` and `brand/kere-logo.png` — are the same 323×326 tile), so dropping it in would have put a wine block in a cream bar, and it could not follow the nav's light/dark tone.
+- Generated `public/assets/brand/kere-wordmark.png` (**221×49, 1.2 KB**) by mapping the source's luminance to alpha — which keeps the glyph antialiasing — then trimming to the letterforms.
+- It renders through the new `.kere-nav-logo` class as a **CSS mask filled with `currentColor`**, so it inherits `navTextClass` exactly as the text did: ink on the light bar, cream on the dark one, from a single file. Sized by height (`h-[14px] sm:h-[15px] lg:h-4`) with `aspect-ratio: 221 / 49` deriving the width.
+- The link keeps `aria-label="Kere"` and the mask span is `aria-hidden`, so the home link stays announced now that the visible text is gone. The **mobile drawer's** matching "Kere" text was swapped for the same mark so the two don't drift.
+
+**Verified:** `vite build` clean; `.kere-nav-logo` and the mask URL are in the built CSS; the new `clamp(500px, 60vh, 620px)` appears twice (gallery + image) with the old value gone; `/assets/brand/kere-wordmark.png` serves 200 at 1.2 KB; the extracted mark was rendered tinted on the cream nav colour to confirm the background stripped cleanly. **Not browser-verified** — the exact gap and band height want your eye, and that is the part most likely to need a nudge.
+
+---
+
 ### [2026-08-11] Navbar reorder (KERE left, links centred) + fix the blur on hover-grow
 
 **What was done:** Follow-up to the hover change earlier the same day.
