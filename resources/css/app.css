@@ -212,7 +212,7 @@
 
   width: 100%;
   min-height: calc(100vh - 51px);
-  padding: 36px 16px 16px;
+  padding: 72px 16px 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -238,7 +238,7 @@
 .kere-hero-copy {
   position: relative;
   z-index: 40;
-  padding: clamp(29px, 3.5vh, 41px) 24px clamp(12px, 1.8vh, 18px);
+  padding: clamp(58px, 7vh, 82px) 24px clamp(12px, 1.8vh, 18px);
   text-align: center;
   background: var(--white);
 }
@@ -266,7 +266,7 @@
 .kere-gallery {
   position: relative;
   height: 100%;
-  min-height: clamp(500px, 60vh, 620px);
+  min-height: clamp(420px, 50vh, 520px);
   overflow: hidden;
   background: var(--white);
 }
@@ -348,7 +348,7 @@
   position: relative;
   flex: 0 0 auto;
   width: clamp(205px, 17vw, 260px);
-  height: clamp(500px, 60vh, 620px);
+  height: clamp(420px, 50vh, 520px);
   overflow: hidden;
   border-radius: 6px;
   background: #ddd9d5;

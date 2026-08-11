@@ -609,6 +609,20 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-11] Hero spacing settled: heading clear of the navbar, band trimmed
+
+**What was done:** Final tune after the centring fix. Two owner notes — the heading sat almost against the navbar, and the band was now too tall.
+
+- **Restored the designed copy spacing.** `.kere-hero` `padding-top` back to **72px** and `.kere-hero-copy` `padding-top` back to **`clamp(58px, 7vh, 82px)`**. Halving these earlier was collateral from the wrong diagnosis — the gap was never padding, it was the `translate3d` bug, so the original values are correct again. Heading now clears the navbar by **~91px** (header bottom 51 → heading top 142.3) instead of ~17px.
+- **Band trimmed.** `.kere-gallery` `min-height` and `.kere-gallery-image` `height` **`clamp(500px, 60vh, 620px)` → `clamp(420px, 50vh, 520px)`**, kept identical to each other. Visible strip **362px → 270px**.
+- Net at 1280×920: card 77.9→847.1, gallery 259.8→719.8, and `.kere-gallery-track` measures **259.8→719.8**, i.e. still flush with the gallery — the centring fix holds at the new size.
+
+**Verified in browser** (playwright-core + system Chrome): geometry re-measured, plus a screenshot confirming the heading has air under the navbar and the band reads correctly with both ellipse curves. `vite build` clean.
+
+**Flagged, not fixed:** the first screenshot showed the gallery as empty grey boxes, which turned out to be a **capture-timing artefact, not a regression** — all six images report `complete=true` at 600×800, they are just external `picsum.photos` placeholders from the demo seed that had not arrived at 3.5s. Related, and a genuine issue: the landing page hotlinks Unsplash directly in `GuaranteeSection`, `LocalTailorsSection` and `CategoriesSection` (plus `ClothingSeeder`), and one of those now fails with `net::ERR_BLOCKED_BY_ORB`. Hotlinked third-party images on the landing page are worth replacing with local assets.
+
+---
+
 ### [2026-08-11] Hero gallery was half an image below its own band — JS transform clobbered the CSS centring
 
 **What was done:** The reported "big unnecessary gap between the header and the slideshow" was not spacing at all. `.kere-gallery-track` is centred in the stylesheet with `top: 50%` + `transform: translateY(-50%)`, but the marquee RAF loop in `HeroSection.tsx` assigned `track.style.transform = translate3d(Xpx, 0, 0)` every frame, **replacing** that transform and destroying the vertical centring. The track therefore sat exactly half an image-height (276px) below the gallery, hung the same distance out of the bottom, and left a 276px band of empty ellipse-masked white on top.
