@@ -609,6 +609,20 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-11] Navbar hover → underline + grow; restore the pointer cursor on every button
+
+**What was done:** Three owner-requested nav changes, one of which turned out to be a site-wide regression.
+
+- **New nav hover.** `AnimatedNavText` was a two-layer roll-up — the label slid up while a duplicate slid in from below (`group-hover:-translate-y-full` / `group-hover:translate-y-0`). Replaced with the requested effect: the hovered word gains an underline and scales to `110%`. Built as `underline decoration-transparent … group-hover:decoration-current`, so the underline **fades** in via `text-decoration-color` and its space is always reserved — a bare `group-hover:underline` would pop in and nudge the row. `inline-block` makes the transform apply, and because `scale` is a transform it grows without reflowing neighbours. Kept the outgoing `duration-300 ease-out` so nav timing is unchanged. This is the approved **hover-scale** pattern; the old roll-up was not one of the 5.
+- **KERE wordmark hover removed entirely** — dropped both the `<AnimatedNavText>` wrapper and the `group` class on its `<Link>`. Confirmed `navTextClass` is colour-only (`text-white` / `text-[#111111]`), so with `group` gone the wordmark has no hover state left at all.
+- **The EN/ქართ toggle had no pointer cursor — and neither did anything else.** It was already a real `<button>` with an `onClick`, so the fix was not markup. **Tailwind v4's Preflight dropped the `button { cursor: pointer }` that v3 supplied**, so the arrow cursor was showing on all **237 raw `<button>` elements** in the app plus the shared `ui/button.tsx` — the toggle was just where it got noticed. Fixed at the root with one `@layer base` rule (`button:not(:disabled), [role='button']:not([aria-disabled='true'])`), rather than adding a class in 237 places. Disabled buttons are excluded so they keep the default arrow.
+
+**Verified:** `vite build` clean; the `cursor: pointer` rule is present in the built CSS; `group-hover:-translate-y-full` is gone from the bundle and `group-hover:scale-110` / `group-hover:decoration-current` are present. The one remaining `group-hover:translate-y-0` is the Marketplace card's size-picker slide-up, unrelated. **Not browser-verified** — no browser automation this session; the underline offset and the 110% growth want an eyeball at desktop widths, over both the light and dark nav tones.
+
+**Note:** the effect is applied uniformly to every nav label that had the old one — including the filled black **Sign in** link, which now underlines and grows on top of its existing `hover:bg-[#2b2b2b]`. Say so if that one should keep only the background change.
+
+---
+
 ### [2026-08-11] Remove the customizer's single-tab "Style your own" bar
 
 **What was done:** The customizer rendered a black pill tab above the option swatches showing the layer-category name (every seeded product names its one category *"Style your own"*), so the page read the same label twice — once as a black tab, once as the grey section heading directly under it.

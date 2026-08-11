@@ -8,14 +8,8 @@ import { NotificationBell } from '../NotificationBell';
 
 function AnimatedNavText({ children }: { children: ReactNode }) {
     return (
-        <span className="relative inline-grid overflow-hidden align-middle">
-            <span className="col-start-1 row-start-1 transition-transform duration-300 ease-out group-hover:-translate-y-full">{children}</span>
-            <span
-                aria-hidden="true"
-                className="absolute inset-0 translate-y-full transition-transform duration-300 ease-out group-hover:translate-y-0"
-            >
-                {children}
-            </span>
+        <span className="inline-block align-middle underline decoration-transparent decoration-1 underline-offset-4 transition-all duration-300 ease-out group-hover:scale-110 group-hover:decoration-current">
+            {children}
         </span>
     );
 }
@@ -159,9 +153,9 @@ export function Navigation() {
                 <Link
                     to="/"
                     onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                    className={`group justify-self-center text-[18px] leading-none font-medium tracking-normal sm:text-[19px] lg:text-[20px] ${navTextClass}`}
+                    className={`justify-self-center text-[18px] leading-none font-medium tracking-normal sm:text-[19px] lg:text-[20px] ${navTextClass}`}
                 >
-                    <AnimatedNavText>Kere</AnimatedNavText>
+                    Kere
                 </Link>
 
                 <div className="flex min-w-0 items-center justify-end gap-4 sm:gap-7">
