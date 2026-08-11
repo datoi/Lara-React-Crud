@@ -609,6 +609,22 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-11] Remove the customizer's single-tab "Style your own" bar
+
+**What was done:** The customizer rendered a black pill tab above the option swatches showing the layer-category name (every seeded product names its one category *"Style your own"*), so the page read the same label twice — once as a black tab, once as the grey section heading directly under it.
+
+**Root cause:** `OptionPanel.tsx` chose its layout with `useStackedLayout = choosableCategories.length > 1`, so the **tab** branch ran only when a product had *exactly one* category — precisely the case where a tab bar has nothing to switch between. The stacked branch (no tabs, one grey heading per category) was reserved for multi-category products. The condition had the two layouts backwards.
+
+- **Fix:** `OptionPanel` now always stacks. Multi-category products keep the identical stacked rendering they already had (including the `border-t` separator between categories, previously gated on `useStackedLayout`), and single-category products simply lose the pointless tab. Dropped the now-unused `activeCategoryId` state, its initialising `useEffect`, the `activeCategory` lookup, and the `useState`/`useEffect` imports.
+- **`CategoryTabs.tsx` deleted** — the tab bar was its only consumer, so keeping it would have left dead code. This also removes its `duration: 0.25` `layoutId` indicator, which was an off-spec animation.
+- **Why not just hide the pill:** a `categories.length > 1` guard would have left the same backwards branch in place and kept a component no product could reach. Verified against the live API that **all 15 customizer products have 0 or exactly 1 layer category** (the 9 with one all name it "Style your own"), so nothing depended on tab navigation — and stacking keeps future multi-category products fully reachable, which suppressing the tab would not.
+
+**Verified:** `vite build` clean (exit 0); `/customize/mens-cargo-trousers`, `/customize/mens-elbow-shirt` and `/customize/witeli-maika` all 200; the tab's `aria-label` (`Customization categories`) and `tab-indicator` `layoutId` both gone from the built bundle. **Not browser-verified** — no browser automation in this session; the swatch grid and its grey heading should be eyeballed on a customizer page.
+
+**Flagged, not fixed (pre-existing, outside this change):** `OptionPanel.tsx` renders a hardcoded English `"More options coming soon."` for products with no choosable categories — an i18n violation that should come from `en.json`/`ka.json`.
+
+---
+
 ### [2026-08-11] Merge Mariam's August Design Pass (`mariam-changes`) — design in, regressions out
 
 **What was done:** Merged `origin/mariam-changes` (2 commits by `mbadzaghua`, latest 08-10) into `main`. The branch forked at `028990e` on 08-05 and so predated the twenty 08-07 commits, meaning three of its changes would have silently reverted shipped work. Resolution rule (per owner): **her design wins on layout/CSS; anything that reverts a deliberate main commit does not.** Note `origin/mariami` is now fully stale (0 ahead / 60 behind) — `mariam-changes` supersedes it.

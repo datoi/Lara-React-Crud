@@ -1,9 +1,7 @@
 import { motion } from 'motion/react';
 import type { LayerCategory, Fabric } from '../../types/customizer';
-import CategoryTabs from './CategoryTabs';
 import OptionSwatch from './OptionSwatch';
 import FabricPicker from './FabricPicker';
-import { useState, useEffect } from 'react';
 
 interface OptionPanelProps {
     layerCategories: LayerCategory[];
@@ -32,16 +30,6 @@ export default function OptionPanel({
     onSelectFabric,
 }: OptionPanelProps) {
     const choosableCategories = layerCategories.filter(c => c.options.length > 0);
-    const useStackedLayout = choosableCategories.length > 1;
-
-    const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
-    useEffect(() => {
-        if (!useStackedLayout && choosableCategories.length > 0 && activeCategoryId === null) {
-            setActiveCategoryId(choosableCategories[0]?.id ?? null);
-        }
-    }, [choosableCategories, activeCategoryId, useStackedLayout]);
-
-    const activeCategory = choosableCategories.find(c => c.id === activeCategoryId) ?? null;
 
     const renderCategory = (category: LayerCategory, i: number) => {
         const selectedParentId = selections[category.id];
@@ -53,7 +41,7 @@ export default function OptionPanel({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: i * 0.07 }}
-                className={useStackedLayout && i > 0 ? 'border-t border-slate-100 pt-4' : undefined}
+                className={i > 0 ? 'border-t border-slate-100 pt-4' : undefined}
             >
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
                     {category.name}
@@ -91,26 +79,7 @@ export default function OptionPanel({
                 </p>
             )}
 
-            {/* Stacked layout */}
-            {useStackedLayout && choosableCategories.map((cat, i) => renderCategory(cat, i))}
-
-            {/* Tab layout */}
-            {!useStackedLayout && choosableCategories.length > 0 && (
-                <>
-                    <CategoryTabs
-                        categories={choosableCategories}
-                        activeId={activeCategoryId}
-                        onSelect={setActiveCategoryId}
-                    />
-                    <div
-                        id={activeCategoryId ? `panel-${activeCategoryId}` : undefined}
-                        role="tabpanel"
-                        className="min-h-[160px]"
-                    >
-                        {activeCategory && renderCategory(activeCategory, 0)}
-                    </div>
-                </>
-            )}
+            {choosableCategories.map((cat, i) => renderCategory(cat, i))}
 
             {/* Fabric / colour picker */}
             {fabrics.length > 0 && (
