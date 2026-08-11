@@ -609,6 +609,20 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-11] Navbar reorder (KERE left, links centred) + fix the blur on hover-grow
+
+**What was done:** Follow-up to the hover change earlier the same day.
+
+- **Blur on hover fixed — root cause was `scale`.** Growing the label with `transform: scale(1.1)` promotes it to a composited layer, so the browser stretches an already-rasterised bitmap of the text for the length of the transition and only re-renders sharp at the end — exactly the "blurry for a short time, then normal" that was reported. The size change is now **`font-size`** (`group-hover:text-[1.1em]`), which is not a composited property, so the glyphs are re-rendered crisply on every frame. Same 110% growth, same `duration-300 ease-out`.
+- **No layout shift.** `font-size` reflows where `scale` did not, so `AnimatedNavText` now renders a second `aria-hidden invisible` copy of the label at the grown size in the same `inline-grid` cell. The hidden copy fixes the box at its widest, the visible copy is `justify-self-center`, so the word grows symmetrically inside reserved space and never nudges its neighbours.
+- **Bar reordered.** `KERE` moved out of the centre grid cell into the left cell (its `justify-self-center` dropped) and sits alone there — beside the burger below `lg`, since the burger has to live somewhere. The link group moved into the centre cell, reordered to **Marketplace → Start Designing → Remodel → How It Works → FAQ**, and the `h-3.5 w-px` divider that separated the site anchors from the destinations is gone. The bar keeps `grid-cols-[1fr_auto_1fr]`, so the centre group stays optically centred regardless of how wide the left and right clusters get.
+
+**Verified:** `vite build` clean; `group-hover:scale-110` is gone from the bundle and `group-hover:text-[1.1em]` present; the divider span is gone from the source; `navDividerClass` / `showSiteAnchors` / `isOverDark` all still referenced (nothing orphaned by the restructure). **Not browser-verified** — no browser automation this session; worth checking that the centre group still clears the right-hand cluster at ~1024–1280px, where the nav is tightest.
+
+**Flagged:** the **mobile drawer** still lists How It Works → Marketplace → Start Designing → Remodel → FAQ, which no longer matches the desktop order. Left alone as it was outside the request — worth aligning.
+
+---
+
 ### [2026-08-11] Navbar hover → underline + grow; restore the pointer cursor on every button
 
 **What was done:** Three owner-requested nav changes, one of which turned out to be a site-wide regression.

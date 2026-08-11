@@ -6,10 +6,21 @@ import { Link, useLocation } from 'react-router';
 import { getAuthToken, getAuthUser } from '../../hooks/useAuth';
 import { NotificationBell } from '../NotificationBell';
 
+/**
+ * Underlines the label and grows it slightly on hover of the parent `group`.
+ * The size change is `font-size`, not `scale` — a transform hands the browser a
+ * rasterised bitmap to stretch, which reads as blur until the animation ends.
+ * The hidden copy reserves the grown width so neighbours never shift.
+ */
 function AnimatedNavText({ children }: { children: ReactNode }) {
     return (
-        <span className="inline-block align-middle underline decoration-transparent decoration-1 underline-offset-4 transition-all duration-300 ease-out group-hover:scale-110 group-hover:decoration-current">
-            {children}
+        <span className="inline-grid align-middle">
+            <span aria-hidden className="invisible col-start-1 row-start-1 text-[1.1em]">
+                {children}
+            </span>
+            <span className="col-start-1 row-start-1 justify-self-center underline decoration-transparent decoration-1 underline-offset-4 transition-all duration-300 ease-out group-hover:text-[1.1em] group-hover:decoration-current">
+                {children}
+            </span>
         </span>
     );
 }
@@ -111,52 +122,51 @@ export function Navigation() {
                         </span>
                     </button>
 
-                    <div className="hidden items-center gap-7 lg:flex">
-                        {showSiteAnchors && (
-                            <>
-                                <a
-                                    href="#how-it-works"
-                                    className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
-                                >
-                                    <AnimatedNavText>{t('nav.howItWorks')}</AnimatedNavText>
-                                </a>
-                                <a
-                                    href="#faq"
-                                    className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
-                                >
-                                    <AnimatedNavText>{t('nav.faq')}</AnimatedNavText>
-                                </a>
-                                <span aria-hidden className={`h-3.5 w-px ${isOverDark ? 'bg-white/25' : 'bg-black/20'}`} />
-                            </>
-                        )}
-                        <Link
-                            to="/marketplace"
-                            className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
-                        >
-                            <AnimatedNavText>{t('marketplace.title')}</AnimatedNavText>
-                        </Link>
-                        <Link
-                            to="/design"
-                            className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
-                        >
-                            <AnimatedNavText>{t('nav.startDesigning')}</AnimatedNavText>
-                        </Link>
-                        <Link
-                            to="/remodel"
-                            className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
-                        >
-                            <AnimatedNavText>{t('nav.remodel')}</AnimatedNavText>
-                        </Link>
-                    </div>
+                    <Link
+                        to="/"
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                        className={`text-[18px] leading-none font-medium tracking-normal sm:text-[19px] lg:text-[20px] ${navTextClass}`}
+                    >
+                        Kere
+                    </Link>
                 </div>
 
-                <Link
-                    to="/"
-                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                    className={`justify-self-center text-[18px] leading-none font-medium tracking-normal sm:text-[19px] lg:text-[20px] ${navTextClass}`}
-                >
-                    Kere
-                </Link>
+                <div className="hidden items-center gap-7 lg:flex">
+                    <Link
+                        to="/marketplace"
+                        className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
+                    >
+                        <AnimatedNavText>{t('marketplace.title')}</AnimatedNavText>
+                    </Link>
+                    <Link
+                        to="/design"
+                        className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
+                    >
+                        <AnimatedNavText>{t('nav.startDesigning')}</AnimatedNavText>
+                    </Link>
+                    <Link
+                        to="/remodel"
+                        className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
+                    >
+                        <AnimatedNavText>{t('nav.remodel')}</AnimatedNavText>
+                    </Link>
+                    {showSiteAnchors && (
+                        <>
+                            <a
+                                href="#how-it-works"
+                                className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
+                            >
+                                <AnimatedNavText>{t('nav.howItWorks')}</AnimatedNavText>
+                            </a>
+                            <a
+                                href="#faq"
+                                className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
+                            >
+                                <AnimatedNavText>{t('nav.faq')}</AnimatedNavText>
+                            </a>
+                        </>
+                    )}
+                </div>
 
                 <div className="flex min-w-0 items-center justify-end gap-4 sm:gap-7">
                     <Link
