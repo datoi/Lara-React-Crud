@@ -609,6 +609,39 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-12] QA round on the navbar/hero pass — 2 blockers fixed, both outside desktop English
+
+**What was done:** QA drove `998b91f…ac9eee4` in Chrome across 5 viewports × 2 locales and found two blockers, both in the ranges the previous log had explicitly marked unverified. Both reproduced independently before fixing.
+
+**🔴 Blocker 1 — hero gallery clipped at the top on phones (≤640px).** `3636e2e` fixed desktop centring by making the RAF loop write `translate3d(x, -50%, 0)`. That `-50%` applies at *every* breakpoint, but the `≤640px` block overrode the track to `top: 39px`, so the JS subtracted half a track-height from a 39px offset and pushed the band above its own frame — the same bug as before, mirrored.
+
+- **Fix is architectural, not a patched number:** vertical centring moved off `transform` (which the marquee owns and rewrites every frame) onto **flexbox** — `.kere-gallery` gains `display: flex; align-items: center`, `.kere-gallery-track` becomes `position: relative; flex: 0 0 auto` and drops `top` / `left` / `translateY(-50%)`, and the JS goes back to `translate3d(x, 0, 0)`. The stale `top: 39px` mobile override is deleted. Vertical position is now entirely CSS's, so no future transform write can clobber it.
+
+| viewport | before (clipped above / dead below) | after |
+| --- | --- | --- |
+| 1280 | 0 / 0 | 0 / 0 |
+| 640 | **83.5 / 73.5** | **0 / 0** |
+| 390 | **54.6 / 102.4** | **centred, 23.9 symmetric** |
+
+**🔴 Blocker 2 — Georgian nav labels overlapped the sign-in cluster at 1024–1200px.** `nav.faq` in `ka` is "ხშირად დასმული კითხვები" (23 chars vs English's "FAQ"), so the centre column overran the right cluster — silently, with no page scroll to reveal it. Fixed in two parts:
+
+- The hover ghost reserved the **grown** width, padding the whole bar out by ~10% at every width. It now holds the label's **resting** width with the visible copy absolutely positioned, so growing it overflows symmetrically instead. Neighbour shift stays 0.0px (re-verified).
+- The desktop link row moves from `lg` (1024) to **`xl` (1280)** — the first width where Georgian actually fits — with the burger and drawer overlay moved to `xl:hidden` to match, so navigation stays reachable below it.
+
+| clearance (last centre link → right cluster) | 1024 | 1100 | 1200 | 1280 |
+| --- | --- | --- | --- | --- |
+| ka before | −114.7 | −75.6 | −28.6 | +10.3 |
+| ka after | centre hidden | centre hidden | centre hidden | **+45.3** |
+| en after | centre hidden | centre hidden | centre hidden | **+109.9** |
+
+**🟡 Minor 3 — wordmark invisible in forced colours.** `.kere-nav-logo` paints through a mask with `background-color: currentColor`, and forced-colors rewrites `background-color` to Canvas (measured white-on-white). Added a `@media (forced-colors: active)` block setting `forced-color-adjust: none` and `background-color: CanvasText` — now measures `rgb(0,0,0)`.
+
+**Verified:** burger present and drawer populated (10 links) at 1024/1200/1279, hidden at 1280 where the row takes over — clean handoff, no width with neither. Hover unchanged (0.0px shift, 10→11px, decoration `rgb(17,17,17)`). Screenshots at 1024 `ka` and 390 confirm both fixes visually. `vite build` clean.
+
+**Flagged, not fixed (pre-existing):** the header bar has **no language toggle between 640px and 1023px** — the mobile one is `sm:hidden`, the desktop one `lg:flex`. Still reachable inside the burger drawer, so not a break, and it predates this diff. Also still open from earlier: drawer link order differs from desktop, and `npx tsc --noEmit` fails on `tsconfig.json:110`, so typecheck gates nothing for anyone.
+
+---
+
 ### [2026-08-11] Hero spacing settled: heading clear of the navbar, band trimmed
 
 **What was done:** Final tune after the centring fix. Two owner notes — the heading sat almost against the navbar, and the band was now too tall.

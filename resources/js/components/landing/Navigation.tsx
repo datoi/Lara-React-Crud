@@ -10,15 +10,17 @@ import { NotificationBell } from '../NotificationBell';
  * Underlines the label and grows it slightly on hover of the parent `group`.
  * The size change is `font-size`, not `scale` — a transform hands the browser a
  * rasterised bitmap to stretch, which reads as blur until the animation ends.
- * The hidden copy reserves the grown width so neighbours never shift.
+ * The hidden copy holds the box at the label's *resting* width and the visible
+ * copy is taken out of flow, so growing it overflows symmetrically instead of
+ * either shifting neighbours or padding the bar out by 10% at every width.
  */
 function AnimatedNavText({ children }: { children: ReactNode }) {
     return (
-        <span className="inline-grid align-middle">
-            <span aria-hidden className="invisible col-start-1 row-start-1 text-[1.1em]">
+        <span className="relative inline-block align-middle">
+            <span aria-hidden className="invisible">
                 {children}
             </span>
-            <span className="col-start-1 row-start-1 justify-self-center underline decoration-transparent decoration-1 underline-offset-4 transition-all duration-300 ease-out group-hover:text-[1.1em] group-hover:decoration-current">
+            <span className="absolute inset-0 flex items-center justify-center whitespace-nowrap underline decoration-transparent decoration-1 underline-offset-4 transition-all duration-300 ease-out group-hover:text-[1.1em] group-hover:decoration-current">
                 {children}
             </span>
         </span>
@@ -113,7 +115,7 @@ export function Navigation() {
                 <div className="flex min-w-0 items-center gap-4 sm:gap-7">
                     <button
                         onClick={() => setMobileOpen(!mobileOpen)}
-                        className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 lg:hidden ${navTextClass}`}
+                        className={`inline-flex items-center gap-2 transition-opacity hover:opacity-55 xl:hidden ${navTextClass}`}
                         aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
                     >
                         {mobileOpen ? <X className="h-4 w-4 stroke-[1.5]" /> : <Menu className="h-4 w-4 stroke-[1.5]" />}
@@ -132,7 +134,7 @@ export function Navigation() {
                     </Link>
                 </div>
 
-                <div className="hidden items-center gap-7 lg:flex">
+                <div className="hidden items-center gap-7 xl:flex">
                     <Link
                         to="/marketplace"
                         className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
@@ -226,7 +228,7 @@ export function Navigation() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[1000] bg-[#E4E0D7] lg:hidden"
+                        className="fixed inset-0 z-[1000] bg-[#E4E0D7] xl:hidden"
                         onMouseDown={(event) => {
                             if (event.target === event.currentTarget) {
                                 setMobileOpen(false);

@@ -187,6 +187,15 @@
   mask: url('/assets/brand/kere-wordmark.png') center / contain no-repeat;
 }
 
+/* Forced colours rewrites background-color to Canvas, which erases a mask-painted
+   mark. Opt out and paint it in the system text colour so the wordmark survives. */
+@media (forced-colors: active) {
+  .kere-nav-logo {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+}
+
 .kere-hero-title {
   font-family: 'Newsreader', 'Noto Serif Georgian', 'Noto Sans Georgian', Georgia, serif;
   color: transparent;
@@ -269,6 +278,11 @@
   min-height: clamp(420px, 50vh, 520px);
   overflow: hidden;
   background: var(--white);
+  /* Centres the marquee track vertically. Deliberately flexbox rather than
+     `top: 50%` + `translateY(-50%)`: the marquee's RAF loop owns the track's
+     `transform`, so any vertical offset kept there gets overwritten each frame. */
+  display: flex;
+  align-items: center;
 }
 
 .kere-ellipse-top {
@@ -332,15 +346,13 @@
 }
 
 .kere-gallery-track {
-  position: absolute;
-  top: 50%;
-  left: 0;
+  position: relative;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: clamp(10px, 1.25vw, 18px);
   width: max-content;
   padding: 0 clamp(10px, 1.25vw, 18px);
-  transform: translateY(-50%);
   will-change: transform;
 }
 
@@ -492,7 +504,6 @@
   }
 
   .kere-gallery-track {
-    top: 39px;
     gap: 12px;
     padding: 0 12px;
   }
