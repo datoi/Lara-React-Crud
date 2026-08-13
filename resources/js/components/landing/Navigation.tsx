@@ -4,6 +4,8 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router';
 import { getAuthToken, getAuthUser } from '../../hooks/useAuth';
+import { cartCount, openCart, useCart } from '../../hooks/useCart';
+import { CartDrawer } from '../CartDrawer';
 import { NotificationBell } from '../NotificationBell';
 
 /**
@@ -54,6 +56,7 @@ export function Navigation() {
     const [isScrolled, setIsScrolled] = useState(false);
     const { t } = useTranslation();
     const user = getAuthToken() ? getAuthUser() : null;
+    const cartItems = useCart();
     const { pathname } = useLocation();
     // The #how-it-works / #faq sections exist on the landing and "for tailors" pages,
     // so the navbar anchors show there (and scroll to whichever page you're on).
@@ -104,6 +107,7 @@ export function Navigation() {
 
     const navTextClass = isOverDark ? 'text-white' : 'text-[#111111]';
     const navDividerClass = isOverDark ? 'border-white/25' : 'border-black/15';
+    const itemCount = cartCount(cartItems);
 
     return (
         <header
@@ -182,6 +186,20 @@ export function Navigation() {
                     <div className="inline-flex sm:hidden">
                         <LanguageToggle isOverDark={isOverDark} />
                     </div>
+
+                    <button
+                        type="button"
+                        onClick={openCart}
+                        aria-label={itemCount > 0 ? t('cart.openWithCount', { n: itemCount }) : t('cart.open')}
+                        className={`relative inline-flex transition-opacity hover:opacity-55 ${navTextClass}`}
+                    >
+                        <ShoppingBag className="h-4 w-4 stroke-[1.5]" />
+                        {itemCount > 0 && (
+                            <span className="absolute -top-1.5 -right-2 min-w-4 rounded-full bg-[var(--color-brand)] px-1 text-center text-[9px] leading-4 font-bold text-white">
+                                {itemCount > 99 ? '99+' : itemCount}
+                            </span>
+                        )}
+                    </button>
 
                     {user ? (
                         <>
@@ -355,6 +373,8 @@ export function Navigation() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <CartDrawer />
         </header>
     );
 }

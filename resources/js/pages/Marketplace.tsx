@@ -1,4 +1,4 @@
-import { BadgeCheck, ChevronDown, ImageOff, Minus, Palette, Plus, Search, ShoppingBag, Star, X } from 'lucide-react';
+import { BadgeCheck, ChevronDown, ImageOff, Palette, Search, Star, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -8,6 +8,7 @@ import { ErrorFallback } from '../components/ErrorFallback';
 import { Navigation } from '../components/landing/Navigation';
 import { ProductCardSkeleton } from '../components/skeletons/ProductCardSkeleton';
 import { Button } from '../components/ui/button';
+import { addToCart, openCart } from '../hooks/useCart';
 import { getSection, setSection, type Section } from '../hooks/useSection';
 
 interface ApiProduct {
@@ -24,12 +25,6 @@ interface ApiProduct {
     category: { id: number; name: string; slug: string };
     reviews_count: number;
     average_rating: number | null;
-}
-
-interface QuickCartItem {
-    product: ApiProduct;
-    size: string;
-    quantity: number;
 }
 
 interface ApiCategory {
@@ -111,8 +106,6 @@ export default function Marketplace() {
     const [sort, setSort] = useState(() => searchParams.get('sort') ?? '');
     const [activeFilter, setActiveFilter] = useState<FilterMenu | null>(null);
     const [showSort, setShowSort] = useState(false);
-    const [quickCartOpen, setQuickCartOpen] = useState(false);
-    const [quickCartItems, setQuickCartItems] = useState<QuickCartItem[]>([]);
 
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -228,38 +221,22 @@ export default function Marketplace() {
         setPage((p) => p + 1);
     };
 
-    const addToQuickCart = (product: ApiProduct, size: string) => {
-        setQuickCartItems((items) => {
-            const existing = items.find((item) => item.product.id === product.id && item.size === size);
-            if (existing) {
-                return items.map((item) =>
-                    item.product.id === product.id && item.size === size ? { ...item, quantity: item.quantity + 1 } : item,
-                );
-            }
-            return [...items, { product, size, quantity: 1 }];
+    const addProductToCart = (product: ApiProduct, size: string) => {
+        addToCart({
+            productId: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.images?.[0] ?? null,
+            size,
+            // The grid strip only picks a size. Colours are stored as hex, so
+            // defaulting to colors[0] would show a customer "#1E293B" — the
+            // colour is chosen on the product page instead.
+            color: null,
+            tailorId: product.tailor_id,
+            tailorName: product.tailor_name,
         });
-        setQuickCartOpen(true);
+        openCart();
     };
-
-    const updateQuickCartQuantity = (productId: number, size: string, change: number) => {
-        setQuickCartItems((items) =>
-            items
-                .map((item) =>
-                    item.product.id === productId && item.size === size
-                        ? { ...item, quantity: Math.max(0, item.quantity + change) }
-                        : item,
-                )
-                .filter((item) => item.quantity > 0),
-        );
-    };
-
-    const removeQuickCartItem = (productId: number, size: string) => {
-        setQuickCartItems((items) => items.filter((item) => item.product.id !== productId || item.size !== size));
-    };
-
-    const quickCartSubtotal = quickCartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-    const quickCartProductIds = new Set(quickCartItems.map((item) => item.product.id));
-    const recommendedProducts = products.filter((product) => !quickCartProductIds.has(product.id)).slice(0, 6);
 
     const hasActiveFilters =
         selectedCategory !== '' || selectedColours.length > 0 || selectedSizes.length > 0 || selectedFabrics.length > 0 || priceMax < 500;
@@ -673,7 +650,7 @@ export default function Marketplace() {
                                                     type="button"
                                                     onClick={(event) => {
                                                         event.stopPropagation();
-                                                        addToQuickCart(product, size);
+                                                        addProductToCart(product, size);
                                                     }}
                                                     className="min-w-14 flex-1 px-3 py-3 text-center text-[11px] font-semibold text-[#111111] transition-colors hover:bg-[#111111] hover:text-white sm:text-xs"
                                                     aria-label={`${t('marketplace.chooseSize')} ${size}`}
@@ -766,125 +743,6 @@ export default function Marketplace() {
                 />
             )}
 
-            <AnimatePresence>
-                {quickCartOpen && (
-                    <>
-                        <motion.button
-                            type="button"
-                            aria-label={t('marketplace.closeCart')}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setQuickCartOpen(false)}
-                            className="fixed inset-0 z-[60] cursor-default bg-black/35"
-                        />
-                        <motion.aside
-                            role="dialog"
-                            aria-modal="true"
-                            aria-label={t('marketplace.shoppingBag')}
-                            initial={{ x: '100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '100%' }}
-                            transition={{ type: 'tween', duration: 0.28, ease: 'easeOut' }}
-                            className="fixed top-0 right-0 z-[70] flex h-dvh w-full max-w-[620px] flex-col border-l border-[#111111]/20 bg-[#F4F1E7] text-[#111111] shadow-[-20px_0_60px_rgba(17,17,17,0.18)]"
-                        >
-                            <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#111111]/15 px-5 sm:px-7">
-                                <div className="flex items-center gap-3">
-                                    <ShoppingBag className="h-5 w-5" />
-                                    <h2 className="text-lg font-bold uppercase">{t('marketplace.shoppingBag')}</h2>
-                                    <span className="text-sm text-[#6c625b]">({quickCartItems.reduce((sum, item) => sum + item.quantity, 0)})</span>
-                                </div>
-                                <button type="button" onClick={() => setQuickCartOpen(false)} className="p-2 hover:opacity-50">
-                                    <X className="h-6 w-6" />
-                                </button>
-                            </div>
-
-                            <div className="min-h-0 flex-1 overflow-y-auto px-5 sm:px-7">
-                                {quickCartItems.length === 0 ? (
-                                    <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-[#6c625b]">
-                                        <ShoppingBag className="h-10 w-10 stroke-1" />
-                                        <p>{t('marketplace.emptyBag')}</p>
-                                    </div>
-                                ) : (
-                                    <>
-                                        {quickCartItems.map((item) => (
-                                            <div key={`${item.product.id}-${item.size}`} className="grid grid-cols-[105px_1fr] gap-4 border-b border-[#111111]/15 py-5 sm:grid-cols-[145px_1fr] sm:gap-6">
-                                                <button type="button" onClick={() => navigate(`/product/${item.product.id}`)} className="aspect-[3/4] overflow-hidden bg-[#E4E0D7]">
-                                                    {item.product.images?.[0] ? (
-                                                        <img src={item.product.images[0]} alt={item.product.name} className="h-full w-full object-contain p-2" />
-                                                    ) : (
-                                                        <div className="flex h-full items-center justify-center"><ImageOff className="h-7 w-7 opacity-25" /></div>
-                                                    )}
-                                                </button>
-                                                <div className="flex min-w-0 flex-col">
-                                                    <h3 className="pr-8 text-base font-bold uppercase">{item.product.name}</h3>
-                                                    <p className="mt-2 text-sm text-[#514843]">{t('marketplace.sizeLabel')}: {item.size}</p>
-                                                    <p className="mt-3 font-semibold">₾{item.product.price}</p>
-                                                    <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-5">
-                                                        <div className="flex h-10 items-center bg-[#E9E6DC]">
-                                                            <button type="button" onClick={() => updateQuickCartQuantity(item.product.id, item.size, -1)} className="flex h-10 w-10 items-center justify-center hover:bg-[#111111]/8"><Minus className="h-4 w-4" /></button>
-                                                            <span className="w-8 text-center text-sm font-semibold">{item.quantity}</span>
-                                                            <button type="button" onClick={() => updateQuickCartQuantity(item.product.id, item.size, 1)} className="flex h-10 w-10 items-center justify-center hover:bg-[#111111]/8"><Plus className="h-4 w-4" /></button>
-                                                        </div>
-                                                        <button type="button" onClick={() => removeQuickCartItem(item.product.id, item.size)} className="text-xs font-semibold underline underline-offset-4 hover:opacity-50">{t('marketplace.removeItem')}</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-
-                                        {recommendedProducts.length > 0 && (
-                                            <section className="border-b border-[#111111]/15 py-7">
-                                                <h3 className="mb-5 text-xl font-bold uppercase sm:text-2xl">{t('marketplace.youMayAlsoLike')}</h3>
-                                                <div className="flex snap-x gap-3 overflow-x-auto pb-3 sm:gap-4">
-                                                    {recommendedProducts.map((product) => (
-                                                        <button
-                                                            key={product.id}
-                                                            type="button"
-                                                            onClick={() => navigate(`/product/${product.id}`)}
-                                                            className="group/recommendation w-[46%] min-w-[150px] shrink-0 snap-start text-left sm:w-[42%] sm:min-w-[205px]"
-                                                        >
-                                                            <div className="aspect-[3/4] overflow-hidden bg-[#E4E0D7]">
-                                                                {product.images?.[0] ? (
-                                                                    <img
-                                                                        src={product.images[0]}
-                                                                        alt={product.name}
-                                                                        className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover/recommendation:scale-105"
-                                                                    />
-                                                                ) : (
-                                                                    <div className="flex h-full items-center justify-center"><ImageOff className="h-8 w-8 opacity-25" /></div>
-                                                                )}
-                                                            </div>
-                                                            <h4 className="mt-3 truncate text-sm font-bold uppercase">{product.name}</h4>
-                                                            <p className="mt-1 line-clamp-2 min-h-9 text-xs leading-4 text-[#514843]">{product.description}</p>
-                                                            <p className="mt-2 text-sm font-semibold">₾{product.price}</p>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </section>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-
-                            {quickCartItems.length > 0 && (
-                                <div className="shrink-0 border-t border-[#111111]/15 bg-[#F4F1E7] px-5 py-5 sm:px-7">
-                                    <div className="mb-5 flex items-center justify-between text-base font-bold uppercase">
-                                        <span>{t('marketplace.subtotal')}</span>
-                                        <span>₾{quickCartSubtotal.toFixed(2)}</span>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => navigate(`/product/${quickCartItems[0].product.id}`)}
-                                        className="w-full bg-[#111111] px-5 py-4 text-sm font-bold uppercase text-white transition-colors hover:bg-[#333333]"
-                                    >
-                                        {t('marketplace.checkout')}
-                                    </button>
-                                </div>
-                            )}
-                        </motion.aside>
-                    </>
-                )}
-            </AnimatePresence>
         </div>
     );
 }

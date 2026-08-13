@@ -1,4 +1,4 @@
-import { Check, HelpCircle, Info, Loader2, Minus, Palette, Pencil, Plus, Star, User } from 'lucide-react';
+import { Check, HelpCircle, Info, Loader2, Minus, Palette, Pencil, Plus, ShoppingBag, Star, User } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -17,6 +17,7 @@ import {
     saveReturnTo,
     type PendingMarketplaceOrder,
 } from '../hooks/useAuth';
+import { addToCart, openCart } from '../hooks/useCart';
 import { measurementWarning } from '../utils/measurementSanity';
 
 interface ApiProduct {
@@ -143,6 +144,24 @@ export default function ProductCustomization({ customize = false }: { customize?
 
     // Sizes are offered only on individual (customizable) orders.
     const showSizePicker = product.is_customizable && (product.sizes?.length ?? 0) > 0;
+
+    const handleAddToCart = () => {
+        if (!product) return;
+        addToCart(
+            {
+                productId: product.id,
+                name: product.name,
+                price: product.price,
+                image: product.images?.[0] ?? null,
+                size: showSizePicker ? selectedSize : null,
+                color: selectedColor || null,
+                tailorId: product.tailor_id,
+                tailorName: product.tailor_name ?? null,
+            },
+            quantity
+        );
+        openCart();
+    };
 
     const handleOrder = async () => {
         const token = getAuthToken();
@@ -554,6 +573,14 @@ export default function ProductCustomization({ customize = false }: { customize?
                                     </div>
                                 </div>
                                 {orderError && <p className="text-destructive mb-2 text-center text-xs">{orderError}</p>}
+                                <Button
+                                    onClick={handleAddToCart}
+                                    variant="outline"
+                                    className="mb-2 h-auto w-full rounded-none border-[#111111] py-3 text-xs font-semibold tracking-[0.08em] text-[#111111] uppercase hover:bg-[#111111] hover:text-white active:scale-[0.99]"
+                                >
+                                    <ShoppingBag className="h-4 w-4" />
+                                    {t('cart.addToCart')}
+                                </Button>
                                 <Button
                                     onClick={handleOrder}
                                     disabled={placing}

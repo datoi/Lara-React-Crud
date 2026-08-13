@@ -62,28 +62,67 @@ class OrderController extends Controller
 
     private function storeMarketplaceOrder(Request $request, User $user)
     {
-        $data = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'color' => 'nullable|string|max:100',
-            'size' => 'nullable|string|max:50',
-            'quantity' => 'required|integer|min:1|max:1000',
-            'cm_measurements' => ['nullable', 'array'],
-            'cm_measurements.chest' => ['nullable', 'numeric', 'min:0'],
-            'cm_measurements.waist' => ['nullable', 'numeric', 'min:0'],
-            'cm_measurements.hips' => ['nullable', 'numeric', 'min:0'],
-            'cm_measurements.length' => ['nullable', 'numeric', 'min:0'],
-            'customization_note' => ['nullable', 'string', 'max:1000'],
-            'tailor_id' => 'nullable|integer|exists:users,id',
-        ]);
+        // Two shapes reach this endpoint: a single product (product page) and a
+        // cart checkout, which posts one request per tailor carrying that tailor's
+        // lines. Both normalise into $lines so there is a single code path below.
+        $isCart = $request->has('items');
 
-        $product = Product::findOrFail($data['product_id']);
+        if ($isCart) {
+            $data = $request->validate([
+                'items' => 'required|array|min:1|max:50',
+                'items.*.product_id' => 'required|integer|exists:products,id',
+                'items.*.color' => 'nullable|string|max:100',
+                'items.*.size' => 'nullable|string|max:50',
+                'items.*.quantity' => 'required|integer|min:1|max:1000',
+                'tailor_id' => 'nullable|integer|exists:users,id',
+            ]);
 
-        // Only accept a customization note when the tailor allows customization
-        $customizationNote = $product->is_customizable ? ($data['customization_note'] ?? null) : null;
+            $lines = array_map(fn ($i) => [
+                'product_id' => (int) $i['product_id'],
+                'color' => $i['color'] ?? null,
+                'size' => $i['size'] ?? null,
+                'quantity' => (int) $i['quantity'],
+                'cm_measurements' => null,
+                'customization_note' => null,
+            ], $data['items']);
+        } else {
+            $data = $request->validate([
+                'product_id' => 'required|exists:products,id',
+                'color' => 'nullable|string|max:100',
+                'size' => 'nullable|string|max:50',
+                'quantity' => 'required|integer|min:1|max:1000',
+                'cm_measurements' => ['nullable', 'array'],
+                'cm_measurements.chest' => ['nullable', 'numeric', 'min:0'],
+                'cm_measurements.waist' => ['nullable', 'numeric', 'min:0'],
+                'cm_measurements.hips' => ['nullable', 'numeric', 'min:0'],
+                'cm_measurements.length' => ['nullable', 'numeric', 'min:0'],
+                'customization_note' => ['nullable', 'string', 'max:1000'],
+                'tailor_id' => 'nullable|integer|exists:users,id',
+            ]);
 
-        // Critical #7: prevent overselling
-        if ($product->stock < $data['quantity']) {
-            return response()->json(['message' => 'Not enough stock available.'], 422);
+            $lines = [[
+                'product_id' => (int) $data['product_id'],
+                'color' => $data['color'] ?? null,
+                'size' => $data['size'] ?? null,
+                'quantity' => (int) $data['quantity'],
+                'cm_measurements' => $data['cm_measurements'] ?? null,
+                'customization_note' => $data['customization_note'] ?? null,
+            ]];
+        }
+
+        $products = Product::whereIn('id', array_column($lines, 'product_id'))->get()->keyBy('id');
+
+        // Critical #7: prevent overselling. Totalled per product first, since the
+        // same product can appear on several lines in different sizes.
+        $wanted = [];
+        foreach ($lines as $line) {
+            $wanted[$line['product_id']] = ($wanted[$line['product_id']] ?? 0) + $line['quantity'];
+        }
+
+        foreach ($wanted as $productId => $quantity) {
+            if ($products[$productId]->stock < $quantity) {
+                return response()->json(['message' => 'Not enough stock available.'], 422);
+            }
         }
 
         $shipping = (int) config('app.shipping_cost', 15);
@@ -95,8 +134,9 @@ class OrderController extends Controller
                 return response()->json(['message' => 'Selected tailor is not available.'], 422);
             }
         } else {
-            $tailor = $product->tailor_id
-                ? User::find($product->tailor_id)
+            $firstProduct = $products[$lines[0]['product_id']];
+            $tailor = $firstProduct->tailor_id
+                ? User::find($firstProduct->tailor_id)
                 : $this->randomTailor();
         }
 
@@ -105,18 +145,31 @@ class OrderController extends Controller
             return response()->json(['message' => 'No tailor is currently available. Please try again later.'], 503);
         }
 
-        $unitPrice = $product->price;
-        $subtotal = $unitPrice * $data['quantity'];
+        // An order belongs to one tailor, so every line has to be theirs to make.
+        // The cart groups by tailor client-side; this enforces it server-side.
+        foreach ($lines as $line) {
+            $lineProduct = $products[$line['product_id']];
+            if ($lineProduct->tailor_id && $lineProduct->tailor_id !== $tailor->id) {
+                return response()->json(['message' => 'All items in an order must belong to the same tailor.'], 422);
+            }
+        }
+
+        $subtotal = 0;
+        foreach ($lines as $line) {
+            $subtotal += $products[$line['product_id']]->price * $line['quantity'];
+        }
 
         try {
-            $order = DB::transaction(function () use ($data, $user, $tailor, $product, $unitPrice, $subtotal, $shipping, $customizationNote) {
+            $order = DB::transaction(function () use ($lines, $products, $wanted, $user, $tailor, $subtotal, $shipping) {
                 // Critical #1: capture affected rows — throws so transaction rolls back if stock is gone
-                $affected = Product::where('id', $product->id)
-                    ->where('stock', '>=', $data['quantity'])
-                    ->decrement('stock', $data['quantity']);
+                foreach ($wanted as $productId => $quantity) {
+                    $affected = Product::where('id', $productId)
+                        ->where('stock', '>=', $quantity)
+                        ->decrement('stock', $quantity);
 
-                if ($affected === 0) {
-                    throw new \RuntimeException('out_of_stock');
+                    if ($affected === 0) {
+                        throw new \RuntimeException('out_of_stock');
+                    }
                 }
 
                 $order = Order::create([
@@ -138,24 +191,34 @@ class OrderController extends Controller
                     'country' => 'GE',
                 ]);
 
-                $order->items()->create([
-                    'product_id' => $product->id,
-                    'product_name' => $product->name,
-                    'color' => $data['color'] ?? null,
-                    'size' => $data['size'] ?? null,
-                    'quantity' => $data['quantity'],
-                    'price' => $unitPrice,
-                    'cm_measurements' => $data['cm_measurements'] ?? null,
-                    'customization_note' => $customizationNote,
-                ]);
+                foreach ($lines as $line) {
+                    $lineProduct = $products[$line['product_id']];
+                    $order->items()->create([
+                        'product_id' => $lineProduct->id,
+                        'product_name' => $lineProduct->name,
+                        'color' => $line['color'],
+                        'size' => $line['size'],
+                        'quantity' => $line['quantity'],
+                        'price' => $lineProduct->price,
+                        'cm_measurements' => $line['cm_measurements'],
+                        // Only accept a customization note when the tailor allows customization
+                        'customization_note' => $lineProduct->is_customizable ? $line['customization_note'] : null,
+                    ]);
+                }
+
+                $leadProduct = $products[$lines[0]['product_id']];
+                $extra = count($lines) - 1;
+                $label = $extra > 0
+                    ? "\"{$leadProduct->name}\" and {$extra} more item(s)"
+                    : "\"{$leadProduct->name}\"";
 
                 $this->notify(
                     $tailor->id,
                     'new_order',
                     'New Order Received!',
-                    "You received a new order for \"{$product->name}\" from {$user->getFullName()}.",
+                    "You received a new order for {$label} from {$user->getFullName()}.",
                     $order->id,
-                    ['product_name' => $product->name]
+                    ['product_name' => $leadProduct->name]
                 );
 
                 return $order;

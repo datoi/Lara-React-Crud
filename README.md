@@ -609,6 +609,44 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-13] Shopping cart — guest bag, global drawer, `/cart`, tailor-grouped checkout
+
+**What was done:** A standard marketplace add-to-cart. Mariam's design already shipped a cart *drawer* in `Marketplace.tsx`, but `quickCartItems` was plain `useState` local to that page — it vanished on navigation or refresh, had no nav badge, and its "checkout" button just navigated to the first item's product page. The drawer design was kept and promoted to a real cart.
+
+- **Store (`hooks/useCart.ts`).** A `useSyncExternalStore` module rather than a Context provider, matching the existing `useSection` / `useAuth` plain-module convention and avoiding a provider above `RouterProvider` (the drawer needs router hooks). Persists to `localStorage` under `kere_cart` alongside `kere_lang` / `kere_section`, so **guests can fill a bag without an account** and only log in at checkout, reusing the existing `saveReturnTo` redirect. Also syncs across tabs via the `storage` event, tolerates malformed/unparseable storage, caps quantity at 99, and treats product + size + colour as the line identity.
+- **Prices are a display snapshot only.** `storeMarketplaceOrder` recomputes every price from the product row (`$lineProduct->price`), so an edited `kere_cart` cannot change what a customer is charged. `/cart` re-fetches each product on load to refresh stock and surface anything that sold out, and blocks checkout while a line exceeds stock.
+- **Global drawer (`components/CartDrawer.tsx`)** mounted inside `Navigation` (present on 19 pages), opened from a new nav bag icon with a wine count badge. Closes on Escape and locks body scroll. Keeps Mariam's markup, including the "you may also like" strip, which now fetches its own suggestions.
+- **`/cart` page** groups the bag by tailor, showing per-tailor delivery and a notice that the bag will split; plus `Add to bag` on the product page next to the existing direct "Place order".
+- **Backend — `POST /api/orders` now accepts multiple lines.** *Correction to the plan: this was scoped as "no backend change", which was wrong* — the endpoint created exactly one order item, so one-order-per-tailor was impossible without it. Rather than add a parallel cart endpoint (a drift risk), `storeMarketplaceOrder` normalises **both** shapes into one `$lines` array: the existing `product_id` payload still works untouched, and a new `items[]` payload creates one order with N items. Stock is now totalled per product before the guarded decrement, since one product can appear on several lines in different sizes. A server-side check rejects mixed tailors in one order (422), so the client-side grouping cannot be bypassed.
+- **i18n:** new `cart.*` namespace, 35 keys, in both `en.json` and `ka.json` (1315/1315, in sync).
+
+**Verified — real browser and real HTTP, not just the build.**
+
+| check | result |
+| --- | --- |
+| Single-product order (regression, old payload) | 201, total ₾105 ✅ |
+| Cart order, 2 lines, one tailor | 201, ₾315 = 90×2 + 120 + 15 ✅ |
+| Order rows written | 2 items, subtotal 300 / shipping 15 / total 315 ✅ |
+| Stock decrement | p19 50→47, p21 50→49 ✅ |
+| Mixed tailors in one order | 422, rejected ✅ |
+| Quantity beyond stock | 422, no stock moved ✅ |
+| Badge / drawer / persistence (en + ka) | none→1→2, survives reload ✅ |
+| `/cart` grouping + totals | 2 tailor groups, ₾125.00, ₾ only, no `$`, no untranslated keys ✅ |
+| Logged-out checkout | routes to `/signin` with `returnTo=/cart` ✅ |
+| Logged-in checkout | 2 orders placed, cart cleared, success screen ✅ |
+| Console errors | none at any step ✅ |
+
+All test data (6 orders, a temporary second tailor + product, the minted token) was removed afterwards and stock restored to 50/50.
+
+**Found and fixed during testing:** the marketplace grid's size strip defaulted the line's colour to `colors[0]`, which is stored as hex — the bag rendered "Colour: #1E293B". Quick-add now leaves colour unset (the strip only picks a size), and both the drawer and `/cart` render any hex colour as a swatch instead of raw text.
+
+**Flagged, not fixed:**
+- **Checkout is slow: ~6.1s per tailor order** (measured 9.7s→15.8s, 15.9s→22.0s), because each order sends a confirmation email and an SMS/`Notifier::dual` synchronously inside the request. A two-tailor bag takes ~12s behind one "Placing order…" label. Queueing the mail/SMS would fix it; the UI should also show per-order progress.
+- **Partial-failure window.** Orders are placed sequentially, so if the second fails the first is already committed. The UI reports this explicitly (`cart.errorPartial`) rather than hiding it, but there is no rollback.
+- **`app/Http/Controllers/CartController.php` + `CartItem` are dead code** — Inertia-based (`Inertia::render`, `back()`) in a react-router SPA, and routed nowhere. The `cart_items` table is likewise unused. Left in place as removing them was outside this request, but they are now actively misleading next to a working localStorage cart.
+
+---
+
 ### [2026-08-12] QA round on the navbar/hero pass — 2 blockers fixed, both outside desktop English
 
 **What was done:** QA drove `998b91f…ac9eee4` in Chrome across 5 viewports × 2 locales and found two blockers, both in the ranges the previous log had explicitly marked unverified. Both reproduced independently before fixing.

@@ -5,6 +5,7 @@ import { RouteGuard } from './components/RouteGuard';
 import Landing from './pages/Landing';
 import DesignerApp from './pages/DesignerApp';
 import Marketplace from './pages/Marketplace';
+import CartPage from './pages/CartPage';
 import ProductCustomization from './pages/ProductCustomization';
 import RoleSelection from './pages/RoleSelection';
 import RegisterCustomer from './pages/RegisterCustomer';
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
     { path: '/design/tailor-select', element: wrap(<TailorSelectStep />) },
     { path: '/design/review',        element: wrap(<OrderReview />) },
     { path: '/marketplace',         element: wrap(<Marketplace />) },
+    { path: '/cart',                element: wrap(<CartPage />) },
     { path: '/remodel',              element: wrap(<RemodelRequest />) },
     { path: '/product/:id',          element: wrap(<ProductCustomization />) },
     { path: '/product/:id/customize', element: wrap(<ProductCustomization customize />) },
