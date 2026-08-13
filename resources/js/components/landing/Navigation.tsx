@@ -138,7 +138,7 @@ export function Navigation() {
                     </Link>
                 </div>
 
-                <div className="col-start-2 hidden items-center gap-7 xl:flex">
+                <div className="col-start-2 hidden items-center gap-5 xl:flex 2xl:gap-7">
                     <Link
                         to="/marketplace"
                         className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
@@ -207,8 +207,13 @@ export function Navigation() {
                                 to={user.role === 'admin' ? '/admin-dashboard' : user.role === 'tailor' ? '/tailor-dashboard' : '/customer-dashboard'}
                                 className={`group hidden items-center gap-2 text-[10px] font-semibold tracking-[0.08em] uppercase sm:inline-flex ${navTextClass}`}
                             >
-                                <User className="h-4 w-4 stroke-[1.5]" />
-                                <AnimatedNavText>{user.first_name} {user.last_name}</AnimatedNavText>
+                                <User className="h-4 w-4 shrink-0 stroke-[1.5]" />
+                                {/* Icon-only until 2xl. Once the bag button joined this cluster the
+                                    name overran the Georgian centre links at 1280–1440, and Georgian
+                                    names are long enough that truncating alone did not buy it back. */}
+                                <span className="hidden max-w-[104px] truncate 2xl:inline">
+                                    <AnimatedNavText>{user.first_name}</AnimatedNavText>
+                                </span>
                             </Link>
 
                             <div>

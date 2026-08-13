@@ -533,6 +533,8 @@
         "splitNotice": "Items are made by different tailors, so this becomes {{n}} separate orders — each with its own delivery.",
         "outOfStock": "Out of stock",
         "onlyLeft": "Only {{n}} left",
+        "noLongerAvailable": "No longer available — remove to continue",
+        "errorThrottled": "Too many orders at once. Please wait a minute and place the rest.",
         "fixStockFirst": "Remove or reduce the unavailable items to continue.",
         "errorGeneric": "Something went wrong. Please try again.",
         "errorNetwork": "Could not reach the server. Check your connection and try again.",

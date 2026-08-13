@@ -609,6 +609,30 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-13] Cart QA round — duplicate-order race and a signed-in navbar regression
+
+**What was done:** Fixes for the QA pass on `b5b9bfa`. The backend was cleared as-is; both blockers were frontend.
+
+- **🔴 Duplicate orders on retry after a partial checkout.** `checkout()` bailed on the first failing tailor group but left the *already placed* groups in the bag — `clearCart()` only ran on full success. Pressing **Place order** again re-sent the groups that had already succeeded, creating a second order and decrementing stock again, every click. The cart is now reconciled **as each group succeeds** (`removeCartItem` per line immediately after its 201), so a retry sends only what is genuinely left and re-ordering is impossible. Proven by intercepting the API to force group 1 → 201 and group 2 → 422: across two clicks the successful tailor was sent **exactly once** (`#1 tailor=5`, `#2 tailor=7`, `#3 tailor=7`), and the bag held only the failed line between attempts.
+- **🔴 Georgian navbar overlap returned for signed-in users.** Yesterday's `b5f4874` fixed the signed-out case; the new bag button added ~44px to the same right-hand cluster and ate the remaining margin. Georgian names made it worse, since the full name sat in that cluster. The user link is now **icon-only below `2xl`** (name shown from 1536px, capped and truncated) and the centre group uses `gap-5` until `2xl`. Measured clearance, last centre link → right cluster, in `ka`:
+
+| state | 1280 before → after | 1366 | 1440 |
+| --- | --- | --- | --- |
+| signed out | 1.3 → **20.0** | 60.3 | 97.3 |
+| signed in, Georgian name | −46.4 → **20.7** | 63.7 | 100.7 |
+| signed in, long Latin name | −96.0 → **20.7** | 63.7 | 100.7 |
+
+  Name length no longer affects layout below `2xl`, so the worst case is now the same as the best.
+
+- **🟡 Stock pre-check no longer fails open.** A product deleted while sitting in the bag returned 404, was skipped, and checkout proceeded — the customer saw the raw validator string *"The selected items.0.product_id is invalid."* A 404 is now tracked separately from a network error: the line is flagged **No longer available** and checkout is disabled, while a transport failure still lets the attempt through (the server remains the authority on overselling).
+- **🟡 Write throttle surfaced.** `/api/orders` is `throttle:10,1`, and checkout sends one request per tailor group, so a large multi-tailor bag could hit it mid-checkout. A 429 now reports `cart.errorThrottled` ("wait a minute and place the rest") instead of a generic failure — and because the bag is reconciled per group, the retry resumes rather than duplicating.
+- **Nits:** success-screen order totals use `.toFixed(2)` so they match every other total; the colour label is wrapped in its own element so `gap-1.5` applies to both flex children (previously `Colour:Navy` with no space, while hex swatches got one).
+- **i18n:** `cart.noLongerAvailable` + `cart.errorThrottled` in both locales (1317/1317, in sync).
+
+**Verified:** `vite build` clean; partial-failure retry proven non-duplicating via request interception (no DB writes); nav clearance re-measured across 3 auth states × 4 widths, all positive; deleted-product cart disables checkout and shows the right message; full drawer/badge/persistence/checkout-redirect suite re-run green in **en** and **ka** with zero console errors; colour rendering confirmed by screenshot.
+
+---
+
 ### [2026-08-13] Shopping cart — guest bag, global drawer, `/cart`, tailor-grouped checkout
 
 **What was done:** A standard marketplace add-to-cart. Mariam's design already shipped a cart *drawer* in `Marketplace.tsx`, but `quickCartItems` was plain `useState` local to that page — it vanished on navigation or refresh, had no nav badge, and its "checkout" button just navigated to the first item's product page. The drawer design was kept and promoted to a real cart.

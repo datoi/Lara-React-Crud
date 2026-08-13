@@ -149,7 +149,7 @@ export function CartDrawer() {
                                                 {item.size && <p className="mt-2 text-sm text-[#514843]">{t('cart.sizeLabel')}: {item.size}</p>}
                                                 {item.color && (
                                                     <p className="mt-1 flex items-center gap-1.5 text-sm text-[#514843]">
-                                                        {t('cart.colorLabel')}:
+                                                        <span>{t('cart.colorLabel')}:</span>
                                                         {isHex(item.color) ? (
                                                             <span
                                                                 className="inline-block h-3.5 w-3.5 rounded-full border border-black/20"

@@ -32,6 +32,7 @@ export default function CartPage() {
 
     const [shipping, setShipping] = useState(15);
     const [stock, setStock] = useState<Record<number, number>>({});
+    const [missing, setMissing] = useState<number[]>([]);
     const [checking, setChecking] = useState(true);
     const [placing, setPlacing] = useState(false);
     const [error, setError] = useState('');
@@ -52,18 +53,27 @@ export default function CartPage() {
         Promise.all(
             ids.map((id) =>
                 fetch(`/api/products/${id}`)
-                    .then((r) => (r.ok ? r.json() : null))
-                    .catch(() => null)
+                    .then(async (r) => ({ id, status: r.status, body: r.ok ? await r.json() : null }))
+                    .catch(() => ({ id, status: 0, body: null }))
             )
         ).then((results) => {
             if (!active) return;
             const nextStock: Record<number, number> = {};
+            const gone: number[] = [];
             for (const res of results) {
-                if (!res?.product) continue;
-                nextStock[res.product.id] = res.product.stock ?? 0;
-                if (typeof res.shipping_cost === 'number') setShipping(res.shipping_cost);
+                // A 404 means the product was deleted while it sat in the bag. A
+                // network failure (status 0) is not the customer's problem, so it
+                // does not block checkout — the server still guards overselling.
+                if (res.status === 404) {
+                    gone.push(res.id);
+                    continue;
+                }
+                if (!res.body?.product) continue;
+                nextStock[res.body.product.id] = res.body.product.stock ?? 0;
+                if (typeof res.body.shipping_cost === 'number') setShipping(res.body.shipping_cost);
             }
             setStock(nextStock);
+            setMissing(gone);
             setChecking(false);
         });
         return () => {
@@ -78,11 +88,12 @@ export default function CartPage() {
     const shippingTotal = shipping * groups.length;
     const total = subtotal + shippingTotal;
 
+    const isGone = (item: CartItem): boolean => missing.includes(item.productId);
     const outOfStock = (item: CartItem): boolean => {
         const available = stock[item.productId];
         return available !== undefined && available < item.quantity;
     };
-    const hasBlockers = items.some(outOfStock);
+    const hasBlockers = items.some((i) => outOfStock(i) || isGone(i));
 
     const checkout = async () => {
         const token = getAuthToken();
@@ -120,17 +131,19 @@ export default function CartPage() {
 
                 if (!res.ok) {
                     const body = await res.json().catch(() => ({}));
-                    // Stop rather than press on — earlier orders in this loop are already
-                    // placed, so say so instead of silently losing the rest of the cart.
-                    setError(
-                        results.length > 0
-                            ? t('cart.errorPartial', { count: results.length, message: body.message ?? t('cart.errorGeneric') })
-                            : (body.message ?? t('cart.errorGeneric'))
-                    );
+                    const reason =
+                        res.status === 429 ? t('cart.errorThrottled') : (body.message ?? t('cart.errorGeneric'));
+                    // Groups already ordered were removed as they succeeded, so the
+                    // cart now holds only what still needs buying — pressing Place
+                    // order again retries exactly that and cannot double-order.
+                    setError(results.length > 0 ? t('cart.errorPartial', { count: results.length, message: reason }) : reason);
                     return;
                 }
 
                 const data = await res.json();
+                // Reconcile immediately: this group is bought and must not be re-sent
+                // if a later group fails.
+                for (const item of group.items) removeCartItem(item);
                 results.push({
                     orderNumber: data.order_number,
                     total: data.total,
@@ -174,7 +187,7 @@ export default function CartPage() {
                                         <p className="truncate text-sm font-semibold text-[#111111]">{order.orderNumber}</p>
                                         {order.tailorName && <p className="truncate text-xs text-[#6c625b]">{order.tailorName}</p>}
                                     </div>
-                                    <span className="shrink-0 text-sm font-semibold text-[#111111]">₾{order.total}</span>
+                                    <span className="shrink-0 text-sm font-semibold text-[#111111]">₾{Number(order.total).toFixed(2)}</span>
                                 </li>
                             ))}
                         </ul>
@@ -240,7 +253,7 @@ export default function CartPage() {
                                                         {item.size && <p>{t('cart.sizeLabel')}: {item.size}</p>}
                                                         {item.color && (
                                                             <p className="flex items-center gap-1.5">
-                                                                {t('cart.colorLabel')}:
+                                                                <span>{t('cart.colorLabel')}:</span>
                                                                 {isHex(item.color) ? (
                                                                     <span
                                                                         className="inline-block h-3 w-3 rounded-full border border-black/20"
@@ -253,12 +266,16 @@ export default function CartPage() {
                                                         )}
                                                     </div>
 
-                                                    {outOfStock(item) && (
-                                                        <p className="mt-2 text-xs font-semibold text-red-700">
-                                                            {stock[item.productId] === 0
-                                                                ? t('cart.outOfStock')
-                                                                : t('cart.onlyLeft', { n: stock[item.productId] })}
-                                                        </p>
+                                                    {isGone(item) ? (
+                                                        <p className="mt-2 text-xs font-semibold text-red-700">{t('cart.noLongerAvailable')}</p>
+                                                    ) : (
+                                                        outOfStock(item) && (
+                                                            <p className="mt-2 text-xs font-semibold text-red-700">
+                                                                {stock[item.productId] === 0
+                                                                    ? t('cart.outOfStock')
+                                                                    : t('cart.onlyLeft', { n: stock[item.productId] })}
+                                                            </p>
+                                                        )
                                                     )}
 
                                                     <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-4">
