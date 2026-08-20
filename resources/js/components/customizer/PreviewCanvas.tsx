@@ -150,6 +150,9 @@ export default function PreviewCanvas({
                     src = viewImageUrl(color ?? option, view) ?? src;
                 }
 
+                // A selector-only option carries no artwork — nothing to composite
+                if (!src) return null;
+
                 return (
                     <AnimatePresence mode="popLayout" key={category.id}>
                         <motion.img

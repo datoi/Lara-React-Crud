@@ -2,7 +2,8 @@
 
 /** Anything that carries a front photo plus optional rotation-view photos */
 export interface ViewImageSet {
-    image_url: string;
+    /** null on selector-only options that carry no artwork yet */
+    image_url: string | null;
     back_image_url: string | null;
     left_image_url: string | null;
     right_image_url: string | null;
@@ -10,6 +11,8 @@ export interface ViewImageSet {
 
 /** A colour variant of a style — same garment, different colour photos */
 export interface OptionColor extends ViewImageSet {
+    /** Colour variants always ship a front photo */
+    image_url: string;
     id: number;
     name: string;
     color_hex: string;
@@ -21,8 +24,9 @@ export interface LayerOption {
     id: number;
     name: string;
     slug: string;
-    image_url: string;
-    thumbnail_url: string;
+    /** null when the option is a labelled choice with no artwork (e.g. a fit or neckline) */
+    image_url: string | null;
+    thumbnail_url: string | null;
     /** Third collar variant (e.g. mandarin) — null for options that have no alternate */
     alt_image_url: string | null;
     /** Rotation views — null when the option only has a front photo */

@@ -813,7 +813,7 @@ function SubStyleRow({ child, onDelete, onReorderEnd }: { child: LayerOption; on
                 className="w-8 h-10 rounded overflow-hidden shrink-0 border border-slate-200"
                 style={{ backgroundImage: 'repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%)', backgroundSize: '8px 8px' }}
             >
-                <img src={child.thumbnail_url} alt={child.name} className="w-full h-full object-contain" />
+                {child.thumbnail_url && <img src={child.thumbnail_url} alt={child.name} className="w-full h-full object-contain" />}
             </div>
             <span className="flex-1 text-[11px] font-medium text-slate-600 truncate">{child.name}</span>
             <button
@@ -958,7 +958,7 @@ function StyleCard({
                     className="w-12 h-14 rounded-lg overflow-hidden shrink-0 border border-slate-200"
                     style={{ backgroundImage: 'repeating-conic-gradient(#f1f5f9 0% 25%, #e2e8f0 0% 50%)', backgroundSize: '8px 8px' }}
                 >
-                    <img src={option.thumbnail_url} alt={option.name} className="w-full h-full object-contain" />
+                    {option.thumbnail_url && <img src={option.thumbnail_url} alt={option.name} className="w-full h-full object-contain" />}
                 </div>
                 <span className="flex-1 text-sm font-semibold text-slate-800">{option.name}</span>
                 <button onClick={onDelete} className="text-slate-400 hover:text-slate-700 transition-colors p-1">

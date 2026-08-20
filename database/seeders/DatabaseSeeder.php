@@ -23,5 +23,6 @@ class DatabaseSeeder extends Seeder
         $this->call(ClothingSeeder::class);
         $this->call(SleevelessTankSeeder::class);
         $this->call(MensGarmentsSeeder::class);
+        $this->call(WomensTopsSeeder::class);
     }
 }

@@ -1,7 +1,15 @@
 import { motion } from 'motion/react';
 import type { LayerCategory, Fabric } from '../../types/customizer';
-import OptionSwatch from './OptionSwatch';
+import CategoryOptions from './CategoryOptions';
+import AttributeNavigator from './AttributeNavigator';
 import FabricPicker from './FabricPicker';
+
+/**
+ * Above this many attributes the stacked panel stops being scannable, so the
+ * options move behind a drill-down. Garments with one or two attributes keep
+ * showing everything at once.
+ */
+const DRILLDOWN_MIN_CATEGORIES = 3;
 
 interface OptionPanelProps {
     layerCategories: LayerCategory[];
@@ -12,11 +20,6 @@ interface OptionPanelProps {
     onSelectOption: (categoryId: number, optionId: number) => void;
     onSelectSubOption: (parentOptionId: number, childOptionId: number) => void;
     onSelectFabric: (fabricId: number | null) => void;
-}
-
-/** True if any top-level option in this category has sub-options */
-function categoryHasChildren(category: LayerCategory): boolean {
-    return category.options.some(o => o.children && o.children.length > 0);
 }
 
 export default function OptionPanel({
@@ -31,46 +34,6 @@ export default function OptionPanel({
 }: OptionPanelProps) {
     const choosableCategories = layerCategories.filter(c => c.options.length > 0);
 
-    const renderCategory = (category: LayerCategory, i: number) => {
-        const selectedParentId = selections[category.id];
-        const hasChildren = categoryHasChildren(category);
-
-        return (
-            <motion.div
-                key={category.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: i * 0.07 }}
-                className={i > 0 ? 'border-t border-slate-100 pt-4' : undefined}
-            >
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                    {category.name}
-                </p>
-
-                {hasChildren ? (
-                    <HierarchicalPicker
-                        category={category}
-                        selectedParentId={selectedParentId}
-                        subSelections={subSelections}
-                        onSelectParent={id => onSelectOption(category.id, id)}
-                        onSelectChild={onSelectSubOption}
-                    />
-                ) : (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {category.options.map(option => (
-                            <OptionSwatch
-                                key={option.id}
-                                option={option}
-                                isSelected={selections[category.id] === option.id}
-                                onSelect={() => onSelectOption(category.id, option.id)}
-                            />
-                        ))}
-                    </div>
-                )}
-            </motion.div>
-        );
-    };
-
     return (
         <div className="flex flex-col gap-4">
             {choosableCategories.length === 0 && (
@@ -79,7 +42,37 @@ export default function OptionPanel({
                 </p>
             )}
 
-            {choosableCategories.map((cat, i) => renderCategory(cat, i))}
+            {choosableCategories.length >= DRILLDOWN_MIN_CATEGORIES ? (
+                <AttributeNavigator
+                    categories={choosableCategories}
+                    selections={selections}
+                    subSelections={subSelections}
+                    onSelectOption={onSelectOption}
+                    onSelectSubOption={onSelectSubOption}
+                />
+            ) : (
+                choosableCategories.map((category, i) => (
+                    <motion.div
+                        key={category.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: i * 0.07 }}
+                        className={i > 0 ? 'border-t border-slate-100 pt-4' : undefined}
+                    >
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                            {category.name}
+                        </p>
+
+                        <CategoryOptions
+                            category={category}
+                            selections={selections}
+                            subSelections={subSelections}
+                            onSelectOption={onSelectOption}
+                            onSelectSubOption={onSelectSubOption}
+                        />
+                    </motion.div>
+                ))
+            )}
 
             {/* Fabric / colour picker */}
             {fabrics.length > 0 && (
@@ -91,71 +84,6 @@ export default function OptionPanel({
                     />
                 </div>
             )}
-        </div>
-    );
-}
-
-// ── Two-level picker: parent pills → labeled child swatches ──────────────────
-
-function HierarchicalPicker({
-    category,
-    selectedParentId,
-    subSelections,
-    onSelectParent,
-    onSelectChild,
-}: {
-    category: LayerCategory;
-    selectedParentId: number | undefined;
-    subSelections: Record<number, number>;
-    onSelectParent: (id: number) => void;
-    onSelectChild: (parentId: number, childId: number) => void;
-}) {
-    const selectedParent = category.options.find(o => o.id === selectedParentId)
-        ?? category.options[0];
-    const children = selectedParent?.children ?? [];
-    const childrenLabel = category.children_label ?? 'Style';
-
-    return (
-        <div className="space-y-4">
-            {/* Parent options — image swatches */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {category.options.map(option => (
-                    <OptionSwatch
-                        key={option.id}
-                        option={option}
-                        isSelected={(selectedParentId ?? category.options[0]?.id) === option.id}
-                        onSelect={() => onSelectParent(option.id)}
-                    />
-                ))}
-            </div>
-
-            {/* Sub-styles section with its own label */}
-            <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                    {childrenLabel}
-                </p>
-
-                {children.length > 0 ? (
-                    <motion.div
-                        key={selectedParent?.id}
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="grid grid-cols-3 sm:grid-cols-4 gap-2"
-                    >
-                        {children.map(child => (
-                            <OptionSwatch
-                                key={child.id}
-                                option={child}
-                                isSelected={subSelections[selectedParent!.id] === child.id}
-                                onSelect={() => onSelectChild(selectedParent!.id, child.id)}
-                            />
-                        ))}
-                    </motion.div>
-                ) : (
-                    <p className="text-xs text-slate-400 italic">No {childrenLabel.toLowerCase()} options yet.</p>
-                )}
-            </div>
         </div>
     );
 }

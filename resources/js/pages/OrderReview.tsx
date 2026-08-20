@@ -109,7 +109,7 @@ export default function OrderReview() {
         }
     };
 
-    // Map garment_type to a translated label
+    // Map garment_type (a taxonomy orderKey) to a translated label
     const garmentKeyMap: Record<string, string> = {
         'shirt': 'orderReview.garment_shirt',
         'womens-top': 'orderReview.garment_womensTop',
@@ -118,6 +118,8 @@ export default function OrderReview() {
         'jacket': 'orderReview.garment_jacket',
         'skirt': 'orderReview.garment_skirt',
         'coat': 'orderReview.garment_coat',
+        'jumpsuits': 'orderReview.garment_jumpsuits',
+        'suits': 'orderReview.garment_suits',
     };
     const garmentLabel = garmentKeyMap[draft.garment_type] ? t(garmentKeyMap[draft.garment_type]) : draft.garment_type;
     const isAutoMatch  = draft.assignment_mode === 'random' || draft.tailor_id === null;

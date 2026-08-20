@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { privacyPolicy } from '../data/privacyPolicy';
 
 export default function PrivacyPolicy() {
-    const { t, i18n } = useTranslation();
+    const { i18n } = useTranslation();
     const doc = privacyPolicy[i18n.language === 'ka' ? 'ka' : 'en'];
 
     return (

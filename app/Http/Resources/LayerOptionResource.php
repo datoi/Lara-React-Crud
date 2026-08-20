@@ -15,18 +15,10 @@ class LayerOptionResource extends JsonResource
             'slug' => $this->slug,
             'image_url' => $this->resolveUrl($this->image_path),
             'thumbnail_url' => $this->resolveUrl($this->thumbnail_path ?? $this->image_path),
-            'alt_image_url' => $this->alt_image_path
-                                      ? $this->resolveUrl($this->alt_image_path)
-                                      : null,
-            'back_image_url' => $this->back_image_path
-                                      ? $this->resolveUrl($this->back_image_path)
-                                      : null,
-            'left_image_url' => $this->left_image_path
-                                      ? $this->resolveUrl($this->left_image_path)
-                                      : null,
-            'right_image_url' => $this->right_image_path
-                                      ? $this->resolveUrl($this->right_image_path)
-                                      : null,
+            'alt_image_url' => $this->resolveUrl($this->alt_image_path),
+            'back_image_url' => $this->resolveUrl($this->back_image_path),
+            'left_image_url' => $this->resolveUrl($this->left_image_path),
+            'right_image_url' => $this->resolveUrl($this->right_image_path),
             'color_hex' => $this->color_hex,
             'display_scale' => $this->display_scale ?? 1.0,
             'price_modifier' => $this->price_modifier,
@@ -39,10 +31,15 @@ class LayerOptionResource extends JsonResource
 
     /**
      * Paths starting with '/' are public assets (served directly).
-     * Everything else is a storage-relative path.
+     * Everything else is a storage-relative path. Selector-only options have no
+     * photo at all, so a null path stays null.
      */
-    private function resolveUrl(string $path): string
+    private function resolveUrl(?string $path): ?string
     {
+        if ($path === null || $path === '') {
+            return null;
+        }
+
         if (str_starts_with($path, 'http')) {
             return $path;
         }

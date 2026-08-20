@@ -315,7 +315,9 @@
         "garment_trousers": "Trousers",
         "garment_jacket": "Jacket",
         "garment_skirt": "Skirt",
-        "garment_coat": "Coat"
+        "garment_coat": "Coat",
+        "garment_jumpsuits": "Jumpsuit / Playsuit",
+        "garment_suits": "Suit / Set"
     },
     "myDesigns": {
         "pageTitle": "My Saved Designs",
@@ -622,6 +624,14 @@
         "cat_jacket": "Jacket",
         "cat_skirt": "Skirt",
         "cat_coat": "Coat",
+        "cat_tops": "Tops",
+        "cat_bottoms": "Bottoms",
+        "cat_skirts": "Skirts",
+        "cat_dresses": "Dresses",
+        "cat_eveningDresses": "Evening & Formal Dresses",
+        "cat_jumpsuits": "Jumpsuits & Playsuits",
+        "cat_suits": "Suits & Sets",
+        "cat_blazers": "Blazers & Jackets",
         "categoryTitle": "What do you want to design?",
         "categorySubtitle": "Choose a garment type to customise it, or upload your own design.",
         "uploadMyDesign": "Upload my design",
@@ -655,7 +665,8 @@
         "startingFrom": "Starting from",
         "errorFileType": "Please upload a JPG, PNG, PDF, or SVG file.",
         "errorFileSize": "File must be under 10 MB.",
-        "errorUploadFailed": "Upload failed."
+        "errorUploadFailed": "Upload failed.",
+        "breadcrumbLabel": "Design studio navigation"
     },
     "remodel": {
         "pageTitle": "Remodel a Garment",
@@ -854,7 +865,11 @@
         "submitToTailor": "Submit to Tailor",
         "downloadSpecs": "Download Design Specs",
         "whatStyle": "What style of {{garment}}?",
-        "pickStyle": "Pick the specific style you want to design."
+        "pickStyle": "Pick the specific style you want to design.",
+        "attributesTitle": "Details",
+        "attributesHint": "Choose a detail to change it.",
+        "allAttributes": "All details",
+        "chooseAttribute": "Choose {{attribute}}"
     },
     "saveDesignModal": {
         "title": "Save Design",

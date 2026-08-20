@@ -9,6 +9,11 @@ interface OptionSwatchProps {
 }
 
 export default function OptionSwatch({ option, isSelected, onSelect }: OptionSwatchProps) {
+    // Attribute options (fit, neckline, sleeves…) are labelled choices with no
+    // artwork yet. They render as a text tile so the panel never shows a broken
+    // image — dropping a photo in later turns the same option into a picture tile.
+    const artwork = option.thumbnail_url;
+
     return (
         <motion.button
             onClick={onSelect}
@@ -19,19 +24,22 @@ export default function OptionSwatch({ option, isSelected, onSelect }: OptionSwa
             aria-label={`${option.name}${option.price_modifier !== 0 ? ` — ${option.price_modifier > 0 ? '+' : ''}₾${option.price_modifier}` : ''}`}
             className={[
                 'relative flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-colors cursor-pointer',
+                artwork ? '' : 'min-h-[64px] justify-center px-3 py-3',
                 isSelected
                     ? 'border-slate-900 bg-slate-50'
                     : 'border-slate-200 bg-white hover:border-slate-400',
             ].join(' ')}
         >
             {/* Neutral warm-white background matches the canvas bg for real PNG layers */}
-            <div className="w-full aspect-square rounded-lg overflow-hidden relative bg-[#F5F0EB]">
-                <img
-                    src={option.thumbnail_url}
-                    alt={option.name}
-                    className="absolute inset-0 w-full h-full object-contain"
-                />
-            </div>
+            {artwork && (
+                <div className="w-full aspect-square rounded-lg overflow-hidden relative bg-[#F5F0EB]">
+                    <img
+                        src={artwork}
+                        alt={option.name}
+                        className="absolute inset-0 w-full h-full object-contain"
+                    />
+                </div>
+            )}
 
             <span className="text-xs font-medium text-slate-700 text-center leading-tight line-clamp-2">
                 {option.name}

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import type {
     LayerCategory,
     LayerOption,
@@ -6,11 +6,81 @@ import type {
     Fabric,
     DesignConfiguration,
 } from '../types/customizer';
+import {
+    clearStoredSelections,
+    getStoredSelections,
+    storeSelections,
+    type StoredSelections,
+} from './useCustomizerSelections';
 
 interface UseCustomizerOptions {
     basePrice: number;
     layerCategories: LayerCategory[];
     fabrics: Fabric[];
+    /**
+     * Product slug. When set, selections survive leaving and returning to the
+     * garment; omit it and the hook behaves exactly as before (defaults only).
+     */
+    persistKey?: string;
+}
+
+// ─── Restoring stored ids ─────────────────────────────────────────────────────
+// A stored id is only trustworthy if the option still exists — reseeding the
+// catalogue renumbers everything. Anything unrecognised falls back to the
+// default for that category instead of selecting nothing.
+
+function restoreSelections(
+    stored: Record<number, number> | undefined,
+    defaults: Record<number, number>,
+    layerCategories: LayerCategory[],
+): Record<number, number> {
+    if (!stored) return defaults;
+    const merged = { ...defaults };
+    for (const category of layerCategories) {
+        const optionId = stored[category.id];
+        if (optionId !== undefined && category.options.some(o => o.id === optionId)) {
+            merged[category.id] = optionId;
+        }
+    }
+    return merged;
+}
+
+function restoreSubSelections(
+    stored: Record<number, number> | undefined,
+    defaults: Record<number, number>,
+    layerCategories: LayerCategory[],
+): Record<number, number> {
+    if (!stored) return defaults;
+    const merged = { ...defaults };
+    for (const category of layerCategories) {
+        for (const option of category.options) {
+            const childId = stored[option.id];
+            if (childId !== undefined && option.children?.some(c => c.id === childId)) {
+                merged[option.id] = childId;
+            }
+        }
+    }
+    return merged;
+}
+
+function restoreColorSelections(
+    stored: Record<number, number> | undefined,
+    defaults: Record<number, number>,
+    layerCategories: LayerCategory[],
+): Record<number, number> {
+    if (!stored) return defaults;
+    const merged = { ...defaults };
+    const apply = (option: LayerOption) => {
+        const colorId = stored[option.id];
+        if (colorId !== undefined && option.colors?.some(c => c.id === colorId)) {
+            merged[option.id] = colorId;
+        }
+        option.children?.forEach(apply);
+    };
+    for (const category of layerCategories) {
+        category.options.forEach(apply);
+    }
+    return merged;
 }
 
 interface UseCustomizerReturn {
@@ -38,14 +108,22 @@ export function useCustomizer({
     basePrice,
     layerCategories,
     fabrics,
+    persistKey,
 }: UseCustomizerOptions): UseCustomizerReturn {
+
+    // Read once per garment. Later writes must not re-hydrate and overwrite
+    // what the customer is actively choosing.
+    const restored: StoredSelections | null = useMemo(
+        () => (persistKey ? getStoredSelections(persistKey) : null),
+        [persistKey],
+    );
 
     const buildDefaults = useCallback((): Record<number, number> => {
         const defaults: Record<number, number> = {};
         for (const category of layerCategories) {
-            // Only top-level options (no parent) as primary selections
-            const topLevel = category.options.filter(o => !o.parent_option_id);
-            const def = topLevel.find(o => o.is_default) ?? topLevel[0];
+            // category.options is already top-level only — the API relation
+            // filters parent_option_id, and sub-options arrive under children.
+            const def = category.options.find(o => o.is_default) ?? category.options[0];
             if (def) defaults[category.id] = def.id;
         }
         return defaults;
@@ -79,16 +157,28 @@ export function useCustomizer({
         return defaults;
     }, [layerCategories]);
 
-    const [selections, setSelections] = useState<Record<number, number>>(buildDefaults);
+    const [selections, setSelections] = useState<Record<number, number>>(
+        () => restoreSelections(restored?.selections, buildDefaults(), layerCategories)
+    );
     const [subSelections, setSubSelections] = useState<Record<number, number>>(
-        () => buildSubDefaults()
+        () => restoreSubSelections(restored?.subSelections, buildSubDefaults(), layerCategories)
     );
     const [colorSelections, setColorSelections] = useState<Record<number, number>>(
-        () => buildColorDefaults()
+        () => restoreColorSelections(restored?.colorSelections, buildColorDefaults(), layerCategories)
     );
-    const [fabricId, setFabricId] = useState<number | null>(
-        () => fabrics[0]?.id ?? null
-    );
+    const [fabricId, setFabricId] = useState<number | null>(() => {
+        const stored = restored?.fabricId;
+        return stored !== undefined && stored !== null && fabrics.some(f => f.id === stored)
+            ? stored
+            : fabrics[0]?.id ?? null;
+    });
+
+    // Mirror every change back to the store so returning to this garment — via
+    // browser back, a re-visit, or a reload — restores the configuration.
+    useEffect(() => {
+        if (!persistKey) return;
+        storeSelections(persistKey, { selections, subSelections, colorSelections, fabricId });
+    }, [persistKey, selections, subSelections, colorSelections, fabricId]);
 
     const selectOption = useCallback((categoryId: number, optionId: number) => {
         setSelections(prev => ({ ...prev, [categoryId]: optionId }));
@@ -118,12 +208,15 @@ export function useCustomizer({
     }, []);
 
     const reset = useCallback(() => {
+        // Drop the stored copy first — the effect above re-saves the defaults,
+        // so Reset genuinely returns to a clean garment rather than restoring.
+        if (persistKey) clearStoredSelections(persistKey);
         const defaults = buildDefaults();
         setSelections(defaults);
         setSubSelections(buildSubDefaults());
         setColorSelections(buildColorDefaults());
         setFabricId(fabrics[0]?.id ?? null);
-    }, [buildDefaults, buildSubDefaults, buildColorDefaults, fabrics]);
+    }, [persistKey, buildDefaults, buildSubDefaults, buildColorDefaults, fabrics]);
 
     const getConfiguration = useCallback((): DesignConfiguration => ({
         selections,

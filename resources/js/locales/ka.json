@@ -315,7 +315,9 @@
         "garment_trousers": "შარვალი",
         "garment_jacket": "ჟაკეტი",
         "garment_skirt": "ქვედაბოლო",
-        "garment_coat": "პალტო"
+        "garment_coat": "პალტო",
+        "garment_jumpsuits": "კომბინიზონი",
+        "garment_suits": "კოსტიუმი / კომპლექტი"
     },
     "myDesigns": {
         "pageTitle": "ჩემი შენახული ნამუშევრები",
@@ -622,6 +624,14 @@
         "cat_jacket": "ჟაკეტი",
         "cat_skirt": "ქვედაბოლო",
         "cat_coat": "პალტო",
+        "cat_tops": "ტოპები",
+        "cat_bottoms": "ქვედა ტანსაცმელი",
+        "cat_skirts": "ქვედაბოლოები",
+        "cat_dresses": "კაბები",
+        "cat_eveningDresses": "საღამოსა და ოფიციალური კაბები",
+        "cat_jumpsuits": "კომბინიზონები",
+        "cat_suits": "კოსტიუმები და კომპლექტები",
+        "cat_blazers": "ჟაკეტები და პიჯაკები",
         "categoryTitle": "რისი შეკვეთა გინდა?",
         "categorySubtitle": "აირჩიე ტანსაცმლის სახეობა ან ატვირთე შენი ესკიზი.",
         "uploadMyDesign": "ჩემი ესკიზის ატვირთვა",
@@ -655,7 +665,8 @@
         "startingFrom": "იწყება",
         "errorFileType": "ატვირთე JPG, PNG, PDF ან SVG ფორმატის ფაილი.",
         "errorFileSize": "ფაილი 10 მბ-ზე მეტი არ უნდა იყოს.",
-        "errorUploadFailed": "ატვირთვა ვერ მოხერხდა."
+        "errorUploadFailed": "ატვირთვა ვერ მოხერხდა.",
+        "breadcrumbLabel": "დიზაინ-სტუდიის ნავიგაცია"
     },
     "remodel": {
         "pageTitle": "სამოსის გადაკეთება",
@@ -854,7 +865,11 @@
         "submitToTailor": "მკერავთან გაგზავნა",
         "downloadSpecs": "სპეციფიკაციის გადმოწერა",
         "whatStyle": "რა სტილი {{garment}}?",
-        "pickStyle": "აირჩიეთ სტილი…"
+        "pickStyle": "აირჩიეთ სტილი…",
+        "attributesTitle": "დეტალები",
+        "attributesHint": "აირჩიე დეტალი, რომ შეცვალო.",
+        "allAttributes": "ყველა დეტალი",
+        "chooseAttribute": "აირჩიე: {{attribute}}"
     },
     "saveDesignModal": {
         "title": "დიზაინის შენახვა",

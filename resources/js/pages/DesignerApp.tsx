@@ -9,73 +9,25 @@ import { saveDraft } from '../hooks/useCustomOrderDraft';
 import { Button } from '../components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { Navigation } from '../components/landing/Navigation';
-
-// ─── Garment categories ───────────────────────────────────────────────────────
-
-const CATEGORY_KEYS = [
-    { key: 'shirt',    tKey: 'design.cat_shirt',    emoji: '👔' },
-    { key: 'dress',    tKey: 'design.cat_dress',    emoji: '👗' },
-    { key: 'trousers', tKey: 'design.cat_trousers', emoji: '👖' },
-    { key: 'jacket',   tKey: 'design.cat_jacket',   emoji: '🧥' },
-    { key: 'skirt',    tKey: 'design.cat_skirt',    emoji: '🩱' },
-    { key: 'coat',     tKey: 'design.cat_coat',     emoji: '🧤' },
-];
-
-// Garment types that only belong in the women's section — never shown for men.
-const WOMEN_ONLY_CATEGORIES = new Set(['dress', 'skirt']);
-
-const CATEGORY_VISUALS: Record<string, { image: string; note: string; rotation: string; position: string; offset?: string }> = {
-    shirt: {
-        image: '/assets/design-categories/shirt-cutout.png',
-        note: 'Top',
-        rotation: '-rotate-[2deg]',
-        position: 'md:col-span-4',
-    },
-    dress: {
-        image: '/assets/design-categories/dress-cutout.png',
-        note: 'Dress',
-        rotation: 'rotate-[1.5deg]',
-        position: 'md:col-span-4',
-        offset: 'md:translate-y-7',
-    },
-    trousers: {
-        image: '/assets/design-categories/trousers-cutout.png',
-        note: 'Pants',
-        rotation: '-rotate-[1deg]',
-        position: 'md:col-span-4',
-    },
-    jacket: {
-        image: '/assets/design-categories/jacket-cutout.png',
-        note: 'Jacket',
-        rotation: 'rotate-[1.5deg]',
-        position: 'md:col-span-4',
-        offset: 'md:-translate-y-5',
-    },
-    skirt: {
-        image: '/assets/design-categories/skirt-cutout.png',
-        note: 'Skirt',
-        rotation: '-rotate-[2deg]',
-        position: 'md:col-span-4',
-    },
-    coat: {
-        image: '/assets/design-categories/coat-cutout.png',
-        note: 'Coat',
-        rotation: 'rotate-[1deg]',
-        position: 'md:col-span-4',
-        offset: 'md:translate-y-4',
-    },
-};
+import StudioBreadcrumb from '../components/StudioBreadcrumb';
+import { categoriesFor, findCategory, type GarmentCategory } from '../data/garmentTaxonomy';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf', 'image/svg+xml'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 // ─── Flow state ───────────────────────────────────────────────────────────────
+// The design branch is derived from ?cat= so the browser back button and a
+// shared link both land on the level the customer was actually looking at.
+// The upload branch keeps its own local step — it has no shareable levels.
+
+type UploadStep =
+    | { step: 'upload-type' }
+    | { step: 'upload-file'; category: GarmentCategory };
 
 type FlowState =
     | { step: 'category' }
-    | { step: 'design';       category: string }
-    | { step: 'upload-type' }
-    | { step: 'upload-file';  category: string };
+    | { step: 'design'; category: GarmentCategory }
+    | UploadStep;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -97,13 +49,11 @@ function CategoryStep({
     onSelectUpload,
 }: {
     gender: Section;
-    onSelectDesign: (key: string) => void;
+    onSelectDesign: (category: GarmentCategory) => void;
     onSelectUpload: () => void;
 }) {
     const { t } = useTranslation();
-    const categories = gender === 'men'
-        ? CATEGORY_KEYS.filter(c => !WOMEN_ONLY_CATEGORIES.has(c.key))
-        : CATEGORY_KEYS;
+    const categories = categoriesFor(gender);
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -142,23 +92,33 @@ function CategoryStep({
                 {categories.map((cat, i) => (
                     <motion.button
                         key={cat.key}
-                        onClick={() => onSelectDesign(cat.key)}
+                        onClick={() => onSelectDesign(cat)}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: i * 0.07 }}
-                        className="group block text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7]"
+                        className="group block h-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7]"
                     >
-                        <article>
-                            <p className="mb-2 text-[10px] font-semibold leading-none tracking-[-0.02em] text-[#111111] sm:text-[11px]">
+                        {/* Bottom-aligned so a two-line category name keeps every
+                            card in the row on the same baseline. */}
+                        <article className="flex h-full flex-col">
+                            <p className="mb-2 text-[10px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#111111] sm:text-[11px]">
                                 {t(cat.tKey)}
                             </p>
 
-                            <div className="flex h-[132px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-3 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[156px] sm:p-4 lg:h-[178px]">
-                                <img
-                                    src={CATEGORY_VISUALS[cat.key]?.image}
-                                    alt={t(cat.tKey)}
-                                    className="h-full w-full object-contain mix-blend-multiply"
-                                />
+                            <div className="mt-auto flex h-[132px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-3 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[156px] sm:p-4 lg:h-[178px]">
+                                {cat.image ? (
+                                    <img
+                                        src={cat.image}
+                                        alt={t(cat.tKey)}
+                                        className="h-full w-full object-contain mix-blend-multiply"
+                                    />
+                                ) : (
+                                    /* No cut-out drawn yet — the typographic card
+                                       already used elsewhere in the studio stands in. */
+                                    <span className="font-serif text-[clamp(1.15rem,2.6vw,1.75rem)] font-medium leading-[0.95] tracking-[-0.04em] text-[#111111]">
+                                        {t(cat.tKey)}
+                                    </span>
+                                )}
                             </div>
                         </article>
                     </motion.button>
@@ -176,11 +136,11 @@ function UploadTypeStep({
     onBack,
 }: {
     gender: Section;
-    onSelect: (key: string) => void;
+    onSelect: (category: GarmentCategory) => void;
     onBack: () => void;
 }) {
     const { t } = useTranslation();
-    const uploadCategories = CATEGORY_KEYS.filter(cat => gender !== 'men' || !['dress', 'skirt'].includes(cat.key));
+    const uploadCategories = categoriesFor(gender);
 
     return (
         <motion.div
@@ -210,29 +170,29 @@ function UploadTypeStep({
                 {uploadCategories.map((cat, i) => (
                     <motion.button
                         key={cat.key}
-                        onClick={() => onSelect(cat.key)}
+                        onClick={() => onSelect(cat)}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: i * 0.07 }}
-                        className="group relative block text-left focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7]"
+                        className="group relative block h-full text-left focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7]"
                     >
-                        <article>
+                        <article className="flex h-full flex-col">
                             <div className="mb-2 flex items-start justify-between gap-3">
-                                <p className="text-[10px] font-semibold leading-none tracking-[-0.02em] text-[#111111] sm:text-[11px]">
+                                <p className="text-[10px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#111111] sm:text-[11px]">
                                     {t(cat.tKey)}
                                 </p>
                             </div>
 
-                            {gender === 'women' ? (
-                                <div className="flex h-[132px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-3 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[156px] sm:p-4 lg:h-[178px]">
+                            {gender === 'women' && cat.image ? (
+                                <div className="mt-auto flex h-[132px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-3 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[156px] sm:p-4 lg:h-[178px]">
                                     <img
-                                        src={CATEGORY_VISUALS[cat.key]?.image}
+                                        src={cat.image}
                                         alt={t(cat.tKey)}
                                         className="h-full w-full object-contain mix-blend-multiply"
                                     />
                                 </div>
                             ) : (
-                                <div className="flex h-[112px] items-end border border-[#111111]/45 bg-[#E4E0D7] p-4 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[132px] sm:p-5 lg:h-[150px]">
+                                <div className="mt-auto flex h-[112px] items-end border border-[#111111]/45 bg-[#E4E0D7] p-4 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[132px] sm:p-5 lg:h-[150px]">
                                     <p className="font-serif text-[clamp(1.35rem,3vw,2rem)] font-medium leading-[0.95] tracking-[-0.04em] text-[#111111]">
                                         {t(cat.tKey)}
                                     </p>
@@ -267,7 +227,7 @@ function UploadPanel({
     onContinue,
     onBack,
 }: {
-    category: string;
+    category: GarmentCategory;
     onContinue: (result: UploadResult) => void;
     onBack: () => void;
 }) {
@@ -289,8 +249,7 @@ function UploadPanel({
         setMeasurements(prev => ({ ...prev, [key]: value }));
     };
 
-    const catEntry = CATEGORY_KEYS.find(c => c.key === category);
-    const catLabel = catEntry ? t(catEntry.tKey) : category;
+    const catLabel = t(category.tKey);
 
     const handleFile = async (file: File) => {
         setUploadError(null);
@@ -539,11 +498,9 @@ function UploadPanel({
 function ProductStep({
     category,
     gender,
-    onBack,
 }: {
-    category: string;
+    category: GarmentCategory;
     gender: Section;
-    onBack: () => void;
 }) {
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -551,8 +508,7 @@ function ProductStep({
     const [loading,  setLoading]  = useState(true);
     const [error,    setError]    = useState<string | null>(null);
 
-    const catEntry = CATEGORY_KEYS.find(c => c.key === category);
-    const catLabel = catEntry ? t(catEntry.tKey) : category;
+    const catLabel = t(category.tKey);
 
     useEffect(() => {
         setLoading(true);
@@ -564,14 +520,14 @@ function ProductStep({
             })
             .then(data => {
                 const all: Product[] = (data as { products?: Product[] }).products ?? [];
-                setProducts(all.filter(p => p.category === category));
+                setProducts(all.filter(p => category.productCategories.includes(p.category)));
             })
             .catch(err => setError((err as Error).message ?? 'Failed to load products.'))
             .finally(() => setLoading(false));
     }, [category, gender]);
 
     const handleProductClick = (product: Product) => {
-        saveDraft({ garment_type: category, customization: null, design_file_url: null, estimated_price: product.base_price ?? 0 });
+        saveDraft({ garment_type: category.orderKey, customization: null, design_file_url: null, estimated_price: product.base_price ?? 0 });
         navigate(`/customize/${product.slug}`);
     };
 
@@ -582,13 +538,14 @@ function ProductStep({
             transition={{ duration: 0.5 }}
             className="relative mx-auto max-w-[1050px]"
         >
-            <button
-                onClick={onBack}
-                className="mb-8 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6F1D24]/55 transition-opacity hover:opacity-60"
-            >
-                <ArrowLeft className="w-4 h-4" />
-                {t('design.back')}
-            </button>
+            <StudioBreadcrumb
+                tone="paper"
+                className="mb-8"
+                crumbs={[
+                    { label: t(`section.${gender}`), to: `/design?gender=${gender}` },
+                    { label: catLabel },
+                ]}
+            />
 
             <h1 className="font-serif text-[clamp(2.45rem,5vw,4.7rem)] font-medium leading-[0.92] tracking-[-0.055em] text-[#6F1D24]">{catLabel}</h1>
             <p className="mb-10 mt-5 max-w-[560px] text-sm leading-7 text-[#776158]">{t('design.chooseStyle')}</p>
@@ -631,7 +588,7 @@ function ProductStep({
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center">
                                         <span className="text-4xl opacity-30">
-                                            {CATEGORY_KEYS.find(c => c.key === category)?.emoji ?? '👕'}
+                                            {category.emoji}
                                         </span>
                                     </div>
                                 )}
@@ -666,10 +623,8 @@ export default function DesignerApp() {
     const navigate = useNavigate();
     const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
-    const [flow, setFlow] = useState<FlowState>(
-        searchParams.get('upload') === '1'
-            ? { step: 'upload-type' }
-            : { step: 'category' }
+    const [uploadStep, setUploadStep] = useState<UploadStep | null>(
+        searchParams.get('upload') === '1' ? { step: 'upload-type' } : null
     );
 
     // Upload launched straight from the home page keeps its own section memory;
@@ -691,11 +646,29 @@ export default function DesignerApp() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [section]);
 
+    // The open category comes from the URL. An unknown key — a stale link, or a
+    // women's category left in the URL after switching to men — resolves to
+    // undefined and falls back to the category grid rather than an empty screen.
+    const activeCategory = section ? findCategory(section, searchParams.get('cat')) : undefined;
+
+    const flow: FlowState = uploadStep
+        ?? (activeCategory ? { step: 'design', category: activeCategory } : { step: 'category' });
+
+    const openCategory = (category: GarmentCategory) => {
+        const params = new URLSearchParams(searchParams);
+        params.set('cat', category.key);
+        // Pushed, not replaced, so browser back returns to the category grid.
+        setSearchParams(params);
+    };
+
     const switchSection = (s: Section) => {
         if (s === section) return;
         setSection(scope, s);
         const params = new URLSearchParams(searchParams);
         params.set('gender', s);
+        // Categories differ per section — drop the open one instead of carrying
+        // a key the new section does not have.
+        params.delete('cat');
         setSearchParams(params, { replace: true });
     };
 
@@ -707,7 +680,7 @@ export default function DesignerApp() {
         );
 
         saveDraft({
-            garment_type:          flow.category,
+            garment_type:          flow.category.orderKey,
             customization:         null,
             design_file_url:       result.fileUrl || null,
             measurements:          filledMeasurements,
@@ -763,17 +736,16 @@ export default function DesignerApp() {
                         <CategoryStep
                             key="category"
                             gender={section}
-                            onSelectDesign={key => setFlow({ step: 'design', category: key })}
-                            onSelectUpload={() => setFlow({ step: 'upload-type' })}
+                            onSelectDesign={openCategory}
+                            onSelectUpload={() => setUploadStep({ step: 'upload-type' })}
                         />
                     )}
 
                     {flow.step === 'design' && (
                         <ProductStep
-                            key={`design-${flow.category}`}
+                            key={`design-${flow.category.key}`}
                             category={flow.category}
                             gender={section}
-                            onBack={() => setFlow({ step: 'category' })}
                         />
                     )}
 
@@ -781,17 +753,17 @@ export default function DesignerApp() {
                         <UploadTypeStep
                             key="upload-type"
                             gender={section}
-                            onSelect={key => setFlow({ step: 'upload-file', category: key })}
-                            onBack={() => searchParams.get('upload') === '1' ? navigate(-1) : setFlow({ step: 'category' })}
+                            onSelect={category => setUploadStep({ step: 'upload-file', category })}
+                            onBack={() => searchParams.get('upload') === '1' ? navigate(-1) : setUploadStep(null)}
                         />
                     )}
 
                     {flow.step === 'upload-file' && (
                         <UploadPanel
-                            key={`upload-${flow.category}`}
+                            key={`upload-${flow.category.key}`}
                             category={flow.category}
                             onContinue={handleUploadContinue}
-                            onBack={() => setFlow({ step: 'upload-type' })}
+                            onBack={() => setUploadStep({ step: 'upload-type' })}
                         />
                     )}
                 </AnimatePresence>

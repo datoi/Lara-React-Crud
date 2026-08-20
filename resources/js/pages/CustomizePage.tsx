@@ -4,9 +4,12 @@ import { motion } from 'motion/react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import Customizer from '../components/customizer/Customizer';
+import StudioBreadcrumb, { type StudioCrumb } from '../components/StudioBreadcrumb';
 import { useProductData } from '../hooks/useProductData';
 import { getAuthUser, saveReturnTo } from '../hooks/useAuth';
 import { saveDraft } from '../hooks/useCustomOrderDraft';
+import { categoryForProduct } from '../data/garmentTaxonomy';
+import type { Section } from '../hooks/useSection';
 import type { DesignConfiguration } from '../types/customizer';
 import { useTranslation } from 'react-i18next';
 
@@ -45,6 +48,23 @@ export default function CustomizePage() {
             </div>
         );
     }
+
+    // Rebuilt from the product rather than passed through the flow, so the trail
+    // is correct on a direct link or a refresh. A unisex garment is filed under
+    // whichever section the customer is browsing.
+    const buildCrumbs = (): StudioCrumb[] => {
+        if (!product) return [];
+        const section: Section = product.gender === 'men' ? 'men' : 'women';
+        const category = categoryForProduct(section, product.category);
+        const crumbs: StudioCrumb[] = [
+            { label: t(`section.${section}`), to: `/design?gender=${section}` },
+        ];
+        if (category) {
+            crumbs.push({ label: t(category.tKey), to: `/design?gender=${section}&cat=${category.key}` });
+        }
+        crumbs.push({ label: product.name });
+        return crumbs;
+    };
 
     if (error || !product) {
         return (
@@ -85,6 +105,8 @@ export default function CustomizePage() {
             </nav>
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <StudioBreadcrumb tone="light" className="mb-6" crumbs={buildCrumbs()} />
+
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

@@ -48,7 +48,7 @@ export default function Customizer({
         totalPrice,
         resolveOption,
         resolveColor,
-    } = useCustomizer({ basePrice: product.base_price, layerCategories, fabrics });
+    } = useCustomizer({ basePrice: product.base_price, layerCategories, fabrics, persistKey: product.slug });
     const { t } = useTranslation();
 
     const [saveOpen, setSaveOpen]   = useState(false);
@@ -58,6 +58,12 @@ export default function Customizer({
     const selectedFabric = fabrics.find(f => f.id === fabricId) ?? null;
 
     const hasPanelContent = layerCategories.some(c => c.options.length > 0) || fabrics.length > 0;
+
+    // A garment whose attributes are all selector-only has nothing to composite.
+    // Rather than reserve a tall empty canvas, the options take the full width.
+    const hasPreviewLayers = layerCategories.some(c =>
+        c.slug !== 'collar' && c.is_preview_layer !== false && c.options.some(o => o.image_url),
+    );
 
     // Colour dot groups: one per category whose currently-selected style has colour variants
     const colorGroups = layerCategories
@@ -93,25 +99,29 @@ export default function Customizer({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="grid lg:grid-cols-[1fr_420px] gap-8 items-start"
+            className={hasPreviewLayers
+                ? 'grid lg:grid-cols-[1fr_420px] gap-8 items-start'
+                : 'mx-auto w-full max-w-2xl'}
         >
             {/* ── Preview column ─────────────────────────────────────────────── */}
-            <div className="lg:sticky lg:top-24">
-                <PreviewCanvas
-                    layerCategories={layerCategories}
-                    selections={selections}
-                    selectedFabric={selectedFabric}
-                    view={view}
-                    resolveOption={resolveOption}
-                    resolveColor={resolveColor}
-                />
-                {/* Fabric swatch label below preview */}
-                {selectedFabric && (
-                    <p className="text-center text-xs text-slate-400 mt-2">
-                        Fabric: <span className="font-medium text-slate-600">{selectedFabric.name}</span>
-                    </p>
-                )}
-            </div>
+            {hasPreviewLayers && (
+                <div className="lg:sticky lg:top-24">
+                    <PreviewCanvas
+                        layerCategories={layerCategories}
+                        selections={selections}
+                        selectedFabric={selectedFabric}
+                        view={view}
+                        resolveOption={resolveOption}
+                        resolveColor={resolveColor}
+                    />
+                    {/* Fabric swatch label below preview */}
+                    {selectedFabric && (
+                        <p className="text-center text-xs text-slate-400 mt-2">
+                            Fabric: <span className="font-medium text-slate-600">{selectedFabric.name}</span>
+                        </p>
+                    )}
+                </div>
+            )}
 
             {/* ── Options column ─────────────────────────────────────────────── */}
             <div className="flex flex-col gap-5 pb-24 lg:pb-0">

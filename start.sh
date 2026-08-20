@@ -51,6 +51,9 @@ php artisan db:seed --force --class=ClothingSeeder
 echo "==> Seeding men's customiser garments..."
 php artisan db:seed --force --class=MensGarmentsSeeder
 
+echo "==> Seeding women's Tops garments..."
+php artisan db:seed --force --class=WomensTopsSeeder
+
 echo "==> Creating storage symlink..."
 php artisan storage:link --force
 
