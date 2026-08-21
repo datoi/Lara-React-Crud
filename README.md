@@ -1839,4 +1839,12 @@ Mobile UX pass on the landing:
 - **The note moved off the detail rows.** Repeating "Preview coming soon" on all five rows crowded the list, especially in Georgian. It now appears once, under the option list, where the customer is looking after choosing. The rows show only the choice and its price.
 - **Verified**: photo shown at defaults and withheld after one or two deviations, restored on returning to the photographed cut, price correct throughout (₾45 → ₾50 → ₾45); colour swap keeps the photo; note sits after the option grid (DOM order asserted); men's chino trousers untouched; both locales; no console errors; no mobile overflow.
 
+### 2026-08-21 — Keep the base photo on screen instead of blanking the preview
+
+- **Reverted the preview withholding shipped earlier the same day.** Hiding the photo whenever a selection moved off the photographed cut left the whole left column empty as soon as a customer changed anything — worse than the problem it solved. The preview now always shows the photographed base style ("Classic") in the chosen colour, which is the honest starting point: attribute choices are modifications made to order on top of it.
+- The "Preview coming soon" note stays under each photo-less attribute's option list, so the customer is still told that a specific choice is not pictured — the information is kept, the blank panel is not.
+- The view switcher works again in all states, and colour swaps keep working regardless of the attribute selections.
+- Dropped `customizer.previewCombinationSoon` from both locales — nothing references it now.
+- **Verified**: photo holds through Hip-length + V neckline + Sleeveless with the price at ₾50; colour swap and all four camera angles still work while deviated; note still sits after the option grid; men's chino trousers untouched at ₾120; both locales; no console errors; no mobile overflow.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

@@ -65,20 +65,6 @@ export default function Customizer({
         c.slug !== 'collar' && c.is_preview_layer !== false && c.options.some(o => o.image_url),
     );
 
-    // The photography depicts one cut — the default of every selector-only
-    // attribute (the seeder pins those defaults to what was shot). Once the
-    // customer moves away from it the photo no longer shows what they picked,
-    // so it is withheld rather than showing them the wrong garment. Colour is a
-    // real preview layer and swaps correctly, so it never triggers this.
-    const previewMatchesSelection = useMemo(() => layerCategories
-        .filter(c => c.is_preview_layer === false && c.options.length > 0)
-        .every(category => {
-            const depicted = category.options.find(o => o.is_default) ?? category.options[0];
-            const selected = selections[category.id];
-            return depicted === undefined || selected === undefined || selected === depicted.id;
-        }),
-    [layerCategories, selections]);
-
     // Colour dot groups: one per category whose currently-selected style has colour variants
     const colorGroups = layerCategories
         .filter(c => c.slug !== 'collar')
@@ -120,28 +106,19 @@ export default function Customizer({
             {/* ── Preview column ─────────────────────────────────────────────── */}
             {hasPreviewLayers && (
                 <div className="lg:sticky lg:top-24">
-                    {previewMatchesSelection ? (
-                        <PreviewCanvas
-                            layerCategories={layerCategories}
-                            selections={selections}
-                            selectedFabric={selectedFabric}
-                            view={view}
-                            resolveOption={resolveOption}
-                            resolveColor={resolveColor}
-                        />
-                    ) : (
-                        /* Same footprint as the canvas so the layout never jumps. */
-                        <div className="relative flex w-full flex-col items-center justify-center gap-2 bg-white px-6 text-center h-56 sm:h-72 lg:h-auto lg:aspect-[3/4] lg:max-h-[calc(100vh-10rem)]">
-                            <p className="font-serif text-2xl font-medium tracking-[-0.035em] text-slate-400">
-                                {t('customizer.previewComingSoon')}
-                            </p>
-                            <p className="max-w-[22rem] text-xs leading-relaxed text-slate-400">
-                                {t('customizer.previewCombinationSoon')}
-                            </p>
-                        </div>
-                    )}
+                    {/* Always the photographed base style in the chosen colour.
+                        Attribute choices are made to order and are called out
+                        under their own option list rather than blanking this. */}
+                    <PreviewCanvas
+                        layerCategories={layerCategories}
+                        selections={selections}
+                        selectedFabric={selectedFabric}
+                        view={view}
+                        resolveOption={resolveOption}
+                        resolveColor={resolveColor}
+                    />
                     {/* Fabric swatch label below preview */}
-                    {selectedFabric && previewMatchesSelection && (
+                    {selectedFabric && (
                         <p className="text-center text-xs text-slate-400 mt-2">
                             Fabric: <span className="font-medium text-slate-600">{selectedFabric.name}</span>
                         </p>
@@ -189,10 +166,7 @@ export default function Customizer({
                     </div>
                 ))}
 
-                {/* Nothing to rotate while the preview is withheld */}
-                {previewMatchesSelection && (
-                    <ViewSwitcher views={availableViews} view={view} onChange={setView} />
-                )}
+                <ViewSwitcher views={availableViews} view={view} onChange={setView} />
 
                 {/* Price summary — hidden on mobile (shown in sticky bar below) */}
                 <div className="hidden lg:block">
