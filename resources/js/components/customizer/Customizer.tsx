@@ -62,8 +62,8 @@ export default function Customizer({
 
     const hasPanelContent = layerCategories.some(c => c.options.length > 0) || fabrics.length > 0;
 
-    // A garment whose attributes are all selector-only has nothing to composite.
-    // Rather than reserve a tall empty canvas, the options take the full width.
+    // Whether this garment has been photographed at all. Most Tops have not
+    // been shot yet, so there is nothing for the canvas to composite.
     const hasPreviewLayers = layerCategories.some(c =>
         c.slug !== 'collar' && c.is_preview_layer !== false && c.options.some(o => o.image_url),
     );
@@ -72,13 +72,14 @@ export default function Customizer({
     // On the details list, and inside an attribute we have photographed (the
     // style/colour layer), it shows the garment. Inside an attribute with no
     // photography — fit, length, neckline, back, sleeves — a picture of the
-    // Classic cut would not answer the question being asked, so a placeholder
-    // takes its place until those are shot.
+    // photographed cut would not answer the question being asked, so a
+    // placeholder takes its place until those are shot.
     const openAttribute = openAttributeId === null
         ? null
         : layerCategories.find(c => c.id === openAttributeId) ?? null;
 
-    const showPhoto = openAttribute === null || categoryHasArtwork(openAttribute);
+    const showPhoto = hasPreviewLayers
+        && (openAttribute === null || categoryHasArtwork(openAttribute));
 
     // Colour dot groups: one per category whose currently-selected style has colour variants
     const colorGroups = layerCategories
@@ -114,46 +115,44 @@ export default function Customizer({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className={hasPreviewLayers
-                ? 'grid lg:grid-cols-[1fr_420px] gap-8 items-start'
-                : 'mx-auto w-full max-w-2xl'}
+            className="grid lg:grid-cols-[1fr_420px] gap-8 items-start"
         >
             {/* ── Preview column ─────────────────────────────────────────────── */}
-            {hasPreviewLayers && (
-                <div className="lg:sticky lg:top-24">
-                    {showPhoto ? (
-                        <PreviewCanvas
-                            layerCategories={layerCategories}
-                            selections={selections}
-                            selectedFabric={selectedFabric}
-                            view={view}
-                            resolveOption={resolveOption}
-                            resolveColor={resolveColor}
-                        />
-                    ) : (
-                        /* Same footprint as the canvas so the layout never jumps.
-                           Dashed frame and icon so it reads as a placeholder we
-                           put there on purpose, not a picture that failed. */
-                        <div className="flex w-full flex-col items-center justify-center gap-3 border border-dashed border-slate-300 bg-white/40 px-6 text-center h-56 sm:h-72 lg:h-auto lg:aspect-[3/4] lg:max-h-[calc(100vh-10rem)]">
-                            <span className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 text-slate-400">
-                                <ImageOff className="h-5 w-5 stroke-[1.4]" />
-                            </span>
-                            <p className="font-serif text-2xl font-medium tracking-[-0.035em] text-slate-500">
-                                {t('customizer.previewComingSoon')}
-                            </p>
-                            <p className="max-w-[20rem] text-xs leading-relaxed text-slate-400">
-                                {t('customizer.previewOptionsSoon')}
-                            </p>
-                        </div>
-                    )}
-                    {/* Fabric swatch label below preview */}
-                    {selectedFabric && showPhoto && (
-                        <p className="text-center text-xs text-slate-400 mt-2">
-                            Fabric: <span className="font-medium text-slate-600">{selectedFabric.name}</span>
+            <div className="lg:sticky lg:top-24">
+                {showPhoto ? (
+                    <PreviewCanvas
+                        layerCategories={layerCategories}
+                        selections={selections}
+                        selectedFabric={selectedFabric}
+                        view={view}
+                        resolveOption={resolveOption}
+                        resolveColor={resolveColor}
+                    />
+                ) : (
+                    /* Same footprint as the canvas so the layout never jumps.
+                       Dashed frame and icon so it reads as a placeholder we put
+                       there on purpose, not a picture that failed to load. */
+                    <div className="flex w-full flex-col items-center justify-center gap-3 border border-dashed border-slate-300 bg-white/40 px-6 text-center h-56 sm:h-72 lg:h-auto lg:aspect-[3/4] lg:max-h-[calc(100vh-10rem)]">
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 text-slate-400">
+                            <ImageOff className="h-5 w-5 stroke-[1.4]" />
+                        </span>
+                        <p className="font-serif text-2xl font-medium tracking-[-0.035em] text-slate-500">
+                            {t('customizer.previewComingSoon')}
                         </p>
-                    )}
-                </div>
-            )}
+                        <p className="max-w-[20rem] text-xs leading-relaxed text-slate-400">
+                            {hasPreviewLayers
+                                ? t('customizer.previewOptionsSoon')
+                                : t('customizer.previewGarmentSoon')}
+                        </p>
+                    </div>
+                )}
+                {/* Fabric swatch label below preview */}
+                {selectedFabric && showPhoto && (
+                    <p className="text-center text-xs text-slate-400 mt-2">
+                        Fabric: <span className="font-medium text-slate-600">{selectedFabric.name}</span>
+                    </p>
+                )}
+            </div>
 
             {/* ── Options column ─────────────────────────────────────────────── */}
             <div className="flex flex-col gap-5 pb-24 lg:pb-0">

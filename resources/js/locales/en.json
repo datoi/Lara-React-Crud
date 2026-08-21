@@ -872,7 +872,8 @@
         "chooseAttribute": "Choose {{attribute}}",
         "previewComingSoon": "Preview coming soon",
         "noOptionsYet": "More options coming soon.",
-        "previewOptionsSoon": "We haven't photographed these options yet — your choice is still made to order."
+        "previewOptionsSoon": "We haven't photographed these options yet — your choice is still made to order.",
+        "previewGarmentSoon": "We haven't photographed this garment yet — it is still made to your measurements."
     },
     "saveDesignModal": {
         "title": "Save Design",

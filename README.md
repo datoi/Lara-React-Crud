@@ -1882,4 +1882,12 @@ Implementation: the open attribute moved from local state inside `AttributeNavig
 
 **Verified**: photo on the details list and on the Style screen, including with Neckline: High selected (the reported case); placeholder inside each of the five photo-less attributes independently; photo returns on going back to the list; price correct throughout (₾45 → ₾50); colour swap and view switcher behave; men's chino trousers untouched at ₾120; both locales; mobile 375px; no console errors. All five earlier suites re-run green.
 
+### 2026-08-22 — Every garment gets a left panel, photographed or not
+
+- **The 16 unphotographed Tops had no preview column at all.** An earlier entry collapsed it to a single column when a garment had nothing to composite, so Bodysuit, Blouse, Hoodie and the rest opened with the options card floating against empty space. The two-column layout is now unconditional and the column carries the "Preview coming soon" placeholder whenever there is no photo to show.
+- The placeholder wording follows what is actually missing: a garment with no photography at all reads *"We haven't photographed this garment yet — it is still made to your measurements"*, while the photographed T-shirt inside a photo-less attribute reads *"We haven't photographed these options yet — your choice is still made to order."* An unphotographed garment keeps the garment-level wording inside its attributes too, since claiming only "these options" are missing would imply the rest had been shot.
+- Garments with no layer categories at all (the leftover demo dress and skirt) now show the placeholder rather than a bare page.
+- The T-shirt is unchanged: photo on the details list and on Style, placeholder inside the five photo-less attributes.
+- **Verified**: all 17 Tops render a left panel with the correct content — photo for the T-shirt, placeholder for the other 16 — with no broken images; Bodysuit shows the garment-level wording on the list and inside an attribute, price intact at ₾80; men's chino trousers keep photo and two columns at ₾120; a layer-less demo garment shows the placeholder; both locales; mobile 375px with no overflow; no console errors. All six earlier suites re-run green.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*
