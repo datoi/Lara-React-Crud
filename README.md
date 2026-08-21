@@ -1847,4 +1847,18 @@ Mobile UX pass on the landing:
 - Dropped `customizer.previewCombinationSoon` from both locales — nothing references it now.
 - **Verified**: photo holds through Hip-length + V neckline + Sleeveless with the price at ₾50; colour swap and all four camera angles still work while deviated; note still sits after the option grid; men's chino trousers untouched at ₾120; both locales; no console errors; no mobile overflow.
 
+### 2026-08-21 — Preview holds the Classic photo until a choice we have no photo of
+
+Third pass on this, settling it. The rule the studio now follows:
+
+- **Arriving, and while browsing options, the Classic photo stays on screen** in the chosen colour. It is the garment we actually photographed and the honest starting point.
+- **Choosing an option inside Fit, Length, Neckline, Back Design or Sleeves swaps the preview for a placeholder**, because no photograph of that combination exists and the image would otherwise show a garment the customer did not configure. Re-selecting the photographed option brings the photo straight back.
+- **Colour never triggers it** — it is a real preview layer with its own photos per variant.
+
+The earlier attempt applied the same rule but rendered as a bare empty box, which read as a page that had failed rather than a deliberate state. The placeholder now carries a dashed frame, an `ImageOff` icon and a serif "Preview coming soon" over a line explaining that the choices are still made to order, so it is legible as intentional. The view switcher hides while there is nothing to rotate; the colour dots stay, since the colour choice remains real.
+
+Driven by comparing each selector-only attribute against its photographed default (the seeder pins those defaults to what was shot), so it needs no new schema and resolves itself as garments are photographed.
+
+**Verified**: photo on arrival and while browsing an attribute without choosing; placeholder after choosing in each of the five attributes independently; photo returns on re-selecting the photographed option (₾45 → ₾54 → ₾45); colour swap keeps the photo; view switcher hides and returns; men's chino trousers and the hoodie untouched; both locales; mobile 375px; no console errors.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

@@ -7,7 +7,7 @@
  *            PriceSummary + Save/Order CTAs
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Bookmark, RotateCcw, ShoppingBag } from 'lucide-react';
+import { Bookmark, ImageOff, RotateCcw, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
@@ -65,6 +65,21 @@ export default function Customizer({
         c.slug !== 'collar' && c.is_preview_layer !== false && c.options.some(o => o.image_url),
     );
 
+    // The photography covers one cut only: the default of every selector-only
+    // attribute (the seeder pins those defaults to what was actually shot).
+    // Choose a fit, length, neckline, back or sleeve we have no photo of and the
+    // image would show a garment the customer did not configure, so it is
+    // replaced with a placeholder. Colour is a real preview layer with its own
+    // photos per variant, so it never triggers this.
+    const previewMatchesSelection = useMemo(() => layerCategories
+        .filter(c => c.is_preview_layer === false && c.options.length > 0)
+        .every(category => {
+            const photographed = category.options.find(o => o.is_default) ?? category.options[0];
+            const selected = selections[category.id];
+            return photographed === undefined || selected === undefined || selected === photographed.id;
+        }),
+    [layerCategories, selections]);
+
     // Colour dot groups: one per category whose currently-selected style has colour variants
     const colorGroups = layerCategories
         .filter(c => c.slug !== 'collar')
@@ -106,19 +121,33 @@ export default function Customizer({
             {/* ── Preview column ─────────────────────────────────────────────── */}
             {hasPreviewLayers && (
                 <div className="lg:sticky lg:top-24">
-                    {/* Always the photographed base style in the chosen colour.
-                        Attribute choices are made to order and are called out
-                        under their own option list rather than blanking this. */}
-                    <PreviewCanvas
-                        layerCategories={layerCategories}
-                        selections={selections}
-                        selectedFabric={selectedFabric}
-                        view={view}
-                        resolveOption={resolveOption}
-                        resolveColor={resolveColor}
-                    />
+                    {previewMatchesSelection ? (
+                        <PreviewCanvas
+                            layerCategories={layerCategories}
+                            selections={selections}
+                            selectedFabric={selectedFabric}
+                            view={view}
+                            resolveOption={resolveOption}
+                            resolveColor={resolveColor}
+                        />
+                    ) : (
+                        /* Same footprint as the canvas so the layout never jumps.
+                           Dashed frame and icon so it reads as a placeholder we
+                           put there on purpose, not a picture that failed. */
+                        <div className="flex w-full flex-col items-center justify-center gap-3 border border-dashed border-slate-300 bg-white/40 px-6 text-center h-56 sm:h-72 lg:h-auto lg:aspect-[3/4] lg:max-h-[calc(100vh-10rem)]">
+                            <span className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 text-slate-400">
+                                <ImageOff className="h-5 w-5 stroke-[1.4]" />
+                            </span>
+                            <p className="font-serif text-2xl font-medium tracking-[-0.035em] text-slate-500">
+                                {t('customizer.previewComingSoon')}
+                            </p>
+                            <p className="max-w-[20rem] text-xs leading-relaxed text-slate-400">
+                                {t('customizer.previewCombinationSoon')}
+                            </p>
+                        </div>
+                    )}
                     {/* Fabric swatch label below preview */}
-                    {selectedFabric && (
+                    {selectedFabric && previewMatchesSelection && (
                         <p className="text-center text-xs text-slate-400 mt-2">
                             Fabric: <span className="font-medium text-slate-600">{selectedFabric.name}</span>
                         </p>
@@ -166,7 +195,10 @@ export default function Customizer({
                     </div>
                 ))}
 
-                <ViewSwitcher views={availableViews} view={view} onChange={setView} />
+                {/* Nothing to rotate while the preview is a placeholder */}
+                {previewMatchesSelection && (
+                    <ViewSwitcher views={availableViews} view={view} onChange={setView} />
+                )}
 
                 {/* Price summary — hidden on mobile (shown in sticky bar below) */}
                 <div className="hidden lg:block">
