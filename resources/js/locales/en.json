@@ -872,7 +872,7 @@
         "chooseAttribute": "Choose {{attribute}}",
         "previewComingSoon": "Preview coming soon",
         "noOptionsYet": "More options coming soon.",
-        "previewCombinationSoon": "We don't have a photo of this combination yet — your choices are still made to order."
+        "previewOptionsSoon": "We haven't photographed these options yet — your choice is still made to order."
     },
     "saveDesignModal": {
         "title": "Save Design",

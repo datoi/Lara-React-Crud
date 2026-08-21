@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +8,13 @@ interface AttributeNavigatorProps {
     categories: LayerCategory[];
     selections: Record<number, number>;
     subSelections: Record<number, number>;
+    /**
+     * Attribute currently open, or null for the list. Controlled from the
+     * Customizer because the preview mirrors it — an attribute we have
+     * photographed shows the garment, one we have not shows a placeholder.
+     */
+    openId: number | null;
+    onOpenChange: (id: number | null) => void;
     onSelectOption: (categoryId: number, optionId: number) => void;
     onSelectSubOption: (parentOptionId: number, childOptionId: number) => void;
 }
@@ -32,11 +38,12 @@ export default function AttributeNavigator({
     categories,
     selections,
     subSelections,
+    openId,
+    onOpenChange,
     onSelectOption,
     onSelectSubOption,
 }: AttributeNavigatorProps) {
     const { t } = useTranslation();
-    const [openId, setOpenId] = useState<number | null>(null);
 
     const open = categories.find(c => c.id === openId) ?? null;
 
@@ -49,7 +56,7 @@ export default function AttributeNavigator({
                 transition={{ duration: 0.5 }}
             >
                 <button
-                    onClick={() => setOpenId(null)}
+                    onClick={() => onOpenChange(null)}
                     className="mb-3 flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors hover:text-slate-900"
                 >
                     <ChevronLeft className="h-3.5 w-3.5" />
@@ -97,7 +104,7 @@ export default function AttributeNavigator({
                     return (
                         <li key={category.id}>
                             <button
-                                onClick={() => setOpenId(category.id)}
+                                onClick={() => onOpenChange(category.id)}
                                 className="flex w-full items-center justify-between gap-3 py-3 text-left transition-colors hover:bg-slate-50"
                             >
                                 <span className="min-w-0">

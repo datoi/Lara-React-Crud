@@ -1861,4 +1861,25 @@ Driven by comparing each selector-only attribute against its photographed defaul
 
 **Verified**: photo on arrival and while browsing an attribute without choosing; placeholder after choosing in each of the five attributes independently; photo returns on re-selecting the photographed option (₾45 → ₾54 → ₾45); colour swap keeps the photo; view switcher hides and returns; men's chino trousers and the hoodie untouched; both locales; mobile 375px; no console errors.
 
+### 2026-08-21 — Preview follows the attribute being viewed
+
+Final shape of the preview rule, after two wrong turns recorded above.
+
+**Bug fixed:** with a photo-less choice made anywhere (e.g. Neckline: High), the preview was suppressed globally — so opening the Style attribute, where "Classic" is selected and *does* have photography, still showed a placeholder. The customer could not see the garment they had selected.
+
+**The rule now:** the preview answers whatever the customer is currently looking at.
+
+| Where they are | Left panel |
+| --- | --- |
+| Details list | Classic photo, in the chosen colour |
+| Style (photographed) | Classic photo |
+| Fit / Length / Neckline / Back Design / Sleeves | "Preview coming soon" placeholder |
+| Back on the details list | Classic photo, whatever is selected |
+
+Colour swaps and the four camera angles work wherever the photo is showing; the view switcher hides while the placeholder is up, since there is nothing to rotate.
+
+Implementation: the open attribute moved from local state inside `AttributeNavigator` up to `Customizer` (controlled through `OptionPanel` as `openAttributeId` / `onOpenAttribute`), because the preview and the panel now have to agree on it. The photo/placeholder choice is `categoryHasArtwork(openAttribute)` — the same data-driven predicate the option grid uses — so photographing an attribute makes its placeholder disappear on its own, with no code change. Flat-panel garments (every men's product) never open an attribute, so they always show the photo, exactly as before.
+
+**Verified**: photo on the details list and on the Style screen, including with Neckline: High selected (the reported case); placeholder inside each of the five photo-less attributes independently; photo returns on going back to the list; price correct throughout (₾45 → ₾50); colour swap and view switcher behave; men's chino trousers untouched at ₾120; both locales; mobile 375px; no console errors. All five earlier suites re-run green.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

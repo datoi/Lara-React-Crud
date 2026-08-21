@@ -15,6 +15,7 @@ import PreviewCanvas, { viewImageUrl } from './PreviewCanvas';
 import ViewSwitcher from './ViewSwitcher';
 import ColorDotPicker from './ColorDotPicker';
 import OptionPanel from './OptionPanel';
+import { categoryHasArtwork } from './CategoryOptions';
 import PriceSummary from './PriceSummary';
 import SaveDesignModal from './SaveDesignModal';
 import { useCustomizer } from '../../hooks/useCustomizer';
@@ -54,6 +55,8 @@ export default function Customizer({
     const [saveOpen, setSaveOpen]   = useState(false);
     const [savedName, setSavedName] = useState<string | null>(null);
     const [view, setView]           = useState<GarmentView>('front');
+    // Which attribute the drill-down has open — the preview mirrors it.
+    const [openAttributeId, setOpenAttributeId] = useState<number | null>(null);
 
     const selectedFabric = fabrics.find(f => f.id === fabricId) ?? null;
 
@@ -65,20 +68,17 @@ export default function Customizer({
         c.slug !== 'collar' && c.is_preview_layer !== false && c.options.some(o => o.image_url),
     );
 
-    // The photography covers one cut only: the default of every selector-only
-    // attribute (the seeder pins those defaults to what was actually shot).
-    // Choose a fit, length, neckline, back or sleeve we have no photo of and the
-    // image would show a garment the customer did not configure, so it is
-    // replaced with a placeholder. Colour is a real preview layer with its own
-    // photos per variant, so it never triggers this.
-    const previewMatchesSelection = useMemo(() => layerCategories
-        .filter(c => c.is_preview_layer === false && c.options.length > 0)
-        .every(category => {
-            const photographed = category.options.find(o => o.is_default) ?? category.options[0];
-            const selected = selections[category.id];
-            return photographed === undefined || selected === undefined || selected === photographed.id;
-        }),
-    [layerCategories, selections]);
+    // The preview answers whatever the customer is currently looking at.
+    // On the details list, and inside an attribute we have photographed (the
+    // style/colour layer), it shows the garment. Inside an attribute with no
+    // photography — fit, length, neckline, back, sleeves — a picture of the
+    // Classic cut would not answer the question being asked, so a placeholder
+    // takes its place until those are shot.
+    const openAttribute = openAttributeId === null
+        ? null
+        : layerCategories.find(c => c.id === openAttributeId) ?? null;
+
+    const showPhoto = openAttribute === null || categoryHasArtwork(openAttribute);
 
     // Colour dot groups: one per category whose currently-selected style has colour variants
     const colorGroups = layerCategories
@@ -121,7 +121,7 @@ export default function Customizer({
             {/* ── Preview column ─────────────────────────────────────────────── */}
             {hasPreviewLayers && (
                 <div className="lg:sticky lg:top-24">
-                    {previewMatchesSelection ? (
+                    {showPhoto ? (
                         <PreviewCanvas
                             layerCategories={layerCategories}
                             selections={selections}
@@ -142,12 +142,12 @@ export default function Customizer({
                                 {t('customizer.previewComingSoon')}
                             </p>
                             <p className="max-w-[20rem] text-xs leading-relaxed text-slate-400">
-                                {t('customizer.previewCombinationSoon')}
+                                {t('customizer.previewOptionsSoon')}
                             </p>
                         </div>
                     )}
                     {/* Fabric swatch label below preview */}
-                    {selectedFabric && previewMatchesSelection && (
+                    {selectedFabric && showPhoto && (
                         <p className="text-center text-xs text-slate-400 mt-2">
                             Fabric: <span className="font-medium text-slate-600">{selectedFabric.name}</span>
                         </p>
@@ -176,6 +176,8 @@ export default function Customizer({
                             selections={selections}
                             subSelections={subSelections}
                             fabricId={fabricId}
+                            openAttributeId={openAttributeId}
+                            onOpenAttribute={setOpenAttributeId}
                             onSelectOption={selectOption}
                             onSelectSubOption={selectSubOption}
                             onSelectFabric={selectFabric}
@@ -196,7 +198,7 @@ export default function Customizer({
                 ))}
 
                 {/* Nothing to rotate while the preview is a placeholder */}
-                {previewMatchesSelection && (
+                {showPhoto && (
                     <ViewSwitcher views={availableViews} view={view} onChange={setView} />
                 )}
 

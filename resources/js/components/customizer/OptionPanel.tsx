@@ -18,6 +18,9 @@ interface OptionPanelProps {
     selections: Record<number, number>;
     subSelections: Record<number, number>;
     fabricId: number | null;
+    /** Attribute open in the drill-down; owned by Customizer so the preview can mirror it. */
+    openAttributeId: number | null;
+    onOpenAttribute: (id: number | null) => void;
     onSelectOption: (categoryId: number, optionId: number) => void;
     onSelectSubOption: (parentOptionId: number, childOptionId: number) => void;
     onSelectFabric: (fabricId: number | null) => void;
@@ -29,6 +32,8 @@ export default function OptionPanel({
     selections,
     subSelections,
     fabricId,
+    openAttributeId,
+    onOpenAttribute,
     onSelectOption,
     onSelectSubOption,
     onSelectFabric,
@@ -49,6 +54,8 @@ export default function OptionPanel({
                     categories={choosableCategories}
                     selections={selections}
                     subSelections={subSelections}
+                    openId={openAttributeId}
+                    onOpenChange={onOpenAttribute}
                     onSelectOption={onSelectOption}
                     onSelectSubOption={onSelectSubOption}
                 />

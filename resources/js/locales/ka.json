@@ -872,7 +872,7 @@
         "chooseAttribute": "აირჩიე: {{attribute}}",
         "previewComingSoon": "ვიზუალი მალე დაემატება",
         "noOptionsYet": "დამატებითი ვარიანტები მალე დაემატება.",
-        "previewCombinationSoon": "ამ კომბინაციის ფოტო ჯერ არ გვაქვს — შენი არჩევანი მაინც შეიკერება."
+        "previewOptionsSoon": "ეს ვარიანტები ჯერ არ გვაქვს გადაღებული — შენი არჩევანი მაინც შეიკერება."
     },
     "saveDesignModal": {
         "title": "დიზაინის შენახვა",
