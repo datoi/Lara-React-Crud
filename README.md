@@ -1824,4 +1824,12 @@ Mobile UX pass on the landing:
 - **The three-quarter shots (9 files) are not used** — `layer_option_colors` stores front/back/left/right only, and adding a fifth camera angle would mean schema, type and `ViewSwitcher` changes. They are untouched in the source folder if that angle is wanted later.
 - **Verified**: card preview loads (it is `loading="lazy"` and sits below the fold); canvas paints burgundy on open; colour swap repaints; all four angles resolve to distinct files; spec panel reads Body-Fitting / Cropped / Crew / Cap; hoodie keeps its own defaults and no canvas; men's chino untouched at ₾120; mobile 375px has no overflow and no broken images; no console errors.
 
+### 2026-08-21 — "Coming soon" where the studio has nothing to show yet
+
+- **Empty categories now say it plainly.** The seven women's headings without garments showed a quiet "No styles available yet / Check back soon" pair; they now lead with a serif *Coming soon* in the page's wine, with the explanatory line under it. Dropped `design.checkBackSoon` — in Georgian it read "მალე დაემატება", exactly duplicating the new heading.
+- **Attributes with no artwork are labelled, not disabled.** Only the T-shirt's colour layer has photography; Fit, Length, Neckline, Back Design and Sleeves are labelled choices. Each now carries a quiet *Preview coming soon* next to its current value, and again above the option grid — while staying fully selectable, priced and orderable, because a tailor makes those variations today. Attributes that do have artwork (the colour layer, every men's garment) are untouched.
+- Driven by `categoryHasArtwork()` in `CategoryOptions`, shared by the drill-down and the flat panel, so the note appears from the data rather than from a hardcoded list of attribute names. A garment gains photography and the note disappears on its own.
+- Replaced a hardcoded English "More options coming soon." in `OptionPanel` with a translated key — it was the last untranslated user-facing string in the customizer.
+- **Verified** on the production bundle (the dev servers were down, so this exercised the real build): empty category reads Coming soon in both locales; the T-shirt marks exactly its five photo-less attributes and not the colour layer; all ten sleeve options stay enabled, clickable and priced (Puff still ₾61); men's chino trousers unmarked; no console errors; no mobile overflow at 375px.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LayerCategory, LayerOption } from '../../types/customizer';
-import CategoryOptions from './CategoryOptions';
+import CategoryOptions, { categoryHasArtwork } from './CategoryOptions';
 
 interface AttributeNavigatorProps {
     categories: LayerCategory[];
@@ -56,9 +56,16 @@ export default function AttributeNavigator({
                     {t('customizer.allAttributes')}
                 </button>
 
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    {t('customizer.chooseAttribute', { attribute: open.name })}
-                </p>
+                <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        {t('customizer.chooseAttribute', { attribute: open.name })}
+                    </p>
+                    {!categoryHasArtwork(open) && (
+                        <span className="text-[11px] italic text-slate-400">
+                            {t('customizer.previewComingSoon')}
+                        </span>
+                    )}
+                </div>
 
                 <CategoryOptions
                     category={open}
@@ -99,6 +106,12 @@ export default function AttributeNavigator({
                                         {current && current.price_modifier !== 0 && (
                                             <span className="text-slate-400">
                                                 {' '}({current.price_modifier > 0 ? '+' : ''}₾{current.price_modifier})
+                                            </span>
+                                        )}
+                                        {/* Choosable as normal — only the picture is missing. */}
+                                        {!categoryHasArtwork(category) && (
+                                            <span className="italic text-slate-400">
+                                                {' · '}{t('customizer.previewComingSoon')}
                                             </span>
                                         )}
                                     </span>

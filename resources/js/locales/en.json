@@ -661,12 +661,12 @@
         "back": "Back",
         "chooseStyle": "Choose a style to start customising.",
         "noStyles": "No styles available yet for this category.",
-        "checkBackSoon": "Check back soon.",
         "startingFrom": "Starting from",
         "errorFileType": "Please upload a JPG, PNG, PDF, or SVG file.",
         "errorFileSize": "File must be under 10 MB.",
         "errorUploadFailed": "Upload failed.",
-        "breadcrumbLabel": "Design studio navigation"
+        "breadcrumbLabel": "Design studio navigation",
+        "comingSoon": "Coming soon"
     },
     "remodel": {
         "pageTitle": "Remodel a Garment",
@@ -869,7 +869,9 @@
         "attributesTitle": "Details",
         "attributesHint": "Choose a detail to change it.",
         "allAttributes": "All details",
-        "chooseAttribute": "Choose {{attribute}}"
+        "chooseAttribute": "Choose {{attribute}}",
+        "previewComingSoon": "Preview coming soon",
+        "noOptionsYet": "More options coming soon."
     },
     "saveDesignModal": {
         "title": "Save Design",

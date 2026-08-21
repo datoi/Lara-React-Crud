@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import type { LayerCategory, Fabric } from '../../types/customizer';
-import CategoryOptions from './CategoryOptions';
+import CategoryOptions, { categoryHasArtwork } from './CategoryOptions';
 import AttributeNavigator from './AttributeNavigator';
 import FabricPicker from './FabricPicker';
 
@@ -32,13 +33,14 @@ export default function OptionPanel({
     onSelectSubOption,
     onSelectFabric,
 }: OptionPanelProps) {
+    const { t } = useTranslation();
     const choosableCategories = layerCategories.filter(c => c.options.length > 0);
 
     return (
         <div className="flex flex-col gap-4">
             {choosableCategories.length === 0 && (
-                <p className="text-sm text-slate-400 py-4 text-center">
-                    More options coming soon.
+                <p className="py-4 text-center text-sm text-slate-400">
+                    {t('customizer.noOptionsYet')}
                 </p>
             )}
 
@@ -59,9 +61,16 @@ export default function OptionPanel({
                         transition={{ duration: 0.5, delay: i * 0.07 }}
                         className={i > 0 ? 'border-t border-slate-100 pt-4' : undefined}
                     >
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                            {category.name}
-                        </p>
+                        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                {category.name}
+                            </p>
+                            {!categoryHasArtwork(category) && (
+                                <span className="text-[11px] italic text-slate-400">
+                                    {t('customizer.previewComingSoon')}
+                                </span>
+                            )}
+                        </div>
 
                         <CategoryOptions
                             category={category}

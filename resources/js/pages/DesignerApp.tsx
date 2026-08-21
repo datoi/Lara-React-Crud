@@ -560,8 +560,10 @@ function ProductStep({
 
             {!loading && !error && products.length === 0 && (
                 <div className="border border-[#6F1D24]/15 bg-[#FDFBF5] p-10 text-center shadow-[0_18px_45px_rgba(72,54,45,0.10)]">
-                    <p className="text-sm text-[#92615E]">{t('design.noStyles')}</p>
-                    <p className="mt-1 text-xs text-[#92615E]/70">{t('design.checkBackSoon')}</p>
+                    <p className="font-serif text-[clamp(1.5rem,3vw,2.15rem)] font-medium leading-[0.95] tracking-[-0.04em] text-[#6F1D24]">
+                        {t('design.comingSoon')}
+                    </p>
+                    <p className="mt-3 text-sm text-[#92615E]">{t('design.noStyles')}</p>
                 </div>
             )}
 

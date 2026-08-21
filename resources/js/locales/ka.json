@@ -661,12 +661,12 @@
         "back": "უკან",
         "chooseStyle": "აირჩიე სტილი.",
         "noStyles": "ამ კატეგორიაში ჯერ სტილები არ არის.",
-        "checkBackSoon": "მალე დაემატება.",
         "startingFrom": "იწყება",
         "errorFileType": "ატვირთე JPG, PNG, PDF ან SVG ფორმატის ფაილი.",
         "errorFileSize": "ფაილი 10 მბ-ზე მეტი არ უნდა იყოს.",
         "errorUploadFailed": "ატვირთვა ვერ მოხერხდა.",
-        "breadcrumbLabel": "დიზაინ-სტუდიის ნავიგაცია"
+        "breadcrumbLabel": "დიზაინ-სტუდიის ნავიგაცია",
+        "comingSoon": "მალე დაემატება"
     },
     "remodel": {
         "pageTitle": "სამოსის გადაკეთება",
@@ -869,7 +869,9 @@
         "attributesTitle": "დეტალები",
         "attributesHint": "აირჩიე დეტალი, რომ შეცვალო.",
         "allAttributes": "ყველა დეტალი",
-        "chooseAttribute": "აირჩიე: {{attribute}}"
+        "chooseAttribute": "აირჩიე: {{attribute}}",
+        "previewComingSoon": "ვიზუალი მალე დაემატება",
+        "noOptionsYet": "დამატებითი ვარიანტები მალე დაემატება."
     },
     "saveDesignModal": {
         "title": "დიზაინის შენახვა",

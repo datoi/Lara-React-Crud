@@ -7,10 +7,18 @@ export function categoryHasChildren(category: LayerCategory): boolean {
     return category.options.some(o => o.children && o.children.length > 0);
 }
 
+/**
+ * True when this attribute's options are picture swatches rather than plain
+ * labels. Drives both tile sizing and the "preview coming soon" note — an
+ * attribute is fully choosable either way, it just cannot be shown yet.
+ */
+export function categoryHasArtwork(category: LayerCategory): boolean {
+    return category.options.some(o => o.thumbnail_url || o.colors.length > 0);
+}
+
 /** Label-only options need wider tiles than picture swatches to stay readable. */
 function gridClass(category: LayerCategory): string {
-    const hasArtwork = category.options.some(o => o.thumbnail_url);
-    return hasArtwork
+    return categoryHasArtwork(category)
         ? 'grid grid-cols-3 sm:grid-cols-4 gap-2'
         : 'grid grid-cols-2 sm:grid-cols-3 gap-2';
 }
