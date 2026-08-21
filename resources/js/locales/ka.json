@@ -871,7 +871,8 @@
         "allAttributes": "ყველა დეტალი",
         "chooseAttribute": "აირჩიე: {{attribute}}",
         "previewComingSoon": "ვიზუალი მალე დაემატება",
-        "noOptionsYet": "დამატებითი ვარიანტები მალე დაემატება."
+        "noOptionsYet": "დამატებითი ვარიანტები მალე დაემატება.",
+        "previewCombinationSoon": "ამ კომბინაციის ფოტო ჯერ არ გვაქვს."
     },
     "saveDesignModal": {
         "title": "დიზაინის შენახვა",

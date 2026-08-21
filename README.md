@@ -1832,4 +1832,11 @@ Mobile UX pass on the landing:
 - Replaced a hardcoded English "More options coming soon." in `OptionPanel` with a translated key — it was the last untranslated user-facing string in the customizer.
 - **Verified** on the production bundle (the dev servers were down, so this exercised the real build): empty category reads Coming soon in both locales; the T-shirt marks exactly its five photo-less attributes and not the colour layer; all ten sleeve options stay enabled, clickable and priced (Puff still ₾61); men's chino trousers unmarked; no console errors; no mobile overflow at 375px.
 
+### 2026-08-21 — Withhold the preview when it would show the wrong garment
+
+- **The photo no longer lies.** The T-shirt photography depicts one cut, so choosing Regular fit / Hip-length / Sleeveless still showed the body-fitting cropped cap-sleeve shot — the customer saw a garment they had not configured. The preview column now checks whether every selector-only attribute is still on the cut that was photographed (the seeder pins those defaults to it) and, when it is not, shows "Preview coming soon" in the canvas footprint instead of the wrong picture. Move back to the photographed cut and the photo returns.
+- Colour is a real preview layer and swaps correctly, so changing colour never withholds the photo. The view switcher hides while there is nothing to rotate.
+- **The note moved off the detail rows.** Repeating "Preview coming soon" on all five rows crowded the list, especially in Georgian. It now appears once, under the option list, where the customer is looking after choosing. The rows show only the choice and its price.
+- **Verified**: photo shown at defaults and withheld after one or two deviations, restored on returning to the photographed cut, price correct throughout (₾45 → ₾50 → ₾45); colour swap keeps the photo; note sits after the option grid (DOM order asserted); men's chino trousers untouched; both locales; no console errors; no mobile overflow.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

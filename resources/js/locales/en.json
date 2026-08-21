@@ -871,7 +871,8 @@
         "allAttributes": "All details",
         "chooseAttribute": "Choose {{attribute}}",
         "previewComingSoon": "Preview coming soon",
-        "noOptionsYet": "More options coming soon."
+        "noOptionsYet": "More options coming soon.",
+        "previewCombinationSoon": "We don't have a photo of this combination yet."
     },
     "saveDesignModal": {
         "title": "Save Design",

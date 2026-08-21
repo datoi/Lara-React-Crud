@@ -61,16 +61,9 @@ export default function OptionPanel({
                         transition={{ duration: 0.5, delay: i * 0.07 }}
                         className={i > 0 ? 'border-t border-slate-100 pt-4' : undefined}
                     >
-                        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                {category.name}
-                            </p>
-                            {!categoryHasArtwork(category) && (
-                                <span className="text-[11px] italic text-slate-400">
-                                    {t('customizer.previewComingSoon')}
-                                </span>
-                            )}
-                        </div>
+                        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            {category.name}
+                        </p>
 
                         <CategoryOptions
                             category={category}
@@ -79,6 +72,12 @@ export default function OptionPanel({
                             onSelectOption={onSelectOption}
                             onSelectSubOption={onSelectSubOption}
                         />
+
+                        {!categoryHasArtwork(category) && (
+                            <p className="mt-3 text-center text-[11px] italic text-slate-400">
+                                {t('customizer.previewComingSoon')}
+                            </p>
+                        )}
                     </motion.div>
                 ))
             )}

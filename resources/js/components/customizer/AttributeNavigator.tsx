@@ -56,16 +56,9 @@ export default function AttributeNavigator({
                     {t('customizer.allAttributes')}
                 </button>
 
-                <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        {t('customizer.chooseAttribute', { attribute: open.name })}
-                    </p>
-                    {!categoryHasArtwork(open) && (
-                        <span className="text-[11px] italic text-slate-400">
-                            {t('customizer.previewComingSoon')}
-                        </span>
-                    )}
-                </div>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {t('customizer.chooseAttribute', { attribute: open.name })}
+                </p>
 
                 <CategoryOptions
                     category={open}
@@ -74,6 +67,14 @@ export default function AttributeNavigator({
                     onSelectOption={onSelectOption}
                     onSelectSubOption={onSelectSubOption}
                 />
+
+                {/* Sits under the options, where the customer is looking after
+                    choosing — the choice itself is real, only the picture is missing. */}
+                {!categoryHasArtwork(open) && (
+                    <p className="mt-3 text-center text-[11px] italic text-slate-400">
+                        {t('customizer.previewComingSoon')}
+                    </p>
+                )}
             </motion.div>
         );
     }
@@ -106,12 +107,6 @@ export default function AttributeNavigator({
                                         {current && current.price_modifier !== 0 && (
                                             <span className="text-slate-400">
                                                 {' '}({current.price_modifier > 0 ? '+' : ''}₾{current.price_modifier})
-                                            </span>
-                                        )}
-                                        {/* Choosable as normal — only the picture is missing. */}
-                                        {!categoryHasArtwork(category) && (
-                                            <span className="italic text-slate-400">
-                                                {' · '}{t('customizer.previewComingSoon')}
                                             </span>
                                         )}
                                     </span>
