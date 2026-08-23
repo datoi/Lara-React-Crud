@@ -35,7 +35,9 @@ export default function ColorDotPicker({ label, colors, selectedId, onSelect }: 
                             aria-label={color.name}
                             aria-pressed={isSelected}
                             title={color.name}
-                            className="relative w-9 h-9 rounded-full border-2 transition-all"
+                            // 44px on phones meets the minimum touch target; the tighter 36px dot
+                            // returns from sm up, where pointers are precise.
+                            className="relative h-11 w-11 rounded-full border-2 transition-all sm:h-9 sm:w-9"
                             style={{
                                 backgroundColor: color.color_hex,
                                 borderColor: isSelected ? '#0f172a' : '#e2e8f0',

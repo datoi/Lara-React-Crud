@@ -155,9 +155,15 @@ export default function Customizer({
             </div>
 
             {/* ── Options column ─────────────────────────────────────────────── */}
+            {/* Order note: on phones the preview sits above this column, so the
+                colour picker is pulled up directly beneath the photo — tapping a
+                colour is pointless if the garment is a screen and a half away.
+                From lg the two columns sit side by side and the original order
+                (details before colour) applies. Every child carries an explicit
+                order because an unset one would collapse to 0 and jump to top. */}
             <div className="flex flex-col gap-5 pb-24 lg:pb-0">
                 {/* Product header */}
-                <div>
+                <div className="order-1">
                     <h1 className="text-2xl font-bold text-slate-900">{product.name}</h1>
                     {product.description && (
                         <p className="text-sm text-slate-500 mt-1 leading-relaxed">
@@ -168,7 +174,7 @@ export default function Customizer({
 
                 {/* Option panel */}
                 {hasPanelContent && (
-                    <div className="bg-white rounded-2xl border border-slate-100 p-4">
+                    <div className="order-3 bg-white rounded-2xl border border-slate-100 p-4 lg:order-2">
                         <OptionPanel
                             layerCategories={layerCategories}
                             fabrics={fabrics}
@@ -186,7 +192,7 @@ export default function Customizer({
 
                 {/* Colour dot groups — colours of the currently selected style */}
                 {colorGroups.map(({ category, option }) => (
-                    <div key={`${category.id}-${option.id}`} className="bg-white rounded-2xl border border-slate-100 p-4">
+                    <div key={`${category.id}-${option.id}`} className="order-2 bg-white rounded-2xl border border-slate-100 p-4 lg:order-3">
                         <ColorDotPicker
                             label={t('customizer.colorLabel')}
                             colors={option.colors}
@@ -196,13 +202,17 @@ export default function Customizer({
                     </div>
                 ))}
 
-                {/* Nothing to rotate while the preview is a placeholder */}
-                {showPhoto && (
-                    <ViewSwitcher views={availableViews} view={view} onChange={setView} />
+                {/* Nothing to rotate while the preview is a placeholder. The
+                    length guard mirrors ViewSwitcher's own so the ordered
+                    wrapper never becomes an empty flex item adding a gap. */}
+                {showPhoto && availableViews.length > 1 && (
+                    <div className="order-4">
+                        <ViewSwitcher views={availableViews} view={view} onChange={setView} />
+                    </div>
                 )}
 
                 {/* Price summary — hidden on mobile (shown in sticky bar below) */}
-                <div className="hidden lg:block">
+                <div className="order-5 hidden lg:block">
                     <PriceSummary
                         basePrice={product.base_price}
                         layerCategories={layerCategories}
@@ -215,13 +225,13 @@ export default function Customizer({
 
                 {/* Success toast */}
                 {savedName && (
-                    <p className="text-xs text-center text-slate-500">
+                    <p className="order-6 text-xs text-center text-slate-500">
                         ✓ "{savedName}" saved to your designs.
                     </p>
                 )}
 
                 {/* CTAs — desktop only (mobile uses sticky bar) */}
-                <div className="hidden lg:flex gap-2">
+                <div className="order-7 hidden lg:flex gap-2">
                     <Button
                         variant="outline"
                         size="default"

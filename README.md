@@ -1890,4 +1890,13 @@ Implementation: the open attribute moved from local state inside `AttributeNavig
 - The T-shirt is unchanged: photo on the details list and on Style, placeholder inside the five photo-less attributes.
 - **Verified**: all 17 Tops render a left panel with the correct content — photo for the T-shirt, placeholder for the other 16 — with no broken images; Bodysuit shows the garment-level wording on the list and inside an attribute, price intact at ₾80; men's chino trousers keep photo and two columns at ₾120; a layer-less demo garment shows the placeholder; both locales; mobile 375px with no overflow; no console errors. All six earlier suites re-run green.
 
+### 2026-08-22 — Colour picker sits under the photo on phones
+
+- **Tapping a colour on a phone showed you nothing.** Measured on the customizer: the preview canvas ends 360px down the page while the colour dots started at 1020px — a 660px gap, so the garment and its colours could never be on screen at once on any phone (360×640, 375×667, 390×844, 414×896 all failed). The customer changed a colour and had to scroll back up to see the result.
+- The options column now orders its children explicitly, putting the colour picker directly beneath the photo on phones and restoring the original order (details before colour) from `lg` up, where the two columns sit side by side anyway. Colour dots moved from 1020px to **539px** — a 179px gap — and photo plus colours now fit one screen on every device tested, including 360×640.
+- Every child of that column carries an explicit `order-*`, because an unset one collapses to `order: 0` and jumps to the top. The `ViewSwitcher` gained a length guard alongside its ordered wrapper so the wrapper never becomes an empty flex item contributing a stray 20px gap.
+- **Colour dots were 36px, below the 44px minimum touch target.** Now `h-11 w-11` on phones, returning to the tighter `h-9 w-9` from `sm` up where pointers are precise.
+- Benefits the men's line too — chino trousers and the rest use the same column.
+- **Verified**: photo and colour dots on screen together at 360×640, 375×667, 390×844 and 414×896, all with 44px dots and no horizontal overflow; tapping a colour repaints the photo that is visible; desktop keeps DETAILS above COLOR while phones put COLOR first; a garment with no colours (Bodysuit) keeps its placeholder and correct spacing; Georgian phone layout matches; men's chino trousers correct; no console errors. All six earlier suites re-run green.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*
