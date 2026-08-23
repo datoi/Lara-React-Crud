@@ -52,10 +52,7 @@ export function AnalyticsConsent() {
                     aria-live="polite"
                     aria-label={t('consent.title')}
                     data-testid="analytics-consent"
-                    /* Sits above any page-level fixed bottom bar (the customizer
-                       publishes its height as --kere-bottom-bar) so it never
-                       covers a primary action; falls back to flush-bottom. */
-                    className="fixed inset-x-0 bottom-[var(--kere-bottom-bar,0px)] z-[200] p-3 sm:p-6"
+                    className="fixed inset-x-0 bottom-0 z-[200] p-3 sm:p-6"
                 >
                     <div className="mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5">
                         <p className="text-xs leading-relaxed text-slate-600 sm:text-sm">

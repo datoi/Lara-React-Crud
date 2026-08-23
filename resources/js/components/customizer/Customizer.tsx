@@ -6,7 +6,7 @@
  *   Right — OptionPanel (tabs per category → option swatches + fabric picker)
  *            PriceSummary + Save/Order CTAs
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bookmark, ImageOff, RotateCcw, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
@@ -110,26 +110,6 @@ export default function Customizer({
         if (!availableViews.includes(view)) setView('front');
     }, [availableViews, view]);
 
-    /**
-     * The cookie banner is fixed to the bottom of the viewport and was landing
-     * on top of the order bar, hiding the price and the Order button until a
-     * visitor dismissed it. Publish this bar's real height so the banner can
-     * clear it. The bar is lg:hidden, so on desktop it measures 0 and the
-     * banner sits flush with the bottom as before.
-     */
-    const bottomBarRef = useRef<HTMLDivElement>(null);
-    useEffect(() => {
-        const publish = () => {
-            const h = bottomBarRef.current?.offsetHeight ?? 0;
-            document.documentElement.style.setProperty('--kere-bottom-bar', `${h}px`);
-        };
-        publish();
-        window.addEventListener('resize', publish);
-        return () => {
-            window.removeEventListener('resize', publish);
-            document.documentElement.style.removeProperty('--kere-bottom-bar');
-        };
-    }, []);
 
     return (
         <motion.div
@@ -187,7 +167,10 @@ export default function Customizer({
                 From lg the two columns sit side by side and the original order
                 (details before colour) applies. Every child carries an explicit
                 order because an unset one would collapse to 0 and jump to top. */}
-            <div className="flex flex-col gap-5 pb-24 lg:pb-0">
+            {/* Bottom padding leaves room for the consent banner, which is fixed
+                to the viewport bottom and would otherwise sit on the price row
+                once the page is scrolled to its end. */}
+            <div className="flex flex-col gap-5 pb-28 lg:pb-0">
                 {/* Product header */}
                 <div className="order-1">
                     <h1 className="text-2xl font-bold text-slate-900">{product.name}</h1>
@@ -290,13 +273,21 @@ export default function Customizer({
                         className="gap-1.5 flex-1"
                     >
                         <ShoppingBag className="w-4 h-4" />
-                        {t('customizer.orderPrice', { price: totalPrice.toFixed(2) })}
+                        {t('customizer.continuePrice', { price: totalPrice.toFixed(2) })}
                     </Button>
                 </div>
-            </div>
 
-            {/* ── Mobile sticky bottom bar ───────────────────────────────────── */}
-            <div ref={bottomBarRef} className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-4 py-3 flex items-center gap-3">
+                {/* ── Mobile price + actions ─────────────────────────────────
+                    In the flow rather than fixed to the viewport, so it no
+                    longer floats over the page or fights the consent banner.
+                    Lives inside the options column because the outer element is
+                    a two-column grid — as a grid sibling it would have taken a
+                    cell of its own on desktop. */}
+                {/* gap-2 and flex-wrap because every child is shrink-0: the
+                    Georgian labels pushed this row 2px past a 360px screen.
+                    The tighter gap makes it fit; the wrap keeps it safe for
+                    longer prices or labels. */}
+                <div className="order-8 lg:hidden -mx-4 border-t border-slate-200 bg-white px-4 py-3 flex flex-wrap items-center gap-2 sm:mx-0 sm:gap-3 sm:rounded-2xl sm:border">
                 <div className="flex-1 min-w-0">
                     <p className="text-xs text-slate-400">{t('customizer.total')}</p>
                     <p className="text-lg font-bold text-slate-900 leading-tight">₾{totalPrice.toFixed(2)}</p>
@@ -325,8 +316,9 @@ export default function Customizer({
                     className="gap-1.5 shrink-0"
                 >
                     <ShoppingBag className="w-4 h-4" />
-                    {t('customizer.order')}
+                    {t('customizer.continueLabel')}
                 </Button>
+                </div>
             </div>
 
             <SaveDesignModal

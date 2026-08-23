@@ -839,8 +839,6 @@
         "viewPrev": "წინა ხედი",
         "viewNext": "შემდეგი ხედი",
         "saveDesign": "დიზაინის შენახვა",
-        "order": "შეკვეთა",
-        "orderPrice": "შეკვეთა — ₾{{price}}",
         "back": "უკან",
         "fabricAndColors": "ქსოვილი და ფერები",
         "chooseMaterial": "აირჩიეთ მასალა…",
@@ -873,7 +871,9 @@
         "previewComingSoon": "ვიზუალი მალე დაემატება",
         "noOptionsYet": "დამატებითი ვარიანტები მალე დაემატება.",
         "previewOptionsSoon": "ეს ვარიანტები ჯერ არ გვაქვს გადაღებული — შენი არჩევანი მაინც შეიკერება.",
-        "previewGarmentSoon": "ეს ნივთი ჯერ არ გვაქვს გადაღებული — ის მაინც შენს ზომებზე იკერება."
+        "previewGarmentSoon": "ეს ნივთი ჯერ არ გვაქვს გადაღებული — ის მაინც შენს ზომებზე იკერება.",
+        "continueLabel": "გაგრძელება",
+        "continuePrice": "გაგრძელება — ₾{{price}}"
     },
     "saveDesignModal": {
         "title": "დიზაინის შენახვა",
