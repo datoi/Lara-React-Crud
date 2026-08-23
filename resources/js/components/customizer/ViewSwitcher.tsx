@@ -31,28 +31,32 @@ export default function ViewSwitcher({ views, view, onChange }: ViewSwitcherProp
     const step = (delta: number) =>
         onChange(views[(index + delta + views.length) % views.length]);
 
+    // Deliberately chrome-free: it sits directly under the garment as a caption
+    // for it, so a card and outlined buttons would compete with the photo.
     return (
-        <div className="bg-white rounded-2xl border border-slate-100 p-4 flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-1">
             <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => step(-1)}
                 aria-label={t('customizer.viewPrev')}
+                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-900"
             >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <span className="w-24 text-center text-xs font-medium text-slate-600 select-none">
+            <span className="min-w-[5.5rem] select-none text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                 {t(VIEW_LABEL_KEYS[views[index]])}
             </span>
 
             <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => step(1)}
                 aria-label={t('customizer.viewNext')}
+                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-900"
             >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="h-4 w-4" />
             </Button>
         </div>
     );

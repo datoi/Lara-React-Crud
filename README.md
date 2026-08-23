@@ -1916,4 +1916,11 @@ Implementation: the open attribute moved from local state inside `AttributeNavig
 - The chevron affordance went with the rows; the bordered tile carries it now, matching `OptionSwatch`, which is already a bordered tappable tile. Removed the then-unused `ChevronRight` import.
 - **Verified**: no horizontal overflow at 360, 390 or 1440; six tiles in three rows at every width; drill-down, colour swap, persistence and the placeholder states all unchanged; men's chino trousers unaffected. All eight earlier suites re-run green.
 
+### 2026-08-22 — View switcher moves above the colours and loses its chrome
+
+- The front/back/side control sat below the details list in its own white card with two outlined buttons. It now sits **directly above the colour picker**, so on phones it reads as a caption under the pinned garment rather than a stray widget further down the page.
+- Stripped to a chrome-free row: ghost arrow buttons and a small uppercase label, no card, no borders. It captions the photo instead of competing with it. Buttons remain `<Button variant size>` per the project convention.
+- Phone page height fell again, 1118px → **1072px**.
+- **Verified**: the switcher renders above COLOR on both phone and desktop; all four angles still cycle (front → back → left → right, each loading its own file); the longest Georgian label (`მარჯვენა მხარე`, 111px) does not wrap and causes no overflow at 360px; the control still hides while the preview is a placeholder. All nine suites re-run green.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

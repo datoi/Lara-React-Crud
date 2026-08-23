@@ -179,7 +179,7 @@ export default function Customizer({
 
                 {/* Option panel */}
                 {hasPanelContent && (
-                    <div className="order-3 bg-white rounded-2xl border border-slate-100 p-4 lg:order-2">
+                    <div className="order-4 bg-white rounded-2xl border border-slate-100 p-4 lg:order-2">
                         <OptionPanel
                             layerCategories={layerCategories}
                             fabrics={fabrics}
@@ -197,7 +197,7 @@ export default function Customizer({
 
                 {/* Colour dot groups — colours of the currently selected style */}
                 {colorGroups.map(({ category, option }) => (
-                    <div key={`${category.id}-${option.id}`} className="order-2 bg-white rounded-2xl border border-slate-100 p-4 lg:order-3">
+                    <div key={`${category.id}-${option.id}`} className="order-3 bg-white rounded-2xl border border-slate-100 p-4 lg:order-4">
                         <ColorDotPicker
                             label={t('customizer.colorLabel')}
                             colors={option.colors}
@@ -207,11 +207,13 @@ export default function Customizer({
                     </div>
                 ))}
 
-                {/* Nothing to rotate while the preview is a placeholder. The
-                    length guard mirrors ViewSwitcher's own so the ordered
-                    wrapper never becomes an empty flex item adding a gap. */}
+                {/* Sits directly above the colour picker, so on phones it reads as
+                    a caption under the pinned garment. Nothing to rotate while the
+                    preview is a placeholder; the length guard mirrors
+                    ViewSwitcher's own so the ordered wrapper never becomes an
+                    empty flex item adding a gap. */}
                 {showPhoto && availableViews.length > 1 && (
-                    <div className="order-4">
+                    <div className="order-2 -mt-2 lg:order-3 lg:mt-0">
                         <ViewSwitcher views={availableViews} view={view} onChange={setView} />
                     </div>
                 )}
