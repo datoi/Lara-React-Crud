@@ -23,6 +23,12 @@ interface UseCustomizerOptions {
      * garment; omit it and the hook behaves exactly as before (defaults only).
      */
     persistKey?: string;
+    /**
+     * A saved design being reopened. Takes precedence over the per-tab session
+     * copy — the customer explicitly asked for this design, so a half-finished
+     * configuration left in the tab must not win over it.
+     */
+    savedConfiguration?: DesignConfiguration | null;
 }
 
 // ─── Restoring stored ids ─────────────────────────────────────────────────────
@@ -110,14 +116,23 @@ export function useCustomizer({
     layerCategories,
     fabrics,
     persistKey,
+    savedConfiguration,
 }: UseCustomizerOptions): UseCustomizerReturn {
 
     // Read once per garment. Later writes must not re-hydrate and overwrite
-    // what the customer is actively choosing.
-    const restored: StoredSelections | null = useMemo(
-        () => (persistKey ? getStoredSelections(persistKey) : null),
-        [persistKey],
-    );
+    // what the customer is actively choosing. A reopened saved design wins over
+    // whatever the tab happened to be holding.
+    const restored: StoredSelections | null = useMemo(() => {
+        if (savedConfiguration) {
+            return {
+                selections: savedConfiguration.selections ?? {},
+                subSelections: savedConfiguration.sub_selections ?? {},
+                colorSelections: savedConfiguration.color_selections ?? {},
+                fabricId: savedConfiguration.fabric_id ?? null,
+            };
+        }
+        return persistKey ? getStoredSelections(persistKey) : null;
+    }, [savedConfiguration, persistKey]);
 
     const buildDefaults = useCallback((): Record<number, number> => {
         const defaults: Record<number, number> = {};
@@ -275,9 +290,10 @@ export function useCustomizer({
     const getConfiguration = useCallback((): DesignConfiguration => ({
         selections,
         color_selections: colorSelections,
+        sub_selections: subSelections,
         fabric_id: fabricId,
         spec: buildSpec(),
-    }), [selections, colorSelections, fabricId, buildSpec]);
+    }), [selections, colorSelections, subSelections, fabricId, buildSpec]);
 
     const totalPrice = useMemo(() => {
         let total = basePrice;

@@ -1540,3 +1540,10 @@
 .customer-register-page [class*="absolute z-20"] [class*="bg-slate-50"] {
   background-color: rgba(255, 255, 255, 0.08) !important;
 }
+
+/* Reserve room for the fixed cookie banner while it is up, so page content —
+   notably the customizer's Continue button — is never stranded underneath it.
+   AnalyticsConsent publishes its measured height; the var is absent otherwise. */
+body {
+  padding-bottom: var(--kere-consent-h, 0px);
+}

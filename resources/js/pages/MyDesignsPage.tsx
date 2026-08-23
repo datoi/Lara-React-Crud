@@ -112,7 +112,7 @@ export default function MyDesignsPage() {
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <Button variant="ghost" size="icon" onClick={() => navigate(`/customize/${design.product?.slug}`)} aria-label="Edit design">
+                                        <Button variant="ghost" size="icon" onClick={() => navigate(`/customize/${design.product?.slug}?design=${design.id}`)} aria-label="Edit design">
                                             <Pencil className="w-4 h-4" />
                                         </Button>
                                         <Button variant="ghost" size="icon" onClick={() => handleDelete(design.id)} disabled={deleting === design.id} aria-label="Delete design">

@@ -398,8 +398,17 @@ class WomensTopsSeeder extends Seeder
 
         $depicted = $garment['photos']['depicts'][$attribute['slug']] ?? null;
 
+        // Narrowing can remove every zero-cost option — an Off-shoulder Top has
+        // no plain neckline, a Tunic no short length — which left base_price
+        // advertised on the card but unreachable in the customizer. Modifiers
+        // are relative to the cheapest choice this garment actually offers, so
+        // "Starting from" is always a price someone can pay. Garments that keep
+        // a zero-cost option subtract nothing and are unaffected.
+        $cheapest = min(array_map(fn (string $s) => $attribute['options'][$s][1], $slugs));
+
         foreach ($slugs as $index => $slug) {
             [$label, $priceModifier] = $attribute['options'][$slug];
+            $priceModifier -= $cheapest;
 
             // On a photographed garment the base price buys the cut in the
             // photos, so those options carry no surcharge — only deviating

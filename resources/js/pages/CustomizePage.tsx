@@ -1,12 +1,13 @@
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link, useParams, useNavigate } from 'react-router';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import Customizer from '../components/customizer/Customizer';
 import StudioBreadcrumb, { type StudioCrumb } from '../components/StudioBreadcrumb';
 import { useProductData } from '../hooks/useProductData';
-import { getAuthUser, saveReturnTo } from '../hooks/useAuth';
+import { getAuthUser, getAuthToken, saveReturnTo } from '../hooks/useAuth';
 import { saveDraft } from '../hooks/useCustomOrderDraft';
 import { categoryForProduct } from '../data/garmentTaxonomy';
 import type { Section } from '../hooks/useSection';
@@ -16,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 export default function CustomizePage() {
     const { slug }   = useParams<{ slug: string }>();
     const navigate   = useNavigate();
+    const [searchParams] = useSearchParams();
     const { t }      = useTranslation();
     const authUser   = getAuthUser();
 
@@ -25,6 +27,37 @@ export default function CustomizePage() {
     };
 
     const { product, layerCategories, fabrics, loading, error } = useProductData(slug);
+
+    /**
+     * Reopening a saved design. My Designs links here with ?design=<id>; without
+     * it the page behaves exactly as before. The customizer must not mount until
+     * this has resolved, or it would seed from defaults and then be re-seeded,
+     * flashing the wrong configuration and overwriting the session copy.
+     */
+    const designId = searchParams.get('design');
+    const [savedConfiguration, setSavedConfiguration] = useState<DesignConfiguration | null>(null);
+    const [designLoading, setDesignLoading] = useState(Boolean(designId));
+
+    useEffect(() => {
+        if (!designId) { setSavedConfiguration(null); setDesignLoading(false); return; }
+
+        let cancelled = false;
+        setDesignLoading(true);
+        fetch(`/api/customizer/designs/${designId}`, {
+            headers: { Authorization: `Bearer ${getAuthToken()}`, Accept: 'application/json' },
+        })
+            .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+            .then(data => {
+                if (cancelled) return;
+                setSavedConfiguration((data.design?.configuration ?? null) as DesignConfiguration | null);
+            })
+            // A design that cannot be loaded (deleted, or someone else's) falls
+            // back to a fresh garment rather than blocking the page.
+            .catch(() => { if (!cancelled) setSavedConfiguration(null); })
+            .finally(() => { if (!cancelled) setDesignLoading(false); });
+
+        return () => { cancelled = true; };
+    }, [designId]);
 
     // The heading this garment is filed under. Drives the breadcrumb and, more
     // importantly, draft.garment_type — reaching the customizer directly (a
@@ -55,7 +88,7 @@ export default function CustomizePage() {
         navigate('/design/tailor-select');
     };
 
-    if (loading) {
+    if (loading || designLoading) {
         return (
             <div className="kere-workflow-page min-h-screen bg-white flex items-center justify-center">
                 <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
@@ -126,6 +159,7 @@ export default function CustomizePage() {
                 >
                     <Customizer
                         product={product}
+                        savedConfiguration={savedConfiguration}
                         layerCategories={layerCategories}
                         fabrics={fabrics}
                         onOrder={handleOrder}

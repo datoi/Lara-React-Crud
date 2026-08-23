@@ -124,6 +124,8 @@ export interface DesignConfiguration {
     selections: Record<number, number>;
     /** Chosen colour variant per option id (only options that have colours) */
     color_selections: Record<number, number>;
+    /** Chosen sub-style per parent option id (e.g. collar variants) */
+    sub_selections: Record<number, number>;
     fabric_id: number | null;
     /** Readable snapshot of the same choices — see DesignSpecLine */
     spec: DesignSpecLine[];

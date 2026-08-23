@@ -23,6 +23,8 @@ import type { CustomizerProduct, DesignConfiguration, Fabric, GarmentView, Layer
 
 interface CustomizerProps {
     product: CustomizerProduct;
+    /** Saved design being reopened, if the page was entered with ?design= */
+    savedConfiguration?: DesignConfiguration | null;
     layerCategories: LayerCategory[];
     fabrics: Fabric[];
     /** Called when the user proceeds. Receives the live total so the order
@@ -32,6 +34,7 @@ interface CustomizerProps {
 
 export default function Customizer({
     product,
+    savedConfiguration,
     layerCategories,
     fabrics,
     onOrder,
@@ -50,7 +53,7 @@ export default function Customizer({
         totalPrice,
         resolveOption,
         resolveColor,
-    } = useCustomizer({ basePrice: product.base_price, layerCategories, fabrics, persistKey: product.slug });
+    } = useCustomizer({ basePrice: product.base_price, layerCategories, fabrics, persistKey: product.slug, savedConfiguration });
     const { t } = useTranslation();
 
     const [saveOpen, setSaveOpen]   = useState(false);
@@ -168,10 +171,11 @@ export default function Customizer({
                 From lg the two columns sit side by side and the original order
                 (details before colour) applies. Every child carries an explicit
                 order because an unset one would collapse to 0 and jump to top. */}
-            {/* Bottom padding leaves room for the consent banner, which is fixed
-                to the viewport bottom and would otherwise sit on the price row
-                once the page is scrolled to its end. */}
-            <div className="flex flex-col gap-5 pb-28 lg:pb-0">
+            {/* Clearance for the consent banner is reserved globally on <body>
+                from its measured height — a fixed guess here was 112px against
+                a banner up to 184px in Georgian, leaving the Continue button
+                partly unclickable. */}
+            <div className="flex flex-col gap-5 pb-6 lg:pb-0">
                 {/* Product header */}
                 <div className="order-1">
                     <h1 className="text-2xl font-bold text-slate-900">{product.name}</h1>
