@@ -26,17 +26,31 @@ export default function CustomizePage() {
 
     const { product, layerCategories, fabrics, loading, error } = useProductData(slug);
 
-    const handleOrder = (configuration: DesignConfiguration) => {
+    // The heading this garment is filed under. Drives the breadcrumb and, more
+    // importantly, draft.garment_type — reaching the customizer directly (a
+    // shared link, or "Edit design" from My Designs) never passed through
+    // ProductStep, so the draft could arrive with no garment type at all, or
+    // worse, with a stale one left over from a different category this session.
+    const section: Section = product?.gender === 'men' ? 'men' : 'women';
+    const category = product ? categoryForProduct(section, product.category) : undefined;
+
+    const handleOrder = (configuration: DesignConfiguration, totalPrice: number) => {
         if (!authUser) {
             saveReturnTo('/design/tailor-select');
             navigate('/login/customer');
             return;
         }
-        // Save the customization to the shared draft, then continue to tailor selection
+        if (!product) return;
+
+        // Save the customization to the shared draft, then continue to tailor
+        // selection. estimated_price is the configured total the customer just
+        // read on the button — the base price alone ignores every option
+        // modifier and can understate the garment by most of its value.
         saveDraft({
+            garment_type:    category?.orderKey ?? product.category,
             customization:   configuration as unknown as Record<string, unknown>,
             design_file_url: null,
-            estimated_price: product?.base_price ?? 0,
+            estimated_price: totalPrice,
         });
         navigate('/design/tailor-select');
     };
@@ -54,8 +68,6 @@ export default function CustomizePage() {
     // whichever section the customer is browsing.
     const buildCrumbs = (): StudioCrumb[] => {
         if (!product) return [];
-        const section: Section = product.gender === 'men' ? 'men' : 'women';
-        const category = categoryForProduct(section, product.category);
         const crumbs: StudioCrumb[] = [
             { label: t(`section.${section}`), to: `/design?gender=${section}` },
         ];

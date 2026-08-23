@@ -4,6 +4,7 @@ import { Loader2, Check, FileText, ChevronDown, ChevronUp, Sparkles, Scissors } 
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { getAuthToken } from '../../hooks/useAuth';
+import DesignSpecList, { readSpec } from '../DesignSpecList';
 
 interface OpenOrderDesign {
     garment_type?: string;
@@ -12,6 +13,8 @@ interface OpenOrderDesign {
     tailor_notes?: string;
     customization_request?: string;
     measurements?: Record<string, number | string>;
+    /** Studio configuration: raw ids plus a readable spec snapshot */
+    customization?: unknown;
     change_request?: string;
     remodel_images?: string[];
 }
@@ -137,6 +140,12 @@ function OpenOrderCard({ order, onRequested }: { order: OpenOrder; onRequested: 
                         <p className="mt-2 text-xs text-slate-600">
                             <span className="font-semibold text-slate-500">{t('tailorComponents.remodelExpectedPrice')}:</span> ₾{order.expected_price}
                         </p>
+                    )}
+
+                    {readSpec(design?.customization).length > 0 && (
+                        <div className="mt-3">
+                            <DesignSpecList spec={readSpec(design?.customization)} label={t('tailorComponents.studioSpec')} />
+                        </div>
                     )}
 
                     {measurements.length > 0 && (

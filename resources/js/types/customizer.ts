@@ -102,6 +102,21 @@ export interface SavedDesign {
 export type GarmentView = 'front' | 'back' | 'left' | 'right';
 
 /**
+ * One line of the human-readable garment specification, snapshotted when the
+ * design is ordered or saved.
+ *
+ * The id maps below are the machine record — they let the design be reopened in
+ * the customizer — but they are useless to a tailor, and they rot: retiring an
+ * option leaves historical orders pointing at a row nothing resolves. This is
+ * the durable record of what the customer actually asked for.
+ */
+export interface DesignSpecLine {
+    attribute: string;
+    option: string;
+    price_modifier: number;
+}
+
+/**
  * The live configuration state held in useCustomizer.
  * selections maps layer_category.id → layer_option.id
  */
@@ -110,6 +125,8 @@ export interface DesignConfiguration {
     /** Chosen colour variant per option id (only options that have colours) */
     color_selections: Record<number, number>;
     fabric_id: number | null;
+    /** Readable snapshot of the same choices — see DesignSpecLine */
+    spec: DesignSpecLine[];
 }
 
 export interface PreviewResult {

@@ -5,6 +5,7 @@ import type {
     OptionColor,
     Fabric,
     DesignConfiguration,
+    DesignSpecLine,
 } from '../types/customizer';
 import {
     clearStoredSelections,
@@ -218,11 +219,6 @@ export function useCustomizer({
         setFabricId(fabrics[0]?.id ?? null);
     }, [persistKey, buildDefaults, buildSubDefaults, buildColorDefaults, fabrics]);
 
-    const getConfiguration = useCallback((): DesignConfiguration => ({
-        selections,
-        color_selections: colorSelections,
-        fabric_id: fabricId,
-    }), [selections, colorSelections, fabricId]);
 
     /**
      * Resolves which option's image the canvas should render for a category.
@@ -255,6 +251,33 @@ export function useCustomizer({
             ?? option.colors.find(c => c.is_default)
             ?? option.colors[0];
     }, [colorSelections]);
+
+    /**
+     * Readable snapshot of the current choices, taken at the moment the design
+     * is ordered or saved. Uses the effective option, so a sub-selected child
+     * wins over its parent, and folds the chosen colour into the style line.
+     */
+    const buildSpec = useCallback((): DesignSpecLine[] => {
+        const lines: DesignSpecLine[] = [];
+        for (const category of layerCategories) {
+            const option = resolveOption(category);
+            if (!option) continue;
+            const colour = resolveColor(option);
+            lines.push({
+                attribute: category.name,
+                option: colour ? `${option.name} — ${colour.name}` : option.name,
+                price_modifier: option.price_modifier,
+            });
+        }
+        return lines;
+    }, [layerCategories, resolveOption, resolveColor]);
+
+    const getConfiguration = useCallback((): DesignConfiguration => ({
+        selections,
+        color_selections: colorSelections,
+        fabric_id: fabricId,
+        spec: buildSpec(),
+    }), [selections, colorSelections, fabricId, buildSpec]);
 
     const totalPrice = useMemo(() => {
         let total = basePrice;

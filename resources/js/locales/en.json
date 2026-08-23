@@ -1359,7 +1359,8 @@
         "productUpdatedDesc": "Your changes have been saved.",
         "confirmDeleteDesc": "This will permanently remove the product from the marketplace.",
         "confirmDeleteBtn": "Delete",
-        "statsFetchError": "Stats unavailable — check your connection"
+        "statsFetchError": "Stats unavailable — check your connection",
+        "studioSpec": "Design specification"
     },
     "measurementGuide": {
         "title": "Measurement Guide",

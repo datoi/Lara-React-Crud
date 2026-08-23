@@ -7,6 +7,7 @@ import { getDraft, clearDraft } from '../hooks/useCustomOrderDraft';
 import { getAuthUser, getAuthToken } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
 import { useTranslation } from 'react-i18next';
+import DesignSpecList, { readSpec } from '../components/DesignSpecList';
 
 const SHIPPING = 15;
 
@@ -167,11 +168,25 @@ export default function OrderReview() {
                                     )}
                                 </div>
                             ) : draft.customization ? (
-                                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200 mb-4">
-                                    <div className="w-10 h-10 bg-slate-200 rounded-lg flex items-center justify-center shrink-0">
-                                        <span className="text-xl">✂️</span>
+                                <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-slate-200 rounded-lg flex items-center justify-center shrink-0">
+                                            <span className="text-xl">✂️</span>
+                                        </div>
+                                        <p className="text-sm font-medium text-slate-700">{t('orderReview.customDesignStudio')}</p>
                                     </div>
-                                    <p className="text-sm font-medium text-slate-700">{t('orderReview.customDesignStudio')}</p>
+
+                                    {/* The customer's last chance to check what they configured
+                                        before committing — previously this said only "custom
+                                        design" and showed none of the choices. */}
+                                    {readSpec(draft.customization).length > 0 && (
+                                        <div className="mt-3">
+                                            <DesignSpecList
+                                                spec={readSpec(draft.customization)}
+                                                label={t('tailorComponents.studioSpec')}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             ) : null}
 

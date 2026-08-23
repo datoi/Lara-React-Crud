@@ -19,14 +19,15 @@ import { categoryHasArtwork } from './CategoryOptions';
 import PriceSummary from './PriceSummary';
 import SaveDesignModal from './SaveDesignModal';
 import { useCustomizer } from '../../hooks/useCustomizer';
-import type { CustomizerProduct, Fabric, GarmentView, LayerCategory } from '../../types/customizer';
+import type { CustomizerProduct, DesignConfiguration, Fabric, GarmentView, LayerCategory } from '../../types/customizer';
 
 interface CustomizerProps {
     product: CustomizerProduct;
     layerCategories: LayerCategory[];
     fabrics: Fabric[];
-    /** Called when user proceeds to order */
-    onOrder?: (configuration: ReturnType<ReturnType<typeof useCustomizer>['getConfiguration']>) => void;
+    /** Called when the user proceeds. Receives the live total so the order
+     *  flow records the price the customer was actually shown. */
+    onOrder?: (configuration: DesignConfiguration, totalPrice: number) => void;
 }
 
 export default function Customizer({
@@ -269,7 +270,7 @@ export default function Customizer({
                     <Button
                         variant="default"
                         size="default"
-                        onClick={() => onOrder?.(getConfiguration())}
+                        onClick={() => onOrder?.(getConfiguration(), totalPrice)}
                         className="gap-1.5 flex-1"
                     >
                         <ShoppingBag className="w-4 h-4" />
@@ -312,7 +313,7 @@ export default function Customizer({
                 <Button
                     variant="default"
                     size="default"
-                    onClick={() => onOrder?.(getConfiguration())}
+                    onClick={() => onOrder?.(getConfiguration(), totalPrice)}
                     className="gap-1.5 shrink-0"
                 >
                     <ShoppingBag className="w-4 h-4" />

@@ -263,6 +263,13 @@ class OrderController extends Controller
             'custom_design_data.tailor_notes' => 'nullable|string|max:500',
             'custom_design_data.customization_request' => 'nullable|string|max:1000',
             'custom_design_data.customization' => 'nullable|array|max:50',
+            // Readable spec snapshot from the studio. Bounded and typed because
+            // the parent array only limits its top-level key count, so nested
+            // content would otherwise be unvalidated free-form JSON.
+            'custom_design_data.customization.spec' => 'nullable|array|max:30',
+            'custom_design_data.customization.spec.*.attribute' => 'required_with:custom_design_data.customization.spec|string|max:60',
+            'custom_design_data.customization.spec.*.option' => 'required_with:custom_design_data.customization.spec|string|max:120',
+            'custom_design_data.customization.spec.*.price_modifier' => 'nullable|numeric|min:-9999|max:9999',
             // Existing fields
             'custom_design_data.fabric' => 'nullable|string|max:100',
             'custom_design_data.color' => 'nullable|string|max:100',
