@@ -1908,4 +1908,12 @@ Implementation: the open attribute moved from local state inside `AttributeNavig
 - **Verified**: preview visible at the top and still visible scrolled to the bottom on three phone sizes; colour tap from the bottom repaints the pinned photo; placeholder garment fits without clipping; attribute-open state keeps the preview on screen; desktop preview still 740px tall with no overflow; no console errors. All eight earlier suites re-run green.
 - Test-harness note: two suites detected the placeholder by selecting the preview column via its Tailwind class, which this change renamed — turning every placeholder assertion into a silent false negative. They now key off the placeholder's body copy, which no other element carries. Same class of mistake as the `screenshot()` helper clearing the viewport; both are fixed at the source rather than worked around.
 
+### 2026-08-22 — Attribute list becomes a wrapping row of tiles
+
+- **Six full-width rows were the last thing eating the phone screen.** The stacked details list ran ~370px, which is why the garment and the choices still could not sit together. The attributes are now a wrapping flex row of tiles, two to a row, each showing the attribute name above its current value and price delta.
+- Measured: the list dropped from ~370px to **198px at 360×640 and 179px at 390×844**, taking the whole page from 1319px to **1138px / 1118px**. With the pinned preview above, the photo, the colour picker, all six attributes, the view switcher and the price bar are effectively on one screen.
+- Desktop benefits too — in the 420px column the tiles land two to a row at 189px each, so the panel is denser without changing the interaction. Tapping a tile still opens that attribute's options exactly as before.
+- The chevron affordance went with the rows; the bordered tile carries it now, matching `OptionSwatch`, which is already a bordered tappable tile. Removed the then-unused `ChevronRight` import.
+- **Verified**: no horizontal overflow at 360, 390 or 1440; six tiles in three rows at every width; drill-down, colour swap, persistence and the placeholder states all unchanged; men's chino trousers unaffected. All eight earlier suites re-run green.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

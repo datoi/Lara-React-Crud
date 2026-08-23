@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { LayerCategory, LayerOption } from '../../types/customizer';
 import CategoryOptions, { categoryHasArtwork } from './CategoryOptions';
@@ -98,27 +98,30 @@ export default function AttributeNavigator({
             </p>
             <p className="mb-3 mt-1 text-xs text-slate-400">{t('customizer.attributesHint')}</p>
 
-            <ul className="divide-y divide-slate-100 border-y border-slate-100">
+            {/* Wrapping row rather than a stacked list: six full-width rows ran
+                ~370px and pushed the garment off a phone screen. As tiles two to
+                a row they take roughly a third of that, so the customer can see
+                what they have chosen and the preview at the same time. */}
+            <ul className="flex flex-wrap gap-2">
                 {categories.map(category => {
                     const current = selectedOption(category, selections);
                     return (
-                        <li key={category.id}>
+                        <li key={category.id} className="min-w-[calc(50%-0.25rem)] flex-1">
                             <button
                                 onClick={() => onOpenChange(category.id)}
-                                className="flex w-full items-center justify-between gap-3 py-3 text-left transition-colors hover:bg-slate-50"
+                                className="flex h-full w-full flex-col items-start gap-0.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left transition-colors hover:border-slate-400"
                             >
-                                <span className="min-w-0">
-                                    <span className="block text-sm font-medium text-slate-900">{category.name}</span>
-                                    <span className="mt-0.5 block truncate text-xs text-slate-500">
-                                        {current?.name ?? '—'}
-                                        {current && current.price_modifier !== 0 && (
-                                            <span className="text-slate-400">
-                                                {' '}({current.price_modifier > 0 ? '+' : ''}₾{current.price_modifier})
-                                            </span>
-                                        )}
-                                    </span>
+                                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                    {category.name}
                                 </span>
-                                <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                                <span className="line-clamp-2 text-sm font-medium leading-snug text-slate-900">
+                                    {current?.name ?? '—'}
+                                    {current && current.price_modifier !== 0 && (
+                                        <span className="font-normal text-slate-400">
+                                            {' '}({current.price_modifier > 0 ? '+' : ''}₾{current.price_modifier})
+                                        </span>
+                                    )}
+                                </span>
                             </button>
                         </li>
                     );
