@@ -1923,4 +1923,12 @@ Implementation: the open attribute moved from local state inside `AttributeNavig
 - Phone page height fell again, 1118px → **1072px**.
 - **Verified**: the switcher renders above COLOR on both phone and desktop; all four angles still cycle (front → back → left → right, each loading its own file); the longest Georgian label (`მარჯვენა მხარე`, 111px) does not wrap and causes no overflow at 360px; the control still hides while the preview is a placeholder. All nine suites re-run green.
 
+### 2026-08-22 — Cookie banner stops covering the order bar
+
+- **The consent banner sat on top of the customizer's order bar on phones**, hiding the running total and the Order button until a visitor dismissed it — a conversion problem, not a cosmetic one, and it appeared on every first visit.
+- The banner is global and fixed to the viewport bottom, while the order bar is page-level, so the banner had no way to know it was there. The Customizer now publishes the bar's measured height as `--kere-bottom-bar` on the document element, and the banner offsets itself with `bottom-[var(--kere-bottom-bar,0px)]`. Measured, not hardcoded, so it survives changes to the bar's contents or padding.
+- The bar is `lg:hidden`, so on desktop it measures 0 and the banner sits flush exactly as before. The variable is removed when the customizer unmounts, so no other page inherits an offset.
+- Also tightened the banner on phones — smaller padding, smaller text, tighter gaps — so it takes less of a small screen while it is up.
+- **Verified**: bar measures 65px and the CSS variable matches; the banner's bottom edge lands exactly on the bar's top edge at 360×640 and 390×844, with no overlap; desktop resolves to `0px`; the variable is cleared after navigating away. Analytics is unconfigured locally so the real banner cannot mount — the mechanism was proved with a stand-in using the banner's exact positioning, then the real banner was verified against production, where Clarity is configured.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

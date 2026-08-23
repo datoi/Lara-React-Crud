@@ -6,7 +6,7 @@
  *   Right — OptionPanel (tabs per category → option swatches + fabric picker)
  *            PriceSummary + Save/Order CTAs
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bookmark, ImageOff, RotateCcw, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
@@ -109,6 +109,27 @@ export default function Customizer({
     useEffect(() => {
         if (!availableViews.includes(view)) setView('front');
     }, [availableViews, view]);
+
+    /**
+     * The cookie banner is fixed to the bottom of the viewport and was landing
+     * on top of the order bar, hiding the price and the Order button until a
+     * visitor dismissed it. Publish this bar's real height so the banner can
+     * clear it. The bar is lg:hidden, so on desktop it measures 0 and the
+     * banner sits flush with the bottom as before.
+     */
+    const bottomBarRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const publish = () => {
+            const h = bottomBarRef.current?.offsetHeight ?? 0;
+            document.documentElement.style.setProperty('--kere-bottom-bar', `${h}px`);
+        };
+        publish();
+        window.addEventListener('resize', publish);
+        return () => {
+            window.removeEventListener('resize', publish);
+            document.documentElement.style.removeProperty('--kere-bottom-bar');
+        };
+    }, []);
 
     return (
         <motion.div
@@ -271,7 +292,7 @@ export default function Customizer({
             </div>
 
             {/* ── Mobile sticky bottom bar ───────────────────────────────────── */}
-            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-4 py-3 flex items-center gap-3">
+            <div ref={bottomBarRef} className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-4 py-3 flex items-center gap-3">
                 <div className="flex-1 min-w-0">
                     <p className="text-xs text-slate-400">{t('customizer.total')}</p>
                     <p className="text-lg font-bold text-slate-900 leading-tight">₾{totalPrice.toFixed(2)}</p>
