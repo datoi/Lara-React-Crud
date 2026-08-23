@@ -1931,4 +1931,10 @@ Implementation: the open attribute moved from local state inside `AttributeNavig
 - Also tightened the banner on phones — smaller padding, smaller text, tighter gaps — so it takes less of a small screen while it is up.
 - **Verified**: bar measures 65px and the CSS variable matches; the banner's bottom edge lands exactly on the bar's top edge at 360×640 and 390×844, with no overlap; desktop resolves to `0px`; the variable is cleared after navigating away. Analytics is unconfigured locally so the real banner cannot mount — the mechanism was proved with a stand-in using the banner's exact positioning, then the real banner was verified against production, where Clarity is configured.
 
+### 2026-08-22 — Desktop CTA row no longer forces a horizontal scrollbar in Georgian
+
+- Found while verifying the consent-banner fix: on desktop the whole page had a horizontal scrollbar, **~19–25px of overflow, Georgian only**. The customizer's desktop Reset / Save / Order row is a plain flex row, and `Button` sets `whitespace-nowrap`, so the longer Georgian labels (`გადატვირთვა`, `დიზაინის შენახვა`, `შეკვეთა — ₾45.00`) could not shrink and pushed past the 420px column. Worse on the men's garments, whose three-digit prices make the Order label longer still.
+- The row now wraps (`lg:flex-wrap`). Measured 0px overflow at 1024, 1280 and 1440 in both locales.
+- **Pre-existing, not introduced here** — the row has always been a non-wrapping flex. It went unnoticed because every responsive assertion in this session compared `scrollWidth` against `innerWidth`, and `innerWidth` *includes* the scrollbar gutter: at 1440 the real content box is 1425, so a 1444px-wide layout still read as "no overflow". Comparing against `document.documentElement.clientWidth` is what surfaced it. Worth remembering for any future responsive check.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

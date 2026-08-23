@@ -259,7 +259,11 @@ export default function Customizer({
                 )}
 
                 {/* CTAs — desktop only (mobile uses sticky bar) */}
-                <div className="order-7 hidden lg:flex gap-2">
+                {/* Wraps because Button forces whitespace-nowrap: the Georgian
+                    labels ("გადატვირთვა", "დიზაინის შენახვა", "შეკვეთა — ₾45.00")
+                    cannot shrink and pushed this row ~20px past the column,
+                    giving the whole desktop page a horizontal scrollbar. */}
+                <div className="order-7 hidden lg:flex lg:flex-wrap gap-2">
                     <Button
                         variant="outline"
                         size="default"
