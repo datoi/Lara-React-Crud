@@ -117,8 +117,13 @@ export default function Customizer({
             transition={{ duration: 0.5 }}
             className="grid lg:grid-cols-[1fr_420px] gap-8 items-start"
         >
-            {/* ── Preview column ─────────────────────────────────────────────── */}
-            <div className="lg:sticky lg:top-24">
+            {/* ── Preview column ─────────────────────────────────────────────────
+                Pinned on phones too, under the 4rem navbar. The options scroll
+                beneath it, so a colour tap or an attribute change is always seen
+                — previously the garment scrolled away and changes went unnoticed.
+                Needs the page colour behind it or scrolling content shows through,
+                and z-10 to sit under the z-50 navbar but over the panel. */}
+            <div className="sticky top-16 z-10 bg-[var(--kere-page)] pb-2 lg:top-24 lg:z-auto lg:bg-transparent lg:pb-0">
                 {showPhoto ? (
                     <PreviewCanvas
                         layerCategories={layerCategories}
@@ -132,14 +137,14 @@ export default function Customizer({
                     /* Same footprint as the canvas so the layout never jumps.
                        Dashed frame and icon so it reads as a placeholder we put
                        there on purpose, not a picture that failed to load. */
-                    <div className="flex w-full flex-col items-center justify-center gap-3 border border-dashed border-slate-300 bg-white/40 px-6 text-center h-56 sm:h-72 lg:h-auto lg:aspect-[3/4] lg:max-h-[calc(100vh-10rem)]">
-                        <span className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 text-slate-400">
-                            <ImageOff className="h-5 w-5 stroke-[1.4]" />
+                    <div className="flex w-full flex-col items-center justify-center gap-2 border border-dashed border-slate-300 bg-white/40 px-6 text-center h-40 sm:gap-3 sm:h-72 lg:h-auto lg:aspect-[3/4] lg:max-h-[calc(100vh-10rem)]">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-slate-400 sm:h-12 sm:w-12">
+                            <ImageOff className="h-4 w-4 stroke-[1.4] sm:h-5 sm:w-5" />
                         </span>
-                        <p className="font-serif text-2xl font-medium tracking-[-0.035em] text-slate-500">
+                        <p className="font-serif text-lg font-medium tracking-[-0.035em] text-slate-500 sm:text-2xl">
                             {t('customizer.previewComingSoon')}
                         </p>
-                        <p className="max-w-[20rem] text-xs leading-relaxed text-slate-400">
+                        <p className="max-w-[20rem] text-[11px] leading-snug text-slate-400 sm:text-xs sm:leading-relaxed">
                             {hasPreviewLayers
                                 ? t('customizer.previewOptionsSoon')
                                 : t('customizer.previewGarmentSoon')}
