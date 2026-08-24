@@ -278,15 +278,10 @@ export function useCustomizer({
             const option = resolveOption(category);
             if (!option) continue;
             const colour = resolveColor(option);
-            // resolveOption returns the sub-option when one is chosen, so name
-            // its parent too: a tailor reading "Sleeves: Fitted" cannot tell
-            // which sleeve is being fitted.
-            const parent = category.options.find(o => o.children?.some(c => c.id === option.id));
-            const name = parent ? `${parent.name} — ${option.name}` : option.name;
             lines.push({
                 attribute: category.name,
-                option: colour ? `${name} — ${colour.name}` : name,
-                price_modifier: (parent?.price_modifier ?? 0) + option.price_modifier,
+                option: colour ? `${option.name} — ${colour.name}` : option.name,
+                price_modifier: option.price_modifier,
             });
         }
         return lines;

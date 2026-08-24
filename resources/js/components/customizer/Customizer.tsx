@@ -19,7 +19,7 @@ import { categoryHasArtwork } from './CategoryOptions';
 import PriceSummary from './PriceSummary';
 import SaveDesignModal from './SaveDesignModal';
 import { useCustomizer } from '../../hooks/useCustomizer';
-import type { CustomizerProduct, DesignConfiguration, Fabric, GarmentView, LayerCategory, LayerOption } from '../../types/customizer';
+import type { CustomizerProduct, DesignConfiguration, Fabric, GarmentView, LayerCategory } from '../../types/customizer';
 
 interface CustomizerProps {
     product: CustomizerProduct;
@@ -82,45 +82,14 @@ export default function Customizer({
         ? null
         : layerCategories.find(c => c.id === openAttributeId) ?? null;
 
-    // Whether the choices as they stand resolve to an actual photograph. Now
-    // that the photographed dimension is a sub-option — the fits of one sleeve
-    // — a customer can select a sleeve we have never shot, and a preview layer
-    // with no artwork paints nothing at all. That would leave an empty frame
-    // where the garment was; the placeholder says why instead.
-    const selectionHasPhoto = layerCategories.some(category => {
-        if (category.slug === 'collar' || category.is_preview_layer === false) return false;
-        const option = resolveOption(category);
-        if (!option) return false;
-        return Boolean(resolveColor(option)?.image_url ?? option.image_url);
-    });
-
-    const showPhoto = hasPreviewLayers && selectionHasPhoto
+    const showPhoto = hasPreviewLayers
         && (openAttribute === null || categoryHasArtwork(openAttribute));
 
-    // Colour dot groups: one per category whose current selection has colour
-    // variants. When it has none — a sleeve we have not photographed carries no
-    // colour rows of its own — fall back to that category's photographed option.
-    // The colour is a property of the garment being ordered, not of the picture
-    // we happen to have, so it must stay choosable either way.
-    const colourBearing = (category: LayerCategory): LayerOption | null => {
-        for (const option of category.options) {
-            if (option.colors.length > 0) return option;
-            const child = option.children?.find(c => c.colors.length > 0);
-            if (child) return child;
-        }
-        return null;
-    };
-
+    // Colour dot groups: one per category whose currently-selected style has colour variants
     const colorGroups = layerCategories
         .filter(c => c.slug !== 'collar')
-        .map(category => {
-            const resolved = resolveOption(category);
-            return {
-                category,
-                option: resolved && resolved.colors.length > 0 ? resolved : colourBearing(category),
-            };
-        })
-        .filter((g): g is { category: LayerCategory; option: LayerOption } =>
+        .map(category => ({ category, option: resolveOption(category) }))
+        .filter((g): g is { category: LayerCategory; option: NonNullable<ReturnType<typeof resolveOption>> } =>
             g.option !== null && g.option.colors.length > 0,
         );
 
