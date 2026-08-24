@@ -127,20 +127,35 @@ class WomensTopsSeeder extends Seeder
                     'length'   => 'cropped',
                     'neckline' => 'crew',
                     'sleeves'  => 'cap',
+                    'back-design' => 'normal',
                 ],
                 // First colour is the default — it becomes the card preview and
                 // the opening customizer view. Swatch hexes sampled from the
                 // photographs themselves.
                 'colors' => [
-                    ['slug' => 'burgundy', 'name' => 'Burgundy', 'hex' => '#76041f'],
-                    ['slug' => 'black',    'name' => 'Black',    'hex' => '#181818'],
-                    ['slug' => 'red',      'name' => 'Red',      'hex' => '#de1a1f'],
-                    ['slug' => 'pink',     'name' => 'Pink',     'hex' => '#fc2d7c'],
-                    ['slug' => 'orange',   'name' => 'Orange',   'hex' => '#fc6d05'],
-                    ['slug' => 'yellow',   'name' => 'Yellow',   'hex' => '#fcd02c'],
-                    ['slug' => 'green',    'name' => 'Green',    'hex' => '#01714a'],
-                    ['slug' => 'olive',    'name' => 'Olive',    'hex' => '#6f7342'],
-                    ['slug' => 'brown',    'name' => 'Brown',    'hex' => '#663a25'],
+                    ['slug' => 'burgundy', 'name' => 'Burgundy', 'hex' => '#770421'],
+                    ['slug' => 'black', 'name' => 'Black', 'hex' => '#141414'],
+                    ['slug' => 'charcoal-gray', 'name' => 'Charcoal Gray', 'hex' => '#3c4249'],
+                    ['slug' => 'light-gray', 'name' => 'Light Gray', 'hex' => '#cecece'],
+                    ['slug' => 'white', 'name' => 'White', 'hex' => '#f1f1f3'],
+                    ['slug' => 'off-white', 'name' => 'Off-White', 'hex' => '#f9f2e6'],
+                    ['slug' => 'cream', 'name' => 'Cream', 'hex' => '#fef0d1'],
+                    ['slug' => 'beige', 'name' => 'Beige', 'hex' => '#e5cdaf'],
+                    ['slug' => 'camel', 'name' => 'Camel', 'hex' => '#c79762'],
+                    ['slug' => 'brown', 'name' => 'Brown', 'hex' => '#6d422a'],
+                    ['slug' => 'olive', 'name' => 'Olive', 'hex' => '#6d7f27'],
+                    ['slug' => 'emerald', 'name' => 'Emerald', 'hex' => '#017b57'],
+                    ['slug' => 'turquoise', 'name' => 'Turquoise', 'hex' => '#5ee4db'],
+                    ['slug' => 'sky', 'name' => 'Sky', 'hex' => '#9bd2f2'],
+                    ['slug' => 'blue', 'name' => 'Blue', 'hex' => '#3a6eec'],
+                    ['slug' => 'navy', 'name' => 'Navy', 'hex' => '#010f6d'],
+                    ['slug' => 'lavender', 'name' => 'Lavender', 'hex' => '#c188e1'],
+                    ['slug' => 'purple', 'name' => 'Purple', 'hex' => '#5e088d'],
+                    ['slug' => 'pink', 'name' => 'Pink', 'hex' => '#fd2a86'],
+                    ['slug' => 'blush', 'name' => 'Blush', 'hex' => '#fcd0d1'],
+                    ['slug' => 'red', 'name' => 'Red', 'hex' => '#d8111b'],
+                    ['slug' => 'orange', 'name' => 'Orange', 'hex' => '#fd6c03'],
+                    ['slug' => 'yellow', 'name' => 'Yellow', 'hex' => '#fdd62c'],
                 ],
             ],
         ],
@@ -359,6 +374,13 @@ class WomensTopsSeeder extends Seeder
                 ],
             );
         }
+
+        // A re-shoot can drop a colour — the first T-shirt batch had a Green the
+        // second does not. Its row would otherwise survive updateOrCreate and
+        // keep pointing at a file the new set no longer contains.
+        $style->colors()
+            ->whereNotIn('name', array_column($photos['colors'], 'name'))
+            ->delete();
     }
 
     private function seedAttribute(
