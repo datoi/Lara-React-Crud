@@ -135,6 +135,7 @@ class WomensTopsSeeder extends Seeder
                 // and choosing a sleeve fit shows the shoot that depicts it
                 // rather than a picture of the other one.
                 'attribute' => 'sleeve-fit',
+                'style'  => ['slug' => 'classic', 'name' => 'Classic'],
                 // The cut the photography actually shows. Pinned as this
                 // garment's defaults so the preview and the spec panel agree
                 // the moment the page opens.
@@ -343,24 +344,16 @@ class WomensTopsSeeder extends Seeder
             ],
         );
 
-        $attributes = $this->attributesFor($garment);
-        $seeded = [];
-
-        foreach ($attributes as $order => $attribute) {
-            if ($this->seedAttribute($product, $attribute, $order, $garment)) {
-                $seeded[] = $attribute['slug'];
-            }
+        // Display order 0 stays reserved for the style row, so a photographed
+        // garment still opens with its style above the tailoring spec.
+        foreach ($this->attributesFor($garment) as $order => $attribute) {
+            $this->seedAttribute($product, $attribute, $order + 1, $garment);
         }
 
         if ($photos) {
+            $this->seedStyle($product, $photos);
             $this->seedPhotos($product, $photos);
         }
-
-        // A garment that no longer offers an attribute — or the retired 'style'
-        // layer, now that the photography hangs off a real attribute — must not
-        // keep a stale category advertising choices this seeder no longer makes.
-        // Options and their colours cascade with it.
-        $product->layerCategories()->whereNotIn('slug', $seeded)->get()->each->delete();
     }
 
     /**
@@ -384,6 +377,48 @@ class WomensTopsSeeder extends Seeder
             self::ATTRIBUTES,
             fn (array $a) => ! ($sleeveless && $a['slug'] === 'sleeve-fit'),
         ));
+    }
+
+    /**
+     * The garment's style row — for the T-shirt, "Classic".
+     *
+     * It is a labelled choice, not a canvas layer: the photography hangs off the
+     * attribute the shoots actually differ by (see seedPhotos), and compositing
+     * two full-garment photos would stack one on the other. It still carries a
+     * thumbnail, so opening it shows the garment rather than a placeholder.
+     */
+    private function seedStyle(CustomizerProduct $product, array $photos): void
+    {
+        $default = $this->defaultVariant($photos);
+        $front = "/assets/garments/{$default['folder']}/{$default['colors'][0]['slug']}-front.png";
+
+        $category = LayerCategory::updateOrCreate(
+            ['customizer_product_id' => $product->id, 'slug' => 'style'],
+            [
+                'name' => 'Style',
+                'children_label' => null,
+                'z_index' => 1,
+                'is_required' => true,
+                'is_colorable' => false,
+                'is_preview_layer' => false,
+                'display_order' => 0,
+            ],
+        );
+
+        LayerOption::updateOrCreate(
+            ['layer_category_id' => $category->id, 'slug' => $photos['style']['slug']],
+            [
+                'parent_option_id' => null,
+                'name' => $photos['style']['name'],
+                'image_path' => null,
+                'thumbnail_path' => $front,
+                'color_hex' => null,
+                'price_modifier' => 0,
+                'is_default' => true,
+                'is_active' => true,
+                'display_order' => 0,
+            ],
+        );
     }
 
     /** The shoot a garment opens on: the first variant listed. */
@@ -451,16 +486,15 @@ class WomensTopsSeeder extends Seeder
         }
     }
 
-    /** @return bool whether this garment offers the attribute at all */
     private function seedAttribute(
         CustomizerProduct $product,
         array $attribute,
         int $order,
         array $garment,
-    ): bool {
+    ): void {
         $slugs = $this->allowedOptionSlugs($attribute, $garment);
         if ($slugs === []) {
-            return false;
+            return;
         }
 
         $category = LayerCategory::updateOrCreate(
@@ -529,8 +563,6 @@ class WomensTopsSeeder extends Seeder
         $category->allOptions()
             ->whereNotIn('slug', $slugs)
             ->update(['is_active' => false]);
-
-        return true;
     }
 
     /**
