@@ -88,6 +88,18 @@ class WomensTopsSeeder extends Seeder
             'slug' => 'sleeves',
             'name' => 'Sleeves',
             'default' => 'short',
+            // Each sleeve carries its own fit, so the customer picks the sleeve
+            // and then how it sits, in one place. 'Sleeveless' has nothing to
+            // fit, so it alone has no sub-options.
+            'children' => [
+                'label' => 'Sleeve fit',
+                'default' => 'fitted',
+                'except' => ['sleeveless'],
+                'options' => [
+                    'fitted'  => ['Fitted', 0],
+                    'relaxed' => ['Relaxed', 0],
+                ],
+            ],
             'options' => [
                 'sleeveless'    => ['Sleeveless', 0],
                 'cap'           => ['Cap', 4],
@@ -100,19 +112,6 @@ class WomensTopsSeeder extends Seeder
                 'balloon'       => ['Balloon', 16],
                 'bishop'        => ['Bishop', 17],
                 'one-sleeve'    => ['One sleeve', 13],
-            ],
-        ],
-        [
-            'slug' => 'sleeve-fit',
-            'name' => 'Sleeve Fit',
-            'default' => 'fitted',
-            // How the sleeve sits on the arm, independent of which sleeve it is
-            // — the same short sleeve can be cut close or cut with room. The
-            // T-shirt is photographed both ways; garments with no sleeves at
-            // all skip this attribute entirely (see attributesFor).
-            'options' => [
-                'fitted'  => ['Fitted', 0],
-                'relaxed' => ['Relaxed', 0],
             ],
         ],
     ];
@@ -134,8 +133,8 @@ class WomensTopsSeeder extends Seeder
                 // sleeve sits. So the photography varies along one attribute,
                 // and choosing a sleeve fit shows the shoot that depicts it
                 // rather than a picture of the other one.
-                'attribute' => 'sleeve-fit',
-                'style'  => ['slug' => 'classic', 'name' => 'Classic'],
+                'attribute' => 'sleeves',
+                'option'    => 'short',
                 // The cut the photography actually shows. Pinned as this
                 // garment's defaults so the preview and the spec panel agree
                 // the moment the page opens.
@@ -145,7 +144,6 @@ class WomensTopsSeeder extends Seeder
                     'neckline'    => 'crew',
                     'sleeves'     => 'short',
                     'back-design' => 'normal',
-                    'sleeve-fit'  => 'fitted',
                 ],
                 // First variant is the default; its first colour becomes the
                 // card preview and the opening customizer view. Swatch hexes
@@ -344,81 +342,13 @@ class WomensTopsSeeder extends Seeder
             ],
         );
 
-        // Display order 0 stays reserved for the style row, so a photographed
-        // garment still opens with its style above the tailoring spec.
-        foreach ($this->attributesFor($garment) as $order => $attribute) {
-            $this->seedAttribute($product, $attribute, $order + 1, $garment);
+        foreach (self::ATTRIBUTES as $order => $attribute) {
+            $this->seedAttribute($product, $attribute, $order, $garment);
         }
 
         if ($photos) {
-            $this->seedStyle($product, $photos);
             $this->seedPhotos($product, $photos);
         }
-    }
-
-    /**
-     * The attributes this garment offers, in display order.
-     *
-     * Sleeve fit is meaningless on a garment with no sleeves, and deriving that
-     * from the sleeve options themselves keeps it from drifting out of step with
-     * a second hand-maintained list of sleeveless garments.
-     *
-     * @return list<array<string, mixed>>
-     */
-    private function attributesFor(array $garment): array
-    {
-        $sleeves = $this->allowedOptionSlugs(
-            self::ATTRIBUTES[array_search('sleeves', array_column(self::ATTRIBUTES, 'slug'), true)],
-            $garment,
-        );
-        $sleeveless = $sleeves === ['sleeveless'];
-
-        return array_values(array_filter(
-            self::ATTRIBUTES,
-            fn (array $a) => ! ($sleeveless && $a['slug'] === 'sleeve-fit'),
-        ));
-    }
-
-    /**
-     * The garment's style row — for the T-shirt, "Classic".
-     *
-     * It is a labelled choice, not a canvas layer: the photography hangs off the
-     * attribute the shoots actually differ by (see seedPhotos), and compositing
-     * two full-garment photos would stack one on the other. It still carries a
-     * thumbnail, so opening it shows the garment rather than a placeholder.
-     */
-    private function seedStyle(CustomizerProduct $product, array $photos): void
-    {
-        $default = $this->defaultVariant($photos);
-        $front = "/assets/garments/{$default['folder']}/{$default['colors'][0]['slug']}-front.png";
-
-        $category = LayerCategory::updateOrCreate(
-            ['customizer_product_id' => $product->id, 'slug' => 'style'],
-            [
-                'name' => 'Style',
-                'children_label' => null,
-                'z_index' => 1,
-                'is_required' => true,
-                'is_colorable' => false,
-                'is_preview_layer' => false,
-                'display_order' => 0,
-            ],
-        );
-
-        LayerOption::updateOrCreate(
-            ['layer_category_id' => $category->id, 'slug' => $photos['style']['slug']],
-            [
-                'parent_option_id' => null,
-                'name' => $photos['style']['name'],
-                'image_path' => null,
-                'thumbnail_path' => $front,
-                'color_hex' => null,
-                'price_modifier' => 0,
-                'is_default' => true,
-                'is_active' => true,
-                'display_order' => 0,
-            ],
-        );
     }
 
     /** The shoot a garment opens on: the first variant listed. */
@@ -428,15 +358,16 @@ class WomensTopsSeeder extends Seeder
     }
 
     /**
-     * Hang the photography off the attribute it varies along: each variant is
-     * an option that already exists as a labelled choice, given the shoot that
-     * depicts it plus that shoot's colours. The canvas composites it and the
-     * colour dots swap it, exactly as with the men's garments.
+     * Hang the photography off the sub-options it varies across: the shoots are
+     * the same sleeve cut two ways, so they are the fits of one sleeve, each
+     * given the shoot that depicts it plus that shoot's colours. The canvas
+     * composites the selected one and the colour dots swap it.
      */
     private function seedPhotos(CustomizerProduct $product, array $photos): void
     {
         $category = $product->layerCategories()->where('slug', $photos['attribute'])->first();
-        if (! $category) {
+        $parent = $category?->allOptions()->where('slug', $photos['option'])->first();
+        if (! $parent) {
             return;
         }
 
@@ -444,8 +375,15 @@ class WomensTopsSeeder extends Seeder
         // attribute stays a labelled choice the customizer must not composite.
         $category->update(['is_preview_layer' => true, 'is_colorable' => false]);
 
+        $default = $this->defaultVariant($photos);
+        $defaultFront = "/assets/garments/{$default['folder']}/{$default['colors'][0]['slug']}-front.png";
+
+        // The parent carries the default shoot's front only so the garment reads
+        // as photographed; the sub-options below supply what is actually drawn.
+        $parent->update(['image_path' => $defaultFront, 'thumbnail_path' => $defaultFront]);
+
         foreach ($photos['variants'] as $slug => $variant) {
-            $option = $category->allOptions()->where('slug', $slug)->first();
+            $option = $parent->children()->where('slug', self::childSlug($photos['option'], $slug))->first();
             if (! $option) {
                 continue;
             }
@@ -501,7 +439,7 @@ class WomensTopsSeeder extends Seeder
             ['customizer_product_id' => $product->id, 'slug' => $attribute['slug']],
             [
                 'name' => $attribute['name'],
-                'children_label' => null,
+                'children_label' => $attribute['children']['label'] ?? null,
                 'z_index' => $order + 1,
                 'is_required' => true,
                 'is_colorable' => false,
@@ -543,7 +481,7 @@ class WomensTopsSeeder extends Seeder
                 $priceModifier = 0;
             }
 
-            LayerOption::updateOrCreate(
+            $option = LayerOption::updateOrCreate(
                 ['layer_category_id' => $category->id, 'slug' => $slug],
                 [
                     'parent_option_id' => null,
@@ -556,13 +494,72 @@ class WomensTopsSeeder extends Seeder
                     'display_order' => $index,
                 ],
             );
+
+            $this->seedSubOptions($category, $option, $slug, $attribute);
         }
 
         // A re-run with tightened restrictions retires the options that no longer
         // apply. Deactivating rather than deleting keeps saved designs resolvable.
+        // Scoped to top-level options: sub-options are keyed by their own slugs
+        // and would all fail this test, retiring every sleeve fit on the line.
         $category->allOptions()
+            ->whereNull('parent_option_id')
             ->whereNotIn('slug', $slugs)
             ->update(['is_active' => false]);
+    }
+
+    /**
+     * Sub-options of one option — the fits of a single sleeve.
+     *
+     * They are a property of their parent, not of the attribute: 'Sleeveless'
+     * has nothing to fit, so it gets none, while every other sleeve gets the
+     * same pair. The customizer resolves the chosen child over its parent, so
+     * the child is what the canvas draws and what the order spec records.
+     */
+    private function seedSubOptions(
+        LayerCategory $category,
+        LayerOption $parent,
+        string $parentSlug,
+        array $attribute,
+    ): void {
+        $children = $attribute['children'] ?? null;
+        if (! $children || in_array($parentSlug, $children['except'] ?? [], true)) {
+            // A parent that should have none must not keep any from an earlier run.
+            $parent->children()->update(['is_active' => false]);
+
+            return;
+        }
+
+        foreach (array_keys($children['options']) as $index => $childSlug) {
+            [$childLabel, $childPrice] = $children['options'][$childSlug];
+
+            LayerOption::updateOrCreate(
+                ['layer_category_id' => $category->id, 'slug' => self::childSlug($parentSlug, $childSlug)],
+                [
+                    'parent_option_id' => $parent->id,
+                    'name' => $childLabel,
+                    'image_path' => null,
+                    'thumbnail_path' => null,
+                    'price_modifier' => $childPrice,
+                    'is_default' => $childSlug === $children['default'],
+                    'is_active' => true,
+                    'display_order' => $index,
+                ],
+            );
+        }
+
+        // Anything left from an earlier shape — sub-options seeded before their
+        // slugs carried the parent — must not keep showing up under it.
+        $expected = array_map(
+            fn (string $childSlug) => self::childSlug($parentSlug, $childSlug),
+            array_keys($children['options']),
+        );
+        $parent->children()->whereNotIn('slug', $expected)->update(['is_active' => false]);
+    }
+
+    private static function childSlug(string $parentSlug, string $childSlug): string
+    {
+        return "{$parentSlug}-{$childSlug}";
     }
 
     /**

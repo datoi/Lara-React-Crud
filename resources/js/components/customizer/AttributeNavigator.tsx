@@ -19,10 +19,30 @@ interface AttributeNavigatorProps {
     onSelectSubOption: (parentOptionId: number, childOptionId: number) => void;
 }
 
-function selectedOption(category: LayerCategory, selections: Record<number, number>): LayerOption | undefined {
-    return category.options.find(o => o.id === selections[category.id])
+/**
+ * What the tile says for one attribute: the chosen option, and the sub-option
+ * chosen inside it. Sleeve fit lives under each sleeve, so "Short" alone would
+ * leave the customer unable to see the fit they picked without opening it again.
+ */
+function currentChoice(
+    category: LayerCategory,
+    selections: Record<number, number>,
+    subSelections: Record<number, number>,
+): { label: string; priceModifier: number } | null {
+    const parent: LayerOption | undefined = category.options.find(o => o.id === selections[category.id])
         ?? category.options.find(o => o.is_default)
         ?? category.options[0];
+    if (!parent) return null;
+
+    const children = parent.children ?? [];
+    const child = children.find(c => c.id === subSelections[parent.id])
+        ?? children.find(c => c.is_default)
+        ?? children[0];
+
+    return {
+        label: child ? `${parent.name} — ${child.name}` : parent.name,
+        priceModifier: parent.price_modifier + (child?.price_modifier ?? 0),
+    };
 }
 
 /**
@@ -104,7 +124,7 @@ export default function AttributeNavigator({
                 what they have chosen and the preview at the same time. */}
             <ul className="flex flex-wrap gap-2">
                 {categories.map(category => {
-                    const current = selectedOption(category, selections);
+                    const current = currentChoice(category, selections, subSelections);
                     return (
                         <li key={category.id} className="min-w-[calc(50%-0.25rem)] flex-1">
                             <button
@@ -115,10 +135,10 @@ export default function AttributeNavigator({
                                     {category.name}
                                 </span>
                                 <span className="line-clamp-2 text-sm font-medium leading-snug text-slate-900">
-                                    {current?.name ?? '—'}
-                                    {current && current.price_modifier !== 0 && (
+                                    {current?.label ?? '—'}
+                                    {current && current.priceModifier !== 0 && (
                                         <span className="font-normal text-slate-400">
-                                            {' '}({current.price_modifier > 0 ? '+' : ''}₾{current.price_modifier})
+                                            {' '}({current.priceModifier > 0 ? '+' : ''}₾{current.priceModifier})
                                         </span>
                                     )}
                                 </span>
