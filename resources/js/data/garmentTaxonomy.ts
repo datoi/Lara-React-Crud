@@ -41,9 +41,9 @@ const WOMEN: GarmentCategory[] = [
     { key: 'bottoms',          tKey: 'design.cat_bottoms',         productCategories: ['bottoms', 'trousers'],    orderKey: 'trousers', image: `${ART}/trousers-cutout.png`, emoji: '👖' },
     { key: 'skirts',           tKey: 'design.cat_skirts',          productCategories: ['skirts', 'skirt'],        orderKey: 'skirt',    image: `${ART}/skirt-cutout.png`,    emoji: '🩱' },
     { key: 'dresses',          tKey: 'design.cat_dresses',         productCategories: ['dresses', 'dress'],       orderKey: 'dress',    image: `${ART}/dress-cutout.png`,    emoji: '👗' },
-    { key: 'evening-dresses',  tKey: 'design.cat_eveningDresses',  productCategories: ['evening-dresses'],        orderKey: 'dress',                                        emoji: '👗' },
-    { key: 'jumpsuits',        tKey: 'design.cat_jumpsuits',       productCategories: ['jumpsuits'],              orderKey: 'jumpsuits',                                    emoji: '🩳' },
-    { key: 'suits',            tKey: 'design.cat_suits',           productCategories: ['suits'],                  orderKey: 'suits',                                        emoji: '🥻' },
+    { key: 'evening-dresses',  tKey: 'design.cat_eveningDresses',  productCategories: ['evening-dresses'],        orderKey: 'dress',    image: `${ART}/evening-dress-cutout.png`, emoji: '👗' },
+    { key: 'jumpsuits',        tKey: 'design.cat_jumpsuits',       productCategories: ['jumpsuits'],              orderKey: 'jumpsuits', image: `${ART}/jumpsuit-cutout.png`, emoji: '🩳' },
+    { key: 'suits',            tKey: 'design.cat_suits',           productCategories: ['suits'],                  orderKey: 'suits',     image: `${ART}/suit-cutout.png`,     emoji: '🥻' },
     { key: 'blazers',          tKey: 'design.cat_blazers',         productCategories: ['blazers', 'jacket', 'coat'], orderKey: 'jacket',  image: `${ART}/jacket-cutout.png`,   emoji: '🧥' },
 ];
 
