@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router';
-import { ArrowRight, Scissors, Upload, Ruler } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface HeroImage {
@@ -18,9 +18,6 @@ const fallbackImages = [
 
 export function HeroSection() {
   const { t } = useTranslation();
-  // null = the image set hasn't been decided yet; we keep the gallery hidden
-  // until then so the fallback images never flash-swap to real products on load.
-  const [productImages, setProductImages] = useState<HeroImage[] | null>(null);
 
   // Marquee is JS-driven so it can auto-slide, pause while pressed, and be
   // dragged left/right by finger (touch) or mouse.
@@ -30,51 +27,12 @@ export function HeroSection() {
   const draggedRef = useRef(false);
   const reduceMotionRef = useRef(false);
 
-  useEffect(() => {
-    let active = true;
-
-    fetch('/api/products?per_page=12')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Failed to load products');
-        }
-
-        return response.json();
-      })
-      .then((data) => {
-        if (!active) return;
-        const list: { id: number; name: string; images?: string[] }[] = data.data ?? [];
-
-        setProductImages(
-          list
-            .filter((product) => product.images?.[0])
-            .slice(0, 4)
-            .map((product) => ({
-              src: product.images![0],
-              alt: product.name,
-              productId: product.id,
-            })),
-        );
-      })
-      .catch(() => {
-        if (active) setProductImages([]);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const ready = productImages !== null;
-
-  const heroImages: HeroImage[] =
-    productImages && productImages.length >= 4
-      ? productImages
-      : fallbackImages.map((image) => ({
-          src: image.src,
-          alt: t(image.altKey),
-          productId: null,
-        }));
+  const ready = true;
+  const heroImages: HeroImage[] = fallbackImages.map((image) => ({
+    src: image.src,
+    alt: t(image.altKey),
+    productId: null,
+  }));
   const movingImages = [...heroImages, ...heroImages];
 
   // ── Continuous marquee + drag ────────────────────────────────────────────
@@ -167,9 +125,6 @@ export function HeroSection() {
         <div className="kere-hero-copy">
           <h1>{t('hero.headline')}</h1>
 
-          <p>
-            {t('hero.subtitle')}
-          </p>
         </div>
 
         <div className="kere-gallery">
@@ -215,9 +170,7 @@ export function HeroSection() {
         <div className="kere-actions">
           <div className="kere-actions-row">
             <Link to="/design" className="kere-button kere-button-primary">
-              <Scissors />
               {t('hero.startYourDesign')}
-              <ArrowRight />
             </Link>
 
             <Link to="/design?upload=1" className="kere-button kere-button-secondary">
@@ -227,9 +180,7 @@ export function HeroSection() {
           </div>
 
           <Link to="/remodel" className="kere-button kere-button-primary kere-button-remodel">
-            <Ruler />
             {t('hero.remodelGarment')}
-            <ArrowRight />
           </Link>
         </div>
       </div>

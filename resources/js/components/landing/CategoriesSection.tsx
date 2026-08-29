@@ -85,7 +85,6 @@ export function CategoriesSection() {
                     <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-3">
                         {t('categories.sectionTitle')}
                     </h2>
-                    <p className="text-slate-500">{t('categories.sectionSubtitle')}</p>
                 </motion.div>
 
                 {/* 3×2 grid */}

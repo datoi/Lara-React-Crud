@@ -10,7 +10,6 @@ export function ClothingTypeSelector({ onSelect }: ClothingTypeSelectorProps) {
         <div>
             <div className="text-center mb-10">
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">What are you designing?</h2>
-                <p className="text-slate-500">Choose the type of clothing you want to create.</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {GARMENTS.map((item, i) => (

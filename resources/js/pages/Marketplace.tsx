@@ -1,4 +1,4 @@
-import { BadgeCheck, ChevronDown, ImageOff, Palette, Search, Star, X } from 'lucide-react';
+import { BadgeCheck, Check, ChevronDown, Heart, ImageOff, LayoutGrid, Palette, Search, Star, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -10,6 +10,7 @@ import { ProductCardSkeleton } from '../components/skeletons/ProductCardSkeleton
 import { Button } from '../components/ui/button';
 import { addToCart, openCart } from '../hooks/useCart';
 import { getSection, setSection, type Section } from '../hooks/useSection';
+import { getAuthToken, saveReturnTo } from '../hooks/useAuth';
 
 interface ApiProduct {
     id: number;
@@ -47,6 +48,18 @@ const COLOUR_OPTIONS = [
     { label: 'Green', value: '#465846' },
 ];
 const FABRIC_OPTIONS = ['Cotton', 'Linen', 'Wool', 'Silk', 'Denim', 'Leather', 'Viscose', 'Chiffon', 'Crepe', 'Jersey'];
+
+const CATEGORY_IMAGES: Record<string, string> = {
+    dresses: '/assets/design-categories/dress-cutout.png',
+    tops: '/assets/design-categories/shirt-cutout.png',
+    shirts: '/assets/design-categories/shirt-cutout.png',
+    suits: '/assets/design-categories/suit-cutout.png',
+    jumpsuits: '/assets/design-categories/jumpsuit-cutout.png',
+    skirts: '/assets/design-categories/skirt-cutout.png',
+    jackets: '/assets/design-categories/jacket-cutout.png',
+    pants: '/assets/design-categories/trousers-cutout.png',
+    trousers: '/assets/design-categories/trousers-cutout.png',
+};
 
 export default function Marketplace() {
     const navigate = useNavigate();
@@ -106,6 +119,21 @@ export default function Marketplace() {
     const [sort, setSort] = useState(() => searchParams.get('sort') ?? '');
     const [activeFilter, setActiveFilter] = useState<FilterMenu | null>(null);
     const [showSort, setShowSort] = useState(false);
+    const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
+    const [wishlistProduct, setWishlistProduct] = useState<ApiProduct | null>(null);
+    const [wishlistSaving, setWishlistSaving] = useState<number | null>(null);
+
+    useEffect(() => {
+        const token = getAuthToken();
+        if (!token) return;
+        fetch('/api/wishlist', {
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        })
+            .then((response) => response.ok ? response.json() : null)
+            .then((data) => {
+                if (data) setWishlistIds(new Set((data.products ?? []).map((product: ApiProduct) => product.id)));
+            });
+    }, []);
 
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -236,6 +264,32 @@ export default function Marketplace() {
             tailorName: product.tailor_name,
         });
         openCart();
+    };
+
+    const toggleWishlist = async (product: ApiProduct) => {
+        const token = getAuthToken();
+        if (!token) {
+            saveReturnTo('/marketplace');
+            navigate('/login/customer');
+            return;
+        }
+
+        const isSaved = wishlistIds.has(product.id);
+        setWishlistSaving(product.id);
+        const response = await fetch(`/api/wishlist/${product.id}`, {
+            method: isSaved ? 'DELETE' : 'POST',
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        });
+        if (response.ok) {
+            setWishlistIds((current) => {
+                const next = new Set(current);
+                if (isSaved) next.delete(product.id);
+                else next.add(product.id);
+                return next;
+            });
+            if (!isSaved) setWishlistProduct(product);
+        }
+        setWishlistSaving(null);
     };
 
     const hasActiveFilters =
@@ -380,10 +434,9 @@ export default function Marketplace() {
             </Helmet>
             <Navigation />
 
-            <div className="w-full px-2 pt-11 pb-8 sm:px-3 lg:px-4">
-                <div className="px-4 py-12 text-center sm:py-16 lg:py-20">
-                    <p className="mx-auto max-w-[620px] text-sm leading-6 text-[#6c625b]">{t('marketplace.subtitle')}</p>
-                    <div className="relative mx-auto mt-8 w-full max-w-[620px]">
+            <div className="w-full px-3 pb-8 pt-24 sm:px-3 sm:pt-11 lg:px-4">
+                <div className="hidden px-4 py-12 text-center sm:block sm:py-16 lg:py-20">
+                    <div className="relative mx-auto w-full max-w-[620px]">
                     <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#6c625b]" />
                     <input
                         type="text"
@@ -396,7 +449,35 @@ export default function Marketplace() {
                     </div>
                 </div>
 
-                <div className="mb-10 overflow-x-auto">
+                <div className="sm:hidden">
+                    <h1 className="px-2 font-serif text-[clamp(3.3rem,16vw,5rem)] font-normal leading-[0.92] tracking-[-0.055em] text-black">
+                        {t('marketplace.allClothing')}
+                    </h1>
+
+                    <div className="marketplace-scrollbar-none -mx-3 mt-9 flex snap-x gap-2 overflow-x-auto px-3 pb-4" style={{ scrollbarWidth: 'none' }}>
+                        {categories
+                            .filter((category) => audience !== 'men' || !WOMEN_ONLY_CATEGORY_SLUGS.includes(category.slug))
+                            .map((category) => (
+                                <button
+                                    key={category.id}
+                                    type="button"
+                                    onClick={() => handleCategoryChange(category.slug)}
+                                    className={`w-[42vw] max-w-[190px] shrink-0 snap-start border p-2 pb-4 text-black ${selectedCategory === category.slug ? 'border-black' : 'border-black/5 bg-white/35'}`}
+                                >
+                                    <div className="aspect-[3/4] bg-[#efefed]">
+                                        <img
+                                            src={CATEGORY_IMAGES[category.slug] ?? '/assets/design-categories/dress-cutout.png'}
+                                            alt=""
+                                            className="h-full w-full object-contain p-2"
+                                        />
+                                    </div>
+                                    <span className="mt-3 block text-sm font-normal uppercase tracking-[0.02em]">{category.name}</span>
+                                </button>
+                            ))}
+                    </div>
+                </div>
+
+                <div className="mb-10 hidden overflow-x-auto sm:block">
                     <div className="flex min-w-max items-center justify-start gap-2 px-2 lg:min-w-0 lg:justify-center">
                         <button
                             onClick={() => {
@@ -425,31 +506,25 @@ export default function Marketplace() {
                     </div>
                 </div>
 
-                <div className="mb-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-y border-[#111111]/20 py-3">
-                    <div className="relative order-1 h-fit w-full max-w-[280px] justify-self-start">
-                        <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e) => handleSearchChange(e.target.value)}
-                            placeholder={t('marketplace.searchPlaceholder')}
-                            className="w-full border border-[#111111]/15 bg-[#EEEAE0] py-2.5 pr-4 pl-10 text-sm text-[#111111] placeholder:text-[#6c625b]/60 focus:ring-1 focus:ring-[#111111] focus:outline-none"
-                        />
-                        {search && (
-                            <button
-                                onClick={() => handleSearchChange('')}
-                                className="absolute top-1/2 right-3 -translate-y-1/2 text-[#6c625b] hover:text-[#111111]"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                        )}
-                    </div>
-
+                <div className="sticky top-[50px] z-40 -mx-3 mb-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-y border-[#111111]/20 bg-[#E4E0D7] px-3 py-3 sm:mx-0 sm:px-3">
                     <p className="order-2 hidden justify-self-center text-xs font-semibold whitespace-nowrap text-[#111111] uppercase sm:block">
                         {products.length === 1 ? t('marketplace.showingOne') : t('marketplace.showingMany', { n: products.length })}
                     </p>
 
-                    <div className="relative order-3 h-fit justify-self-end">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setActiveFilter((current) => current === 'category' ? null : 'category');
+                            setShowSort(false);
+                        }}
+                        className="order-1 justify-self-start text-sm font-normal uppercase text-black sm:hidden"
+                    >
+                        {t('marketplace.filtersLabel')} <ChevronDown className="ml-1 inline h-4 w-4" />
+                    </button>
+
+                    <LayoutGrid className="order-2 h-5 w-5 text-black sm:hidden" aria-hidden="true" />
+
+                    <div className="relative order-3 h-fit justify-self-end sm:order-1 sm:justify-self-start">
                         <button
                             onClick={() => {
                                 setShowSort((v) => !v);
@@ -462,7 +537,7 @@ export default function Marketplace() {
                             }`}
                         >
                             <span className="hidden sm:inline">{sortLabel}</span>
-                            <span className="sm:hidden">{t('marketplace.sortLabel')}</span>
+                            <span className="sm:hidden">{sortLabel}</span>
                             <ChevronDown className="h-4 w-4" />
                         </button>
                         <AnimatePresence>
@@ -472,7 +547,7 @@ export default function Marketplace() {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 6, scale: 0.97 }}
                                     transition={{ duration: 0.15 }}
-                                    className="absolute top-full right-0 z-20 mt-2 w-48 border border-[#111111]/15 bg-[#EEEAE0] p-2 shadow-lg"
+                                    className="absolute top-full left-0 z-20 mt-2 max-h-[calc(100vh-130px)] w-[min(12rem,calc(100vw-1.5rem))] overflow-y-auto border border-[#111111]/15 bg-[#EEEAE0] p-2 shadow-lg"
                                 >
                                     {sortOptions.map((opt) => (
                                         <button
@@ -490,8 +565,8 @@ export default function Marketplace() {
                         </AnimatePresence>
                     </div>
 
-                    <div className="relative order-1 min-w-0">
-                        <div className="flex min-h-11 max-w-full flex-wrap items-center gap-x-4 gap-y-1 overflow-visible pr-3">
+                    <div className="relative order-1 hidden min-w-0 sm:order-3 sm:block sm:justify-self-end">
+                        <div className="flex min-h-11 max-w-full flex-wrap items-center justify-end gap-x-4 gap-y-1 overflow-visible pl-3">
                             {(['category', 'colour', 'size', 'fabric', 'more'] as FilterMenu[]).map((menu) => (
                                 <div key={menu} className="relative shrink-0">
                                     <button
@@ -516,7 +591,7 @@ export default function Marketplace() {
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: 6 }}
                                                 transition={{ duration: 0.15 }}
-                                                className="absolute top-full left-0 z-20 mt-2 w-[min(440px,90vw)] border border-[#111111]/15 bg-[#F4F1E7] px-8 py-7 shadow-[0_18px_48px_rgba(17,17,17,0.16)]"
+                                                className="absolute top-full right-0 z-20 mt-2 max-h-[calc(100vh-130px)] w-[min(380px,calc(100vw-1.5rem))] overflow-y-auto border border-[#111111]/15 bg-[#F4F1E7] px-6 py-6 shadow-[0_18px_48px_rgba(17,17,17,0.16)]"
                                             >
                                                 <h3 className="border-b border-[#111111]/15 pb-5 text-xl font-medium text-[#6c625b]">
                                                     {t('marketplace.filterPrefix')} {filterLabel(menu)}
@@ -535,6 +610,19 @@ export default function Marketplace() {
                             ))}
                         </div>
                     </div>
+
+                    <AnimatePresence>
+                        {activeFilter === 'category' && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 6 }}
+                                className="absolute left-3 right-3 top-full z-30 border border-black/15 bg-[#F4F1E7] p-5 shadow-xl sm:hidden"
+                            >
+                                {renderFilterContent('category')}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {(hasActiveFilters || sort) && (
@@ -612,7 +700,7 @@ export default function Marketplace() {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-10 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
                         {products.map((product, i) => {
                             const isNew = newProductIdsRef.current === null || newProductIdsRef.current.has(product.id);
                             const newBatchIndex = newProductIdsRef.current ? [...newProductIdsRef.current].indexOf(product.id) : i;
@@ -622,10 +710,22 @@ export default function Marketplace() {
                                     initial={isNew ? { opacity: 0, y: 16 } : false}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: isNew ? 0.4 : 0, delay: isNew ? newBatchIndex * 0.04 : 0 }}
-                                    className="group cursor-pointer overflow-hidden border border-[#111111]/18 bg-transparent transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(17,17,17,0.14)]"
+                                    className="group cursor-pointer overflow-hidden border-0 bg-transparent transition-transform duration-300 sm:border sm:border-[#111111]/18 sm:hover:-translate-y-1 sm:hover:shadow-[0_24px_60px_rgba(17,17,17,0.14)]"
                                     onClick={() => navigate(`/product/${product.id}`)}
                                 >
                                     <div className="relative aspect-[4/5] overflow-hidden bg-[#EEEAE0]">
+                                        <button
+                                            type="button"
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                toggleWishlist(product);
+                                            }}
+                                            disabled={wishlistSaving === product.id}
+                                            aria-label={wishlistIds.has(product.id) ? t('wishlist.remove') : t('wishlist.add')}
+                                            className="absolute right-3 top-3 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-black shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-transform hover:scale-105 disabled:opacity-50"
+                                        >
+                                            <Heart className={`h-5 w-5 stroke-[1.4] ${wishlistIds.has(product.id) ? 'fill-black' : 'fill-transparent'}`} />
+                                        </button>
                                         {product.is_customizable && (
                                             <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 bg-white/90 px-2 py-1 text-[10px] font-semibold text-[#111111] shadow-sm backdrop-blur">
                                                 <Palette className="h-3 w-3" />
@@ -636,14 +736,14 @@ export default function Marketplace() {
                                             <img
                                                 src={product.images[0]}
                                                 alt={product.name}
-                                                className="h-full w-full object-contain p-5 transition-transform duration-500 group-hover:scale-105"
+                                                className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-105 sm:p-5"
                                             />
                                         ) : (
                                             <div className="flex h-full w-full items-center justify-center text-[#6c625b]/28">
                                                 <ImageOff className="h-10 w-10 stroke-[1.4]" />
                                             </div>
                                         )}
-                                        <div className="absolute inset-x-0 bottom-0 z-10 flex translate-y-0 items-center overflow-x-auto border-t border-[#111111]/15 bg-[#F4F1E7]/96 transition-transform duration-300 md:translate-y-full md:group-hover:translate-y-0">
+                                        <div className="absolute inset-x-0 bottom-0 z-10 hidden items-center overflow-x-auto border-t border-[#111111]/15 bg-[#F4F1E7]/96 transition-transform duration-300 md:flex md:translate-y-full md:group-hover:translate-y-0">
                                             {(product.sizes?.length ? product.sizes : ['XS', 'S', 'M', 'L', 'XL']).map((size) => (
                                                 <button
                                                     key={size}
@@ -661,9 +761,9 @@ export default function Marketplace() {
                                         </div>
                                     </div>
 
-                                    <div className="border-t border-[#111111]/12 px-3 py-3">
-                                        <h3 className="mb-0.5 text-xs leading-tight font-bold text-[#111111] sm:text-sm">{product.name}</h3>
-                                        <p className="mb-2 flex flex-wrap items-center gap-1 text-[10px] text-[#6c625b]">
+                                    <div className="px-0 py-3 sm:border-t sm:border-[#111111]/12 sm:px-3">
+                                        <h3 className="mb-1 text-sm leading-tight font-normal uppercase text-[#111111] sm:text-sm sm:font-bold sm:normal-case">{product.name}</h3>
+                                        <p className="mb-2 hidden flex-wrap items-center gap-1 text-[10px] text-[#6c625b] sm:flex">
                                             <span>
                                                 {t('marketplace.by')}{' '}
                                                 {product.tailor_id ? (
@@ -686,7 +786,7 @@ export default function Marketplace() {
                                             )}
                                         </p>
                                         {product.reviews_count > 0 ? (
-                                            <div className="mb-2 flex items-center gap-1">
+                                            <div className="mb-2 hidden items-center gap-1 sm:flex">
                                                 {[1, 2, 3, 4, 5].map((i) => (
                                                     <Star
                                                         key={i}
@@ -696,7 +796,7 @@ export default function Marketplace() {
                                                 <span className="ml-1 text-xs text-[#6c625b]">({product.reviews_count})</span>
                                             </div>
                                         ) : (
-                                            <p className="mb-2 text-[10px] text-[#6c625b]">{t('marketplace.noReviews')}</p>
+                                            <p className="mb-2 hidden text-[10px] text-[#6c625b] sm:block">{t('marketplace.noReviews')}</p>
                                         )}
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm font-bold text-[#111111]">₾{product.price}</span>
@@ -713,6 +813,17 @@ export default function Marketplace() {
                                                 </Button>
                                             )}
                                         </div>
+                                        <button
+                                            type="button"
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                navigate(`/product/${product.id}`);
+                                            }}
+                                            className="mt-4 min-h-11 w-full bg-black px-3 text-xs font-normal uppercase tracking-[0.04em] text-white sm:hidden"
+                                            style={{ color: '#ffffff' }}
+                                        >
+                                            {t('marketplace.quickBuy')}
+                                        </button>
                                     </div>
                                 </motion.div>
                             );
@@ -732,6 +843,64 @@ export default function Marketplace() {
                     </div>
                 )}
             </div>
+
+            <AnimatePresence>
+                {wishlistProduct && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[140] flex items-center justify-center bg-black/45 p-4"
+                        onClick={() => setWishlistProduct(null)}
+                    >
+                        <motion.section
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="wishlist-added-title"
+                            initial={{ opacity: 0, y: 14, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+                            className="relative w-full max-w-2xl bg-white p-5 text-black shadow-2xl sm:p-7"
+                            onClick={(event) => event.stopPropagation()}
+                        >
+                            <div className="flex items-center gap-3 border-b border-black/10 pb-4 pr-10">
+                                <Check className="h-6 w-6 stroke-[1.4]" />
+                                <h2 id="wishlist-added-title" className="text-lg font-normal uppercase tracking-[0.04em]">
+                                    {t('wishlist.addedTitle')}
+                                </h2>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setWishlistProduct(null)}
+                                aria-label={t('wishlist.close')}
+                                className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+
+                            <div className="grid gap-6 pt-5 sm:grid-cols-[180px_1fr] sm:items-center">
+                                <div className="aspect-[4/5] bg-[#EEEAE0]">
+                                    {wishlistProduct.images?.[0] && (
+                                        <img src={wishlistProduct.images[0]} alt={wishlistProduct.name} className="h-full w-full object-contain p-4" />
+                                    )}
+                                </div>
+                                <div>
+                                    <p className="text-sm leading-6">
+                                        {t('wishlist.addedMessage', { name: wishlistProduct.name })}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/wishlist')}
+                                        className="mt-6 min-h-12 w-full border border-black bg-white px-5 text-xs font-normal uppercase tracking-[0.08em] text-black transition-colors hover:bg-black hover:text-white"
+                                    >
+                                        {t('wishlist.view')}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.section>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {(activeFilter || showSort) && (
                 <div

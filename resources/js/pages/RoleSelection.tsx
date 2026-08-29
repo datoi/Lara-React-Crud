@@ -23,10 +23,6 @@ export default function RoleSelection() {
                         <h1 className="max-w-[500px] font-serif text-[clamp(1.9rem,3.9vw,3.9rem)] font-medium leading-[0.94] tracking-[-0.04em] text-white">
                             {t('signIn.pageTitle')}
                         </h1>
-                        <p className="mt-5 max-w-[390px] text-xs leading-6 text-white/62 sm:text-sm">
-                            {t('signIn.pageSubtitle')}
-                        </p>
-
                         <div className="mt-10 grid gap-px border border-white/18 bg-white/18">
                             <motion.button
                                 whileHover={{ x: 5 }}

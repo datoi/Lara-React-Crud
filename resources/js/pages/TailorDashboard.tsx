@@ -241,7 +241,6 @@ export default function TailorDashboard() {
                     <h1 className="font-serif text-[clamp(2rem,4vw,3.5rem)] font-medium leading-[1.02] tracking-normal text-[#111111]">
                         {t('tailorDashboard.welcomeBack', { name: greeting })}
                     </h1>
-                    <p className="mt-3 max-w-2xl text-sm leading-7 text-[#92615E] sm:text-base">{t('tailorDashboard.shopToday')}</p>
                 </motion.div>
 
                 {/* ── Onboarding panel — 0 products ── */}
@@ -269,18 +268,6 @@ export default function TailorDashboard() {
                             </motion.div>
                         )}
                     </>
-                )}
-
-                {/* ── Motivation nudge — visible when not onboarding and setup incomplete ── */}
-                {!showOnboarding && !setupComplete && profileComplete && products.length > 0 && (
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.4, delay: 0.2 }}
-                        className="text-xs text-slate-400 text-center"
-                    >
-                        {t('tailorDashboard.motivationNudge')}
-                    </motion.p>
                 )}
 
                 {/* ── Available design requests (open pool) ── */}

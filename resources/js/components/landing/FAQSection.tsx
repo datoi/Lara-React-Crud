@@ -180,10 +180,10 @@ export function FAQSection() {
 
     return (
         <>
-        <section id="faq" className="overflow-hidden bg-[#f7f6f3] px-4 py-20 sm:px-6 md:py-28 lg:px-8">
-            <div className="mx-auto max-w-[1500px]">
-                <div className="border-b border-black/20 pb-8 sm:pb-10">
-                    <h2 className="font-serif text-[clamp(1.65rem,3.1vw,3rem)] font-medium uppercase leading-[1] tracking-normal text-[#111111]">
+        <section id="faq" className="overflow-hidden bg-[#f7f6f3] px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
+            <div className="mx-auto max-w-[1280px]">
+                <div className="border-b border-black/20 pb-5 sm:pb-6">
+                    <h2 className="font-serif text-[clamp(1.65rem,2.7vw,2.5rem)] font-normal uppercase leading-[1] tracking-normal text-black">
                         {t('faq.sectionTitle')}
                     </h2>
                 </div>
@@ -202,16 +202,16 @@ export function FAQSection() {
                                     onClick={() => setOpen(isOpen ? null : i)}
                                     aria-expanded={isOpen}
                                     aria-controls={panelId}
-                                    className="group grid w-full grid-cols-[minmax(0,1fr)_36px] items-center gap-4 py-6 text-left sm:grid-cols-[minmax(0,1fr)_46px] sm:py-8 lg:grid-cols-[minmax(0,1fr)_50px] lg:py-9"
+                                    className="group grid w-full grid-cols-[minmax(0,1fr)_36px] items-center gap-3 py-4 text-left sm:grid-cols-[minmax(0,1fr)_42px] sm:py-5 lg:py-5"
                                 >
-                                    <h3 className="justify-self-start text-sm font-semibold leading-6 tracking-normal text-[#111111] sm:text-base">
+                                    <h3 className="justify-self-start text-sm font-normal leading-5 tracking-normal text-black sm:text-base">
                                         {faq.q}
                                     </h3>
 
-                                    <span className="flex h-9 w-9 items-center justify-center justify-self-end rounded-full transition-colors duration-300 group-hover:bg-black/5 sm:h-11 sm:w-11">
+                                    <span className="flex h-8 w-8 items-center justify-center justify-self-end rounded-full transition-colors duration-300 group-hover:bg-black/5 sm:h-9 sm:w-9">
                                         <Plus
                                             className={[
-                                                'h-5 w-5 stroke-[1.4] text-[#111111] transition-transform duration-300',
+                                                'h-4 w-4 stroke-[1.4] text-black transition-transform duration-300',
                                                 isOpen ? 'rotate-45' : '',
                                             ].join(' ')}
                                         />
@@ -228,8 +228,8 @@ export function FAQSection() {
                                     ].join(' ')}
                                 >
                                     <div className="overflow-hidden">
-                                        <div className="grid grid-cols-[minmax(0,1fr)_36px] gap-4 pb-7 sm:grid-cols-[minmax(0,1fr)_46px] sm:pb-9 lg:grid-cols-[minmax(0,1fr)_50px] lg:pb-10">
-                                            <p className="max-w-2xl text-xs leading-6 text-[#707070] sm:text-sm">
+                                        <div className="grid grid-cols-[minmax(0,1fr)_36px] gap-3 pb-5 sm:grid-cols-[minmax(0,1fr)_42px] sm:pb-6">
+                                            <p className="max-w-2xl text-xs leading-5 text-black sm:text-sm">
                                                 {faq.a}
                                             </p>
 
@@ -242,20 +242,17 @@ export function FAQSection() {
                     })}
                 </div>
 
-                <div className="mx-auto flex max-w-5xl flex-col gap-6 pt-10 sm:flex-row sm:items-end sm:justify-between md:pt-14">
+                <div className="mx-auto flex max-w-5xl flex-col gap-5 pt-7 sm:flex-row sm:items-end sm:justify-between sm:pt-8">
                     <div>
-                        <p className="max-w-lg font-serif text-lg font-medium leading-tight tracking-normal text-[#111111] sm:text-xl">
+                        <p className="max-w-lg font-serif text-lg font-medium leading-tight tracking-normal text-black sm:text-xl">
                             {t('faq.stillHaveQuestions')}
-                        </p>
-                        <p className="mt-3 max-w-lg text-sm leading-7 text-[#717171] sm:text-base">
-                            {t('faq.stillHaveQuestionsDesc')}
                         </p>
                     </div>
 
                     <button
                         type="button"
                         onClick={handleEmailSupport}
-                        className="inline-flex min-h-[50px] w-fit items-center justify-center gap-3 border border-black/30 px-7 text-[11px] font-bold uppercase tracking-[0.14em] text-[#111111] transition-colors duration-200 hover:bg-[#111111] hover:text-white"
+                        className="inline-flex min-h-11 w-fit items-center justify-center gap-3 border border-black/30 px-6 text-[11px] font-bold uppercase tracking-[0.14em] text-black transition-colors duration-200 hover:bg-black hover:text-white"
                     >
                         {t('faq.emailSupport')}
                     </button>

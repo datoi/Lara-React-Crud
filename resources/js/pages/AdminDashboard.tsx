@@ -335,7 +335,6 @@ export default function AdminDashboard() {
                 {/* ── Header ── */}
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">{t('adminDashboard.platformControl')}</h1>
-                    <p className="text-slate-500 mt-1 text-sm">{t('adminDashboard.manageDesc')}</p>
                 </div>
 
                 {/* ── Stats ── */}
@@ -554,7 +553,6 @@ export default function AdminDashboard() {
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                             <div>
                                 <h2 className="font-bold text-slate-900">{t('adminDashboard.unassignedOrders')}</h2>
-                                <p className="text-xs text-slate-400 mt-0.5">{t('adminDashboard.unassignedDesc')}</p>
                             </div>
                             <span className="text-xs text-slate-400">{t('adminDashboard.total', { n: unassignedOrders.length })}</span>
                         </div>
@@ -656,7 +654,6 @@ export default function AdminDashboard() {
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                             <div>
                                 <h2 className="font-bold text-slate-900">{t('adminDashboard.pendingTailors')}</h2>
-                                <p className="text-xs text-slate-400 mt-0.5">{t('adminDashboard.pendingTailorsDesc')}</p>
                             </div>
                             <span className="text-xs text-slate-400">{t('adminDashboard.total', { n: pendingTailors.length })}</span>
                         </div>

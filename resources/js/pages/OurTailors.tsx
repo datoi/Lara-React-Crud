@@ -57,7 +57,6 @@ export default function OurTailors() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                         <h1 className="text-4xl md:text-6xl font-black mb-6">{t('ourTailors.heroTitle')}</h1>
-                        <p className="text-lg text-slate-300 max-w-2xl mx-auto">{t('ourTailors.heroDesc')}</p>
                     </motion.div>
                 </div>
             </section>
@@ -144,8 +143,7 @@ export default function OurTailors() {
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
                         <h2 className="text-3xl font-black text-slate-900 mb-4">{t('ourTailors.ctaTitle')}</h2>
-                        <p className="text-slate-500 mb-8 leading-relaxed">{t('ourTailors.ctaDesc')}</p>
-                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
                             <Link to="/register/tailor" className="bg-slate-900 text-white font-semibold px-8 py-3 rounded-full hover:bg-slate-700 transition-colors">
                                 {t('ourTailors.applyAsTailor')}
                             </Link>

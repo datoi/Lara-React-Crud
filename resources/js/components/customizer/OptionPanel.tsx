@@ -66,9 +66,9 @@ export default function OptionPanel({
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: i * 0.07 }}
-                        className={i > 0 ? 'border-t border-slate-100 pt-4' : undefined}
+                        className={i > 0 ? 'border-t border-[#111111]/20 pt-4' : undefined}
                     >
-                        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        <p className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-[#514843]">
                             {category.name}
                         </p>
 
@@ -91,7 +91,7 @@ export default function OptionPanel({
 
             {/* Fabric / colour picker */}
             {fabrics.length > 0 && (
-                <div className="border-t border-slate-100 pt-4">
+                <div className="border-t border-[#111111]/20 pt-4">
                     <FabricPicker
                         fabrics={fabrics}
                         selectedId={fabricId}

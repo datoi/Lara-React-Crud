@@ -46,7 +46,7 @@ class ClothingSeeder extends Seeder
                 'slug'        => 'summer-maxi-dress',
                 'description' => 'Elegant full-length summer dress in breathable linen. Perfect for Georgian summers.',
                 'price'       => 210,
-                'images'      => ['https://images.unsplash.com/photo-1566479179817-e0a0b22b5ef3?w=600&q=80'],
+                'images'      => ['/assets/catalog/teal-chiffon-mini-dress.png'],
                 'is_featured' => true,
             ],
             [
@@ -55,7 +55,7 @@ class ClothingSeeder extends Seeder
                 'slug'        => 'a-line-midi-dress',
                 'description' => 'Classic A-line midi dress with a tailored waist. Versatile for any occasion.',
                 'price'       => 160,
-                'images'      => ['https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=600&q=80'],
+                'images'      => ['/assets/catalog/striped-mini-dress.png'],
                 'is_featured' => false,
             ],
             [
@@ -64,7 +64,7 @@ class ClothingSeeder extends Seeder
                 'slug'        => 'silk-evening-dress',
                 'description' => 'Luxurious silk evening dress with a structured bodice and flowing skirt.',
                 'price'       => 320,
-                'images'      => ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80'],
+                'images'      => ['/assets/catalog/pink-halter-mini-dress.png'],
                 'is_featured' => true,
             ],
             // Shirts
@@ -74,7 +74,7 @@ class ClothingSeeder extends Seeder
                 'slug'        => 'linen-button-shirt',
                 'description' => 'Premium linen button-up shirt, breathable and stylish. Made to your measurements.',
                 'price'       => 120,
-                'images'      => ['https://images.unsplash.com/photo-1603252109303-2751441dd157?w=600&q=80'],
+                'images'      => ['/assets/catalog/blue-camp-collar-shirt.png'],
                 'is_featured' => true,
             ],
             [
@@ -102,7 +102,7 @@ class ClothingSeeder extends Seeder
                 'slug'        => 'wide-leg-linen-trousers',
                 'description' => 'Relaxed wide-leg trousers in natural linen. Tailored to your exact measurements.',
                 'price'       => 130,
-                'images'      => ['https://images.unsplash.com/photo-1594938298603-c8148c4b4d2f?w=600&q=80'],
+                'images'      => ['/assets/catalog/black-wide-leg-jeans.png'],
                 'is_featured' => true,
             ],
             [

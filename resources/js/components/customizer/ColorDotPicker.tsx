@@ -19,7 +19,7 @@ export default function ColorDotPicker({ label, colors, selectedId, onSelect }: 
 
     return (
         <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+            <p className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-[#514843]">
                 {label}
             </p>
             <div className="flex flex-wrap gap-2">

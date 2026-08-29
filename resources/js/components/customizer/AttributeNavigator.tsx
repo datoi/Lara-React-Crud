@@ -57,13 +57,13 @@ export default function AttributeNavigator({
             >
                 <button
                     onClick={() => onOpenChange(null)}
-                    className="mb-3 flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors hover:text-slate-900"
+                    className="mb-3 flex items-center gap-1 text-xs font-medium text-[#6c625b] transition-colors hover:text-[#111111]"
                 >
                     <ChevronLeft className="h-3.5 w-3.5" />
                     {t('customizer.allAttributes')}
                 </button>
 
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <p className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-[#514843]">
                     {t('customizer.chooseAttribute', { attribute: open.name })}
                 </p>
 
@@ -93,7 +93,7 @@ export default function AttributeNavigator({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
         >
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <p className="text-xs font-medium uppercase tracking-[0.08em] text-[#514843]">
                 {t('customizer.attributesTitle')}
             </p>
             <p className="mb-3 mt-1 text-xs text-slate-400">{t('customizer.attributesHint')}</p>
@@ -109,12 +109,12 @@ export default function AttributeNavigator({
                         <li key={category.id} className="min-w-[calc(50%-0.25rem)] flex-1">
                             <button
                                 onClick={() => onOpenChange(category.id)}
-                                className="flex h-full w-full flex-col items-start gap-0.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left transition-colors hover:border-slate-400"
+                                className="flex h-full w-full flex-col items-start gap-0.5 border border-[#111111]/20 bg-transparent px-3 py-2 text-left transition-colors hover:border-[#111111]"
                             >
-                                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-[#6c625b]">
                                     {category.name}
                                 </span>
-                                <span className="line-clamp-2 text-sm font-medium leading-snug text-slate-900">
+                                <span className="line-clamp-2 text-sm font-medium leading-snug text-[#111111]">
                                     {current?.name ?? '—'}
                                     {current && current.price_modifier !== 0 && (
                                         <span className="font-normal text-slate-400">

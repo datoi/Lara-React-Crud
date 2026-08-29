@@ -34,21 +34,21 @@ export default function PriceSummary({
     }
 
     return (
-        <div className="bg-slate-900 rounded-2xl p-5 text-white">
+        <div className="border border-[#111111] bg-[#E4E0D7] p-5 text-[#111111]">
             <div className="space-y-1.5 mb-4 text-sm">
-                <div className="flex justify-between text-slate-400">
+                <div className="flex justify-between text-[#6c625b]">
                     <span>Base price</span>
                     <span>₾{basePrice.toFixed(2)}</span>
                 </div>
                 {modifierLines.map((line, i) => (
-                    <div key={i} className="flex justify-between text-slate-400">
+                    <div key={i} className="flex justify-between text-[#6c625b]">
                         <span className="truncate max-w-[65%]">{line.label}</span>
                         <span>
                             {line.amount > 0 ? '+' : ''}₾{line.amount.toFixed(2)}
                         </span>
                     </div>
                 ))}
-                <div className="flex justify-between font-bold text-white text-base pt-2 border-t border-slate-700">
+                <div className="flex justify-between border-t border-[#111111]/20 pt-2 text-base font-semibold text-[#111111]">
                     <span>Total</span>
                     <span>₾{totalPrice.toFixed(2)}</span>
                 </div>

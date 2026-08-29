@@ -111,9 +111,6 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                             🧵
                         </div>
                         <p className="font-semibold text-slate-900 text-sm mb-1">{t('tailorComponents.noProductsYet')}</p>
-                        <p className="text-slate-400 text-xs max-w-xs mb-4 leading-relaxed">
-                            {t('tailorComponents.noProductsDesc')}
-                        </p>
                         <Button
                             variant="default"
                             size="default"

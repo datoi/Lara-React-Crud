@@ -78,7 +78,6 @@ export default function HelpCenter() {
                         transition={{ duration: 0.5 }}
                     >
                         <h1 className="text-4xl md:text-6xl font-black mb-6">{t('helpCenter.heroTitle')}</h1>
-                        <p className="text-slate-300 max-w-xl mx-auto">{t('helpCenter.heroDesc')}</p>
                     </motion.div>
                 </div>
             </section>
@@ -121,7 +120,6 @@ export default function HelpCenter() {
                     className="max-w-md mx-auto px-4"
                 >
                     <h2 className="text-2xl font-black text-slate-900 mb-3">{t('helpCenter.stillNeedHelp')}</h2>
-                    <p className="text-slate-500 mb-6 text-sm">{t('helpCenter.stillDesc')}</p>
                     <Link
                         to="/"
                         className="inline-block bg-slate-900 text-white font-semibold px-8 py-3 rounded-full hover:bg-slate-700 transition-colors"

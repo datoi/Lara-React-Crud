@@ -233,7 +233,6 @@ export default function RemodelRequest() {
                                 <label htmlFor="change" className="mb-2 block text-lg font-semibold tracking-normal text-[#17130F]">
                                     {t('remodel.changeLabel')}
                                 </label>
-                                <p className="mb-5 text-sm leading-5 text-[#5C5148]">{t('remodel.changeHint')}</p>
                                 <textarea
                                     id="change"
                                     value={changeRequest}
@@ -248,7 +247,6 @@ export default function RemodelRequest() {
                             {/* Pickup / return address */}
                             <section className="mb-14">
                                 <h2 className="mb-2 text-lg font-semibold tracking-normal text-[#17130F]">{t('remodel.addressLabel')}</h2>
-                                <p className="mb-5 text-sm leading-5 text-[#5C5148]">{t('remodel.addressHint')}</p>
 
                                 <div className="grid max-w-[1100px] grid-cols-1 gap-3 sm:grid-cols-6">
                                     <input
@@ -325,7 +323,6 @@ export default function RemodelRequest() {
                                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                                 {t('remodel.submit')}
                             </Button>
-                            <p className="mx-auto mt-4 max-w-[520px] text-center text-xs leading-5 text-[#5C5148]">{t('remodel.submitHint')}</p>
                         </div>
                     </div>
 

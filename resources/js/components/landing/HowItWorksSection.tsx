@@ -21,7 +21,7 @@ export function HowItWorksSection() {
     },
     {
       title: t('howItWorks.s3Title'),
-      image: '/assets/size-fit/size-main.jpg',
+      image: '/assets/size-fit/measurements-3d-reference.png',
       tone: 'bg-[#F4EBD4]',
     },
     {
@@ -54,10 +54,6 @@ export function HowItWorksSection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="flex flex-col gap-4 md:items-end"
           >
-            <p className="max-w-sm text-xs leading-6 text-[#5f5f5f] sm:text-sm md:text-right">
-              {t('howItWorks.heroDesc')}
-            </p>
-
             <Link
               to="/help"
               className="inline-flex min-h-[42px] items-center justify-center gap-2 border border-[#111111] bg-transparent px-5 text-xs font-semibold uppercase tracking-[0.12em] text-[#111111] transition-all duration-500 hover:-translate-y-0.5 hover:bg-[#111111] hover:text-white"

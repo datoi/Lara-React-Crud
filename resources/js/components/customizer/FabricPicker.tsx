@@ -13,7 +13,7 @@ export default function FabricPicker({ fabrics, selectedId, onSelect }: FabricPi
 
     return (
         <div>
-            <h3 className="text-sm font-semibold text-slate-700 mb-3">Fabric & Color</h3>
+            <h3 className="mb-3 text-sm font-medium text-[#514843]">Fabric & Color</h3>
             <div className="flex flex-wrap gap-2">
                 {fabrics.map(fabric => {
                     const isSelected = fabric.id === selectedId;

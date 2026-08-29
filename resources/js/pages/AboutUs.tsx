@@ -30,7 +30,6 @@ export default function AboutUs() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="max-w-3xl">
                         <h1 className="text-4xl md:text-6xl font-black mb-6">{t('aboutUs.heroTitle')}</h1>
-                        <p className="text-lg text-slate-300 leading-relaxed">{t('aboutUs.heroDesc')}</p>
                     </motion.div>
                 </div>
             </section>
@@ -42,8 +41,6 @@ export default function AboutUs() {
                             <h2 className="text-3xl font-black text-slate-900 mb-6">{t('aboutUs.whyTitle')}</h2>
                             <div className="space-y-4 text-slate-600 leading-relaxed">
                                 <p>{t('aboutUs.whyP1')}</p>
-                                <p>{t('aboutUs.whyP2')}</p>
-                                <p>{t('aboutUs.whyP3')}</p>
                             </div>
                         </motion.div>
                         <motion.div
@@ -103,8 +100,7 @@ export default function AboutUs() {
             <section className="py-16 text-center">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="max-w-xl mx-auto px-4">
                     <h2 className="text-2xl font-black text-slate-900 mb-4">{t('aboutUs.ctaTitle')}</h2>
-                    <p className="text-slate-500 mb-8">{t('aboutUs.ctaDesc')}</p>
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
                         <Link to="/marketplace" className="bg-slate-900 text-white font-semibold px-8 py-3 rounded-full hover:bg-slate-700 transition-colors">
                             {t('aboutUs.browseMarketplace')}
                         </Link>

@@ -619,7 +619,6 @@ export default function CustomerDashboard() {
                     ) : fetchError ? (
                         <div className="py-12 text-center px-5">
                             <p className="text-slate-500 font-medium mb-2">{t('customerDashboard.failedToLoad')}</p>
-                            <p className="text-slate-400 text-sm mb-4">{t('customerDashboard.failedToLoadHint')}</p>
                             <button
                                 onClick={() => setRetryKey(k => k + 1)}
                                 className="text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
@@ -631,8 +630,7 @@ export default function CustomerDashboard() {
                         <div className="py-16 text-center">
                             <ShoppingBag className="w-10 h-10 text-slate-200 mx-auto mb-3" />
                             <p className="text-slate-600 font-medium mb-1">{t('customerDashboard.noOrdersYet')}</p>
-                            <p className="text-slate-400 text-sm mb-4">{t('customerDashboard.noOrdersHint')}</p>
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                            <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2">
                                 <Link
                                     to="/marketplace"
                                     className="inline-flex items-center gap-1.5 text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"

@@ -70,7 +70,6 @@ export default function AdminLogin() {
                         <ShieldAlert className="w-6 h-6 text-slate-300" />
                     </div>
                     <h1 className="text-xl font-bold text-white">Admin Access</h1>
-                    <p className="text-sm text-slate-500 mt-1">Design Studio Control Panel</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">

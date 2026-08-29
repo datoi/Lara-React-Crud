@@ -117,7 +117,8 @@ class WomensTopsSeeder extends Seeder
                 'sleeves'  => ['one-sleeve'],
             ],
             'photos' => [
-                'folder' => 'WomanTshirtClassic',
+                'folder' => 'WomanTshirtKere',
+                'front_only' => true,
                 'style'  => ['slug' => 'classic', 'name' => 'Classic'],
                 // The cut the photography actually shows. Pinned as this
                 // garment's defaults so the preview and the spec panel agree
@@ -132,15 +133,10 @@ class WomensTopsSeeder extends Seeder
                 // the opening customizer view. Swatch hexes sampled from the
                 // photographs themselves.
                 'colors' => [
-                    ['slug' => 'burgundy', 'name' => 'Burgundy', 'hex' => '#76041f'],
+                    ['slug' => 'navy',     'name' => 'Navy',     'hex' => '#171c3c'],
                     ['slug' => 'black',    'name' => 'Black',    'hex' => '#181818'],
-                    ['slug' => 'red',      'name' => 'Red',      'hex' => '#de1a1f'],
-                    ['slug' => 'pink',     'name' => 'Pink',     'hex' => '#fc2d7c'],
-                    ['slug' => 'orange',   'name' => 'Orange',   'hex' => '#fc6d05'],
-                    ['slug' => 'yellow',   'name' => 'Yellow',   'hex' => '#fcd02c'],
-                    ['slug' => 'green',    'name' => 'Green',    'hex' => '#01714a'],
-                    ['slug' => 'olive',    'name' => 'Olive',    'hex' => '#6f7342'],
-                    ['slug' => 'brown',    'name' => 'Brown',    'hex' => '#663a25'],
+                    ['slug' => 'ivory',    'name' => 'Ivory',    'hex' => '#eee9dd'],
+                    ['slug' => 'burgundy', 'name' => 'Burgundy', 'hex' => '#6f1d24'],
                 ],
             ],
         ],
@@ -227,6 +223,20 @@ class WomensTopsSeeder extends Seeder
             'except' => [
                 'neckline' => ['halter', 'sweetheart', 'one-shoulder'],
                 'sleeves'  => ['cap', 'one-sleeve'],
+            ],
+            'photos' => [
+                'folder' => 'WomanSweaterKere',
+                'front_only' => true,
+                'style' => ['slug' => 'quarter-zip', 'name' => 'Quarter Zip'],
+                'depicts' => [
+                    'fit' => 'relaxed',
+                    'length' => 'hip-length',
+                    'neckline' => 'high',
+                    'sleeves' => 'long',
+                ],
+                'colors' => [
+                    ['slug' => 'black', 'name' => 'Black', 'hex' => '#181818'],
+                ],
             ],
         ],
         [
@@ -334,9 +344,9 @@ class WomensTopsSeeder extends Seeder
                 'name' => $photos['style']['name'],
                 'image_path' => "{$base}/{$default}-front.png",
                 'thumbnail_path' => "{$base}/{$default}-front.png",
-                'back_image_path' => "{$base}/{$default}-back.png",
-                'left_image_path' => "{$base}/{$default}-left.png",
-                'right_image_path' => "{$base}/{$default}-right.png",
+                'back_image_path' => ($photos['front_only'] ?? false) ? null : "{$base}/{$default}-back.png",
+                'left_image_path' => ($photos['front_only'] ?? false) ? null : "{$base}/{$default}-left.png",
+                'right_image_path' => ($photos['front_only'] ?? false) ? null : "{$base}/{$default}-right.png",
                 'color_hex' => null,
                 'price_modifier' => 0,
                 'is_default' => true,
@@ -351,14 +361,18 @@ class WomensTopsSeeder extends Seeder
                 [
                     'color_hex' => $color['hex'],
                     'image_path' => "{$base}/{$color['slug']}-front.png",
-                    'back_image_path' => "{$base}/{$color['slug']}-back.png",
-                    'left_image_path' => "{$base}/{$color['slug']}-left.png",
-                    'right_image_path' => "{$base}/{$color['slug']}-right.png",
+                    'back_image_path' => ($photos['front_only'] ?? false) ? null : "{$base}/{$color['slug']}-back.png",
+                    'left_image_path' => ($photos['front_only'] ?? false) ? null : "{$base}/{$color['slug']}-left.png",
+                    'right_image_path' => ($photos['front_only'] ?? false) ? null : "{$base}/{$color['slug']}-right.png",
                     'is_default' => $index === 0,
                     'display_order' => $index,
                 ],
             );
         }
+
+        $style->colors()
+            ->whereNotIn('name', array_column($photos['colors'], 'name'))
+            ->delete();
     }
 
     private function seedAttribute(

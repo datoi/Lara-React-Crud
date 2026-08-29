@@ -4,14 +4,13 @@ import { Link, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { Trash2, Loader2, Pencil, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { getAuthToken, getAuthUser } from '../hooks/useAuth';
+import { getAuthToken } from '../hooks/useAuth';
 import type { SavedDesign } from '../types/customizer';
 import { useTranslation } from 'react-i18next';
 
 export default function MyDesignsPage() {
     const navigate  = useNavigate();
     const { t }     = useTranslation();
-    const authUser  = getAuthUser();
     const token     = getAuthToken();
 
     const [designs, setDesigns]   = useState<SavedDesign[]>([]);
@@ -72,9 +71,6 @@ export default function MyDesignsPage() {
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900">{t('myDesigns.pageTitle')}</h1>
-                        <p className="text-sm text-slate-500 mt-0.5">
-                            {authUser?.first_name ? `${authUser.first_name}'s` : 'Your'} {t('myDesigns.subtitle')}
-                        </p>
                     </div>
                     <Button variant="default" size="sm" onClick={() => navigate('/marketplace')}>
                         {t('myDesigns.newDesign')}
