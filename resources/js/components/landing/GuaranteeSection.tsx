@@ -86,10 +86,10 @@ export function GuaranteeSection() {
 
     return (
         <motion.section
-            initial={{ opacity: 0, y: 48 }}
+            initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.18 }}
-            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
             className="overflow-hidden bg-[#F4F0E9] px-4 py-12 sm:px-6 md:py-16 lg:px-8"
         >
             <div className="mx-auto max-w-[1180px]">

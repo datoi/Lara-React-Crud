@@ -3,24 +3,51 @@ import { X } from 'lucide-react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
+// Seeing the popup once is enough — the flag is written on any dismissal, so a
+// returning visitor is never interrupted again. The Join banner's button still
+// opens it on demand, which is why that path ignores the flag.
+const SEEN_KEY = 'kere_newsletter_seen';
+
+function alreadySeen(): boolean {
+    try {
+        return localStorage.getItem(SEEN_KEY) === '1';
+    } catch {
+        return false;
+    }
+}
+
+function markSeen(): void {
+    try {
+        localStorage.setItem(SEEN_KEY, '1');
+    } catch {
+        /* private mode — the popup simply shows again next visit */
+    }
+}
+
 export function NewsletterPopup() {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
     const [firstName, setFirstName] = useState('');
     const [email, setEmail] = useState('');
     const closeButtonRef = useRef<HTMLButtonElement>(null);
 
     const close = () => {
+        markSeen();
         setOpen(false);
     };
 
     useEffect(() => {
+        if (alreadySeen()) return;
         const timer = window.setTimeout(() => setOpen(true), 450);
         return () => window.clearTimeout(timer);
     }, []);
 
     useEffect(() => {
-        const handleOpen = () => setOpen(true);
+        const handleOpen = () => {
+            setSubmitted(false);
+            setOpen(true);
+        };
         window.addEventListener('kere:open-newsletter', handleOpen);
         return () => window.removeEventListener('kere:open-newsletter', handleOpen);
     }, []);
@@ -43,17 +70,23 @@ export function NewsletterPopup() {
         };
     }, [open]);
 
+    // No newsletter endpoint exists yet — the footer form is the same UI-only
+    // stub. Confirm in place rather than closing silently, so the submit is not
+    // indistinguishable from a dismissal.
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (!firstName.trim() || !email.trim()) return;
-        setOpen(false);
+        markSeen();
+        setSubmitted(true);
+        setFirstName('');
+        setEmail('');
     };
 
     if (!open) return null;
 
     return (
         <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4 sm:p-6"
+            className="fixed inset-0 z-[130] flex items-center justify-center bg-black/55 p-4 sm:p-6"
             role="presentation"
             onMouseDown={(event) => {
                 if (event.target === event.currentTarget) close();
@@ -103,6 +136,11 @@ export function NewsletterPopup() {
                     </p>
                 </div>
 
+                {submitted ? (
+                    <p role="status" className="relative z-10 mt-6 text-center text-sm font-normal leading-6 text-[#222222]">
+                        {t('footer.newsletterSuccess')}
+                    </p>
+                ) : (
                 <form onSubmit={handleSubmit} className="relative z-10 mt-6 space-y-2.5">
                     <label className="sr-only" htmlFor="newsletter-first-name">{t('newsletterPopup.firstName')}</label>
                     <input
@@ -147,6 +185,7 @@ export function NewsletterPopup() {
                         {t('newsletterPopup.submit')}
                     </button>
                 </form>
+                )}
             </section>
         </div>
     );

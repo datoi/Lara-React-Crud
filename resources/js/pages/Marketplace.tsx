@@ -301,8 +301,10 @@ export default function Marketplace() {
         (menu === 'fabric' && selectedFabrics.length > 0) ||
         (menu === 'more' && priceMax < 500);
 
+    // Every caller maps this over a list, so it keys itself on the label — those
+    // are unique within each menu.
     const checkboxRow = (label: string, checked: boolean, onClick: () => void, swatch?: string) => (
-        <button onClick={onClick} className="flex w-full items-center gap-4 py-2.5 text-left text-sm font-semibold text-[#2c2926] hover:opacity-60">
+        <button key={label} onClick={onClick} className="flex w-full items-center gap-4 py-2.5 text-left text-sm font-semibold text-[#2c2926] hover:opacity-60">
             <span
                 className={`flex h-6 w-6 shrink-0 items-center justify-center border ${checked ? 'border-[#111111] bg-[#111111]' : 'border-[#111111]/60'}`}
             >
@@ -568,15 +570,38 @@ export default function Marketplace() {
                         </div>
                     </div>
 
+                    {/* Below sm the per-menu triggers are hidden, so this one panel
+                        carries all five filters behind its own tab row — otherwise
+                        colour, size, fabric and price are unreachable on a phone. */}
                     <AnimatePresence>
-                        {activeFilter === 'category' && (
+                        {activeFilter && (
                             <motion.div
                                 initial={{ opacity: 0, y: 6 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 6 }}
+                                transition={{ duration: 0.15 }}
                                 className="absolute left-3 right-3 top-full z-30 border border-black/15 bg-[#F4F1E7] p-5 shadow-xl sm:hidden"
                             >
-                                {renderFilterContent('category')}
+                                <div className="marketplace-scrollbar-none -mx-1 flex gap-4 overflow-x-auto border-b border-[#111111]/15 pb-3" style={{ scrollbarWidth: 'none' }}>
+                                    {(['category', 'colour', 'size', 'fabric', 'more'] as FilterMenu[]).map((menu) => (
+                                        <button
+                                            key={menu}
+                                            onClick={() => setActiveFilter(menu)}
+                                            className={`shrink-0 px-1 text-[11px] font-semibold uppercase transition-colors ${
+                                                activeFilter === menu || filterIsActive(menu) ? 'text-[#111111]' : 'text-[#514843]'
+                                            }`}
+                                        >
+                                            {filterLabel(menu)}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="max-h-[46vh] overflow-y-auto py-4">{renderFilterContent(activeFilter)}</div>
+                                <button
+                                    onClick={() => resetFilter(activeFilter)}
+                                    className="border-t border-[#111111]/15 pt-4 text-sm font-semibold text-[#111111] underline underline-offset-4"
+                                >
+                                    {t('marketplace.resetFilter')}
+                                </button>
                             </motion.div>
                         )}
                     </AnimatePresence>
