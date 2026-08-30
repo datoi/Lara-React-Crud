@@ -23,16 +23,16 @@ export default function OptionSwatch({ option, isSelected, onSelect }: OptionSwa
             aria-pressed={isSelected}
             aria-label={`${option.name}${option.price_modifier !== 0 ? ` — ${option.price_modifier > 0 ? '+' : ''}₾${option.price_modifier}` : ''}`}
             className={[
-                'relative flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-colors cursor-pointer',
+                'relative flex cursor-pointer flex-col items-center gap-1.5 border p-2 transition-colors',
                 artwork ? '' : 'min-h-[64px] justify-center px-3 py-3',
                 isSelected
-                    ? 'border-slate-900 bg-slate-50'
-                    : 'border-slate-200 bg-white hover:border-slate-400',
+                    ? 'border-[#111111] bg-[#F2F1ED]'
+                    : 'border-[#111111]/20 bg-transparent hover:border-[#111111]/60',
             ].join(' ')}
         >
             {/* Neutral warm-white background matches the canvas bg for real PNG layers */}
             {artwork && (
-                <div className="w-full aspect-square rounded-lg overflow-hidden relative bg-[#F5F0EB]">
+                <div className="relative aspect-square w-full overflow-hidden bg-[#F2F1ED]">
                     <img
                         src={artwork}
                         alt={option.name}
@@ -41,7 +41,7 @@ export default function OptionSwatch({ option, isSelected, onSelect }: OptionSwa
                 </div>
             )}
 
-            <span className="text-xs font-medium text-slate-700 text-center leading-tight line-clamp-2">
+            <span className="line-clamp-2 text-center text-xs font-medium leading-tight text-[#514843]">
                 {option.name}
             </span>
 
@@ -53,7 +53,7 @@ export default function OptionSwatch({ option, isSelected, onSelect }: OptionSwa
 
             {/* Selected check badge */}
             {isSelected && (
-                <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-slate-900 flex items-center justify-center">
+                <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center bg-[#111111]">
                     <Check className="w-3 h-3 text-white" strokeWidth={3} />
                 </span>
             )}

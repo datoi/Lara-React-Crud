@@ -63,9 +63,6 @@ export default function SectionSelect() {
                     <h1 className="font-serif text-[clamp(2.05rem,4vw,3.45rem)] font-medium leading-[0.92] tracking-[-0.05em] text-[#111111]">
                         {t('section.title')}
                     </h1>
-                    <p className="mx-auto mt-3 max-w-[500px] text-sm leading-6 text-[#776158]">
-                        {t('section.subtitle')}
-                    </p>
                 </motion.div>
 
                 <div className="mt-10 grid grid-cols-2 items-start gap-4 sm:gap-5">

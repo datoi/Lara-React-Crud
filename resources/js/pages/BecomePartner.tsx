@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { Navigation } from '../components/landing/Navigation';
 import { Footer } from '../components/landing/Footer';
 import {
-    ArrowRight, CheckCircle, Star, Users, ShoppingBag,
-    Scissors, Shield, TrendingUp, MessageCircle, ChevronDown, ChevronUp,
+    ArrowRight, CheckCircle, Star,
+    Scissors, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { getAuthUser } from '../hooks/useAuth';
 
@@ -92,11 +92,10 @@ type ProcessStep = {
 
 type ProcessExperienceProps = {
     title: string;
-    subtitle: string;
     steps: ProcessStep[];
 };
 
-function ProcessExperience({ title, subtitle, steps }: ProcessExperienceProps) {
+function ProcessExperience({ title, steps }: ProcessExperienceProps) {
     const [activeStep, setActiveStep] = useState(0);
     const current = steps[activeStep] ?? steps[0];
 
@@ -108,9 +107,6 @@ function ProcessExperience({ title, subtitle, steps }: ProcessExperienceProps) {
                         {title}
                     </h2>
 
-                    <p className="mt-5 max-w-[510px] text-sm leading-7 text-[#725E54]">
-                        {subtitle}
-                    </p>
                 </div>
 
                 <div className="border-t border-[#6F1D24]/15">
@@ -252,12 +248,12 @@ export default function BecomePartner() {
     }, []);
 
     const VALUE_PROPS = [
-        { icon: ShoppingBag,   title: t('partners.vp1Title'), body: t('partners.vp1Body') },
-        { icon: TrendingUp,    title: t('partners.vp2Title'), body: t('partners.vp2Body') },
-        { icon: Shield,        title: t('partners.vp3Title'), body: t('partners.vp3Body') },
-        { icon: MessageCircle, title: t('partners.vp4Title'), body: t('partners.vp4Body') },
-        { icon: Users,         title: t('partners.vp5Title'), body: t('partners.vp5Body') },
-        { icon: Scissors,      title: t('partners.vp6Title'), body: t('partners.vp6Body') },
+        { title: t('partners.vp1Title'), body: t('partners.vp1Body') },
+        { title: t('partners.vp2Title'), body: t('partners.vp2Body') },
+        { title: t('partners.vp3Title'), body: t('partners.vp3Body') },
+        { title: t('partners.vp4Title'), body: t('partners.vp4Body') },
+        { title: t('partners.vp5Title'), body: t('partners.vp5Body') },
+        { title: t('partners.vp6Title'), body: t('partners.vp6Body') },
     ];
 
     const FAQS = [
@@ -307,15 +303,6 @@ export default function BecomePartner() {
                                     {t('partners.heroTitleHighlight')}
                                 </span>
                             </motion.h1>
-
-                            <motion.p
-                                initial={{ opacity: 0, y: 16 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.55, delay: 0.15 }}
-                                className="mt-8 max-w-[620px] text-sm leading-7 text-[#6E5A50] sm:text-base md:text-lg md:leading-8"
-                            >
-                                {t('partners.heroSubtitle')}
-                            </motion.p>
 
                             <motion.div
                                 initial={{ opacity: 0, y: 16 }}
@@ -417,15 +404,9 @@ export default function BecomePartner() {
                                     {t('partners.whyTitle')}
                                 </h2>
 
-                                <p className="mt-4 max-w-[430px] text-xs leading-6 text-white/70">
-                                    {t('partners.whySubtitle')}
-                                </p>
                             </motion.div>
 
-                            {VALUE_PROPS.slice(0, 5).map((step, index) => {
-                                const Icon = step.icon;
-
-                                return (
+                            {VALUE_PROPS.slice(0, 5).map((step) => (
                                     <motion.article
                                         key={step.title}
                                         initial={{
@@ -448,30 +429,19 @@ export default function BecomePartner() {
                                             delay: 0,
                                             ease: [0.22, 1, 0.36, 1],
                                         }}
-                                        className="group grid grid-cols-[42px_1px_32px_1fr] gap-3 border-b border-white/25 py-5 text-white sm:grid-cols-[50px_1px_36px_1fr] sm:gap-4 sm:py-6"
+                                        className="border-b border-white/25 py-6 text-white sm:py-7"
                                     >
-                                        <span className="font-serif text-2xl font-light leading-none tracking-[-0.02em] text-white sm:text-3xl">
-                                            {String(index + 1).padStart(2, '0')}
-                                        </span>
-
-                                        <span className="h-8 w-px bg-white/40 sm:h-9" />
-
-                                        <span className="flex h-8 w-8 items-start justify-center pt-1 text-white/90 sm:h-9 sm:w-9">
-                                            <Icon className="h-4.5 w-4.5 stroke-[1.15] sm:h-5 sm:w-5" />
-                                        </span>
-
-                                        <div className="pb-1">
-                                            <h3 className="max-w-[340px] font-serif text-[clamp(1rem,1.35vw,1.28rem)] font-normal leading-[1.18] tracking-[-0.01em] text-white">
+                                        <div>
+                                            <h3 className="max-w-[420px] font-serif text-[clamp(1.05rem,1.45vw,1.35rem)] font-normal leading-[1.18] tracking-[-0.01em] text-white">
                                                 {step.title}
                                             </h3>
 
-                                            <p className="mt-2 max-w-[330px] text-[11px] leading-5 text-white/70">
+                                            <p className="mt-2 max-w-[400px] text-xs leading-5 text-white/70">
                                                 {step.body}
                                             </p>
                                         </div>
                                     </motion.article>
-                                );
-                            })}
+                            ))}
                         </div>
 
                         <div aria-hidden="true" />
@@ -506,7 +476,6 @@ export default function BecomePartner() {
                             },
                         ]}
                         title={t('partners.howTitle')}
-                        subtitle={t('partners.howSubtitle')}
                     />
 
                     <div className="mt-9 flex flex-col gap-5 border-t border-[#6F1D24]/15 pt-7 sm:flex-row sm:items-center sm:justify-end">
@@ -531,9 +500,6 @@ export default function BecomePartner() {
                         <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
                             {t('partners.tailorsTitle')}
                         </h2>
-                        <p className="text-slate-500">
-                            {t('partners.tailorsSubtitle')}
-                        </p>
                     </motion.div>
 
                     <div className="grid md:grid-cols-3 gap-6">
@@ -691,10 +657,6 @@ export default function BecomePartner() {
                         <h2 className="mx-auto mt-7 max-w-[850px] font-serif text-[clamp(2.7rem,5.8vw,5.6rem)] font-medium leading-[0.92] tracking-[-0.055em] text-[#6F1D24]">
                             {t('partners.finalTitle')}
                         </h2>
-
-                        <p className="mx-auto mt-5 max-w-[560px] text-sm leading-7 text-[#80685D] sm:text-base">
-                            {t('partners.finalSubtitle')}
-                        </p>
 
                         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
                             <PartnerCTA

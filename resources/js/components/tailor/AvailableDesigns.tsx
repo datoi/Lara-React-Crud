@@ -278,7 +278,6 @@ export function AvailableDesigns() {
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100">
                 <h2 className="font-bold text-slate-900">{t('tailorComponents.availableDesignsTitle')}</h2>
-                <p className="text-xs text-slate-400 mt-0.5">{t('tailorComponents.availableDesignsDesc')}</p>
             </div>
 
             {loading ? (

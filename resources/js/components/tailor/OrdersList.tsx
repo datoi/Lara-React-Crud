@@ -512,9 +512,6 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                             📦
                         </div>
                         <p className="font-semibold text-slate-900 text-sm mb-1">{t('tailorComponents.noOrdersYet')}</p>
-                        <p className="text-slate-400 text-xs max-w-xs leading-relaxed">
-                            {t('tailorComponents.noOrdersDesc')}
-                        </p>
                     </div>
                 ) : (
                     <>

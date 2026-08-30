@@ -158,7 +158,6 @@ export function FinalPreview({ config, onBack }: FinalPreviewProps) {
                         <Check className="w-10 h-10 text-slate-700" />
                     </motion.div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2">{t('customizer.submitted')}</h3>
-                    <p className="text-slate-500">A tailor will review your design and contact you to confirm details before starting.</p>
                     <p className="text-sm text-slate-400 mt-4">Taking you to your dashboard…</p>
                 </div>
             ) : (
@@ -245,7 +244,7 @@ export function FinalPreview({ config, onBack }: FinalPreviewProps) {
                         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
                             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
                                 <span>{t('customizer.estimatedPrice')}</span>
-                                <Info className="w-3.5 h-3.5 text-slate-400" title="Final price confirmed by tailor" />
+                                <Info className="w-3.5 h-3.5 text-slate-400" aria-label="Final price confirmed by tailor" />
                             </div>
                             <div className="space-y-1.5 text-sm text-slate-600">
                                 <div className="flex justify-between">
@@ -269,14 +268,10 @@ export function FinalPreview({ config, onBack }: FinalPreviewProps) {
                                 <span className="font-semibold text-slate-900">Total estimate</span>
                                 <span className="text-xl font-bold text-slate-900">₾{total}</span>
                             </div>
-                            <p className="text-[11px] text-slate-400 mt-2">Tailor confirms final price before starting work.</p>
                         </div>
 
                         {/* Actions */}
                         <div className="flex flex-col gap-3">
-                            <p className="text-xs text-slate-400 text-center">
-                                You can adjust details later with your tailor. No payment required now.
-                            </p>
                             {submitError && (
                                 <p className="text-xs text-destructive text-center">{submitError}</p>
                             )}

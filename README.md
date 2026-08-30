@@ -609,6 +609,22 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-08-30] Import Mariami's design pass — design only, Wishlist feature left behind
+
+**What was done:** Pulled the two commits Mariami pushed to `origin/mariam-changes` since 2026-08-24 (`5eb5f4b`, `7f9d0a2`) onto a branch off `main`, taking **only** the design changes. Her branch forks at `2c7fe0e`, so nothing on `main` after that point (the T-shirt-shoot revert chain) was disturbed; the two histories touch no file in common, so every design file was taken whole rather than merged.
+
+- **Cherry-picked whole:** `5eb5f4b` — evening-dress / jumpsuit / suit cutouts wired into `garmentTaxonomy.ts` (those three women's categories previously fell back to an emoji).
+- **Taken from `7f9d0a2` (design):** `app.css` + 63 frontend files. The landing drops wine text for near-black (`#111111` / `#6c625b`) and a flat `#E4E0D7` header with no blur or shadow; `FeaturesSection` becomes a sticky-image split; `SizeFitSection` becomes a full-bleed video campaign; `GuaranteeSection` moves to an embossed-ivory review card with gold-foil stars; `MarketplaceCarousel` gains a category filter row, per-card image arrows and a size strip; `Marketplace` gains a dedicated mobile layout; the whole customizer is restyled off `slate-*` onto the brand greys; `CustomizePage` adopts the site `Navigation`; new `NewsletterPopup` + `JoinSection`; a site-wide copy trim (~40 subtitle/description paragraphs removed) reflected in both locales.
+- **Deliberately excluded (not design):** the entire **Wishlist feature** she bundled into the same commit — `WishlistController`, the `wishlist_items` migration, the `User`/`Product` `belongsToMany` relations, three `routes/api.php` routes, `WishlistPage.tsx` and its route, the heart button and "added to wishlist" modal in `Marketplace.tsx`, and the `wishlist.*` i18n block. Marketplace was hand-edited so the mobile redesign survives without it; both locales are back to key-for-key parity at 1353 keys.
+- **Also excluded:** `WomensTopsSeeder.php` — her change re-points the T-shirt at a `WomanTshirtKere` front-only shoot with 4 colours and re-adds the `colors()->…->delete()` sweep, which is exactly what `1f2ab6d` and `b173bc2` removed from `main` on purpose. Taking it would have silently undone the customer's revert. The `WomanTshirtKere`/`WomanSweaterKere` photo folders were left out with it, as were three unreferenced 2–3 MB textures (`review-card-red-texture`, `ivory-embossed-popup`, `silver-foil-popup`).
+- **Kept:** `ClothingSeeder.php` — swaps five dead Unsplash URLs for local Kere catalog photography. Data, but purely an image swap; **needs a reseed to show up**, which is why the marketplace still renders rotated Unsplash stock (concert/landscape photos) against dress names.
+
+**Verified in the browser** (headless Edge over CDP, Laravel + Vite): landing, marketplace (390 / 1440), `/customize/womens-blouse`, `/about`, `/partners`, `/our-tailors`, `/help`. All mount clean, zero console errors, no horizontal overflow at 1440, ₾ renders throughout, and the adaptive dark navbar still flips correctly on the dark-hero pages. `tsc --noEmit` and `vite build` both clean.
+
+**Open findings handed back (not fixed here):** `NewsletterPopup` re-opens on every visit (no persistence), its scroll lock sets `body.overflow` while `html` is the scrolling element so the page scrolls behind it, it ties the navbar at `z-[100]` and loses (header paints over the overlay), and its submit closes the dialog without sending anything. Marketplace has no search input below `sm`, and only the category filter is reachable on mobile. `GuaranteeSection` animates at `0.75s` with a custom cubic-bezier, and the new mobile filter panel has no `transition` (Motion default spring) — both off the 5-pattern / 0.5–0.6s rule. `CustomizePage` lost its `StudioBreadcrumb` and back control.
+
+---
+
 ### [2026-08-13] Cart QA round — duplicate-order race and a signed-in navbar regression
 
 **What was done:** Fixes for the QA pass on `b5b9bfa`. The backend was cleared as-is; both blockers were frontend.

@@ -16,13 +16,13 @@ import { NotificationBell } from '../NotificationBell';
  * copy is taken out of flow, so growing it overflows symmetrically instead of
  * either shifting neighbours or padding the bar out by 10% at every width.
  */
-function AnimatedNavText({ children }: { children: ReactNode }) {
+function AnimatedNavText({ children, showUnderline = true }: { children: ReactNode; showUnderline?: boolean }) {
     return (
         <span className="relative inline-block align-middle">
             <span aria-hidden className="invisible">
                 {children}
             </span>
-            <span className="absolute inset-0 flex items-center justify-center whitespace-nowrap underline decoration-transparent decoration-1 underline-offset-4 transition-all duration-300 ease-out group-hover:text-[1.1em] group-hover:decoration-current">
+            <span className={`absolute inset-0 flex items-center justify-center whitespace-nowrap transition-all duration-300 ease-out group-hover:text-[1.1em] ${showUnderline ? 'underline decoration-transparent decoration-1 underline-offset-4 group-hover:decoration-current' : 'no-underline'}`}>
                 {children}
             </span>
         </span>
@@ -103,17 +103,20 @@ export function Navigation() {
             window.removeEventListener('scroll', updateTone);
             window.removeEventListener('resize', updateTone);
         };
-    }, []);
+    }, [pathname]);
 
-    const navTextClass = isOverDark ? 'text-white' : 'text-[#111111]';
-    const navDividerClass = isOverDark ? 'border-white/25' : 'border-black/15';
+    const isCustomizer = pathname.startsWith('/customize/');
+    const isMarketplace = pathname === '/marketplace';
+    const navIsDark = isOverDark && !isLanding && !isCustomizer && !isMarketplace;
+    const navTextClass = navIsDark ? 'text-white' : 'text-[#111111]';
+    const navDividerClass = navIsDark ? 'border-white/25' : 'border-black/15';
     const itemCount = cartCount(cartItems);
 
     return (
         <header
-            data-nav-tone={isOverDark ? 'dark' : 'light'}
+            data-nav-tone={navIsDark ? 'dark' : 'light'}
             data-scrolled={isScrolled ? 'true' : 'false'}
-            className={`kere-site-header fixed inset-x-0 top-0 z-[100] pt-1.5 backdrop-blur-xl transition-all duration-500 ${isOverDark ? 'bg-[#1c1c1c] text-white shadow-[0_1px_0_rgba(255,255,255,0.08)]' : 'bg-[#F4F0E9] text-[#111111] shadow-[0_1px_0_rgba(0,0,0,0.06)]'}`}
+            className={`kere-site-header fixed inset-x-0 top-0 z-[100] pt-1.5 backdrop-blur-xl transition-all duration-500 ${isLanding ? 'bg-[#E4E0D7] text-[#111111] shadow-none' : isCustomizer || isMarketplace ? 'bg-[#E4E0D7] text-[#111111] shadow-[0_1px_0_rgba(0,0,0,0.06)]' : navIsDark ? 'bg-[#1c1c1c] text-white shadow-[0_1px_0_rgba(255,255,255,0.08)]' : 'bg-[#F4F0E9] text-[#111111] shadow-[0_1px_0_rgba(0,0,0,0.06)]'}`}
         >
             <div className="kere-site-header-bar mx-auto grid h-10 max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:h-11 sm:px-6 lg:h-11 lg:px-10">
                 <div className="col-start-1 flex min-w-0 items-center gap-4 sm:gap-7">
@@ -143,19 +146,19 @@ export function Navigation() {
                         to="/marketplace"
                         className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
                     >
-                        <AnimatedNavText>{t('marketplace.title')}</AnimatedNavText>
+                        <AnimatedNavText showUnderline={!isLanding}>{t('marketplace.title')}</AnimatedNavText>
                     </Link>
                     <Link
                         to="/design"
                         className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
                     >
-                        <AnimatedNavText>{t('nav.startDesigning')}</AnimatedNavText>
+                        <AnimatedNavText showUnderline={!isLanding}>{t('nav.startDesigning')}</AnimatedNavText>
                     </Link>
                     <Link
                         to="/remodel"
                         className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
                     >
-                        <AnimatedNavText>{t('nav.remodel')}</AnimatedNavText>
+                        <AnimatedNavText showUnderline={!isLanding}>{t('nav.remodel')}</AnimatedNavText>
                     </Link>
                     {showSiteAnchors && (
                         <>
@@ -163,13 +166,13 @@ export function Navigation() {
                                 href="#how-it-works"
                                 className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
                             >
-                                <AnimatedNavText>{t('nav.howItWorks')}</AnimatedNavText>
+                                <AnimatedNavText showUnderline={!isLanding}>{t('nav.howItWorks')}</AnimatedNavText>
                             </a>
                             <a
                                 href="#faq"
                                 className={`group text-[10px] font-semibold tracking-[0.08em] uppercase ${navTextClass}`}
                             >
-                                <AnimatedNavText>{t('nav.faq')}</AnimatedNavText>
+                                <AnimatedNavText showUnderline={!isLanding}>{t('nav.faq')}</AnimatedNavText>
                             </a>
                         </>
                     )}
@@ -180,11 +183,11 @@ export function Navigation() {
                         to="/partners"
                         className={`group hidden text-[10px] font-semibold tracking-[0.08em] uppercase md:inline ${navTextClass}`}
                     >
-                        <AnimatedNavText>{t('nav.forTailors')}</AnimatedNavText>
+                        <AnimatedNavText showUnderline={!isLanding}>{t('nav.forTailors')}</AnimatedNavText>
                     </Link>
 
                     <div className="inline-flex sm:hidden">
-                        <LanguageToggle isOverDark={isOverDark} />
+                        <LanguageToggle isOverDark={navIsDark} />
                     </div>
 
                     <button
@@ -212,7 +215,7 @@ export function Navigation() {
                                     name overran the Georgian centre links at 1280–1440, and Georgian
                                     names are long enough that truncating alone did not buy it back. */}
                                 <span className="hidden max-w-[104px] truncate 2xl:inline">
-                                    <AnimatedNavText>{user.first_name}</AnimatedNavText>
+                                    <AnimatedNavText showUnderline={!isLanding}>{user.first_name}</AnimatedNavText>
                                 </span>
                             </Link>
 
@@ -226,7 +229,7 @@ export function Navigation() {
                                 to="/signin"
                                 className="kere-sign-in-link group hidden min-h-9 items-center bg-[#111111] px-4 text-sm font-normal !text-white transition-colors hover:bg-[#2b2b2b] hover:!text-white sm:inline-flex"
                             >
-                                <AnimatedNavText>{t('nav.signIn')}</AnimatedNavText>
+                                <span className="whitespace-nowrap">{t('nav.signIn')}</span>
                             </Link>
 
                             <Link
@@ -240,7 +243,7 @@ export function Navigation() {
                     )}
 
                     <div className={`hidden h-5 items-center border-l pl-5 lg:flex ${navDividerClass}`}>
-                        <LanguageToggle isOverDark={isOverDark} />
+                        <LanguageToggle isOverDark={navIsDark} />
                     </div>
                 </div>
             </div>

@@ -65,9 +65,6 @@ function CategoryStep({
                 <h1 className="mt-3 font-serif text-[clamp(2.15rem,4vw,3.7rem)] font-medium leading-[0.92] tracking-[-0.05em] text-[#111111]">
                     {t('design.categoryTitle')}
                 </h1>
-                <p className="mx-auto mt-3 max-w-[520px] text-sm leading-6 text-[#776158]">
-                    {t('design.categorySubtitle')}
-                </p>
             </div>
 
             <motion.button

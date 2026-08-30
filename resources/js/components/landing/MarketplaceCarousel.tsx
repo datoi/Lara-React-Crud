@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { ShoppingBag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface Product {
@@ -8,6 +8,7 @@ interface Product {
   name: string;
   price: number;
   images: string[];
+  sizes: string[] | null;
   tailor_name: string | null;
   category: {
     name: string;
@@ -24,6 +25,8 @@ export function MarketplaceCarousel() {
   // products never flash-swap to real ones on load.
   const [products, setProducts] = useState<Product[] | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [imageIndexes, setImageIndexes] = useState<Record<number, number>>({});
   const pressRef = useRef<{ pointerId: number; startX: number; scrollStart: number } | null>(null);
   const stripRef = useRef<HTMLDivElement>(null);
 
@@ -58,6 +61,7 @@ export function MarketplaceCarousel() {
       name: t('carousel.productPinkDress'),
       price: 210,
       images: ['/assets/hero/kere-look-1.jpeg'],
+      sizes: ['XS', 'S', 'M', 'L', 'XL'],
       tailor_name: 'Kere',
       category: {
         name: 'Dresses',
@@ -72,6 +76,7 @@ export function MarketplaceCarousel() {
       name: t('carousel.productBlueDress'),
       price: 280,
       images: ['/assets/hero/kere-look-2.jpeg'],
+      sizes: ['XS', 'S', 'M', 'L'],
       tailor_name: 'Kere',
       category: {
         name: 'Dresses',
@@ -86,6 +91,7 @@ export function MarketplaceCarousel() {
       name: t('carousel.productBlueSuit'),
       price: 320,
       images: ['/assets/hero/kere-look-3.jpeg'],
+      sizes: ['S', 'M', 'L', 'XL'],
       tailor_name: 'Kere',
       category: {
         name: 'Suits',
@@ -100,6 +106,7 @@ export function MarketplaceCarousel() {
       name: t('carousel.productGreenDress'),
       price: 260,
       images: ['/assets/hero/kere-look-4.jpeg'],
+      sizes: ['XS', 'S', 'M', 'L', 'XL'],
       tailor_name: 'Kere',
       category: {
         name: 'Dresses',
@@ -113,6 +120,28 @@ export function MarketplaceCarousel() {
 
   const ready = products !== null;
   const displayedProducts = products && products.length > 0 ? products.slice(0, 8) : fallbackProducts;
+  const categories = Array.from(
+    new Map(displayedProducts.map((product) => [product.category.slug, product.category])).values(),
+  );
+  const filteredProducts = activeCategory === 'all'
+    ? displayedProducts
+    : displayedProducts.filter((product) => product.category.slug === activeCategory);
+
+  const selectCategory = (slug: string) => {
+    setActiveCategory(slug);
+    stripRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
+  };
+
+  const changeProductImage = (product: Product, direction: -1 | 1) => {
+    if (product.images.length < 2) return;
+    setImageIndexes((current) => {
+      const index = current[product.id] ?? 0;
+      return {
+        ...current,
+        [product.id]: (index + direction + product.images.length) % product.images.length,
+      };
+    });
+  };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     // Touch uses the browser's native horizontal scroll (with momentum); the
@@ -150,17 +179,31 @@ export function MarketplaceCarousel() {
   };
 
   return (
-    <section id="categories" className="overflow-hidden bg-white px-4 py-20 sm:px-6 md:py-28 lg:px-8">
+    <section id="categories" className="overflow-hidden bg-white px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
       <div className="mx-auto max-w-[1500px]">
-        <div className="mb-12 sm:mb-16">
-          <h2 className="max-w-[620px] font-serif text-[clamp(1.75rem,3.2vw,3.25rem)] font-medium uppercase leading-[0.96] tracking-normal text-[#111111]">
-            {t('carousel.title')}
-          </h2>
-
-          <p className="mt-7 max-w-xl text-sm leading-7 text-[#6f6f6f] sm:text-base">
-            {t('carousel.subtitle')}
-          </p>
-        </div>
+        <nav
+          aria-label={t('carousel.categoriesLabel')}
+          className="marketplace-scrollbar-none -mx-4 mb-7 flex gap-7 overflow-x-auto px-4 py-4 sm:mx-0 sm:justify-center sm:px-0"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          <button
+            type="button"
+            onClick={() => selectCategory('all')}
+            className={`shrink-0 text-xs font-normal uppercase tracking-[0.08em] transition-opacity ${activeCategory === 'all' ? 'text-black' : 'text-black/45 hover:text-black'}`}
+          >
+            {t('marketplace.allCategories')}
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category.slug}
+              type="button"
+              onClick={() => selectCategory(category.slug)}
+              className={`shrink-0 text-xs font-normal uppercase tracking-[0.08em] transition-opacity ${activeCategory === category.slug ? 'text-black' : 'text-black/45 hover:text-black'}`}
+            >
+              {category.name}
+            </button>
+          ))}
+        </nav>
 
         <div className="relative">
           <div
@@ -188,39 +231,76 @@ export function MarketplaceCarousel() {
               transition: 'opacity 0.4s ease',
             }}
           >
-            {displayedProducts.map((product) => {
-              const image = product.images?.[0];
+            {filteredProducts.map((product) => {
+              const imageIndex = imageIndexes[product.id] ?? 0;
+              const image = product.images?.[imageIndex];
+              const productPath = product.isFallback ? '/marketplace' : `/product/${product.id}`;
 
               return (
-                <Link
+                <article
                   key={product.id}
-                  to={product.isFallback ? '/marketplace' : `/product/${product.id}`}
-                  draggable={false}
                   className="group block w-[78vw] shrink-0 snap-center sm:w-[46vw] sm:snap-start lg:w-[calc((100%_-_72px)/4)]"
-                  onClick={(event) => {
-                    if (isDragging) {
-                      event.preventDefault();
-                    }
-                  }}
                 >
                   <div className="relative aspect-[0.78] overflow-hidden border border-black/20 bg-[#f4f4f2]">
                     {image ? (
-                      <img
-                        src={image}
-                        alt={product.name}
+                      <Link
+                        to={productPath}
                         draggable={false}
-                        loading="lazy"
-                        className="h-full w-full object-contain p-5 transition-transform duration-700 ease-out group-hover:scale-[1.025]"
-                      />
+                        className="block h-full w-full"
+                        onClick={(event) => {
+                          if (isDragging) event.preventDefault();
+                        }}
+                      >
+                        <img
+                          src={image}
+                          alt={`${product.name} ${imageIndex + 1}`}
+                          draggable={false}
+                          loading="lazy"
+                          className="h-full w-full object-contain p-5 transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+                        />
+                      </Link>
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-[#b2b2b2]">
                         <ShoppingBag className="h-12 w-12" />
                       </div>
                     )}
 
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={() => changeProductImage(product, -1)}
+                      aria-label={t('carousel.previous')}
+                      disabled={product.images.length < 2}
+                      className="absolute left-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-white/90 text-black opacity-0 shadow-sm transition-all hover:bg-black hover:text-white group-hover:opacity-100 group-focus-within:opacity-100 disabled:hidden"
+                    >
+                      <ChevronLeft className="h-5 w-5 stroke-[1.4]" />
+                    </button>
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={() => changeProductImage(product, 1)}
+                      aria-label={t('carousel.next')}
+                      disabled={product.images.length < 2}
+                      className="absolute right-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-white/90 text-black opacity-0 shadow-sm transition-all hover:bg-black hover:text-white group-hover:opacity-100 group-focus-within:opacity-100 disabled:hidden"
+                    >
+                      <ChevronRight className="h-5 w-5 stroke-[1.4]" />
+                    </button>
+
+                    <div className="marketplace-scrollbar-none absolute inset-x-0 bottom-0 z-10 flex min-h-11 translate-y-full items-center gap-5 overflow-x-auto border-t border-black/20 bg-white/95 px-4 text-[11px] font-normal uppercase text-black opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 sm:justify-center">
+                      {(product.sizes?.length ? product.sizes : ['XS', 'S', 'M', 'L', 'XL']).map((size) => (
+                        <span key={size} className="shrink-0">{size}</span>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="pt-4">
+                  <Link
+                    to={productPath}
+                    draggable={false}
+                    className="block pt-4"
+                    onClick={(event) => {
+                      if (isDragging) event.preventDefault();
+                    }}
+                  >
                     <h3 className="truncate text-sm font-bold uppercase tracking-normal text-[#111111] sm:text-base">
                       {product.name}
                     </h3>
@@ -234,8 +314,8 @@ export function MarketplaceCarousel() {
                         </p>
                       )}
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                </article>
               );
             })}
           </div>

@@ -80,8 +80,7 @@ export default function TailorSelectStep() {
                         {t('tailorSelect.back')}
                     </button>
 
-                    <h1 className="text-2xl font-bold text-slate-900 mb-2">{t('tailorSelect.pageTitle')}</h1>
-                    <p className="text-slate-500 mb-8">{t('tailorSelect.pageSubtitle')}</p>
+                    <h1 className="mb-8 text-2xl font-bold text-slate-900">{t('tailorSelect.pageTitle')}</h1>
 
                     {loading ? (
                         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 text-slate-400 animate-spin" /></div>

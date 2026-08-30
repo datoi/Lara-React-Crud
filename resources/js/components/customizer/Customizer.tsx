@@ -120,7 +120,7 @@ export default function Customizer({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="grid lg:grid-cols-[1fr_420px] gap-8 items-start"
+            className="grid items-start lg:grid-cols-[55%_45%]"
         >
             {/* ── Preview column ─────────────────────────────────────────────────
                 Pinned on phones too, under the 4rem navbar. The options scroll
@@ -128,7 +128,7 @@ export default function Customizer({
                 — previously the garment scrolled away and changes went unnoticed.
                 Needs the page colour behind it or scrolling content shows through,
                 and z-10 to sit under the z-50 navbar but over the panel. */}
-            <div className="sticky top-16 z-10 bg-[var(--kere-page)] pb-2 lg:top-24 lg:z-auto lg:bg-transparent lg:pb-0">
+            <div className="sticky top-11 z-10 bg-[#F2F1ED] lg:top-11 lg:z-auto">
                 {showPhoto ? (
                     <PreviewCanvas
                         layerCategories={layerCategories}
@@ -142,8 +142,8 @@ export default function Customizer({
                     /* Same footprint as the canvas so the layout never jumps.
                        Dashed frame and icon so it reads as a placeholder we put
                        there on purpose, not a picture that failed to load. */
-                    <div className="flex w-full flex-col items-center justify-center gap-2 border border-dashed border-slate-300 bg-white/40 px-6 text-center h-40 sm:gap-3 sm:h-72 lg:h-auto lg:aspect-[3/4] lg:max-h-[calc(100vh-10rem)]">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-slate-400 sm:h-12 sm:w-12">
+                    <div className="flex h-52 w-full flex-col items-center justify-center gap-2 border-b border-[#111111]/15 bg-[#F2F1ED] px-6 text-center sm:h-80 sm:gap-3 lg:h-[calc(100vh-3rem)]">
+                        <span className="flex h-9 w-9 items-center justify-center border border-[#111111]/20 text-[#6c625b] sm:h-12 sm:w-12">
                             <ImageOff className="h-4 w-4 stroke-[1.4] sm:h-5 sm:w-5" />
                         </span>
                         <p className="font-serif text-lg font-medium tracking-[-0.035em] text-slate-500 sm:text-2xl">
@@ -158,8 +158,8 @@ export default function Customizer({
                 )}
                 {/* Fabric swatch label below preview */}
                 {selectedFabric && showPhoto && (
-                    <p className="text-center text-xs text-slate-400 mt-2">
-                        Fabric: <span className="font-medium text-slate-600">{selectedFabric.name}</span>
+                    <p className="border-b border-[#111111]/15 bg-[#E4E0D7] px-4 py-3 text-center text-xs text-[#6c625b]">
+                        Fabric: <span className="font-medium text-[#111111]">{selectedFabric.name}</span>
                     </p>
                 )}
             </div>
@@ -175,12 +175,14 @@ export default function Customizer({
                 from its measured height — a fixed guess here was 112px against
                 a banner up to 184px in Georgian, leaving the Continue button
                 partly unclickable. */}
-            <div className="flex flex-col gap-5 pb-6 lg:pb-0">
+            <div className="flex min-h-[calc(100vh-3rem)] flex-col bg-[#E4E0D7] px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
                 {/* Product header */}
-                <div className="order-1">
-                    <h1 className="text-2xl font-bold text-slate-900">{product.name}</h1>
+                <div className="order-1 border-b border-[#111111]/20 pb-6">
+                    <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.08em] text-[#6c625b]">{product.category}</p>
+                    <h1 className="text-lg font-medium uppercase leading-tight text-[#111111]">{product.name}</h1>
+                    <p className="mt-2 text-sm font-medium text-[#111111]">₾{totalPrice.toFixed(2)}</p>
                     {product.description && (
-                        <p className="text-sm text-slate-500 mt-1 leading-relaxed">
+                        <p className="mt-5 max-w-xl text-xs leading-5 text-[#514843]">
                             {product.description}
                         </p>
                     )}
@@ -188,7 +190,7 @@ export default function Customizer({
 
                 {/* Option panel */}
                 {hasPanelContent && (
-                    <div className="order-4 bg-white rounded-2xl border border-slate-100 p-4 lg:order-2">
+                    <div className="order-4 border-b border-[#111111]/20 py-6 lg:order-2">
                         <OptionPanel
                             layerCategories={layerCategories}
                             fabrics={fabrics}
@@ -206,7 +208,7 @@ export default function Customizer({
 
                 {/* Colour dot groups — colours of the currently selected style */}
                 {colorGroups.map(({ category, option }) => (
-                    <div key={`${category.id}-${option.id}`} className="order-3 bg-white rounded-2xl border border-slate-100 p-4 lg:order-4">
+                    <div key={`${category.id}-${option.id}`} className="order-3 border-b border-[#111111]/20 py-6 lg:order-4">
                         <ColorDotPicker
                             label={t('customizer.colorLabel')}
                             colors={option.colors}
@@ -222,7 +224,7 @@ export default function Customizer({
                     ViewSwitcher's own so the ordered wrapper never becomes an
                     empty flex item adding a gap. */}
                 {showPhoto && availableViews.length > 1 && (
-                    <div className="order-2 -mt-2 lg:order-3 lg:mt-0">
+                    <div className="order-2 border-b border-[#111111]/20 py-4 lg:order-3">
                         <ViewSwitcher views={availableViews} view={view} onChange={setView} />
                     </div>
                 )}
@@ -241,7 +243,7 @@ export default function Customizer({
 
                 {/* Success toast */}
                 {savedName && (
-                    <p className="order-6 text-xs text-center text-slate-500">
+                    <p className="order-6 py-3 text-center text-xs text-[#6c625b]">
                         ✓ "{savedName}" saved to your designs.
                     </p>
                 )}
@@ -251,13 +253,13 @@ export default function Customizer({
                     labels ("გადატვირთვა", "დიზაინის შენახვა", "შეკვეთა — ₾45.00")
                     cannot shrink and pushed this row ~20px past the column,
                     giving the whole desktop page a horizontal scrollbar. */}
-                <div className="order-7 hidden lg:flex lg:flex-wrap gap-2">
+                <div className="order-7 hidden gap-2 pt-6 lg:flex lg:flex-wrap">
                     <Button
                         variant="outline"
                         size="default"
                         onClick={reset}
                         aria-label={t('customizer.reset')}
-                        className="gap-1.5"
+                        className="gap-1.5 rounded-none border-[#111111]/30 bg-transparent text-[#111111] hover:bg-[#111111] hover:text-white"
                     >
                         <RotateCcw className="w-4 h-4" />
                         {t('customizer.reset')}
@@ -266,7 +268,7 @@ export default function Customizer({
                         variant="outline"
                         size="default"
                         onClick={() => setSaveOpen(true)}
-                        className="gap-1.5 flex-1"
+                        className="flex-1 gap-1.5 rounded-none border-[#111111] bg-transparent text-[#111111] hover:bg-[#111111] hover:text-white"
                     >
                         <Bookmark className="w-4 h-4" />
                         {t('customizer.saveDesign')}
@@ -275,7 +277,7 @@ export default function Customizer({
                         variant="default"
                         size="default"
                         onClick={() => onOrder?.(getConfiguration(), totalPrice)}
-                        className="gap-1.5 flex-1"
+                        className="flex-1 gap-1.5 rounded-none bg-[#111111] text-white hover:bg-[#333333]"
                     >
                         <ShoppingBag className="w-4 h-4" />
                         {t('customizer.continuePrice', { price: totalPrice.toFixed(2) })}
@@ -292,17 +294,17 @@ export default function Customizer({
                     Georgian labels pushed this row 2px past a 360px screen.
                     The tighter gap makes it fit; the wrap keeps it safe for
                     longer prices or labels. */}
-                <div className="order-8 lg:hidden -mx-4 border-t border-slate-200 bg-white px-4 py-3 flex flex-wrap items-center gap-2 sm:mx-0 sm:gap-3 sm:rounded-2xl sm:border">
+                <div className="order-8 -mx-5 mt-6 flex flex-wrap items-center gap-2 border-t border-[#111111]/20 bg-[#E4E0D7] px-5 py-4 sm:-mx-8 sm:px-8 lg:hidden">
                 <div className="flex-1 min-w-0">
-                    <p className="text-xs text-slate-400">{t('customizer.total')}</p>
-                    <p className="text-lg font-bold text-slate-900 leading-tight">₾{totalPrice.toFixed(2)}</p>
+                    <p className="text-xs text-[#6c625b]">{t('customizer.total')}</p>
+                    <p className="text-lg font-medium leading-tight text-[#111111]">₾{totalPrice.toFixed(2)}</p>
                 </div>
                 <Button
                     variant="outline"
                     size="sm"
                     onClick={reset}
                     aria-label={t('customizer.reset')}
-                    className="gap-1 shrink-0"
+                    className="shrink-0 gap-1 rounded-none border-[#111111]/30 bg-transparent"
                 >
                     <RotateCcw className="w-3.5 h-3.5" />
                 </Button>
@@ -310,7 +312,7 @@ export default function Customizer({
                     variant="outline"
                     size="sm"
                     onClick={() => setSaveOpen(true)}
-                    className="gap-1 shrink-0"
+                    className="shrink-0 gap-1 rounded-none border-[#111111]/30 bg-transparent"
                 >
                     <Bookmark className="w-3.5 h-3.5" />
                 </Button>
@@ -318,7 +320,7 @@ export default function Customizer({
                     variant="default"
                     size="default"
                     onClick={() => onOrder?.(getConfiguration(), totalPrice)}
-                    className="gap-1.5 shrink-0"
+                    className="shrink-0 gap-1.5 rounded-none bg-[#111111] text-white"
                 >
                     <ShoppingBag className="w-4 h-4" />
                     {t('customizer.continueLabel')}

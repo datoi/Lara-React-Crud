@@ -9,10 +9,12 @@ import { GuaranteeSection } from '../components/landing/GuaranteeSection';
 import { CTASection } from '../components/landing/CTASection';
 import { FAQSection } from '../components/landing/FAQSection';
 import { Footer } from '../components/landing/Footer';
+import { NewsletterPopup } from '../components/landing/NewsletterPopup';
+import { JoinSection } from '../components/landing/JoinSection';
 
 export default function Landing() {
     return (
-        <div className="kere-landing min-h-screen overflow-x-hidden bg-[#E4E0D7]">
+        <div className="kere-landing min-h-screen overflow-x-clip bg-[#E4E0D7]">
             <Helmet>
                 <title>Kere — Custom Clothing Marketplace | Tbilisi</title>
                 <meta name="description" content="Connect with expert Georgian tailors for bespoke clothing. Design custom garments or browse our curated marketplace. Handcrafted in Tbilisi." />
@@ -31,6 +33,7 @@ export default function Landing() {
                     "priceRange": "₾₾"
                 })}</script>
             </Helmet>
+            <NewsletterPopup />
             <Navigation />
             <HeroSection />
             <MarketplaceCarousel />
@@ -40,7 +43,7 @@ export default function Landing() {
             <GuaranteeSection />
             <CTASection />
             <FAQSection />
-
+            <JoinSection />
             <Footer />
         </div>
     );

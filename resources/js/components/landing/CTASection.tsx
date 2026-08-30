@@ -19,9 +19,6 @@ export function CTASection() {
                     <h2 className="mx-auto max-w-3xl font-serif text-[clamp(1.65rem,3.1vw,3rem)] font-medium uppercase leading-[1] tracking-normal text-[#111111]">
                         {t('cta.title')}<br className="hidden sm:block" /> {t('cta.titleLine2')}
                     </h2>
-                    <p className="mx-auto mt-8 max-w-xl text-sm leading-7 text-[#717171] sm:text-base">
-                        {t('cta.subtitle')}
-                    </p>
                     <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
                         <Button
                             asChild

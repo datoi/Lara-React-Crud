@@ -94,7 +94,7 @@ export default function PreviewCanvas({
 
     if (loading) {
         return (
-            <div className="relative w-full aspect-[3/4] bg-slate-100 rounded-2xl overflow-hidden animate-pulse">
+            <div className="relative h-52 w-full animate-pulse overflow-hidden bg-[#F2F1ED] sm:h-80 lg:h-[calc(100vh-3rem)]">
                 <div className="absolute inset-0 flex flex-col gap-4 items-center justify-center">
                     <div className="w-32 h-4 bg-slate-200 rounded" />
                     <div className="w-24 h-4 bg-slate-200 rounded" />
@@ -110,7 +110,7 @@ export default function PreviewCanvas({
 
     return (
         <div
-            className="relative w-full h-40 sm:h-72 lg:h-auto lg:aspect-[3/4] lg:max-h-[calc(100vh-10rem)]"
+            className="relative h-52 w-full overflow-hidden bg-[#F2F1ED] sm:h-80 lg:h-[calc(100vh-3rem)]"
             style={{ backgroundColor: canvasBackground }}
             role="img"
             aria-label={`Shirt preview${selectedFabric ? ` in ${selectedFabric.name}` : ''}`}
@@ -160,7 +160,7 @@ export default function PreviewCanvas({
                             src={src}
                             alt={`${category.name}: ${option.name}`}
                             draggable={false}
-                            className="absolute inset-0 w-full h-full object-scale-down object-[center_25%] pointer-events-none select-none"
+                            className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain object-center"
                             style={{
                                 zIndex: category.z_index,
                                 filter: category.is_colorable

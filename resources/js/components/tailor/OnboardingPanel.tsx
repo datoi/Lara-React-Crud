@@ -27,11 +27,7 @@ export function OnboardingPanel({ onAddProduct }: Props) {
                 {t('tailorComponents.gettingStarted')}
             </p>
             <h2 className="text-xl sm:text-2xl font-bold mb-1.5">{t('tailorComponents.onboardingHeading')}</h2>
-            <p className="text-slate-400 text-sm mb-7 max-w-lg">
-                {t('tailorComponents.onboardingDesc')}
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-5 mb-8">
+            <div className="mt-7 flex flex-col sm:flex-row gap-5 mb-8">
                 {STEPS.map((step, i) => (
                     <div key={step.num} className="flex items-start gap-3 flex-1 relative">
                         {/* Connector line */}

@@ -82,9 +82,6 @@ export function LocalTailorsSection() {
                         <h2 className="font-serif text-3xl md:text-4xl font-semibold text-slate-900 mb-4 tracking-tight">
                             {t('localTailors.title')}
                         </h2>
-                        <p className="text-slate-500 text-base leading-relaxed mb-8">
-                            {t('localTailors.subtitle')}
-                        </p>
 
                         {/* 2x2 stat cards */}
                         <div className="grid grid-cols-2 gap-4 mb-8">

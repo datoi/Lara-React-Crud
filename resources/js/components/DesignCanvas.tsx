@@ -84,7 +84,6 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">
                     {t('customizer.customizeGarment', { garment: garment?.label.toLowerCase() ?? '' })}
                 </h2>
-                <p className="text-slate-500">Add design elements, style details, and your measurements.</p>
             </div>
 
             <div className="grid md:grid-cols-[240px_1fr] gap-8 max-w-4xl mx-auto items-start">

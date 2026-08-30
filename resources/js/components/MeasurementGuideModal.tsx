@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactElement } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
@@ -25,10 +25,10 @@ const SIZE_CHART = [
 function ChestSvg() {
     return (
         <svg viewBox="0 0 120 160" className="w-32 h-40 mx-auto" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <ellipse cx="60" cy="28" rx="16" ry="18" stroke="#94a3b8" strokeWidth="1.5" />
-            <path d="M44 44 C30 50 22 72 24 110 L96 110 C98 72 90 50 76 44" stroke="#94a3b8" strokeWidth="1.5" />
-            <path d="M44 50 C36 56 30 80 32 100" stroke="#94a3b8" strokeWidth="1.5" />
-            <path d="M76 50 C84 56 90 80 88 100" stroke="#94a3b8" strokeWidth="1.5" />
+            <ellipse cx="60" cy="28" rx="16" ry="18" stroke="#6b6b6b" strokeWidth="1.5" />
+            <path d="M44 44 C30 50 22 72 24 110 L96 110 C98 72 90 50 76 44" stroke="#6b6b6b" strokeWidth="1.5" />
+            <path d="M44 50 C36 56 30 80 32 100" stroke="#6b6b6b" strokeWidth="1.5" />
+            <path d="M76 50 C84 56 90 80 88 100" stroke="#6b6b6b" strokeWidth="1.5" />
             <line x1="24" y1="65" x2="96" y2="65" stroke="#1e293b" strokeWidth="2" strokeDasharray="4 2" />
             <circle cx="24" cy="65" r="3" fill="#1e293b" />
             <circle cx="96" cy="65" r="3" fill="#1e293b" />
@@ -41,10 +41,10 @@ function ChestSvg() {
 function WaistSvg() {
     return (
         <svg viewBox="0 0 120 160" className="w-32 h-40 mx-auto" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <ellipse cx="60" cy="28" rx="16" ry="18" stroke="#94a3b8" strokeWidth="1.5" />
-            <path d="M44 44 C30 50 22 72 24 110 L96 110 C98 72 90 50 76 44" stroke="#94a3b8" strokeWidth="1.5" />
-            <path d="M44 50 C36 56 30 80 32 100" stroke="#94a3b8" strokeWidth="1.5" />
-            <path d="M76 50 C84 56 90 80 88 100" stroke="#94a3b8" strokeWidth="1.5" />
+            <ellipse cx="60" cy="28" rx="16" ry="18" stroke="#6b6b6b" strokeWidth="1.5" />
+            <path d="M44 44 C30 50 22 72 24 110 L96 110 C98 72 90 50 76 44" stroke="#6b6b6b" strokeWidth="1.5" />
+            <path d="M44 50 C36 56 30 80 32 100" stroke="#6b6b6b" strokeWidth="1.5" />
+            <path d="M76 50 C84 56 90 80 88 100" stroke="#6b6b6b" strokeWidth="1.5" />
             <line x1="28" y1="84" x2="92" y2="84" stroke="#1e293b" strokeWidth="2" strokeDasharray="4 2" />
             <circle cx="28" cy="84" r="3" fill="#1e293b" />
             <circle cx="92" cy="84" r="3" fill="#1e293b" />
@@ -57,8 +57,8 @@ function WaistSvg() {
 function HipsSvg() {
     return (
         <svg viewBox="0 0 120 180" className="w-32 h-40 mx-auto" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <ellipse cx="60" cy="28" rx="16" ry="18" stroke="#94a3b8" strokeWidth="1.5" />
-            <path d="M44 44 C28 54 20 80 22 120 C22 140 40 152 60 152 C80 152 98 140 98 120 C100 80 92 54 76 44" stroke="#94a3b8" strokeWidth="1.5" />
+            <ellipse cx="60" cy="28" rx="16" ry="18" stroke="#6b6b6b" strokeWidth="1.5" />
+            <path d="M44 44 C28 54 20 80 22 120 C22 140 40 152 60 152 C80 152 98 140 98 120 C100 80 92 54 76 44" stroke="#6b6b6b" strokeWidth="1.5" />
             <line x1="22" y1="112" x2="98" y2="112" stroke="#1e293b" strokeWidth="2" strokeDasharray="4 2" />
             <circle cx="22" cy="112" r="3" fill="#1e293b" />
             <circle cx="98" cy="112" r="3" fill="#1e293b" />
@@ -71,8 +71,8 @@ function HipsSvg() {
 function LengthSvg() {
     return (
         <svg viewBox="0 0 120 200" className="w-32 h-44 mx-auto" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <ellipse cx="60" cy="22" rx="14" ry="16" stroke="#94a3b8" strokeWidth="1.5" />
-            <path d="M46 36 C36 44 30 70 32 120 L50 120 L54 160 L66 160 L70 120 L88 120 C90 70 84 44 74 36" stroke="#94a3b8" strokeWidth="1.5" />
+            <ellipse cx="60" cy="22" rx="14" ry="16" stroke="#6b6b6b" strokeWidth="1.5" />
+            <path d="M46 36 C36 44 30 70 32 120 L50 120 L54 160 L66 160 L70 120 L88 120 C90 70 84 44 74 36" stroke="#6b6b6b" strokeWidth="1.5" />
             <circle cx="45" cy="42" r="3" fill="#1e293b" />
             <line x1="38" y1="42" x2="38" y2="160" stroke="#1e293b" strokeWidth="2" strokeDasharray="4 2" />
             <circle cx="38" cy="160" r="3" fill="#1e293b" />
@@ -110,7 +110,7 @@ export function MeasurementGuideModal({ open, onClose, initialStep = 'chest' }: 
         title: string;
         tip: string;
         steps: string[];
-        Diagram: () => JSX.Element;
+        Diagram: () => ReactElement;
     }> = {
         chest: {
             title: t('measurementGuide.chestTitle'),
@@ -205,23 +205,23 @@ export function MeasurementGuideModal({ open, onClose, initialStep = 'chest' }: 
                         onClick={e => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                            <h2 className="font-bold text-slate-900 text-base">{t('measurementGuide.title')}</h2>
-                            <Button variant="ghost" size="sm" onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-700">
+                        <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
+                            <h2 className="text-base font-bold text-black">{t('measurementGuide.title')}</h2>
+                            <Button variant="ghost" size="sm" onClick={onClose} className="p-1.5 text-[#666666] hover:text-black">
                                 <X className="w-5 h-5" />
                             </Button>
                         </div>
 
                         {/* Tabs */}
-                        <div className="flex overflow-x-auto border-b border-slate-100 px-2 gap-1 scrollbar-none">
+                        <div className="scrollbar-none flex gap-1 overflow-x-auto border-b border-black/10 px-2">
                             {STEPS.map(s => (
                                 <button
                                     key={s.key}
                                     onClick={() => setActiveStep(s.key)}
                                     className={`flex-shrink-0 text-xs font-medium px-3 py-3 border-b-2 transition-colors cursor-pointer ${
                                         activeStep === s.key
-                                            ? 'border-slate-900 text-slate-900'
-                                            : 'border-transparent text-slate-400 hover:text-slate-700'
+                                            ? 'border-black text-black'
+                                            : 'border-transparent text-[#777777] hover:text-black'
                                     }`}
                                 >
                                     {s.label}
@@ -242,16 +242,16 @@ export function MeasurementGuideModal({ open, onClose, initialStep = 'chest' }: 
                                         className="p-5"
                                     >
                                         <div className="flex gap-5 items-start mb-5">
-                                            <div className="bg-slate-50 rounded-2xl p-3 flex-shrink-0">
+                                            <div className="flex-shrink-0 rounded-2xl bg-[#f3f3f3] p-3">
                                                 {Diagram && <Diagram />}
                                             </div>
                                             <div className="flex-1">
-                                                <h3 className="font-bold text-slate-900 text-base mb-1">{content.title}</h3>
-                                                <p className="text-xs text-slate-500 italic mb-3">{content.tip}</p>
+                                                <h3 className="mb-1 text-base font-bold text-black">{content.title}</h3>
+                                                <p className="mb-3 text-xs italic text-[#555555]">{content.tip}</p>
                                                 <ol className="space-y-2">
                                                     {content.steps.map((step, i) => (
-                                                        <li key={i} className="flex gap-2.5 text-sm text-slate-600 leading-snug">
-                                                            <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                        <li key={i} className="flex gap-2.5 text-sm leading-snug text-[#333333]">
+                                                            <span className="mt-0.5 flex-shrink-0 text-sm font-normal text-black">
                                                                 {i + 1}
                                                             </span>
                                                             {step}
@@ -270,8 +270,8 @@ export function MeasurementGuideModal({ open, onClose, initialStep = 'chest' }: 
                                         transition={{ duration: 0.5 }}
                                         className="p-5"
                                     >
-                                        <p className="text-xs text-slate-500 mb-4">{t('measurementGuide.chartNote')}</p>
-                                        <div className="overflow-x-auto rounded-xl border border-slate-100">
+                                        <p className="mb-4 text-xs text-[#555555]">{t('measurementGuide.chartNote')}</p>
+                                        <div className="overflow-x-auto rounded-xl border border-black/10">
                                             <table className="w-full text-sm">
                                                 <thead>
                                                     <tr className="bg-slate-900 text-white">
@@ -288,35 +288,35 @@ export function MeasurementGuideModal({ open, onClose, initialStep = 'chest' }: 
                                                 </thead>
                                                 <tbody>
                                                     {SIZE_CHART.map((row, i) => (
-                                                        <tr key={row.size} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                                                            <td className="px-3 py-2.5 font-bold text-slate-900">{row.size}</td>
-                                                            <td className="px-3 py-2.5 text-slate-600">{row.chest}</td>
-                                                            <td className="px-3 py-2.5 text-slate-600">{row.waist}</td>
-                                                            <td className="px-3 py-2.5 text-slate-600">{row.hips}</td>
-                                                            <td className="px-3 py-2.5 text-slate-600">{row.length}</td>
+                                                        <tr key={row.size} className={i % 2 === 0 ? 'bg-white' : 'bg-[#f3f3f3]'}>
+                                                            <td className="px-3 py-2.5 font-bold text-black">{row.size}</td>
+                                                            <td className="px-3 py-2.5 text-[#333333]">{row.chest}</td>
+                                                            <td className="px-3 py-2.5 text-[#333333]">{row.waist}</td>
+                                                            <td className="px-3 py-2.5 text-[#333333]">{row.hips}</td>
+                                                            <td className="px-3 py-2.5 text-[#333333]">{row.length}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
                                             </table>
                                         </div>
-                                        <p className="text-xs text-slate-400 mt-3">{t('measurementGuide.chartFootnote')}</p>
+                                        <p className="mt-3 text-xs text-[#777777]">{t('measurementGuide.chartFootnote')}</p>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
                         </div>
 
                         {/* Footer nav */}
-                        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50">
+                        <div className="flex items-center justify-between border-t border-black/10 bg-[#f3f3f3] px-5 py-3">
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={goPrev}
                                 disabled={activeStep === 'chest'}
-                                className="flex items-center gap-1 text-slate-500 hover:text-slate-900 disabled:opacity-30"
+                                className="flex items-center gap-1 text-[#555555] hover:text-black disabled:opacity-30"
                             >
                                 <ChevronLeft className="w-4 h-4" /> {t('measurementGuide.prev')}
                             </Button>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-[#666666]">
                                 {activeStep === 'chart' ? '5 / 5' : `${currentIndex + 1} / 5`}
                             </span>
                             <Button
@@ -324,7 +324,7 @@ export function MeasurementGuideModal({ open, onClose, initialStep = 'chest' }: 
                                 size="sm"
                                 onClick={goNext}
                                 disabled={activeStep === 'chart'}
-                                className="flex items-center gap-1 text-slate-500 hover:text-slate-900 disabled:opacity-30"
+                                className="flex items-center gap-1 text-[#555555] hover:text-black disabled:opacity-30"
                             >
                                 {t('measurementGuide.next')} <ChevronRight className="w-4 h-4" />
                             </Button>

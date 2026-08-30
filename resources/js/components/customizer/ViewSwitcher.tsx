@@ -40,12 +40,12 @@ export default function ViewSwitcher({ views, view, onChange }: ViewSwitcherProp
                 size="sm"
                 onClick={() => step(-1)}
                 aria-label={t('customizer.viewPrev')}
-                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-900"
+                className="h-8 w-8 rounded-none p-0 text-[#6c625b] hover:text-[#111111]"
             >
                 <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <span className="min-w-[5.5rem] select-none text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <span className="min-w-[5.5rem] select-none text-center text-[11px] font-medium uppercase tracking-[0.12em] text-[#514843]">
                 {t(VIEW_LABEL_KEYS[views[index]])}
             </span>
 
@@ -54,7 +54,7 @@ export default function ViewSwitcher({ views, view, onChange }: ViewSwitcherProp
                 size="sm"
                 onClick={() => step(1)}
                 aria-label={t('customizer.viewNext')}
-                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-900"
+                className="h-8 w-8 rounded-none p-0 text-[#6c625b] hover:text-[#111111]"
             >
                 <ChevronRight className="h-4 w-4" />
             </Button>

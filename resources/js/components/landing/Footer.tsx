@@ -110,9 +110,11 @@ export function Footer() {
                                     </button>
                                 </div>
 
-                                <p className="mt-3 max-w-sm text-[9px] leading-4 text-black/45">
-                                    {submitted ? t('footer.newsletterSuccess') : t('footer.newsletterDesc')}
-                                </p>
+                                {submitted && (
+                                    <p className="mt-3 max-w-sm text-[9px] leading-4 text-black/45">
+                                        {t('footer.newsletterSuccess')}
+                                    </p>
+                                )}
                             </form>
                         </div>
 
