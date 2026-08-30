@@ -105,6 +105,183 @@ class WomensTopsSeeder extends Seeder
     ];
 
     /**
+     * The T-shirt photography: one style per sleeve construction, each with its
+     * own colourway. Style is the preview layer, so choosing one swaps both the
+     * garment on the canvas and the colour dots underneath it.
+     *
+     * Classic is the original shoot and stays the default, at the head of the
+     * row. The five after it come from the 2026 studio set, which photographs
+     * the same cropped crew tee — the cut 'depicts' pins — in five sleeve
+     * constructions. They differ in the sleeve alone: measured across all 102
+     * configurations the body is one garment (hem 584-625px) while the sleeve
+     * runs from a fitted set-in to a dropped shoulder, so fit, length and
+     * neckline stay the labelled selectors they already were.
+     *
+     * A style opens on its 'cover' colour, which is also its tile thumbnail —
+     * six different ones, because five styles thumbnailed in black read as the
+     * same garment repeated. Cover is independent of colour order, so the dots
+     * stay in one canonical sequence across every style. Hexes are sampled from the
+     * photographs themselves, which is why one colour word differs in shade
+     * between styles — they are separate shoots of separate dye lots. Both the
+     * files and the hexes come from scripts/prepare-tshirt-photos.mjs.
+     */
+    private const TSHIRT_STYLES = [
+        [
+            'slug' => 'classic', 'name' => 'Classic',
+            'cover' => 'burgundy',
+            'folder' => 'WomanTshirtClassic', 'prefix' => '',
+            'colors' => [
+                ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#76041f'],
+                ['slug' => 'black',           'name' => 'Black',        'hex' => '#181818'],
+                ['slug' => 'red',             'name' => 'Red',          'hex' => '#de1a1f'],
+                ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#fc2d7c'],
+                ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fc6d05'],
+                ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#fcd02c'],
+                ['slug' => 'green',           'name' => 'Green',        'hex' => '#01714a'],
+                ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#6f7342'],
+                ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#663a25'],
+            ],
+        ],
+        [
+            'slug' => 'fitted', 'name' => 'Fitted',
+            'cover' => 'navy',
+            'folder' => 'WomanTshirtStudio', 'prefix' => 'fitted-',
+            'colors' => [
+                ['slug' => 'black',           'name' => 'Black',        'hex' => '#151515'],
+                ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#3c4249'],
+                ['slug' => 'navy',            'name' => 'Navy',         'hex' => '#02116e'],
+                ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#6b4129'],
+                ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#c69661'],
+                ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#e4cbad'],
+                ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#fef0cf'],
+                ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#f2eadc'],
+                ['slug' => 'white',           'name' => 'White',        'hex' => '#e6e5e8'],
+                ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#cccccc'],
+                ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#fccfd0'],
+                ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#fd2a87'],
+                ['slug' => 'red',             'name' => 'Red',          'hex' => '#d8111b'],
+                ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#780423'],
+                ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fe6d03'],
+                ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#fed72b'],
+                ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#6c7e25'],
+                ['slug' => 'emerald',         'name' => 'Emerald',      'hex' => '#017b58'],
+                ['slug' => 'turquoise',       'name' => 'Turquoise',    'hex' => '#5ce4da'],
+                ['slug' => 'sky',             'name' => 'Sky',          'hex' => '#9bd2f2'],
+                ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#3b6fec'],
+                ['slug' => 'lavender',        'name' => 'Lavender',     'hex' => '#c38be3'],
+                ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#620991'],
+            ],
+        ],
+        [
+            'slug' => 'wide', 'name' => 'Wide',
+            'cover' => 'olive',
+            'folder' => 'WomanTshirtStudio', 'prefix' => 'wide-',
+            'colors' => [
+                ['slug' => 'black',           'name' => 'Black',        'hex' => '#1e1e1f'],
+                ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#454446'],
+                ['slug' => 'navy',            'name' => 'Navy',         'hex' => '#182042'],
+                ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#5b392b'],
+                ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#cd9b6e'],
+                ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#e9daca'],
+                ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#f7edd6'],
+                ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#f2e9e0'],
+                ['slug' => 'white',           'name' => 'White',        'hex' => '#e9e8ea'],
+                ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#d3d3d8'],
+                ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#fcdedd'],
+                ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#fd398f'],
+                ['slug' => 'red',             'name' => 'Red',          'hex' => '#e71223'],
+                ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#662032'],
+                ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fd670d'],
+                ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#fdd318'],
+                ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#6c6d3f'],
+                ['slug' => 'green',           'name' => 'Green',        'hex' => '#018f5c'],
+                ['slug' => 'turquoise',       'name' => 'Turquoise',    'hex' => '#36ced1'],
+                ['slug' => 'sky',             'name' => 'Sky',          'hex' => '#9dd4f4'],
+                ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#164bd2'],
+                ['slug' => 'lavender',        'name' => 'Lavender',     'hex' => '#cdb2e9'],
+                ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#6e24a3'],
+            ],
+        ],
+        [
+            'slug' => 'dropped', 'name' => 'Dropped',
+            'cover' => 'camel',
+            'folder' => 'WomanTshirtStudio', 'prefix' => 'dropped-',
+            'colors' => [
+                ['slug' => 'black',           'name' => 'Black',        'hex' => '#171717'],
+                ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#4d4d4f'],
+                ['slug' => 'navy',            'name' => 'Navy',         'hex' => '#1d2234'],
+                ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#4a322b'],
+                ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#d79d68'],
+                ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#ebdcc9'],
+                ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#f6ead9'],
+                ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#ece8e0'],
+                ['slug' => 'white',           'name' => 'White',        'hex' => '#e8e8ea'],
+                ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#dfdfdf'],
+                ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#fcdfde'],
+                ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#fc4292'],
+                ['slug' => 'red',             'name' => 'Red',          'hex' => '#f20c21'],
+                ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#681628'],
+                ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fd6710'],
+                ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#fee03e'],
+                ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#68684a'],
+                ['slug' => 'green',           'name' => 'Green',        'hex' => '#006f4e'],
+                ['slug' => 'sky',             'name' => 'Sky',          'hex' => '#d6e7f8'],
+                ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#1952d9'],
+            ],
+        ],
+        [
+            'slug' => 'oversized', 'name' => 'Oversized',
+            'cover' => 'orange',
+            'folder' => 'WomanTshirtStudio', 'prefix' => 'oversized-',
+            'colors' => [
+                ['slug' => 'black',           'name' => 'Black',        'hex' => '#1c1c1c'],
+                ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#474747'],
+                ['slug' => 'navy',            'name' => 'Navy',         'hex' => '#1c243b'],
+                ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#643a29'],
+                ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#cb935f'],
+                ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#eedfcf'],
+                ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#f6ead6'],
+                ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#eee8df'],
+                ['slug' => 'white',           'name' => 'White',        'hex' => '#e8e8ea'],
+                ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#ceced0'],
+                ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#fadedd'],
+                ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#fc559b'],
+                ['slug' => 'red',             'name' => 'Red',          'hex' => '#e50d1c'],
+                ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#591729'],
+                ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fd640e'],
+                ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#fdca0d'],
+                ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#6e6e4f'],
+                ['slug' => 'green',           'name' => 'Green',        'hex' => '#006c4a'],
+                ['slug' => 'turquoise',       'name' => 'Turquoise',    'hex' => '#23cfe4'],
+                ['slug' => 'sky',             'name' => 'Sky',          'hex' => '#b9daf7'],
+                ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#0f44c3'],
+                ['slug' => 'lavender',        'name' => 'Lavender',     'hex' => '#d6c5ed'],
+                ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#572e88'],
+            ],
+        ],
+        [
+            'slug' => 'puff', 'name' => 'Puff',
+            'cover' => 'pink',
+            'folder' => 'WomanTshirtStudio', 'prefix' => 'puff-',
+            'colors' => [
+                ['slug' => 'black',           'name' => 'Black',        'hex' => '#1f1f1f'],
+                ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#48474a'],
+                ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#6e4b3a'],
+                ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#d09c74'],
+                ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#ead6c0'],
+                ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#f3e9da'],
+                ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#eee9e1'],
+                ['slug' => 'white',           'name' => 'White',        'hex' => '#e8e7e9'],
+                ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#c1c1c3'],
+                ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#f9dad9'],
+                ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#f6357f'],
+                ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#5a192b'],
+                ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fd6b1f'],
+            ],
+        ],
+    ];
+
+    /**
      * The 17 Tops garments. 'only' whitelists an attribute's options,
      * 'except' removes them; an attribute left unmentioned offers the full set.
      */
@@ -117,9 +294,7 @@ class WomensTopsSeeder extends Seeder
                 'sleeves'  => ['one-sleeve'],
             ],
             'photos' => [
-                'folder' => 'WomanTshirtClassic',
-                'style'  => ['slug' => 'classic', 'name' => 'Classic'],
-                // The cut the photography actually shows. Pinned as this
+                // The cut every T-shirt photograph shows. Pinned as this
                 // garment's defaults so the preview and the spec panel agree
                 // the moment the page opens.
                 'depicts' => [
@@ -128,20 +303,7 @@ class WomensTopsSeeder extends Seeder
                     'neckline' => 'crew',
                     'sleeves'  => 'cap',
                 ],
-                // First colour is the default — it becomes the card preview and
-                // the opening customizer view. Swatch hexes sampled from the
-                // photographs themselves.
-                'colors' => [
-                    ['slug' => 'burgundy', 'name' => 'Burgundy', 'hex' => '#76041f'],
-                    ['slug' => 'black',    'name' => 'Black',    'hex' => '#181818'],
-                    ['slug' => 'red',      'name' => 'Red',      'hex' => '#de1a1f'],
-                    ['slug' => 'pink',     'name' => 'Pink',     'hex' => '#fc2d7c'],
-                    ['slug' => 'orange',   'name' => 'Orange',   'hex' => '#fc6d05'],
-                    ['slug' => 'yellow',   'name' => 'Yellow',   'hex' => '#fcd02c'],
-                    ['slug' => 'green',    'name' => 'Green',    'hex' => '#01714a'],
-                    ['slug' => 'olive',    'name' => 'Olive',    'hex' => '#6f7342'],
-                    ['slug' => 'brown',    'name' => 'Brown',    'hex' => '#663a25'],
-                ],
+                'styles' => self::TSHIRT_STYLES,
             ],
         ],
         [
@@ -275,7 +437,7 @@ class WomensTopsSeeder extends Seeder
     private function seedGarment(array $garment): void
     {
         $photos = $garment['photos'] ?? null;
-        $defaultColor = $photos['colors'][0]['slug'] ?? null;
+        $lead = $photos['styles'][0] ?? null;
 
         $product = CustomizerProduct::updateOrCreate(
             ['slug' => "womens-{$garment['slug']}"],
@@ -286,8 +448,8 @@ class WomensTopsSeeder extends Seeder
                 'description' => $garment['description'],
                 'base_price' => $garment['price'],
                 'is_active' => true,
-                'preview_image_path' => $photos
-                    ? "/assets/garments/{$photos['folder']}/{$defaultColor}-front.png"
+                'preview_image_path' => $lead
+                    ? self::photoPath($lead, $lead['cover'], 'front')
                     : null,
             ],
         );
@@ -304,15 +466,49 @@ class WomensTopsSeeder extends Seeder
     }
 
     /**
-     * The photographed garment: one style option carrying a colour variant per
-     * shot set. Same shape the customizer admin produces, and the same shape
-     * MensGarmentsSeeder uses — the canvas composites it, the colour dots swap it.
+     * Angles the T-shirt is offered in.
+     *
+     * Left and right are withheld. Measured over the studio set, the garment's
+     * side profile varies 9-13% between colours of a SINGLE style, while the
+     * five styles differ by less than that side-on — a classifier that places
+     * 0 of 102 front views in the wrong style misplaces 47 of 102 left views.
+     * So changing colour on a side view reads as a different cut, which is the
+     * defect it was reported as. The original Classic shoot has the same fault
+     * more mildly (6-8%), and is withheld with the rest rather than leaving one
+     * style rotating and five not. Fronts and backs are consistent to 0.3-3%.
+     *
+     * Nothing is deleted: the files stay in WomanTshirtStudio/. Put 'left' and
+     * 'right' back here when a consistently posed re-shoot lands.
+     */
+    private const PHOTO_VIEWS = ['front', 'back'];
+
+    /**
+     * Public path of one photograph — /assets/garments/<folder>/<prefix><colour>-<view>.png
+     * — or null when the angle is not offered, or the shoot did not deliver it.
+     * A rotation view pointing at a file that is not on disk would give the
+     * customer a tile that 404s; null instead leaves the angle out of the
+     * switcher, which already offers only views every rendered layer has.
+     * See scripts/prepare-tshirt-photos.mjs.
+     */
+    private static function photoPath(array $style, string $color, string $view): ?string
+    {
+        if (! in_array($view, self::PHOTO_VIEWS, true)) {
+            return null;
+        }
+
+        $path = "/assets/garments/{$style['folder']}/{$style['prefix']}{$color}-{$view}.png";
+
+        return file_exists(public_path($path)) ? $path : null;
+    }
+
+    /**
+     * The photographed garment: a Style option per shoot, each carrying a colour
+     * variant per colourway. Same shape the customizer admin produces, and the
+     * same shape MensGarmentsSeeder uses — the canvas composites the selected
+     * option, the colour dots swap it.
      */
     private function seedPhotoLayer(CustomizerProduct $product, array $photos): void
     {
-        $base = "/assets/garments/{$photos['folder']}";
-        $default = $photos['colors'][0]['slug'];
-
         $category = LayerCategory::updateOrCreate(
             ['customizer_product_id' => $product->id, 'slug' => 'style'],
             [
@@ -327,37 +523,43 @@ class WomensTopsSeeder extends Seeder
             ],
         );
 
-        $style = LayerOption::updateOrCreate(
-            ['layer_category_id' => $category->id, 'slug' => $photos['style']['slug']],
-            [
-                'parent_option_id' => null,
-                'name' => $photos['style']['name'],
-                'image_path' => "{$base}/{$default}-front.png",
-                'thumbnail_path' => "{$base}/{$default}-front.png",
-                'back_image_path' => "{$base}/{$default}-back.png",
-                'left_image_path' => "{$base}/{$default}-left.png",
-                'right_image_path' => "{$base}/{$default}-right.png",
-                'color_hex' => null,
-                'price_modifier' => 0,
-                'is_default' => true,
-                'is_active' => true,
-                'display_order' => 0,
-            ],
-        );
+        foreach ($photos['styles'] as $order => $style) {
+            $cover = $style['cover'];
 
-        foreach ($photos['colors'] as $index => $color) {
-            $style->colors()->updateOrCreate(
-                ['name' => $color['name']],
+            $option = LayerOption::updateOrCreate(
+                ['layer_category_id' => $category->id, 'slug' => $style['slug']],
                 [
-                    'color_hex' => $color['hex'],
-                    'image_path' => "{$base}/{$color['slug']}-front.png",
-                    'back_image_path' => "{$base}/{$color['slug']}-back.png",
-                    'left_image_path' => "{$base}/{$color['slug']}-left.png",
-                    'right_image_path' => "{$base}/{$color['slug']}-right.png",
-                    'is_default' => $index === 0,
-                    'display_order' => $index,
+                    'parent_option_id' => null,
+                    'name' => $style['name'],
+                    'image_path' => self::photoPath($style, $cover, 'front'),
+                    'thumbnail_path' => self::photoPath($style, $cover, 'front'),
+                    'back_image_path' => self::photoPath($style, $cover, 'back'),
+                    'left_image_path' => self::photoPath($style, $cover, 'left'),
+                    'right_image_path' => self::photoPath($style, $cover, 'right'),
+                    'color_hex' => null,
+                    // The base price buys any of the photographed sleeves — the
+                    // same tee, cut differently at the shoulder.
+                    'price_modifier' => 0,
+                    'is_default' => $order === 0,
+                    'is_active' => true,
+                    'display_order' => $order,
                 ],
             );
+
+            foreach ($style['colors'] as $index => $color) {
+                $option->colors()->updateOrCreate(
+                    ['name' => $color['name']],
+                    [
+                        'color_hex' => $color['hex'],
+                        'image_path' => self::photoPath($style, $color['slug'], 'front'),
+                        'back_image_path' => self::photoPath($style, $color['slug'], 'back'),
+                        'left_image_path' => self::photoPath($style, $color['slug'], 'left'),
+                        'right_image_path' => self::photoPath($style, $color['slug'], 'right'),
+                        'is_default' => $color['slug'] === $cover,
+                        'display_order' => $index,
+                    ],
+                );
+            }
         }
     }
 

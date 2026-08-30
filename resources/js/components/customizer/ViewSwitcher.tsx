@@ -1,12 +1,14 @@
 /**
  * ViewSwitcher — rotate the garment preview between available camera angles.
  *
- * Renders nothing when only the front view exists for the current selection,
- * so products (or colors) without back/side photos never show the control.
+ * A four-up row of tiles rather than a prev/next stepper: every angle we hold is
+ * visible at once, so the customer can go straight to the one they want instead
+ * of stepping past the others.
+ *
+ * Renders nothing when only the front view exists for the current selection, so
+ * products (or colours) without back/side photos never show the control.
  */
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui/button';
 import type { GarmentView } from '../../types/customizer';
 
 const VIEW_LABEL_KEYS: Record<GarmentView, string> = {
@@ -20,44 +22,64 @@ interface ViewSwitcherProps {
     views: GarmentView[];
     view: GarmentView;
     onChange: (view: GarmentView) => void;
+    /**
+     * Photograph for a view's tile. Returning null renders the tile as a label
+     * only — a garment whose angles are not photographed still gets a switcher.
+     */
+    thumbnailFor?: (view: GarmentView) => string | null;
 }
 
-export default function ViewSwitcher({ views, view, onChange }: ViewSwitcherProps) {
+export default function ViewSwitcher({ views, view, onChange, thumbnailFor }: ViewSwitcherProps) {
     const { t } = useTranslation();
 
     if (views.length <= 1) return null;
 
-    const index = Math.max(0, views.indexOf(view));
-    const step = (delta: number) =>
-        onChange(views[(index + delta + views.length) % views.length]);
-
-    // Deliberately chrome-free: it sits directly under the garment as a caption
-    // for it, so a card and outlined buttons would compete with the photo.
+    // Sized as if there were always four angles, then centred, so withholding a
+    // view changes how many tiles there are but never how big they are.
     return (
-        <div className="flex items-center justify-center gap-1">
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => step(-1)}
-                aria-label={t('customizer.viewPrev')}
-                className="h-8 w-8 rounded-none p-0 text-[#6c625b] hover:text-[#111111]"
-            >
-                <ChevronLeft className="h-4 w-4" />
-            </Button>
+        <div className="flex flex-wrap justify-center gap-3">
+            {views.map(candidate => {
+                const isSelected = candidate === view;
+                const label = t(VIEW_LABEL_KEYS[candidate]);
+                const thumbnail = thumbnailFor?.(candidate) ?? null;
 
-            <span className="min-w-[5.5rem] select-none text-center text-[11px] font-medium uppercase tracking-[0.12em] text-[#514843]">
-                {t(VIEW_LABEL_KEYS[views[index]])}
-            </span>
-
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => step(1)}
-                aria-label={t('customizer.viewNext')}
-                className="h-8 w-8 rounded-none p-0 text-[#6c625b] hover:text-[#111111]"
-            >
-                <ChevronRight className="h-4 w-4" />
-            </Button>
+                return (
+                    <button
+                        key={candidate}
+                        type="button"
+                        onClick={() => onChange(candidate)}
+                        aria-pressed={isSelected}
+                        aria-label={label}
+                        className={[
+                            'flex w-[calc(25%-0.5625rem)] cursor-pointer flex-col bg-white transition-colors',
+                            isSelected
+                                ? 'border border-[#111111]'
+                                : 'border border-[#111111]/[0.16] hover:border-[#111111]/60',
+                        ].join(' ')}
+                    >
+                        {thumbnail && (
+                            <span className="block aspect-square w-full overflow-hidden">
+                                <img
+                                    src={thumbnail}
+                                    alt=""
+                                    aria-hidden="true"
+                                    draggable={false}
+                                    className="h-full w-full select-none object-contain object-center"
+                                />
+                            </span>
+                        )}
+                        <span
+                            className={[
+                                'block px-1 text-center text-[10px] uppercase tracking-[0.06em]',
+                                thumbnail ? 'pb-2' : 'py-4',
+                                isSelected ? 'text-[#111111]' : 'text-[#655D55]',
+                            ].join(' ')}
+                        >
+                            {label}
+                        </span>
+                    </button>
+                );
+            })}
         </div>
     );
 }

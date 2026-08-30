@@ -893,7 +893,15 @@
         "previewOptionsSoon": "We haven't photographed these options yet — your choice is still made to order.",
         "previewGarmentSoon": "We haven't photographed this garment yet — it is still made to your measurements.",
         "continueLabel": "Continue",
-        "continuePrice": "Continue — ₾{{price}}"
+        "continuePrice": "Continue — ₾{{price}}",
+        "attributeCount_one": "{{count}} detail",
+        "attributeCount_other": "{{count}} details",
+        "optionCount_one": "{{count}} option",
+        "optionCount_other": "{{count}} options",
+        "backToDetails": "Back to details",
+        "basePriceLabel": "Base price",
+        "addOnsLabel": "+₾{{amount}} in add-ons",
+        "measurementNote": "Your tailor confirms measurements after the order is placed."
     },
     "saveDesignModal": {
         "title": "Save Design",

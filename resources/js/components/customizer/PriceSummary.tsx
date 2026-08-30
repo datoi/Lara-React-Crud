@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { LayerCategory, Fabric } from '../../types/customizer';
 
 interface PriceSummaryProps {
@@ -9,6 +10,11 @@ interface PriceSummaryProps {
     totalPrice: number;
 }
 
+/**
+ * What the customer is paying for, line by line: the base garment, then every
+ * choice that added to it, then the total. Only non-zero modifiers appear, so a
+ * default configuration shows two lines rather than a page of zeroes.
+ */
 export default function PriceSummary({
     basePrice,
     layerCategories,
@@ -17,9 +23,9 @@ export default function PriceSummary({
     fabricId,
     totalPrice,
 }: PriceSummaryProps) {
+    const { t } = useTranslation();
     const selectedFabric = fabrics.find(f => f.id === fabricId) ?? null;
 
-    // Collect non-zero option modifiers to display line items
     const modifierLines: { label: string; amount: number }[] = [];
     for (const category of layerCategories) {
         const optId = selections[category.id];
@@ -30,28 +36,31 @@ export default function PriceSummary({
         }
     }
     if (selectedFabric && selectedFabric.price_modifier !== 0) {
-        modifierLines.push({ label: `Fabric: ${selectedFabric.name}`, amount: selectedFabric.price_modifier });
+        modifierLines.push({
+            label: `${t('customizer.fabric')}: ${selectedFabric.name}`,
+            amount: selectedFabric.price_modifier,
+        });
     }
 
     return (
-        <div className="border border-[#111111] bg-[#E4E0D7] p-5 text-[#111111]">
-            <div className="space-y-1.5 mb-4 text-sm">
-                <div className="flex justify-between text-[#6c625b]">
-                    <span>Base price</span>
-                    <span>₾{basePrice.toFixed(2)}</span>
+        <div className="flex flex-col gap-[7px] border border-[#111111]/[0.16] bg-white px-5 py-[18px]">
+            <div className="flex justify-between gap-3 text-[13px] text-[#655D55]">
+                <span>{t('customizer.basePriceLabel')}</span>
+                <span className="flex-none tabular-nums">₾{basePrice.toFixed(2)}</span>
+            </div>
+
+            {modifierLines.map((line, i) => (
+                <div key={i} className="flex justify-between gap-3 text-[13px] text-[#655D55]">
+                    <span>{line.label}</span>
+                    <span className="flex-none tabular-nums">
+                        {line.amount > 0 ? '+' : ''}₾{line.amount.toFixed(2)}
+                    </span>
                 </div>
-                {modifierLines.map((line, i) => (
-                    <div key={i} className="flex justify-between text-[#6c625b]">
-                        <span className="truncate max-w-[65%]">{line.label}</span>
-                        <span>
-                            {line.amount > 0 ? '+' : ''}₾{line.amount.toFixed(2)}
-                        </span>
-                    </div>
-                ))}
-                <div className="flex justify-between border-t border-[#111111]/20 pt-2 text-base font-semibold text-[#111111]">
-                    <span>Total</span>
-                    <span>₾{totalPrice.toFixed(2)}</span>
-                </div>
+            ))}
+
+            <div className="mt-[3px] flex items-baseline justify-between gap-3 border-t border-[#111111]/[0.16] pt-2.5 text-[15px] font-semibold text-[#111111]">
+                <span>{t('customizer.total')}</span>
+                <span className="flex-none font-serif text-[20px] tabular-nums">₾{totalPrice.toFixed(2)}</span>
             </div>
         </div>
     );

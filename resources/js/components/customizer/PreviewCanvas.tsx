@@ -94,7 +94,7 @@ export default function PreviewCanvas({
 
     if (loading) {
         return (
-            <div className="relative h-52 w-full animate-pulse overflow-hidden bg-[#F2F1ED] sm:h-80 lg:h-[calc(100vh-3rem)]">
+            <div className="relative aspect-square w-full animate-pulse overflow-hidden border border-[#111111]/[0.16] bg-white">
                 <div className="absolute inset-0 flex flex-col gap-4 items-center justify-center">
                     <div className="w-32 h-4 bg-slate-200 rounded" />
                     <div className="w-24 h-4 bg-slate-200 rounded" />
@@ -106,11 +106,11 @@ export default function PreviewCanvas({
     // The container background colour IS the fabric tint source.
     // Greyscaled + brightened PNGs multiply against it to produce the
     // final fabric colour while preserving fold shadows.
-    const canvasBackground = selectedFabric?.color_hex ?? 'transparent';
+    const canvasBackground = selectedFabric?.color_hex ?? '#ffffff';
 
     return (
         <div
-            className="relative h-52 w-full overflow-hidden bg-[#F2F1ED] sm:h-80 lg:h-[calc(100vh-3rem)]"
+            className="relative aspect-square w-full overflow-hidden border border-[#111111]/[0.16] bg-white"
             style={{ backgroundColor: canvasBackground }}
             role="img"
             aria-label={`Shirt preview${selectedFabric ? ` in ${selectedFabric.name}` : ''}`}

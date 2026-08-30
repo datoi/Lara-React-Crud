@@ -893,7 +893,15 @@
         "previewOptionsSoon": "ეს ვარიანტები ჯერ არ გვაქვს გადაღებული — შენი არჩევანი მაინც შეიკერება.",
         "previewGarmentSoon": "ეს ნივთი ჯერ არ გვაქვს გადაღებული — ის მაინც შენს ზომებზე იკერება.",
         "continueLabel": "გაგრძელება",
-        "continuePrice": "გაგრძელება — ₾{{price}}"
+        "continuePrice": "გაგრძელება — ₾{{price}}",
+        "attributeCount_one": "{{count}} პარამეტრი",
+        "attributeCount_other": "{{count}} პარამეტრი",
+        "optionCount_one": "{{count}} ვარიანტი",
+        "optionCount_other": "{{count}} ვარიანტი",
+        "backToDetails": "დეტალებში დაბრუნება",
+        "basePriceLabel": "საბაზისო ფასი",
+        "addOnsLabel": "+₾{{amount}} დამატებები",
+        "measurementNote": "ზომებს ხელოსანი შეკვეთის დადასტურების შემდეგ დააზუსტებს."
     },
     "saveDesignModal": {
         "title": "დიზაინის შენახვა",

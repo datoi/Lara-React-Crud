@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useParams, useNavigate, useSearchParams } from 'react-router';
-import { motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 import Customizer from '../components/customizer/Customizer';
+import StudioBreadcrumb from '../components/StudioBreadcrumb';
 import { Navigation } from '../components/landing/Navigation';
 import { useProductData } from '../hooks/useProductData';
 import { getAuthUser, getAuthToken, saveReturnTo } from '../hooks/useAuth';
@@ -75,7 +75,15 @@ export default function CustomizePage() {
         // modifier and can understate the garment by most of its value.
         saveDraft({
             garment_type:    category?.orderKey ?? product.category,
-            customization:   configuration as unknown as Record<string, unknown>,
+            // garment_type is the taxonomy bucket the tailor is matched on, and
+            // every Tops garment files under one key — so the order would name a
+            // corset top and a hoodie identically. The garment itself travels
+            // with the configuration.
+            customization:   {
+                ...(configuration as unknown as Record<string, unknown>),
+                product_name: product.name,
+                product_slug: product.slug,
+            },
             design_file_url: null,
             estimated_price: totalPrice,
         });
@@ -114,19 +122,25 @@ export default function CustomizePage() {
             <Navigation />
             <div className="h-11" />
             <main className="w-full">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                >
-                    <Customizer
-                        product={product}
-                        savedConfiguration={savedConfiguration}
-                        layerCategories={layerCategories}
-                        fabrics={fabrics}
-                        onOrder={handleOrder}
-                    />
-                </motion.div>
+                <Customizer
+                    product={product}
+                    savedConfiguration={savedConfiguration}
+                    layerCategories={layerCategories}
+                    fabrics={fabrics}
+                    onOrder={handleOrder}
+                    breadcrumb={
+                        <StudioBreadcrumb
+                            tone="paper"
+                            crumbs={[
+                                { label: t(`section.${section}`), to: `/design?gender=${section}` },
+                                ...(category
+                                    ? [{ label: t(category.tKey), to: `/design?gender=${section}&cat=${category.key}` }]
+                                    : []),
+                                { label: product.name },
+                            ]}
+                        />
+                    }
+                />
             </main>
         </div>
     );

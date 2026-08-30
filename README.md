@@ -2009,4 +2009,179 @@ Reverted at the customer's request, back to the state before the second batch of
 - **A migration undoes the data half**, because a seeder only ever adds: it deletes the Fitted/Relaxed sub-options from every women's-tops sleeve and clears the `children_label` and preview flag they set. Without it the customizer would resolve a sub-option over its parent and point the canvas at photographs no longer in the repository. Scoped to women's tops — the men's garments use sub-options for their collar variants.
 - **Verified after reverting**: Style/Classic with nine colours is the preview layer again, no sub-options anywhere, every image path across all 17 Tops resolves, the T-shirt opens at ₾45 on the photographed cut, and twelve browser suites pass.
 
+### 2026-08-30 — The T-shirt studio shoot: five sleeve constructions, 102 colourways
+
+510 new photographs at `public/assets/garments/New Tshirts/` folded into the existing
+Women's T-shirt, alongside the original Classic shoot rather than replacing it. The
+Style layer now holds six options instead of one.
+
+- **What the photographs actually vary.** Every one of the 510 is the same garment —
+  Classic, cropped, crew neck, cap sleeve — in five sleeve constructions and up to 23
+  colours. Fit does not vary: measured across all 102 configurations the hem spans
+  584-625px, which is one body, not five. So `fit`, `length`, `neckline` and
+  `back-design` stay the labelled selectors they already were, and `depicts` still
+  pins body-fitting / cropped / crew / cap.
+- **Modelled as Style options**, which is already the preview layer: `classic`
+  (9 colours, unchanged and still the default) plus `fitted` (23), `wide` (23),
+  `dropped` (20), `oversized` (23) and `puff` (13). 111 colour rows in total. No
+  attribute vocabulary was widened — the line-wide ATTRIBUTES list the other 16 Tops
+  share is untouched.
+- **Each style opens on its own colour** — Classic burgundy, Fitted navy, Wide olive,
+  Dropped camel, Oversized orange, Puff pink — because five styles thumbnailed in the
+  same black read as one garment repeated, and the tile is meant to preview what
+  selecting it gives you. The cover colour is independent of colour order, so the dots
+  stay in one canonical sequence across every style.
+- **Three filename faults corrected by measuring, not by trusting the name.** Two files
+  labelled `BodyFit` measure identically to their `Fit` group and fill that group's one
+  missing colour; one colour set carries a stray `Front` token mid-name; and Puff's
+  off-white and cream views are interchanged, the `(1)` copies being the off-white ones,
+  separable by red-minus-blue warmth (13 against 25). The numeric `01.`-`05.` prefix is
+  the reliable view axis — nine trailing view words are typos, and one contradicts its
+  own prefix.
+- **`scripts/prepare-tshirt-photos.mjs`** derives the web-ready set from the masters:
+  407 files at 700x700 in `WomanTshirtStudio/`, quantised to 200 colours (~59KB each,
+  indistinguishable from lossless at 4x zoom). It reframes every shot to the frame
+  `WomanTshirtClassic/` already uses — garment 411px tall, shoulder line 38px down,
+  centred — because the masters are shot larger and lower, and the side views at a
+  different zoom again (1000±44px against the front's 904±6). Normalising on height is
+  safe: height is constant across all five silhouettes while width, 1149 fitted to 1231
+  oversized, is what distinguishes them. Every written file is re-measured to prove the
+  garment was not cropped.
+- **The masters are gitignored**, like both earlier batches — 664MB that must never
+  reach a deploy.
+- **Not integrated**: the 102 three-quarter views. `layer_option_colors` stores
+  front/back/left/right only, and adding a fifth angle is a schema, API, types,
+  ViewSwitcher, PreviewCanvas and admin change — a feature, not part of this import.
+- **Verified in the browser**: all six styles swap the garment; colours swap within a
+  style; the placeholder still appears on
+  unphotographed attributes instead of a wrong garment; Longline + V prices correctly at
+  ₾57; no console errors, no failed requests, no horizontal overflow at 390px; both
+  locales render. Seeding three times running leaves 546 options and 174 colours with
+  zero duplicates, and all 590 image paths in the database resolve on disk. Men's
+  garments, the other 16 Tops, the designer, marketplace and cart all unchanged.
+- **Known, carried over unchanged**: with a length or neckline the studio has not shot,
+  the list screen still shows the photographed cropped crew tee. That is the existing
+  deliberate behaviour from "Hold the Classic photo until a choice we have no photo of",
+  not new — but it is more visible now there are six styles to reach it from.
+
+### 2026-08-30 — Customizer restructured to the studio handoff
+
+Implemented the `Customizer UX restructure` design bundle in the real components.
+Structure and affordances only — the palette, type and data model are the ones the
+repo already had, and the tokens the handoff quotes were checked against
+`app.css:1481-1486` rather than taken on trust.
+
+- **Two columns.** A pinned left rail holds the photograph and, under it, the angles
+  it can be seen from; the right column carries the garment name and running total,
+  the specification, the colourway, the price breakdown and the CTA. Single column
+  below 900px, where the rail is capped so a square preview plus its tiles cannot
+  fill the screen and pin there.
+- **The specification is now readable without opening anything.** Six spec cards, each
+  showing its attribute, the current choice, its surcharge and how many alternatives
+  exist. Opening one swaps the grid for that attribute's options and leaves everything
+  else standing.
+- **Preview surface is a square white card** with a hairline, instead of a full-height
+  bleed. The photographs are square, so nothing is cropped and the placeholder keeps
+  the same footprint.
+- **View switcher shows the angles** as four tiles carrying the real photographs rather
+  than a prev/next stepper. The handoff drew striped placeholders because it had no
+  artwork; we have four views per colourway, so the tiles use them.
+- **Colour swatches are square chips**, and the CTA is `--kere-burgundy`, the brand
+  accent the rest of the site uses — the old black button was the outlier.
+- **Deviations from the handoff, all deliberate.** Its own 72px "Kere" header bar was
+  dropped: the page already renders the site `Navigation`, left exactly as-is per
+  standing instruction. Its uniform mark-box option tiles are used only for labelled
+  attributes — Style now carries six photographed options, so those stay picture tiles.
+  The back button is 44px rather than 36px, and Reset carries a 44px hit area, because
+  the handoff also asks for a 44px touch minimum. And its drill-down hides the colour
+  row, price card and CTA along with the spec grid; here they stay, separated from the
+  open attribute by a rule. The moment a choice is changing the total is the moment the
+  total is worth seeing — picking Hip-length shows ₾50.00 and the itemised
+  `Length: Hip-length +₾5.00` without leaving the attribute.
+- **i18n**: six new keys in both `en.json` and `ka.json`, verified in sync. The price
+  card's `Base price`/`Total`/`Fabric` labels were hardcoded English and are now
+  translated — the handoff reproduced that bug because it was in the shipped code.
+- **Verified in the browser**: all six styles and their colours swap correctly; the
+  placeholder still replaces the garment on an unphotographed attribute; Longline +
+  Turtle prices at ₾65 across the header, the price card and the CTA; both locales
+  render with no raw keys and no dollar signs; no console errors, no failed requests,
+  no horizontal overflow at 390px; every customizer button meets the 44px touch
+  minimum (the three that do not are pre-existing site-nav buttons). Men's garments,
+  the other Tops, the designer, marketplace, cart and the admin guard all still work.
+- **Applies to every garment**, not just the T-shirt: `Customizer.tsx` renders all 31
+  active customizer products. The two-level collar picker is preserved though no active
+  product uses it — only the inactive `witeli-maika` does.
+
+### 2026-08-30 — Side views withheld: the shoot poses them inconsistently
+
+Reported as "changing colours of side view shirts gives us absolutely different
+shirts". It is not a mapping fault — the mapping is right — it is the photography.
+
+- **What was verified correct.** Traced seven colourways through the live browser:
+  every colour loads its own file for every angle. Sampled the dye of all 408
+  images: each side and back view matches its own front, so no colourway is
+  contaminated by another. 101 of 102 left/right pairs are true mirrors, all facing
+  the way the original Classic shoot faces.
+- **One real defect, fixed.** `puff/black`'s 05 master is a second frame of the LEFT
+  side, not the right: it overlaps its own left view at 0.94 unmirrored against 0.76
+  mirrored, where all 101 other pairs are the reverse. It is excluded in
+  `scripts/prepare-tshirt-photos.mjs`, and `photoPath` now returns null for an angle
+  that is not on disk rather than pointing the database at a missing file.
+- **The actual cause.** The side masters are posed inconsistently. Measuring the
+  garment's depth at the hem, within a single style: fronts vary ±0.3-0.8%, sides
+  vary ±9-13%. A leave-one-out classifier that places 0 of 102 front views in the
+  wrong style misplaces 47 of 102 left views and 49 of 102 right views, with margins
+  of 0.002-0.005 — so side-on, the five cuts differ by less than one cut varies
+  between its own colours. Changing colour genuinely does read as a different
+  garment. Not a batch effect: the neutral colourways separate from the saturated
+  ones by under 1.3 sigma. No scaling fixes it; it is rotation and drape in the
+  source.
+- **So the customizer offers Front and Back only**, via `PHOTO_VIEWS` in
+  `WomensTopsSeeder`. Fronts and backs measured consistent (±0.3-3%). The original
+  Classic shoot has the same fault more mildly (±6-8%) and is withheld with the rest,
+  rather than leaving one style of the T-shirt rotating and five not. Other garments
+  are unaffected — sleeveless-tank is a different shoot and still offers four angles,
+  so rotation is not uniform across Tops. Nothing is deleted — all 407
+  files stay in `WomanTshirtStudio/`; putting `'left'` and `'right'` back in that one
+  constant restores them when a consistently posed re-shoot lands.
+- **The switcher sizes its tiles as if there were always four angles** and centres
+  them, so withholding a view changes how many tiles there are but never how big.
+
+### 2026-08-31 — QA round: custom orders were losing their configuration
+
+Four fixes from an independent QA pass, one of them data loss that had been silently
+running since commit 8c949f4.
+
+- **Custom orders stored only the spec.** `validate()` returns just the sub-paths it
+  has rules for, so once `customization.spec.*` was given rules, the `selections`,
+  `color_selections`, `sub_selections` and `fabric_id` beside it were dropped from the
+  array that gets saved. Nothing looked broken — the tailor-facing spec survived — but
+  every order since had lost its machine-readable configuration, so the design could
+  not be reopened, re-ordered or reported on, and an order with no spec lost the
+  `customization` key entirely. Fixed by giving each key its own bounded rule rather
+  than storing the raw input, which is what the nested rules were added to prevent.
+  Verified by POSTing two real orders and reading the rows back: all seven keys now
+  persist, including the spec-less case.
+- **An order now names its garment.** `garment_type` is a taxonomy bucket — all 19 Tops
+  file under `shirt` — so a corset top and a hoodie reached the tailor as the same
+  line. `product_name` and `product_slug` travel with the configuration, and
+  `readProductName` heads the spec list with it on both tailor screens and the review
+  page, falling back to the taxonomy label for upload-path and historical orders.
+- **The Continue button was unreachable on phones**, and not for the reason it looked.
+  The consent-banner reserve works correctly — `AnalyticsConsent` publishes its
+  measured height and `body` pads by it, measured at 145px in English and up to 204px
+  in Georgian, with zero overlap at every size. The real cause was this branch's own
+  sticky rail: a square preview plus its angle tiles is ~436px, and pinned on a 740px
+  phone it owns y=48-484 while the page tail lands at 418-466, so the CTA sat under it
+  at every scroll position. Capping the height only moves the failure to a smaller
+  screen — the rail is now pinned only once there are two columns. Verified clickable
+  at 360x740, 375x667 and 390x844 in both locales.
+- **"1 options".** The count strings were flat, so English was wrong at n=1 — live on
+  mens-chino-trousers. They now carry i18next `_one`/`_other` forms and the callers
+  pass `count`. This also separates two keys that had been identical in English:
+  attributes read "6 details", options read "10 options" / "1 option".
+- **Housekeeping**: the design-handoff zip is out of the web root (it was returning
+  HTTP 200 at `/assets/garments/`) and now sits in `storage/app/design-handoffs/`,
+  which is not served and is gitignored.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

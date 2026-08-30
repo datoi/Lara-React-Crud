@@ -1,8 +1,3 @@
-/**
- * ColorDotPicker — round colour swatches for a style's colour variants.
- * Clicking a dot swaps the garment photos in the preview canvas.
- * Mirrors FabricPicker's dot styling.
- */
 import { Check } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { OptionColor } from '../../types/customizer';
@@ -14,54 +9,62 @@ interface ColorDotPickerProps {
     onSelect: (colorId: number) => void;
 }
 
+/**
+ * Colour swatches for the photographed garment.
+ *
+ * Square rather than round, with the colour inset behind a white frame, so they
+ * read as fabric chips against the panel and sit square with everything else on
+ * the page — the customizer has no rounded corners anywhere.
+ */
 export default function ColorDotPicker({ label, colors, selectedId, onSelect }: ColorDotPickerProps) {
-    const selected = colors.find(c => c.id === selectedId);
+    if (colors.length === 0) return null;
+
+    const selected = colors.find(c => c.id === selectedId) ?? colors[0];
 
     return (
         <div>
-            <p className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-[#514843]">
-                {label}
-            </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="mb-3.5 flex items-baseline justify-between gap-4">
+                <span className="font-serif text-[18px] font-semibold text-[#111111]">{label}</span>
+                {selected && <span className="text-sm text-[#655D55]">{selected.name}</span>}
+            </div>
+
+            <div className="flex flex-wrap gap-2.5">
                 {colors.map(color => {
-                    const isSelected = color.id === selectedId;
+                    const isSelected = color.id === selected?.id;
                     return (
                         <motion.button
                             key={color.id}
+                            type="button"
                             onClick={() => onSelect(color.id)}
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.06 }}
+                            whileTap={{ scale: 0.96 }}
                             transition={{ duration: 0.15 }}
                             aria-label={color.name}
                             aria-pressed={isSelected}
                             title={color.name}
-                            // 44px on phones meets the minimum touch target; the tighter 36px dot
-                            // returns from sm up, where pointers are precise.
-                            className="relative h-11 w-11 rounded-full border-2 transition-all sm:h-9 sm:w-9"
-                            style={{
-                                backgroundColor: color.color_hex,
-                                borderColor: isSelected ? '#0f172a' : '#e2e8f0',
-                                boxShadow: isSelected
-                                    ? '0 0 0 2px white, 0 0 0 4px #0f172a'
-                                    : undefined,
-                            }}
+                            className={[
+                                'h-11 w-11 cursor-pointer bg-white p-[3px] transition-colors',
+                                isSelected
+                                    ? 'border border-[#111111]'
+                                    : 'border border-[#111111]/[0.16] hover:border-[#111111]/60',
+                            ].join(' ')}
                         >
-                            {isSelected && (
-                                <Check
-                                    className="absolute inset-0 m-auto w-4 h-4"
-                                    style={{
-                                        color: isLight(color.color_hex) ? '#0f172a' : '#ffffff',
-                                    }}
-                                />
-                            )}
+                            <span
+                                className="flex h-full w-full items-center justify-center"
+                                style={{ backgroundColor: color.color_hex }}
+                            >
+                                {isSelected && (
+                                    <Check
+                                        className="h-[13px] w-[13px]"
+                                        strokeWidth={3}
+                                        style={{ color: isLight(color.color_hex) ? '#111111' : '#ffffff' }}
+                                    />
+                                )}
+                            </span>
                         </motion.button>
                     );
                 })}
             </div>
-
-            {selected && (
-                <p className="text-xs text-slate-400 mt-2">{selected.name}</p>
-            )}
         </div>
     );
 }

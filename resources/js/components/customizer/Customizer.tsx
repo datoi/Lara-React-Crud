@@ -1,13 +1,17 @@
 /**
- * Customizer — top-level wrapper for the 2D layer-based clothing configurator.
+ * Customizer — the garment configurator.
  *
  * Layout:
- *   Left  — PreviewCanvas (stacked transparent PNG/SVG layers)
- *   Right — OptionPanel (tabs per category → option swatches + fabric picker)
- *            PriceSummary + Save/Order CTAs
+ *   Left rail  — the photograph and the angles it can be seen from, pinned so a
+ *                change is always visible while the options scroll past it.
+ *   Right      — the garment's name and running total, then its specification as
+ *                a grid of cards, the colourway, the price breakdown and the CTA.
+ *
+ * Opening an attribute replaces the right column below the header with that
+ * attribute's options: one question at a time, with the total still on screen.
  */
-import { useEffect, useMemo, useState } from 'react';
-import { Bookmark, ImageOff, RotateCcw, ShoppingBag } from 'lucide-react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { ImageOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
@@ -27,6 +31,8 @@ interface CustomizerProps {
     savedConfiguration?: DesignConfiguration | null;
     layerCategories: LayerCategory[];
     fabrics: Fabric[];
+    /** Trail above the configurator — supplied by the page, which knows the taxonomy. */
+    breadcrumb?: ReactNode;
     /** Called when the user proceeds. Receives the live total so the order
      *  flow records the price the customer was actually shown. */
     onOrder?: (configuration: DesignConfiguration, totalPrice: number) => void;
@@ -37,6 +43,7 @@ export default function Customizer({
     savedConfiguration,
     layerCategories,
     fabrics,
+    breadcrumb,
     onOrder,
 }: CustomizerProps) {
     const {
@@ -72,12 +79,11 @@ export default function Customizer({
         c.slug !== 'collar' && c.is_preview_layer !== false && c.options.some(o => o.image_url),
     );
 
-    // The preview answers whatever the customer is currently looking at.
-    // On the details list, and inside an attribute we have photographed (the
-    // style/colour layer), it shows the garment. Inside an attribute with no
-    // photography — fit, length, neckline, back, sleeves — a picture of the
-    // photographed cut would not answer the question being asked, so a
-    // placeholder takes its place until those are shot.
+    // The preview answers whatever the customer is currently looking at. On the
+    // spec grid, and inside an attribute we have photographed, it shows the
+    // garment. Inside an attribute with no photography — fit, length, neckline,
+    // back, sleeves — a picture of the photographed cut would not answer the
+    // question being asked, so a placeholder takes its place until those are shot.
     const openAttribute = openAttributeId === null
         ? null
         : layerCategories.find(c => c.id === openAttributeId) ?? null;
@@ -95,102 +101,134 @@ export default function Customizer({
 
     // A view is offered only when every rendered layer has a photo for it,
     // so the composite never mixes angles. The selected colour's photos win.
-    const availableViews = useMemo((): GarmentView[] => {
-        const renderedSources = layerCategories
-            .filter(c => c.slug !== 'collar' && c.is_preview_layer !== false)
-            .map(c => resolveOption(c))
-            .filter((o): o is NonNullable<typeof o> => o !== null)
-            .map(o => resolveColor(o) ?? o);
+    const renderedSources = useMemo(() => layerCategories
+        .filter(c => c.slug !== 'collar' && c.is_preview_layer !== false)
+        .map(c => resolveOption(c))
+        .filter((o): o is NonNullable<typeof o> => o !== null)
+        .map(o => resolveColor(o) ?? o),
+        [layerCategories, resolveOption, resolveColor]);
 
+    const availableViews = useMemo((): GarmentView[] => {
         if (renderedSources.length === 0) return ['front'];
 
         return (['front', 'back', 'left', 'right'] as GarmentView[]).filter(v =>
             renderedSources.every(s => viewImageUrl(s, v) !== null),
         );
-    }, [layerCategories, resolveOption, resolveColor]);
+    }, [renderedSources]);
+
+    // The switcher shows each angle of the garment as it is currently configured.
+    // Only meaningful when a single layer paints the canvas, which is every
+    // photographed garment we have — a composite has no one thumbnail.
+    const thumbnailFor = (candidate: GarmentView): string | null =>
+        renderedSources.length === 1 ? viewImageUrl(renderedSources[0], candidate) : null;
 
     // Picking a color/style that lacks the current angle snaps back to front
     useEffect(() => {
         if (!availableViews.includes(view)) setView('front');
     }, [availableViews, view]);
 
+    const addOns = Math.max(0, totalPrice - product.base_price);
+    const drilledIn = openAttributeId !== null;
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="grid items-start lg:grid-cols-[55%_45%]"
+            className="mx-auto box-border w-full max-w-[1400px] px-[clamp(1rem,4vw,2.5rem)] pb-[clamp(2.5rem,6vw,4.5rem)] pt-[clamp(1rem,3vw,1.75rem)]"
         >
-            {/* ── Preview column ─────────────────────────────────────────────────
-                Pinned on phones too, under the 4rem navbar. The options scroll
-                beneath it, so a colour tap or an attribute change is always seen
-                — previously the garment scrolled away and changes went unnoticed.
-                Needs the page colour behind it or scrolling content shows through,
-                and z-10 to sit under the z-50 navbar but over the panel. */}
-            <div className="sticky top-11 z-10 bg-[#F2F1ED] lg:top-11 lg:z-auto">
-                {showPhoto ? (
-                    <PreviewCanvas
-                        layerCategories={layerCategories}
-                        selections={selections}
-                        selectedFabric={selectedFabric}
-                        view={view}
-                        resolveOption={resolveOption}
-                        resolveColor={resolveColor}
-                    />
-                ) : (
-                    /* Same footprint as the canvas so the layout never jumps.
-                       Dashed frame and icon so it reads as a placeholder we put
-                       there on purpose, not a picture that failed to load. */
-                    <div className="flex h-52 w-full flex-col items-center justify-center gap-2 border-b border-[#111111]/15 bg-[#F2F1ED] px-6 text-center sm:h-80 sm:gap-3 lg:h-[calc(100vh-3rem)]">
-                        <span className="flex h-9 w-9 items-center justify-center border border-[#111111]/20 text-[#6c625b] sm:h-12 sm:w-12">
-                            <ImageOff className="h-4 w-4 stroke-[1.4] sm:h-5 sm:w-5" />
-                        </span>
-                        <p className="font-serif text-lg font-medium tracking-[-0.035em] text-slate-500 sm:text-2xl">
-                            {t('customizer.previewComingSoon')}
-                        </p>
-                        <p className="max-w-[20rem] text-[11px] leading-snug text-slate-400 sm:text-xs sm:leading-relaxed">
-                            {hasPreviewLayers
-                                ? t('customizer.previewOptionsSoon')
-                                : t('customizer.previewGarmentSoon')}
-                        </p>
-                    </div>
-                )}
-                {/* Fabric swatch label below preview */}
-                {selectedFabric && showPhoto && (
-                    <p className="border-b border-[#111111]/15 bg-[#E4E0D7] px-4 py-3 text-center text-xs text-[#6c625b]">
-                        Fabric: <span className="font-medium text-[#111111]">{selectedFabric.name}</span>
-                    </p>
-                )}
-            </div>
+            {breadcrumb && <div className="mb-5">{breadcrumb}</div>}
 
-            {/* ── Options column ─────────────────────────────────────────────── */}
-            {/* Order note: on phones the preview sits above this column, so the
-                colour picker is pulled up directly beneath the photo — tapping a
-                colour is pointless if the garment is a screen and a half away.
-                From lg the two columns sit side by side and the original order
-                (details before colour) applies. Every child carries an explicit
-                order because an unset one would collapse to 0 and jump to top. */}
-            {/* Clearance for the consent banner is reserved globally on <body>
-                from its measured height — a fixed guess here was 112px against
-                a banner up to 184px in Georgian, leaving the Continue button
-                partly unclickable. */}
-            <div className="flex min-h-[calc(100vh-3rem)] flex-col bg-[#E4E0D7] px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
-                {/* Product header */}
-                <div className="order-1 border-b border-[#111111]/20 pb-6">
-                    <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.08em] text-[#6c625b]">{product.category}</p>
-                    <h1 className="text-lg font-medium uppercase leading-tight text-[#111111]">{product.name}</h1>
-                    <p className="mt-2 text-sm font-medium text-[#111111]">₾{totalPrice.toFixed(2)}</p>
-                    {product.description && (
-                        <p className="mt-5 max-w-xl text-xs leading-5 text-[#514843]">
-                            {product.description}
+            <div className="grid items-start gap-[clamp(1.75rem,4vw,3.25rem)] [grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr))]">
+
+                {/* ── Preview rail ───────────────────────────────────────────
+                    Pinned under the fixed navbar so a colour tap or an attribute
+                    change is always seen — previously the garment scrolled away
+                    and changes went unnoticed. Needs the page colour behind it or
+                    scrolling content shows through. */}
+                {/* Pinned only once there are two columns. A square preview plus
+                    its angle tiles is ~436px, and pinning that on a 740px phone
+                    leaves a band the page tail can never escape: whatever sits
+                    last — the Continue button — ends up underneath it at every
+                    scroll position, because the rail stays stuck until its grid
+                    ends. Capping the height would only move the failure to a
+                    smaller screen, so below the breakpoint the rail scrolls with
+                    the page. Width is still capped so the card stays square. */}
+                <div className="z-10 mx-auto flex w-full max-w-[52vh] flex-col gap-3 bg-[#E4E0D7] min-[900px]:sticky min-[900px]:top-14 min-[900px]:max-w-none">
+                    {showPhoto ? (
+                        <PreviewCanvas
+                            layerCategories={layerCategories}
+                            selections={selections}
+                            selectedFabric={selectedFabric}
+                            view={view}
+                            resolveOption={resolveOption}
+                            resolveColor={resolveColor}
+                        />
+                    ) : (
+                        /* Same footprint as the canvas so the layout never jumps.
+                           Dashed frame and icon so it reads as a placeholder we put
+                           there on purpose, not a picture that failed to load. */
+                        <div className="flex aspect-square w-full flex-col items-center justify-center gap-3 border border-[#111111]/[0.16] bg-white px-6 text-center">
+                            <span className="flex h-12 w-12 items-center justify-center border border-[#111111]/20 text-[#655D55]">
+                                <ImageOff className="h-5 w-5 stroke-[1.4]" />
+                            </span>
+                            <p className="font-serif text-xl font-semibold tracking-[-0.02em] text-[#111111] sm:text-2xl">
+                                {t('customizer.previewComingSoon')}
+                            </p>
+                            <p className="max-w-[22rem] text-xs leading-relaxed text-[#655D55]">
+                                {hasPreviewLayers
+                                    ? t('customizer.previewOptionsSoon')
+                                    : t('customizer.previewGarmentSoon')}
+                            </p>
+                        </div>
+                    )}
+
+                    {showPhoto && (
+                        <ViewSwitcher
+                            views={availableViews}
+                            view={view}
+                            onChange={setView}
+                            thumbnailFor={thumbnailFor}
+                        />
+                    )}
+
+                    {selectedFabric && showPhoto && (
+                        <p className="border border-[#111111]/[0.16] bg-white px-4 py-2.5 text-center text-xs text-[#655D55]">
+                            {t('customizer.fabric')}: <span className="font-medium text-[#111111]">{selectedFabric.name}</span>
                         </p>
                     )}
                 </div>
 
-                {/* Option panel */}
-                {hasPanelContent && (
-                    <div className="order-4 border-b border-[#111111]/20 py-6 lg:order-2">
+                {/* ── Configuration column ───────────────────────────────────── */}
+                <div className="flex flex-col">
+
+                    {/* Header — name, description and the running total. Stays put
+                        while an attribute is open, so the price never disappears
+                        at the moment the customer is changing what it depends on. */}
+                    <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+                        <div>
+                            <h1 className="mb-2 font-serif text-[clamp(1.7rem,6vw,2.25rem)] font-semibold leading-[1.05] tracking-[-0.02em] text-[#111111]">
+                                {product.name}
+                            </h1>
+                            {product.description && (
+                                <p className="max-w-[38ch] text-[15px] leading-normal text-[#655D55] [text-wrap:pretty]">
+                                    {product.description}
+                                </p>
+                            )}
+                        </div>
+                        <div className="min-w-24 flex-none pt-1.5 text-right">
+                            <div className="font-serif text-[26px] font-semibold tabular-nums text-[#111111]">
+                                ₾{totalPrice.toFixed(2)}
+                            </div>
+                            <div className="mt-0.5 text-xs text-[#655D55]">
+                                {addOns > 0
+                                    ? t('customizer.addOnsLabel', { amount: addOns.toFixed(2) })
+                                    : t('customizer.basePriceLabel')}
+                            </div>
+                        </div>
+                    </div>
+
+                    {hasPanelContent && (
                         <OptionPanel
                             layerCategories={layerCategories}
                             fabrics={fabrics}
@@ -202,129 +240,70 @@ export default function Customizer({
                             onSelectOption={selectOption}
                             onSelectSubOption={selectSubOption}
                             onSelectFabric={selectFabric}
+                            onReset={() => { reset(); setOpenAttributeId(null); }}
                         />
+                    )}
+
+                    {/* Colour, price and the CTA belong to the whole garment, so
+                        they stay put while a single attribute is open — the moment
+                        a choice is changing the total is exactly when the total is
+                        worth seeing. A rule separates them from the open attribute,
+                        which otherwise runs straight into the colour row. */}
+                    <div className={drilledIn ? 'mt-8 border-t border-[#111111]/20' : undefined}>
+                        {colorGroups.map(({ category, option }) => (
+                            <div key={`${category.id}-${option.id}`} className="mt-8">
+                                <ColorDotPicker
+                                    label={t('customizer.colorLabel')}
+                                    colors={option.colors}
+                                    selectedId={colorSelections[option.id] ?? option.colors.find(c => c.is_default)?.id ?? option.colors[0]?.id}
+                                    onSelect={colorId => selectColor(option.id, colorId)}
+                                />
+                            </div>
+                        ))}
+
+                        <div className="mt-8">
+                            <PriceSummary
+                                basePrice={product.base_price}
+                                layerCategories={layerCategories}
+                                fabrics={fabrics}
+                                selections={selections}
+                                fabricId={fabricId}
+                                totalPrice={totalPrice}
+                            />
+                        </div>
+
+                        {savedName && (
+                            <p className="pt-3 text-center text-xs text-[#655D55]">
+                                ✓ "{savedName}" saved to your designs.
+                            </p>
+                        )}
+
+                        {/* Wraps because Button forces whitespace-nowrap: the
+                            Georgian labels cannot shrink and would otherwise
+                            push the column past the viewport. */}
+                        <div className="mt-4 flex flex-wrap gap-2.5">
+                            <Button
+                                variant="default"
+                                size="default"
+                                onClick={() => onOrder?.(getConfiguration(), totalPrice)}
+                                className="h-12 flex-[1_1_13.75rem] rounded-none bg-[#6F1D24] text-[15px] font-semibold text-white hover:bg-[#5A171D]"
+                            >
+                                {t('customizer.continuePrice', { price: totalPrice.toFixed(2) })}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="default"
+                                onClick={() => setSaveOpen(true)}
+                                className="h-12 rounded-none border-[#111111]/[0.16] bg-white px-6 text-[15px] font-medium text-[#111111] hover:border-[#111111] hover:bg-white"
+                            >
+                                {t('customizer.saveDesign')}
+                            </Button>
+                        </div>
+
+                        <p className="mt-3 max-w-[46ch] text-xs leading-relaxed text-[#655D55]">
+                            {t('customizer.measurementNote')}
+                        </p>
                     </div>
-                )}
-
-                {/* Colour dot groups — colours of the currently selected style */}
-                {colorGroups.map(({ category, option }) => (
-                    <div key={`${category.id}-${option.id}`} className="order-3 border-b border-[#111111]/20 py-6 lg:order-4">
-                        <ColorDotPicker
-                            label={t('customizer.colorLabel')}
-                            colors={option.colors}
-                            selectedId={colorSelections[option.id] ?? option.colors.find(c => c.is_default)?.id ?? option.colors[0]?.id}
-                            onSelect={colorId => selectColor(option.id, colorId)}
-                        />
-                    </div>
-                ))}
-
-                {/* Sits directly above the colour picker, so on phones it reads as
-                    a caption under the pinned garment. Nothing to rotate while the
-                    preview is a placeholder; the length guard mirrors
-                    ViewSwitcher's own so the ordered wrapper never becomes an
-                    empty flex item adding a gap. */}
-                {showPhoto && availableViews.length > 1 && (
-                    <div className="order-2 border-b border-[#111111]/20 py-4 lg:order-3">
-                        <ViewSwitcher views={availableViews} view={view} onChange={setView} />
-                    </div>
-                )}
-
-                {/* Price summary — hidden on mobile (shown in sticky bar below) */}
-                <div className="order-5 hidden lg:block">
-                    <PriceSummary
-                        basePrice={product.base_price}
-                        layerCategories={layerCategories}
-                        fabrics={fabrics}
-                        selections={selections}
-                        fabricId={fabricId}
-                        totalPrice={totalPrice}
-                    />
-                </div>
-
-                {/* Success toast */}
-                {savedName && (
-                    <p className="order-6 py-3 text-center text-xs text-[#6c625b]">
-                        ✓ "{savedName}" saved to your designs.
-                    </p>
-                )}
-
-                {/* CTAs — desktop only (mobile uses sticky bar) */}
-                {/* Wraps because Button forces whitespace-nowrap: the Georgian
-                    labels ("გადატვირთვა", "დიზაინის შენახვა", "შეკვეთა — ₾45.00")
-                    cannot shrink and pushed this row ~20px past the column,
-                    giving the whole desktop page a horizontal scrollbar. */}
-                <div className="order-7 hidden gap-2 pt-6 lg:flex lg:flex-wrap">
-                    <Button
-                        variant="outline"
-                        size="default"
-                        onClick={reset}
-                        aria-label={t('customizer.reset')}
-                        className="gap-1.5 rounded-none border-[#111111]/30 bg-transparent text-[#111111] hover:bg-[#111111] hover:text-white"
-                    >
-                        <RotateCcw className="w-4 h-4" />
-                        {t('customizer.reset')}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="default"
-                        onClick={() => setSaveOpen(true)}
-                        className="flex-1 gap-1.5 rounded-none border-[#111111] bg-transparent text-[#111111] hover:bg-[#111111] hover:text-white"
-                    >
-                        <Bookmark className="w-4 h-4" />
-                        {t('customizer.saveDesign')}
-                    </Button>
-                    <Button
-                        variant="default"
-                        size="default"
-                        onClick={() => onOrder?.(getConfiguration(), totalPrice)}
-                        className="flex-1 gap-1.5 rounded-none bg-[#111111] text-white hover:bg-[#333333]"
-                    >
-                        <ShoppingBag className="w-4 h-4" />
-                        {t('customizer.continuePrice', { price: totalPrice.toFixed(2) })}
-                    </Button>
-                </div>
-
-                {/* ── Mobile price + actions ─────────────────────────────────
-                    In the flow rather than fixed to the viewport, so it no
-                    longer floats over the page or fights the consent banner.
-                    Lives inside the options column because the outer element is
-                    a two-column grid — as a grid sibling it would have taken a
-                    cell of its own on desktop. */}
-                {/* gap-2 and flex-wrap because every child is shrink-0: the
-                    Georgian labels pushed this row 2px past a 360px screen.
-                    The tighter gap makes it fit; the wrap keeps it safe for
-                    longer prices or labels. */}
-                <div className="order-8 -mx-5 mt-6 flex flex-wrap items-center gap-2 border-t border-[#111111]/20 bg-[#E4E0D7] px-5 py-4 sm:-mx-8 sm:px-8 lg:hidden">
-                <div className="flex-1 min-w-0">
-                    <p className="text-xs text-[#6c625b]">{t('customizer.total')}</p>
-                    <p className="text-lg font-medium leading-tight text-[#111111]">₾{totalPrice.toFixed(2)}</p>
-                </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={reset}
-                    aria-label={t('customizer.reset')}
-                    className="shrink-0 gap-1 rounded-none border-[#111111]/30 bg-transparent"
-                >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSaveOpen(true)}
-                    className="shrink-0 gap-1 rounded-none border-[#111111]/30 bg-transparent"
-                >
-                    <Bookmark className="w-3.5 h-3.5" />
-                </Button>
-                <Button
-                    variant="default"
-                    size="default"
-                    onClick={() => onOrder?.(getConfiguration(), totalPrice)}
-                    className="shrink-0 gap-1.5 rounded-none bg-[#111111] text-white"
-                >
-                    <ShoppingBag className="w-4 h-4" />
-                    {t('customizer.continueLabel')}
-                </Button>
                 </div>
             </div>
 

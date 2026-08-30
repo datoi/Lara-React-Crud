@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { DesignSpecLine } from '../types/customizer';
 
 /**
@@ -8,13 +9,30 @@ import type { DesignSpecLine } from '../types/customizer';
  * do not survive a retired option — this snapshot is what makes a studio order
  * actually fulfillable.
  */
-export default function DesignSpecList({ spec, label }: { spec: DesignSpecLine[]; label: string }) {
+export default function DesignSpecList({
+    spec,
+    label,
+    garment = null,
+}: {
+    spec: DesignSpecLine[];
+    label: string;
+    /** The garment being made. Heads the list so a tailor reads what it is first. */
+    garment?: string | null;
+}) {
+    const { t } = useTranslation();
+
     if (spec.length === 0) return null;
 
     return (
         <div>
             <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
             <dl className="divide-y divide-slate-100 rounded-lg border border-slate-100">
+                {garment && (
+                    <div className="flex items-baseline justify-between gap-3 px-3 py-1.5">
+                        <dt className="shrink-0 text-xs text-slate-500">{t('orderReview.garment')}</dt>
+                        <dd className="text-right text-xs font-semibold text-slate-900">{garment}</dd>
+                    </div>
+                )}
                 {spec.map((line, i) => (
                     <div key={`${line.attribute}-${i}`} className="flex items-baseline justify-between gap-3 px-3 py-1.5">
                         <dt className="shrink-0 text-xs text-slate-500">{line.attribute}</dt>
@@ -31,6 +49,20 @@ export default function DesignSpecList({ spec, label }: { spec: DesignSpecLine[]
             </dl>
         </div>
     );
+}
+
+/**
+ * The garment the customer was actually configuring.
+ *
+ * garment_type on the order is a taxonomy bucket — every one of the Tops
+ * garments files under "shirt" — so on its own it cannot tell a corset top from
+ * a hoodie. Null on orders placed before the name was carried, which the caller
+ * should fall back from rather than render blank.
+ */
+export function readProductName(customization: unknown): string | null {
+    if (!customization || typeof customization !== 'object') return null;
+    const name = (customization as { product_name?: unknown }).product_name;
+    return typeof name === 'string' && name.trim() !== '' ? name : null;
 }
 
 /**

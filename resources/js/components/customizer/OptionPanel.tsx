@@ -1,16 +1,7 @@
-import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import type { LayerCategory, Fabric } from '../../types/customizer';
-import CategoryOptions, { categoryHasArtwork } from './CategoryOptions';
 import AttributeNavigator from './AttributeNavigator';
 import FabricPicker from './FabricPicker';
-
-/**
- * Above this many attributes the stacked panel stops being scannable, so the
- * options move behind a drill-down. Garments with one or two attributes keep
- * showing everything at once.
- */
-const DRILLDOWN_MIN_CATEGORIES = 3;
 
 interface OptionPanelProps {
     layerCategories: LayerCategory[];
@@ -24,8 +15,14 @@ interface OptionPanelProps {
     onSelectOption: (categoryId: number, optionId: number) => void;
     onSelectSubOption: (parentOptionId: number, childOptionId: number) => void;
     onSelectFabric: (fabricId: number | null) => void;
+    onReset: () => void;
 }
 
+/**
+ * The garment specification and the fabric choice. Every attribute goes through
+ * the same spec-card grid regardless of how many there are — a garment with two
+ * attributes and one with six should not read as two different pages.
+ */
 export default function OptionPanel({
     layerCategories,
     fabrics,
@@ -37,19 +34,20 @@ export default function OptionPanel({
     onSelectOption,
     onSelectSubOption,
     onSelectFabric,
+    onReset,
 }: OptionPanelProps) {
     const { t } = useTranslation();
     const choosableCategories = layerCategories.filter(c => c.options.length > 0);
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col">
             {choosableCategories.length === 0 && (
-                <p className="py-4 text-center text-sm text-slate-400">
+                <p className="py-4 text-center text-sm text-[#655D55]">
                     {t('customizer.noOptionsYet')}
                 </p>
             )}
 
-            {choosableCategories.length >= DRILLDOWN_MIN_CATEGORIES ? (
+            {choosableCategories.length > 0 && (
                 <AttributeNavigator
                     categories={choosableCategories}
                     selections={selections}
@@ -58,40 +56,16 @@ export default function OptionPanel({
                     onOpenChange={onOpenAttribute}
                     onSelectOption={onSelectOption}
                     onSelectSubOption={onSelectSubOption}
+                    onReset={onReset}
                 />
-            ) : (
-                choosableCategories.map((category, i) => (
-                    <motion.div
-                        key={category.id}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: i * 0.07 }}
-                        className={i > 0 ? 'border-t border-[#111111]/20 pt-4' : undefined}
-                    >
-                        <p className="mb-3 text-xs font-medium uppercase tracking-[0.08em] text-[#514843]">
-                            {category.name}
-                        </p>
-
-                        <CategoryOptions
-                            category={category}
-                            selections={selections}
-                            subSelections={subSelections}
-                            onSelectOption={onSelectOption}
-                            onSelectSubOption={onSelectSubOption}
-                        />
-
-                        {!categoryHasArtwork(category) && (
-                            <p className="mt-3 text-center text-[11px] italic text-slate-400">
-                                {t('customizer.previewComingSoon')}
-                            </p>
-                        )}
-                    </motion.div>
-                ))
             )}
 
-            {/* Fabric / colour picker */}
+            {/* Material, like colour, is a property of the whole garment, so it
+                stays visible while an attribute is open. No garment carries
+                fabrics yet; the picker stays wired so one that does still gets
+                it, and stays out of the layout when it has none. */}
             {fabrics.length > 0 && (
-                <div className="border-t border-[#111111]/20 pt-4">
+                <div className="mt-8 border-t border-[#111111]/20 pt-6">
                     <FabricPicker
                         fabrics={fabrics}
                         selectedId={fabricId}
