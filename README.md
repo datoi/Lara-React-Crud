@@ -2184,4 +2184,30 @@ running since commit 8c949f4.
   HTTP 200 at `/assets/garments/`) and now sits in `storage/app/design-handoffs/`,
   which is not served and is gitignored.
 
+### 2026-08-31 — Side views restored
+
+Reverses the withholding two entries above, at the customer's request. All four
+angles are offered again: `PHOTO_VIEWS = ['front', 'back', 'left', 'right']`.
+
+The measurement behind the withholding still stands — within one style the side
+profile varies 9-13% between colours where the fronts vary 0.3-0.8%, so flipping
+colour on a side view can read as a slightly different cut. What was wrong was the
+conclusion drawn from it. The inconsistency is between colours, and a customer
+configures one garment in one colour at a time; it surfaces only when changing
+colour while already looking at a side view. Hiding 203 photographs to avoid that
+narrow case cost more than it saved.
+
+Worth restating, because the withholding implied otherwise: the side views were
+never unidentified. Every one was checked to be the right colour (sampled dye
+against its own front, all 408), the right style, and a true mirror of its pair —
+101 of 102. The single exception, `puff/black`'s right view being a second frame of
+its left, remains excluded, so that one garment offers three angles rather than a
+wrong fourth. `photoPath` returning null for an absent file is what makes that
+degrade cleanly instead of 404ing.
+
+Verified: every colour of every style now carries front, back, left and right —
+589 image paths, none missing. Driven in the browser: four view tiles, each colour
+loading its own side files, `puff/black` showing three, no console errors and no
+failed requests.
+
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

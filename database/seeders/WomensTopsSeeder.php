@@ -466,21 +466,22 @@ class WomensTopsSeeder extends Seeder
     }
 
     /**
-     * Angles the T-shirt is offered in.
+     * Angles the T-shirt is offered in — every angle the shoot delivered.
      *
-     * Left and right are withheld. Measured over the studio set, the garment's
-     * side profile varies 9-13% between colours of a SINGLE style, while the
-     * five styles differ by less than that side-on — a classifier that places
-     * 0 of 102 front views in the wrong style misplaces 47 of 102 left views.
-     * So changing colour on a side view reads as a different cut, which is the
-     * defect it was reported as. The original Classic shoot has the same fault
-     * more mildly (6-8%), and is withheld with the rest rather than leaving one
-     * style rotating and five not. Fronts and backs are consistent to 0.3-3%.
+     * One caveat, measured and knowingly accepted: the side masters are posed
+     * less consistently than the fronts. Within a single style the side profile
+     * varies 9-13% between colours, where the fronts vary 0.3-0.8%, so changing
+     * colour while looking at a side view can read as a slightly different cut.
+     * That is drape and rotation in the photography, not a mapping fault — every
+     * file was checked to be the right colour, the right style, and a true mirror
+     * of its pair. It shows only when flipping colours on a side view, which is
+     * narrow enough that hiding 203 photographs to avoid it costs more than it
+     * saves. A consistently posed re-shoot of the side angles would settle it.
      *
-     * Nothing is deleted: the files stay in WomanTshirtStudio/. Put 'left' and
-     * 'right' back here when a consistently posed re-shoot lands.
+     * A view still resolves to null when its file is genuinely absent, so
+     * puff/black offers three angles rather than a wrong fourth.
      */
-    private const PHOTO_VIEWS = ['front', 'back'];
+    private const PHOTO_VIEWS = ['front', 'back', 'left', 'right'];
 
     /**
      * Public path of one photograph — /assets/garments/<folder>/<prefix><colour>-<view>.png
