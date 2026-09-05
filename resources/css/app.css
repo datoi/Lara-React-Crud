@@ -1628,3 +1628,30 @@
 body {
   padding-bottom: var(--kere-consent-h, 0px);
 }
+
+/* ── Guided designer ────────────────────────────────────────────────────────
+   The five-step designer runs the art-directed palette from the design pass:
+   warmer and lighter than the studio's --kere-ivory, with Cormorant Garamond
+   on the display type. Scoped to the flow rather than adopted app-wide so the
+   marketplace, dashboards and landing page keep the palette they were built
+   in. Georgian sets wider than Latin, so the display face falls through to
+   Noto Serif Georgian for ka. */
+.kere-designer {
+  --kd-burgundy:  #6f1d24;
+  --kd-rail-text: #f6ece6;
+  --kd-cream:     #faf5ef;
+  --kd-stage:     #f4ebe3;
+  --kd-tile:      #fffcf8;
+  --kd-ink:       #2a1418;
+  --kd-body:      #6b4a4a;
+  --kd-muted:     #9c7a73;
+  --kd-hairline:  rgba(111, 29, 36, 0.22);
+
+  background: var(--kd-cream);
+  color: var(--kd-ink);
+}
+
+.kere-designer .kd-display {
+  font-family: 'Cormorant Garamond', 'Noto Serif Georgian', Georgia, serif;
+  font-weight: 400;
+}

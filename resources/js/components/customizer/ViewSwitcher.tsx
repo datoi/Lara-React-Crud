@@ -51,10 +51,10 @@ export default function ViewSwitcher({ views, view, onChange, thumbnailFor }: Vi
                         aria-pressed={isSelected}
                         aria-label={label}
                         className={[
-                            'flex w-[calc(25%-0.5625rem)] cursor-pointer flex-col bg-white transition-colors',
+                            'flex w-[calc(25%-0.5625rem)] cursor-pointer flex-col bg-[var(--kd-tile)] transition-colors duration-150',
                             isSelected
-                                ? 'border border-[#111111]'
-                                : 'border border-[#111111]/[0.16] hover:border-[#111111]/60',
+                                ? 'border border-[var(--kd-burgundy)]'
+                                : 'border border-[var(--kd-hairline)] hover:border-[var(--kd-burgundy)]',
                         ].join(' ')}
                     >
                         {thumbnail && (
@@ -72,7 +72,7 @@ export default function ViewSwitcher({ views, view, onChange, thumbnailFor }: Vi
                             className={[
                                 'block px-1 text-center text-[10px] uppercase tracking-[0.06em]',
                                 thumbnail ? 'pb-2' : 'py-4',
-                                isSelected ? 'text-[#111111]' : 'text-[#655D55]',
+                                isSelected ? 'text-[var(--kd-burgundy)]' : 'text-[var(--kd-muted)]',
                             ].join(' ')}
                         >
                             {label}

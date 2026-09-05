@@ -20,6 +20,7 @@ class LayerOptionResource extends JsonResource
             'left_image_url' => $this->resolveUrl($this->left_image_path),
             'right_image_url' => $this->resolveUrl($this->right_image_path),
             'color_hex' => $this->color_hex,
+            'depicts' => $this->depicts,
             'display_scale' => $this->display_scale ?? 1.0,
             'price_modifier' => $this->price_modifier,
             'is_default' => $this->is_default,

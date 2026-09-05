@@ -609,6 +609,129 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-05] Review round on the wizard rewrite — two blockers, dead machinery, wrong docs
+
+**What was done:** Acted on two independent reviews of the five-step designer rewrite. Both blockers were real and both are fixed; the majors were verified before acting, and one of them turned out to be a claim about a tree state that does not exist.
+
+**Blocker — a stale garment survived a heading switch and shipped the wrong `garment_type`.** `useProductData` bailed on `if (!slug) return;` without clearing `product` / `layerCategories` / `fabrics`. That was safe while it only ran on `/customize/:slug`, but `DesignerApp` now calls it with a slug that goes set → unset, because `openCategory` and `switchSection` both `params.delete('garment')`. Switching Tops → Dresses after choosing a T-shirt left the stage, the ₾45.00 total and steps 02–05 all live on a garment no longer selected, and the order draft went out as `garment_type: "dress"` with `product_name: "T-shirt"` — bad data on the field tailors are matched on. The `!slug` branch now clears all three plus `error`/`loading`. **Verified:** after the switch the stage, price, CTA and rail all reset, and no draft is written.
+
+**Blocker — a deep link whose garment failed to load was a silent dead end.** `styleError` was rendered only inside the garment step, and only when `category` was truthy, while a URL carrying `?garment=` opens on step 02 — exactly the case the error existed for. `stepContent()` now handles it before the switch: a spinner while the garment is still in flight, and on failure the message plus a **Back to garments** button. `canAdvance` is `product !== null` on every step, not just the first, so Continue can no longer walk to an empty review and an inert CTA. The garment step's error moved out of the style group so a link naming no heading still reports it. **Verified** with `/api/customizer/products/*` blocked at the network layer, in both locales.
+
+**Raw fetch text no longer reaches the customer.** `useCategoryProducts` set `(err as Error).message`, so a network failure rendered a literal untranslated "Failed to fetch", and its `?? 'Failed to load garments.'` fallback was unreachable. Both hooks now expose `error` as a boolean; `DesignerApp` words it once as `designer.loadFailed`, translated.
+
+**Removed the sequential-unlock machinery the rewrite orphaned.** `AttributeNavigator` was deleted with the drill-down, but `confirmed` stayed in `useCustomizer` — declared, initialised, filtered, mutated in `selectOption`, cleared in `reset`, persisted, restored, re-derived from saved designs and exported, with no consumer anywhere. Gone from both hooks, along with eleven locale keys nothing rendered (`lockedUntil`, `attributesTitle`, `chooseAttribute`, `attributesHint`, `allAttributes`, `noOptionsYet`, `backToDetails`, and the `attributeCount`/`optionCount` plurals) — `lockedUntil` had been added the day before for a label that never shipped. Both locales stay key-for-key in sync at 1381.
+
+**Two step labels named the wrong thing.** Step 04 is a colour picker — its heading says "Pick your colour", its group says "Colour", and `ka` already read ფერი — but `en` said "Fabric", so the rail read "04 Fabric" and the review sheet told the customer their fabric was "Burgundy". Step 05 is a review sheet, but both locales labelled it "Fit"/მორგება, so the footer read "Continue to Fit" and then showed a review. Now **Colour** / ფერი and **Review** / გადახედვა, and the review row is labelled by the kind of value it holds rather than by the step's name.
+
+**Smaller fixes:** the running total is no longer `hidden` below 900px — it is the thing the footer exists for; a shared `money()` puts every price in one shape (`+₾5.00` beside `₾45.00`, not `+₾5`); the rail's exit control keeps a 44×44 touch target on a phone where it drops its label, with the label as its accessible name; the saved-design toast timer is cleared on unmount; the section switcher and Reset use `<Button variant size>`; and the colour union orders by each colour's own place in the catalogue, so Green sits between Emerald and Turquoise instead of trailing Purple because the first sleeve was shot in Emerald.
+
+**One reported finding was wrong, and the note it targeted has been corrected.** The closing "Known data gap" claimed the working-tree seeder prices the five photographed sleeves at 4/4/4/6/16 and that "the seeder edits are uncommitted and have not been run". Both false: `seedAttribute`'s `$free` zeroes every photographed sleeve on a photographed garment by design, so the T-shirt's are 0 and the DB agrees; 4/4/4/6/16 are the line-wide list prices that apply where the sleeve is *not* photographed, which `womens-blouse` carries — and those blouse rows only exist because the seeder **has** been run. The note now says so.
+
+**Also noted:** one review referenced a "2026-09-04 entry" recording the retired components. No such entry exists — **the wizard rewrite itself is unlogged**, which the living-doc protocol requires. Whoever landed it should write it; this entry deliberately covers only the review round.
+
+**Verified end to end** (headless Edge over CDP, `ka` + `en`, 390 / 1440): both blocker repros fixed; the happy-path deep link, the style-list failure and the no-heading case all behave; rail reads `01 Garment · 02 Shape · 03 Details · 04 Colour · 05 Review`; review sheet reads `COLOUR Burgundy`; total visible at 390; exit target 44×44 on phone and 146×65 on desktop; every price two-decimal; palette order corrected. No broken images, no failed requests, no console errors, no horizontal overflow. `tsc --noEmit` and `vite build` clean.
+
+**Left alone, deliberately:** the English-only catalogue (attribute and option names come from the database, so steps 02–04 render `FIT / Body-Fitting / Slim` under Georgian chrome). Both reviews raise it and both agree the fix is a translated catalogue rather than a second naming path — it is the next piece of work, not a footnote, but it is not this change. Also untouched, as pre-existing and outside this diff: `UploadPanel.handleFile` silently succeeding with no auth token, `PreviewCanvas`'s 0.35s crossfade being off the approved 0.5/0.6, and its hardcoded English "Shirt preview" `aria-label`.
+
+---
+
+### [2026-09-01] Reverted: photography is a preview, not a gate on what can be ordered
+
+**What was done:** The availability rule added earlier today — disabling any option no photographed garment could be made in — is removed. Every option is choosable again; a combination we have not shot shows the "not photographed yet, still made to your measurements" placeholder and remains fully orderable.
+
+**Why it was reverted, one day after shipping.** The rule worked exactly as specified, and that was the problem. The T-shirt has 16,380 possible specifications (5 fits × 4 lengths × 7 necklines × 9 backs × 13 sleeves) and 5 photographs, so gating on photography reduced a made-to-order tailoring service to a 5-item shop — and pinned the tee at ₾45, because every priced option (longline +₾12, turtle +₾8, lace-up +₾20) had become unreachable. Closing that gap by photography would have meant 16,375 more garments: 65,500 images in one colour, 1,506,500 across the colour range. The photograph is a preview, not a stock record; the tailor can sew any of the 16,380.
+
+- **Removed:** `unavailableSlugs()`, `photographedSpecs()` and `permits()` from `components/customizer/depicts.ts`, the `unavailable` prop threaded through `AttributeNavigator` → `CategoryOptions` → `HierarchicalPicker`, and the `disabled` support on `OptionTile` and `OptionSwatch`. `depictsSelection()` stays — it is what withholds a photograph that would show a different garment, and that safeguard is the reason unphotographed combinations can be offered honestly rather than illustrated with the wrong picture.
+- **Kept:** the sequential unlock (answer Fit before Length, and so on) — that is about the order the specification is filled in, not about photography, and is unaffected. **Superseded:** the wizard rewrite replaced the attribute drill-down with five steps and removed the unlock with it — see the 2026-09-05 entry.
+
+**The photo-coverage plan this makes room for.** `storage/app/garment-variants/` holds the combinations the shoot has not covered, in the file-name form the pipeline reads: `tier1-unlock-every-option.txt` (**29** — one colour and four views each, 116 images, the smallest set giving every option in the customizer at least one photographed context), `tier2-one-step-from-a-photo.txt` (**113**), and `all-missing.txt` (**16,375**, for completeness). Tier 1 is the commissioned target; the long tail is not worth photographing flat.
+
+**Known limitation for when Tier 1 arrives.** The current schema holds photography on the preview-layer *option* — one image set plus colourways per sleeve — so `cap` can carry exactly one cut, the crew-neck one. The Tier 1 files vary fit, length, neckline and back as well, and there is nowhere on a sleeve option to put a second cut. Wiring them in needs the photographs keyed by the specification they depict rather than by one option (the `depicts` column already carries that spec; it would become the lookup key, with the canvas choosing the closest match). Dropping the files in and re-running `prepare-tshirt-photos.mjs` is enough only for new colours or new sleeves of the cut already shot.
+
+**Verified in a real browser** (headless Edge over CDP): all five attributes report every option selectable (5/5, 4/4, 7/7, 9/9, 13/13); walking off the photographed set to Longline → Turtle → Lace-up → Bishop shows the placeholder at each step while the Continue button stays enabled and the price builds correctly (₾45 → ₾57 → ₾65 → ₾85 → ₾102), and returning to a photographed cut restores the photograph. Sequential locks still hold on open (`FIT[open] LENGTH[LOCKED] …`); men's garments and unphotographed Tops unchanged; no broken images, no failed requests, no console errors; no overflow at 390px. `tsc --noEmit` and `vite build` clean.
+
+---
+
+### [2026-09-01] The garment stays on screen the whole way down the specification
+
+**What was done:** The preview no longer blanks out to "Preview coming soon" while the customer is inside Fit, Length, Neckline or Back Design, reappearing only once Sleeves — the last attribute — is answered. The photograph is shown at every step, starting from the plain cap-sleeve tee and getting more specific as the customer answers.
+
+- **The cause was a gate, not missing data.** `showPhoto` required `categoryHasArtwork(openAttribute)` — a rule from when the five shoots were a separate "Style" row and a picture of the photographed cut genuinely did not answer "what does Slim look like?". Now that Fit, Length, Neckline and Back Design each offer only the option the photography supports, that reasoning is gone: the garment on screen *is* the answer. `showPhoto` is now simply `photographed`.
+- **Why the picture never gets ahead of the customer.** An attribute they have not reached sits on its default, and `seedAttribute` pins a photographed garment's defaults to the cut its shoot depicts (`$default` resolves `photos.depicts[attribute]` first). So an unanswered attribute always reads as the value in the photograph, every spec card above the preview agrees with it, and the picture refines rather than contradicts as the chain is answered. No representative-swapping logic is needed, and `depicts` still withholds the photo outright if the specification ever does leave the shoot — which a session stored before these garments were pinned down still can.
+- **Removed the note that now contradicted the preview.** `AttributeNavigator` printed "we haven't photographed these options yet" under any attribute without artwork — visible under Fit in the report that prompted this, directly beneath a garment that was about to be shown. The canvas placeholder already carries that message for genuinely unphotographed garments, so the duplicate is gone (`categoryHasArtwork` is still used by `CategoryOptions` for tile shape).
+
+**Verified in a real browser** (headless Edge over CDP): walking the whole chain from Reset, the photograph is present at all twelve observation points — the grid with nothing answered, and inside each of the five attributes both before and after answering — with no placeholder and no stale note anywhere; the sleeve step still visibly swaps the garment (`cap` → `wide` → `oversized` → `puff` → `cap`). Regression: `womens-blouse` still shows the correct "we haven't photographed this garment yet" placeholder with its locks intact; men's garments unchanged; a session stored off the photographed set (₾94: relaxed, longline, turtle, lace-up, long) still correctly withholds the photo while offering the way back. Availability unchanged at `FIT 1/5 · LENGTH 1/4 · NECKLINE 1/7 · BACK DESIGN 1/9 · SLEEVES 5/13`, all four angles resolve per sleeve including puff/black's three, no broken images, no failed requests, no console errors, no overflow at 390px. `tsc --noEmit` and `vite build` clean.
+
+---
+
+### [2026-09-01] An option that leads to no garment is not offered
+
+**What was done:** Options that cannot produce a garment we can actually make are now disabled rather than merely showing "Preview coming soon" after the fact. Combined with the sequential unlock shipped the day before, the customer walks the specification top-down and is only ever offered choices that lead somewhere. (Both were later removed — the rule the same day, the unlock by the wizard rewrite.)
+
+- **`unavailableSlugs()`** (`components/customizer/depicts.ts`) answers "can any garment still be made in this option, given what has been answered above it?". It builds the set of specifications the garment has actually been photographed in — `photographedSpecs()`, one per photographed option, each carrying its own attribute plus the rest of the cut it declares in `depicts` — and disables every option no surviving spec permits. `OptionTile` and `OptionSwatch` both take a `disabled` prop and render greyed at 45% with `cursor-not-allowed`; the button is genuinely `disabled`, so a click does nothing.
+- **A garment with no photography constrains nothing.** There is no evidence to call any of its options unavailable, so `photographedSpecs()` comes back empty and every option stays choosable. Without this carve-out the 16 unphotographed Tops would have had *every* option disabled and become unusable.
+- **Correction shipped with it: `back-design` was missing from `depicts`.** The 2026-08-31 entry noted that Back Design deliberately did not withhold the photo. That was wrong, and the master audit is what proved it — the shoot delivered a back view of every colourway and every one is plain and closed, so the back *is* photographed. `depicts` now pins `back-design: normal`, and asking for a lace-up back correctly withholds a picture that would be wrong from behind.
+
+**A dead end found and fixed in testing.** The first version narrowed strictly against every answered attribute. Restoring a session pinned off the photographed set — fit `relaxed`, length `longline`, neckline `turtle`, back `lace-up`, sleeve `long`, all reachable before this change — left *one* selectable option in every attribute: the unreachable one already selected. Nothing led back to a makeable garment. `unavailableSlugs()` now falls back to judging each option on its own merit ("can any garment at all be made in it?") when the current answers make nothing reachable, so the customer always sees both where they are and the way back. Verified: that same stale session now offers 2 options per attribute — the current one and the photographed one.
+
+**Consequence, deliberate and worth knowing:** the T-shirt now offers exactly the five cuts that were photographed. Fit is Body-Fitting only, Length Cropped only, Neckline Crew only, Back Design Normal only, and Sleeves the five shot constructions — so the tee is always ₾45 and the longline (+₾12), turtle (+₾8), lace-up (+₾20) and other modifiers are unreachable on it. That is what "disable options with no available garment" means for a garment photographed in one cut; it can be relaxed to "offer it, but mark it made-to-order" by scoping the rule to the preview-layer attribute alone.
+
+**Verified in a real browser** (headless Edge over CDP): fresh walk reports `FIT 1/5 · LENGTH 1/4 · NECKLINE 1/7 · BACK DESIGN 1/9 · SLEEVES 5/13` selectable, and clicking a disabled tile leaves the selection unchanged. Regression: `womens-blouse` still reports 5/5, 4/4, 11/11, 9/9, 13/13 — nothing disabled; men's single-attribute garments unaffected; the stale-session dead end resolves as described. The earlier suites still pass on top — sequential locks, colour continuity across sleeves with correct fallback, all four angles per sleeve including puff/black's three. No broken images, no failed requests, no console errors; no overflow at 390px. `tsc --noEmit` and `vite build` clean.
+
+---
+
+### [2026-08-31] Name the masters after the options they depict, and answer the specification top-down
+
+**What was done:** Two things, both following on from the Style-row retirement earlier the same day. The 510 T-shirt masters were renamed so each file states exactly which combination of customizer options it shows, and the attribute panel now unlocks in order — a customer answers Fit before Length, Length before Neckline, and so on down to Sleeves.
+
+#### The masters now name their options
+
+- **Audited before renaming, not after.** Every one of the 510 masters was measured (`profile()` over the garment's row extents and top contour) rather than trusted. The old names declared the *same* fit, length, neckline and sleeve on every file — `Classic_Fit|BodyFit_Above_Crew_Cap` — with only the 6th token varying, so the names could not be taken at face value. Measured, normalised by garment height: hem 0.645–0.705 and waist 0.645–0.705 across all five sleeves, i.e. **one body**; neck dip 0.043–0.052 on 90 of 102 fronts. **There is no relaxed or otherwise different cut anywhere in the set** — every frame is body-fitting / cropped / crew / plain closed back, and only the sleeve changes.
+- **The 12 apparent neckline outliers were a measurement artefact**, not a second neckline: all 12 are white, off-white or cream, where the ink threshold loses the pale fabric against the white sweep. Rendered against grey, every one is a plain crew.
+- **New name = the option path**: `<fit>_<length>_<neckline>_<back-design>_<sleeve>_<colour>_<view>.png`, using the seeder's own slugs — `body-fitting_cropped_crew_normal_cap_burgundy_front.png`. Views are `front`/`back`/`left`/`right`/`three-quarter`.
+- **Four corrections are now baked into the names** instead of being carried as special cases in code: the meaningless `Fit`/`BodyFit` split (measured identical — the two `BodyFit` files sit inside their groups at hem 0.644 vs 0.646 and 0.678 vs 0.679); the typo'd view words (`Fron`, `Fro`, `Bac`, `Rig`, `RIght`, `Lef`) and the one outright wrong one (05 cap/lavender said `Left`; 05 is the right side); the stray `Front` token in the turquoise oversized set; and puff's interchanged cream/off-white outside the fronts.
+- **One file was renamed to admit it is not what it claimed.** Puff/black's second side frame is another view of the *left*, not the right. Re-verified independently across all 102 left/right pairs by mask IoU: it overlaps its own left view better unmirrored (0.866) than mirrored (0.709), and it is the only pair in the set that way round — median mirrored IoU is 0.877. It is now `..._puff_black_left-alt.png`, so puff/black offers three angles and nothing has to special-case it.
+- **The derived set speaks the same vocabulary**: `WomanTshirtStudio/fitted-*` → `cap-*` (92 files, via `git mv`), so `<sleeve>-<colour>-<view>.png` uses the option slug throughout. The seeder's per-sleeve `'prefix'` field is gone — `TSHIRT_SLEEVES` is now a plain sleeve-slug → colours map and `photoPath()` addresses the file by the slug itself.
+- **`prepare-tshirt-photos.mjs` lost its whole translation layer** — the `VIEW`, `SILHOUETTE` and `COLOUR` lookup tables, the `NOT_SHOT` set and the puff colour fix-up are all deleted. `parse()` is now one destructuring line. Re-deriving is a pure resize.
+
+**Proof the rename changed nothing downstream:** the 407 derived files were checksummed before, the masters renamed, the script rewritten, and the set re-derived — **all 407 are byte-for-byte identical** (`md5sum` diff clean, after normalising `fitted-`→`cap-`). The rename itself ran through a two-phase temp-name pass and wrote a reversible manifest, since the masters are gitignored and untracked.
+
+#### The specification is answered top-down
+
+- **Sequential unlock** (`AttributeNavigator`): an attribute opens only once every attribute above it has been answered. Fit is always open; Length, Neckline, Back Design and Sleeves start locked — greyed, `disabled`, a `Lock` icon, `—` in place of a value they have not been given, and "Choose Fit first" (`customizer.lockedUntil`, added to both locales). A locked card is genuinely inert: clicking it does not open the panel.
+- **Answered ≠ defaulted.** `useCustomizer` tracks `confirmed: number[]` — the attributes the customer actually answered, as opposed to the ones sitting on their seeded default. `selectOption` marks one confirmed even when the answer *is* the default, since the customer still chose it. Persisted with the rest of the session state, and cleared by Reset.
+- **Nothing re-locks.** Going back to change the fit after specifying the whole garment does not throw away the neckline and sleeve already chosen — the locks only ever loosen.
+- **A saved design reopens unlocked**, since it was specified in full when it was saved.
+- **The default garment still shows from the first frame**: the tee opens photographed at ₾45 with everything below Fit locked, so the locks guide the order without hiding what is being bought.
+
+**Judgement calls, flagged rather than assumed:** the locks apply to *every* Women's Tops garment, not only the T-shirt, because all 17 share one attribute chain and the reasoning ("the neckline means nothing until the fit is settled") is generic — say the word and it can be scoped to photographed garments only. Colour is deliberately left outside the chain: it is a property of the whole garment, shown below the spec, and stays changeable from the start.
+
+**Verified in a real browser** (headless Edge over CDP): fresh load shows `FIT[open] LENGTH[LOCKED] NECKLINE[LOCKED] BACK DESIGN[LOCKED] SLEEVES[LOCKED]`; clicking a locked card opens nothing; each answer unlocks exactly the next; changing Fit afterwards re-locks nothing. The earlier photo suite still passes on the renamed files — Relaxed/Turtle/Hip-length each withhold the photo and restore it on the way back, carrying the sleeve; colour carries across sleeves with correct fallback (`cap-emerald` → wide has no emerald → its own colour; `cap-turquoise` → `oversized-turquoise`). Regression: unphotographed Tops lock identically and still show the right placeholder; men's single-attribute garments are unaffected and unlocked; no broken images, no failed requests, no console errors (listener self-tested); no overflow at 390px, where the locked hint stays legible at full weight. `tsc --noEmit` and `vite build` clean.
+
+**Known, not fixed here:** the locked hint interpolates the attribute's database name, so under the Georgian locale it reads "ჯერ აირჩიე: Fit". Attribute and option names are stored in English and rendered directly across the whole spec panel — pre-existing for every garment, made more visible by this string. Fixing it properly means translating the catalogue (a `name_ka` column or an i18n map), not patching this one label into a second naming path.
+
+---
+
+### [2026-08-31] Retire the T-shirt "Style" row — the shoots are sleeve options, and the photo answers the spec
+
+**What was done:** The T-shirt no longer has a `Style` selector sitting above its specification. The five studio shoots are now options of the **Sleeves** attribute, read off the file names in `public/assets/garments/New Tshirts`, and the canvas shows a photograph only while the customer's whole specification matches one that was actually shot. Anything else gets the existing "Preview coming soon" placeholder.
+
+- **What the file names say.** Every one of the 510 masters is named `NN._Classic_Fit|BodyFit_Above_Crew_Cap_<shape>_<Colour>_<View>` — i.e. all of them declare the *same* fit, length, neckline and sleeve, and only `<shape>` (Fitted / Wide / Drop(ped) / Oversized / Puff) varies. Measuring the prepared images settled what `<shape>` actually is: the body is one garment across all five (hem 266–284px, waist 266–289px), while the sleeve runs from a set-in cap ending 48% down the body to a dropped shoulder ending at 71%. So `<shape>` is a **sleeve construction**, not a fit — confirmed with the user before building.
+- **Sleeves gains three options** (`WomensTopsSeeder::ATTRIBUTES`): `wide` (Wide, ₾4), `dropped` (Dropped Shoulder, ₾4), `oversized` (Oversized, ₾6), placed at the head of the shape family after `long`. The shoot's "Fitted" files are the `cap` option (hence the `fitted-` prefix on disk) and "Puff" is `puff`. These are shared attribute rows, so every Tops garment whose narrowing allows them now offers them too — a shirt or blouse can genuinely be cut with a dropped shoulder.
+- **`layer_options.depicts`** (new nullable JSON column, migration `2026_08_31_000001`): the rest of the specification a photograph was shot in, as `layer_category.slug => layer_option.slug`. The five photographed sleeves each carry `{fit: body-fitting, length: cropped, neckline: crew}`. This is data, not a hardcoded frontend rule — any future shoot declares its own cut the same way. Exposed through `LayerOptionResource` as `depicts`.
+- **Preview gating** (`components/customizer/depicts.ts`, new): `depictsSelection(option, categories, selections)` is used in two places — `PreviewCanvas` skips a layer whose photo no longer describes the garment, and `Customizer` folds it into `showPhoto` so the placeholder appears instead of a blank canvas. `showPhoto` now also requires the *resolved* option to actually carry artwork, so picking an unphotographed sleeve (Long, Bell, …) shows the placeholder rather than an empty white frame.
+- **The photographed attribute is the preview layer.** `seedAttribute` now writes the images, the colourways and `depicts` onto the attribute the shoot varies and sets `is_preview_layer` on it; `seedPhotoLayer` and the `style` category are gone. `seedGarment` deletes any category the seeder no longer defines, so a reseed converges instead of leaving the retired row behind.
+- **One cover colour for all five sleeves — Burgundy.** Previously each style opened on its own cover (navy / olive / camel / orange / pink), which made sense when they were separate "styles". As sleeve options they sit in one tile grid, so a single colour lets the tiles compare the sleeve rather than the colour, and changing sleeve no longer changes the garment's colour underneath the customer.
+- **Colour now follows the garment, not the option** (`useCustomizer.selectColor`): choosing a colour propagates by *name* to every sibling option in the same category that was shot in it. Picking Camel on Cap and switching to Puff keeps Camel; a sleeve that shoot never covered in that colour (Emerald is in Fitted's 23 but not Wide's) keeps its own. Without this the restructure would have reset the colour on every sleeve tap.
+- **The old Classic shoot is retired.** `WomanTshirtClassic/` (9 colours) measured as the same cut as the studio Fitted set (hem 280 vs 284, sleeve 46% vs 48%), so it would have collided on the `cap` combination. The studio set covers 8 of its 9 colours and adds 15 more. Nothing references the folder any more; the files are left on disk rather than deleted.
+- **Pricing is unchanged for the photographed tee.** All five photographed sleeves stay at ₾0 on the T-shirt (`$free` in `seedAttribute`), as the style options did, so the garment still opens at its ₾45 card price. Deviating from the shoot still costs: Longline ₾57, Turtle ₾53, Lace-up back ₾65.
+
+**Verified in a real browser** (headless Edge over CDP, `/customize/womens-t-shirt`): opens at ₾45 on the burgundy cap-sleeve tee with no Style row and 5 spec cards; all five photographed sleeves swap the photo and keep the colour; Long/Sleeveless show the placeholder; Relaxed fit, Longline, V and Turtle each withhold the photo and each restores it on the way back, carrying the sleeve selection across; Back Design (not in `depicts`) correctly leaves the photo alone; all four angles resolve per sleeve and colour, and puff/black still offers the three that were shot; Camel and Turquoise carry across sleeves with correct fallback. Regression pass: unphotographed Tops (blouse, crop top) still show "we haven't photographed this garment yet"; men's garments, which keep their own `style` preview layer with `depicts: null`, render unchanged; a stale sessionStorage store pointing at the deleted `style` category recovers to defaults; no console errors; no horizontal overflow at 390px. `tsc --noEmit` clean.
+
+**Known, not fixed here:** `tsconfig.json` sets `"ignoreDeprecations": "6.0"`, which TypeScript 5.7.3 rejects — `npx tsc --noEmit` fails on the config before it type-checks anything (pre-existing; there is no `typecheck` npm script, so nothing caught it). Attribute and option names are stored in English in the database and rendered directly, so the spec panel stays English under the Georgian locale — pre-existing across all garments, not introduced here.
+
+---
+
 ### [2026-08-30] Import Mariami's design pass — design only, Wishlist feature left behind
 
 **What was done:** Pulled the two commits Mariami pushed to `origin/mariam-changes` since 2026-08-24 (`5eb5f4b`, `7f9d0a2`) onto a branch off `main`, taking **only** the design changes. Her branch forks at `2c7fe0e`, so nothing on `main` after that point (the T-shirt-shoot revert chain) was disturbed; the two histories touch no file in common, so every design file was taken whole rather than merged.
@@ -2209,5 +2332,83 @@ Verified: every colour of every style now carries front, back, left and right �
 589 image paths, none missing. Driven in the browser: four view tiles, each colour
 loading its own side files, `puff/black` showing three, no console errors and no
 failed requests.
+
+### 2026-09-04 — The guided designer: /design becomes a five-step wizard
+
+Implements the `Customizer UX restructure` design pass. The studio's two screens —
+the category/product picker at `/design` and the single-screen configurator at
+`/customize/:slug` — collapse into one five-step designer at `/design`:
+**01 Garment · 02 Shape · 03 Details · 04 Fabric · 05 Fit**, down a pinned burgundy
+rail, one question per step, the garment held on a stage panel throughout, and a
+fixed footer carrying the running total and the CTA.
+
+**Decisions taken with the customer**, against the handoff's open questions:
+
+- The wizard *replaces* `/design`; step 01 is the heading grid plus the garments
+  filed under it, so choosing what to make is the first step rather than a page.
+- The photo preview and the view switcher **stay** — the stage mounts the real
+  `PreviewCanvas`, not the prototype's dashed placeholder.
+- Colour is **one garment-wide choice** (step 04), not per-attribute.
+- The reference palette is **adopted**, scoped to `.kere-designer` so nothing else
+  in the app moves: warm cream `#FAF5EF`, stage `#F4EBE3`, tile `#FFFCF8`, and
+  Cormorant Garamond on the display type (falling through to Noto Serif Georgian).
+
+The handoff was drawn against a catalogue two commits old — 9 global colours, 10
+sleeves, Cap free — so all option data, prices and defaults were taken from the
+live catalogue instead, and the eight headings come from `garmentTaxonomy` rather
+than the prototype's hardcoded list.
+
+**Colour, flattened without lying about it.** Colour rows hang off the option that
+carries the photography, and the five sleeve shoots do not cover the same colours —
+cap has 23, dropped 20, puff 13, and none of puff's are green. The chosen colour is
+now held by name (`colorName`, persisted and saved with the design) and applied to
+every option shot in it. Where the current cut was never photographed in that
+colour the **photograph is withheld** and the placeholder stands in, exactly as
+`depictsSelection` already does for an unphotographed cut. The alternative —
+falling back to the option's own default, or to the nearest shade — silently
+repainted the garment a colour the customer had not chosen; both were tried and
+rejected. The garment is made to order, so the colour still reaches the review
+sheet and the tailor; only the picture is missing.
+
+**Kept, not dropped**: the upload-your-own-design branch (a tile on step 01, and it
+keeps the studio's own chrome), the section switcher, Save design and Reset (step
+05), saved-design reopening, and every existing draft/auth/tailor-selection path.
+`/customize/:slug` is now a redirect to `/design?garment=<slug>`, so My Designs'
+"edit", shared links and bookmarks all still resolve; arriving that way opens on
+step 02, since the garment is already answered.
+
+Retired with it: `Customizer`, `OptionPanel`, `AttributeNavigator`,
+`CategoryOptions`, `OptionSwatch`, `FabricPicker`, `ColorDotPicker` and
+`PriceSummary` — the single-screen UI and its drill-down, all unreachable once the
+wizard owns both entry points. New: `DesignerWizard`, `StepRail`, `StagePanel`,
+`ReviewSheet`, `WizardTiles`, `garmentColors`, `submitDesign`,
+`useCategoryProducts`.
+
+**Mobile** (the handoff left it undesigned): below 900px the rail becomes a
+horizontal numbered strip, the columns stack, and the footer wraps — no horizontal
+scroll at 375px, all tap targets ≥52px.
+
+Two fixes fell out of the work. `PreviewCanvas` gained a `bare` prop so it stops
+painting its own white frame inside the stage; the photographs themselves are
+opaque palette PNGs with the backdrop baked in, so the garment is mounted as a
+photo plate rather than floating on the pattern paper — knocking the white out is
+a pipeline job, not a CSS one. And placing an order while logged out now writes
+the draft *before* redirecting to login, matching the upload branch; previously the
+configuration was lost on the way back.
+
+Verified in the browser (headless Edge, ka locale) across all five steps at 1440px
+and 375px: rail navigation and gating, tile selection and surcharges, the running
+total, colour propagating across sleeve changes, the photo withheld for
+puff + Emerald with the colour still on the review sheet, all four view tiles, the
+review rows, the upload branch, and the `/customize` redirect. Typecheck clean.
+
+**Not a data gap** — an earlier draft of this note claimed one, and it was wrong on
+both counts. The T-shirt serves `Cap`, `Wide`, `Dropped Shoulder`, `Oversized` and
+`Puff` at `price_modifier` 0 *by design*: `seedAttribute`'s `$free` zeroes every
+photographed sleeve on a photographed garment, because the base price buys the tee
+as it was shot. 4/4/4/6/16 are the line-wide list prices in `ATTRIBUTES`, and they
+apply wherever the sleeve is **not** photographed — `womens-blouse` carries Wide 4,
+Dropped 4, Oversized 6, Puff 16. Those blouse rows also disprove "the seeder edits
+have not been run": the three new sleeves exist only because of that change.
 
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

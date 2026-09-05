@@ -28,6 +28,7 @@
  */
 import { useMemo } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { depictsSelection } from './depicts';
 import type { LayerCategory, LayerOption, OptionColor, Fabric, GarmentView, ViewImageSet } from '../../types/customizer';
 
 /** The source's image for a view, or null when it has no photo for that angle */
@@ -51,6 +52,12 @@ interface PreviewCanvasProps {
     resolveOption?: (category: LayerCategory) => LayerOption | null;
     /** If provided, resolves the selected colour variant whose photos replace the option's */
     resolveColor?: (option: LayerOption) => OptionColor | null;
+    /**
+     * Drops the frame and the white ground, for a canvas mounted on a surface
+     * that supplies its own. A fabric still paints its colour behind the
+     * layers — that backdrop is what the multiply blend tints against.
+     */
+    bare?: boolean;
 }
 
 export default function PreviewCanvas({
@@ -61,6 +68,7 @@ export default function PreviewCanvas({
     view = 'front',
     resolveOption,
     resolveColor,
+    bare = false,
 }: PreviewCanvasProps) {
     // Sort ascending: lowest z_index renders first (behind)
     const sorted = useMemo(
@@ -106,11 +114,11 @@ export default function PreviewCanvas({
     // The container background colour IS the fabric tint source.
     // Greyscaled + brightened PNGs multiply against it to produce the
     // final fabric colour while preserving fold shadows.
-    const canvasBackground = selectedFabric?.color_hex ?? '#ffffff';
+    const canvasBackground = selectedFabric?.color_hex ?? (bare ? 'transparent' : '#ffffff');
 
     return (
         <div
-            className="relative aspect-square w-full overflow-hidden border border-[#111111]/[0.16] bg-white"
+            className={`relative aspect-square w-full overflow-hidden ${bare ? '' : 'border border-[#111111]/[0.16] bg-white'}`}
             style={{ backgroundColor: canvasBackground }}
             role="img"
             aria-label={`Shirt preview${selectedFabric ? ` in ${selectedFabric.name}` : ''}`}
@@ -134,6 +142,11 @@ export default function PreviewCanvas({
                     })();
 
                 if (!option) return null;
+
+                // The photograph shows the rest of the cut too, so it is only
+                // this customer's garment while they stay on the specification
+                // it was shot in — the stage puts up the placeholder instead.
+                if (!depictsSelection(option, layerCategories, selections)) return null;
 
                 // Selected colour variant supplies the photos when the option has colours
                 const color = resolveColor?.(option) ?? null;

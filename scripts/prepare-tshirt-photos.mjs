@@ -3,23 +3,27 @@
  *
  * Source masters live outside git (see .gitignore) at 1254x1254 and ~1.3MB each.
  * This writes the small, pre-aligned set the customizer serves, matching the
- * convention WomanTshirtClassic/ already uses: 700x700, <name>-<view>.png.
+ * convention the derived sets already use: 700x700, <name>-<view>.png.
  *
- * Three corrections are applied, each established by measuring pixels rather
- * than trusting the filename — see the README Evolution Log:
- *   · two files labelled BodyFit measure identically to their Fit group, and
- *     fill that group's one missing colour
- *   · one colour set carries a stray "Front" token mid-name
- *   · the Puff off-white and cream views are interchanged; the "(1)" copies are
- *     the off-white ones, distinguished by red-minus-blue warmth (13 vs 25)
+ * Both sides of this script speak the customizer's option slugs. A master is
+ *
+ *   <fit>_<length>_<neckline>_<back-design>_<sleeve>_<colour>_<view>.png
+ *   body-fitting_cropped_crew_normal_cap_burgundy_front.png
+ *
+ * so its name states exactly which combination of options it depicts, and the
+ * output keeps the two axes that vary: <sleeve>-<colour>-<view>.png. Nothing
+ * here has to correct or translate a name any more — the shoot's own
+ * vocabulary, its typos, its one mislabelled side view and its interchanged
+ * cream/off-white puff frames were all resolved when the masters were renamed
+ * (see the README Evolution Log). Re-deriving is now a pure resize.
  *
  * Framing: the masters are shot larger and lower than WomanTshirtClassic/, and
  * the side views are shot at a different zoom again (garment height 1000±44px
  * against the front's 904±6). Each image is therefore scaled to a fixed garment
  * height and pinned to the same shoulder line, so rotating the garment or
- * changing style never makes it jump. Height is the safe axis to normalise on:
- * it is constant across all five silhouettes (904±6 across the whole front set),
- * while width — 1149 fitted to 1231 oversized — is what distinguishes them, and
+ * changing sleeve never makes it jump. Height is the safe axis to normalise on:
+ * it is constant across all five sleeves (904±6 across the whole front set),
+ * while width — 1149 cap to 1231 oversized — is what distinguishes them, and
  * scaling by height preserves those ratios exactly.
  *
  * Usage: node scripts/prepare-tshirt-photos.mjs [--dry-run]
@@ -31,35 +35,15 @@ import path from 'node:path';
 const SRC = 'public/assets/garments/New Tshirts';
 const OUT = 'public/assets/garments/WomanTshirtStudio';
 
-/** The numeric prefix is the reliable view axis; the trailing word is typo-prone. */
-const VIEW = { '01.': 'front', '02.': 'back', '03.': 'three-quarter', '04.': 'left', '05.': 'right' };
-/** Views the schema stores — layer_option_colors has no three-quarter column. */
-const KEPT = new Set(['front', 'back', 'left', 'right']);
-
-const SILHOUETTE = {
-    Fitted: 'fitted', Wide: 'wide', Drop: 'dropped', Dropped: 'dropped',
-    Oversized: 'oversized', Puff: 'puff',
-};
-
 /**
- * Views the shoot did not actually deliver, keyed `silhouette-colour-view`.
- *
- * Puff/black's 05 file is a second frame of the LEFT side, not the right: it
- * overlaps its own left view far better unmirrored (0.94) than mirrored (0.76),
- * where all 101 other pairs in the set are the other way round. Writing it would
- * put a left-facing photograph behind the Right tile.
+ * Views the schema stores — layer_option_colors has no three-quarter column,
+ * and 'left-alt' marks the one frame the shoot delivered twice: puff/black's
+ * second file is another view of the LEFT side, not the right (it overlaps its
+ * own left view better unmirrored, 0.87, than mirrored, 0.71, where all 101
+ * other pairs in the set are the other way round). Puff/black therefore offers
+ * three angles rather than a fourth that faces the wrong way.
  */
-const NOT_SHOT = new Set(['puff-black-right']);
-
-const COLOUR = {
-    Beige: 'beige', Black: 'black', Blue: 'blue', Blush: 'blush', Brown: 'brown',
-    Burgundy: 'burgundy', Camel: 'camel', Charc: 'charcoal', Charcoal: 'charcoal',
-    CharcoalGray: 'charcoal', Cream: 'cream', Emerald: 'emerald', Green: 'green',
-    Lavender: 'lavender', LightG: 'light-gray', LightGra: 'light-gray', LightGray: 'light-gray',
-    Navy: 'navy', Off: 'off-white', Olive: 'olive', Orange: 'orange', Pink: 'pink',
-    Purple: 'purple', Red: 'red', Sky: 'sky', Turqu: 'turquoise', Turquoise: 'turquoise',
-    White: 'white', Yellow: 'yellow',
-};
+const KEPT = new Set(['front', 'back', 'left', 'right']);
 
 /* The frame WomanTshirtClassic/ already uses: a 700px canvas holding the garment
    411px tall, shoulder line 38px down, horizontally centred. */
@@ -67,24 +51,11 @@ const CANVAS = 700, GARMENT_H = 411, TOP = 38;
 /** Anything at least this dark is garment rather than the white sweep. */
 const INK = 235;
 
+/** The sleeve, colour and view a master's name declares. */
 function parse(file) {
-    let tokens = file.replace(/\.png$/, '').split('_');
-    const isCopy = / \(1\)$/.test(tokens.at(-1));
-    if (tokens.length === 10 && tokens[3] === 'Front') {
-        tokens = [...tokens.slice(0, 3), ...tokens.slice(4)];
-    }
-    const [index, , , , , , shape, tone] = tokens;
+    const [, , , , sleeve, colour, view] = file.replace(/\.png$/, '').split('_');
 
-    const view = VIEW[index];
-    const silhouette = SILHOUETTE[shape];
-    let colour = COLOUR[tone];
-
-    // Puff's off-white and cream were filed under one name: the plain files are
-    // cream, the "(1)" copies off-white. Only the fronts were filed correctly.
-    if (silhouette === 'puff' && colour === 'off-white' && view !== 'front') {
-        colour = isCopy ? 'off-white' : 'cream';
-    }
-    return { view, silhouette, colour };
+    return { view, sleeve, colour };
 }
 
 /** Bounding box of the garment within a white-swept frame. */
@@ -110,17 +81,15 @@ if (!dryRun) await mkdir(OUT, { recursive: true });
 
 const catalogue = {};
 const clipped = [];
-const rejected = [];
 let written = 0, skipped = 0;
 
 for (const file of files) {
-    const { view, silhouette, colour } = parse(file);
-    if (!view || !silhouette || !colour) throw new Error(`cannot parse: ${file}`);
+    const { view, sleeve, colour } = parse(file);
+    if (!view || !sleeve || !colour) throw new Error(`cannot parse: ${file}`);
     if (!KEPT.has(view)) { skipped++; continue; }
 
-    const target = `${silhouette}-${colour}-${view}.png`;
-    if (NOT_SHOT.has(`${silhouette}-${colour}-${view}`)) { rejected.push(target); continue; }
-    ((catalogue[silhouette] ??= {})[colour] ??= {})[view] = target;
+    const target = `${sleeve}-${colour}-${view}.png`;
+    ((catalogue[sleeve] ??= {})[colour] ??= {})[view] = target;
     if (dryRun) continue;
 
     const master = sharp(path.join(SRC, file)).removeAlpha();
@@ -152,9 +121,8 @@ for (const file of files) {
 }
 
 const counts = Object.entries(catalogue)
-    .map(([silhouette, colours]) => `${silhouette}:${Object.keys(colours).length}`)
+    .map(([sleeve, colours]) => `${sleeve}:${Object.keys(colours).length}`)
     .join(' ');
-console.log(`read ${files.length} · wrote ${written} · skipped ${skipped} three-quarter`);
-console.log(`silhouettes ${counts}`);
-if (rejected.length) console.log(`not shot, skipped: ${rejected.join(', ')}`);
+console.log(`read ${files.length} · wrote ${written} · skipped ${skipped} not stored (three-quarter, left-alt)`);
+console.log(`sleeves ${counts}`);
 console.log(clipped.length ? `CLIPPED (${clipped.length}): ${clipped.join(', ')}` : 'no clipping');

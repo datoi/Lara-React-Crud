@@ -90,16 +90,30 @@ function restoreColorSelections(
     return merged;
 }
 
+/** The colour an option opens on, when it has any. */
+function defaultColorName(layerCategories: LayerCategory[]): string | null {
+    for (const category of layerCategories) {
+        for (const option of category.options) {
+            if (!option.colors?.length) continue;
+            return (option.colors.find(c => c.is_default) ?? option.colors[0]).name;
+        }
+    }
+    return null;
+}
+
 interface UseCustomizerReturn {
     selections: Record<number, number>;
     /** Maps parentOptionId → selected childOptionId */
     subSelections: Record<number, number>;
     /** Maps optionId → selected colour variant id */
     colorSelections: Record<number, number>;
+    /** The colour the customer chose, by name — see selectColorByName */
+    colorName: string | null;
     fabricId: number | null;
     selectOption: (categoryId: number, optionId: number) => void;
     selectSubOption: (parentOptionId: number, childOptionId: number) => void;
-    selectColor: (optionId: number, colorId: number) => void;
+    /** Sets the garment colour across every option photographed in it */
+    selectColorByName: (name: string) => void;
     reset: () => void;
     getConfiguration: () => DesignConfiguration;
     totalPrice: number;
@@ -129,6 +143,7 @@ export function useCustomizer({
                 subSelections: savedConfiguration.sub_selections ?? {},
                 colorSelections: savedConfiguration.color_selections ?? {},
                 fabricId: savedConfiguration.fabric_id ?? null,
+                colorName: savedConfiguration.color_name ?? null,
             };
         }
         return persistKey ? getStoredSelections(persistKey) : null;
@@ -182,6 +197,9 @@ export function useCustomizer({
     const [colorSelections, setColorSelections] = useState<Record<number, number>>(
         () => restoreColorSelections(restored?.colorSelections, buildColorDefaults(), layerCategories)
     );
+    const [colorName, setColorName] = useState<string | null>(
+        () => restored?.colorName ?? defaultColorName(layerCategories),
+    );
     const [fabricId, setFabricId] = useState<number | null>(() => {
         const stored = restored?.fabricId;
         return stored !== undefined && stored !== null && fabrics.some(f => f.id === stored)
@@ -193,8 +211,8 @@ export function useCustomizer({
     // browser back, a re-visit, or a reload — restores the configuration.
     useEffect(() => {
         if (!persistKey) return;
-        storeSelections(persistKey, { selections, subSelections, colorSelections, fabricId });
-    }, [persistKey, selections, subSelections, colorSelections, fabricId]);
+        storeSelections(persistKey, { selections, subSelections, colorSelections, fabricId, colorName });
+    }, [persistKey, selections, subSelections, colorSelections, fabricId, colorName]);
 
     const selectOption = useCallback((categoryId: number, optionId: number) => {
         setSelections(prev => ({ ...prev, [categoryId]: optionId }));
@@ -215,9 +233,31 @@ export function useCustomizer({
         setSubSelections(prev => ({ ...prev, [parentOptionId]: childOptionId }));
     }, []);
 
-    const selectColor = useCallback((optionId: number, colorId: number) => {
-        setColorSelections(prev => ({ ...prev, [optionId]: colorId }));
-    }, []);
+    const selectColorByName = useCallback((name: string) => {
+        // The choice itself, held whether or not the garment as currently cut
+        // was ever photographed in it. Every colour is made to order, so the
+        // customer can have one no shoot covers — what they cannot have is the
+        // picture, and colorFor() below is what admits that.
+        setColorName(name);
+
+        setColorSelections(prev => {
+            const next = { ...prev };
+
+            // Colour belongs to the garment, not to the option that happens to
+            // carry the photographs: choosing Burgundy sets it on every option
+            // that was shot in Burgundy, so trying another sleeve keeps the
+            // colour the customer picked. Matched by name, since each shoot has
+            // its own rows.
+            const apply = (option: LayerOption) => {
+                const match = option.colors?.find(c => c.name === name);
+                if (match) next[option.id] = match.id;
+                option.children?.forEach(apply);
+            };
+            for (const category of layerCategories) category.options.forEach(apply);
+
+            return next;
+        });
+    }, [layerCategories]);
 
     const selectFabric = useCallback((id: number | null) => {
         setFabricId(id);
@@ -231,8 +271,9 @@ export function useCustomizer({
         setSelections(defaults);
         setSubSelections(buildSubDefaults());
         setColorSelections(buildColorDefaults());
+        setColorName(defaultColorName(layerCategories));
         setFabricId(fabrics[0]?.id ?? null);
-    }, [persistKey, buildDefaults, buildSubDefaults, buildColorDefaults, fabrics]);
+    }, [persistKey, buildDefaults, buildSubDefaults, buildColorDefaults, fabrics, layerCategories]);
 
 
     /**
@@ -277,23 +318,28 @@ export function useCustomizer({
         for (const category of layerCategories) {
             const option = resolveOption(category);
             if (!option) continue;
-            const colour = resolveColor(option);
             lines.push({
                 attribute: category.name,
-                option: colour ? `${option.name} — ${colour.name}` : option.name,
+                option: option.name,
                 price_modifier: option.price_modifier,
             });
         }
+
+        // Colour is the garment's, not any one attribute's, so it is its own
+        // line rather than an aside on whichever option carries the photographs.
+        if (colorName) lines.push({ attribute: 'Colour', option: colorName, price_modifier: 0 });
+
         return lines;
-    }, [layerCategories, resolveOption, resolveColor]);
+    }, [layerCategories, resolveOption, colorName]);
 
     const getConfiguration = useCallback((): DesignConfiguration => ({
         selections,
         color_selections: colorSelections,
         sub_selections: subSelections,
+        color_name: colorName,
         fabric_id: fabricId,
         spec: buildSpec(),
-    }), [selections, colorSelections, subSelections, fabricId, buildSpec]);
+    }), [selections, colorSelections, subSelections, colorName, fabricId, buildSpec]);
 
     const totalPrice = useMemo(() => {
         let total = basePrice;
@@ -318,10 +364,11 @@ export function useCustomizer({
         selections,
         subSelections,
         colorSelections,
+        colorName,
         fabricId,
         selectOption,
         selectSubOption,
-        selectColor,
+        selectColorByName,
         selectFabric,
         reset,
         getConfiguration,
