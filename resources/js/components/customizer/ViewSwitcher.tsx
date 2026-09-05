@@ -34,8 +34,9 @@ export default function ViewSwitcher({ views, view, onChange, thumbnailFor }: Vi
 
     if (views.length <= 1) return null;
 
-    // Sized as if there were always four angles, then centred, so withholding a
-    // view changes how many tiles there are but never how big they are.
+    // Sized as a fraction of the row and centred, so withholding a view changes
+    // how many tiles there are but never how big they are. Two across on a phone,
+    // four once there is room for the longest angle name.
     return (
         <div className="flex flex-wrap justify-center gap-3">
             {views.map(candidate => {
@@ -51,7 +52,7 @@ export default function ViewSwitcher({ views, view, onChange, thumbnailFor }: Vi
                         aria-pressed={isSelected}
                         aria-label={label}
                         className={[
-                            'flex w-[calc(25%-0.5625rem)] cursor-pointer flex-col bg-[var(--kd-tile)] transition-colors duration-150',
+                            'flex w-[calc(50%-0.375rem)] cursor-pointer flex-col bg-[var(--kd-tile)] transition-colors duration-150 min-[640px]:w-[calc(25%-0.5625rem)]',
                             isSelected
                                 ? 'border border-[var(--kd-burgundy)]'
                                 : 'border border-[var(--kd-hairline)] hover:border-[var(--kd-burgundy)]',
@@ -70,7 +71,7 @@ export default function ViewSwitcher({ views, view, onChange, thumbnailFor }: Vi
                         )}
                         <span
                             className={[
-                                'block px-1 text-center text-[10px] uppercase tracking-[0.06em]',
+                                'block px-1 text-center text-[10px] uppercase leading-[1.3] tracking-[0.06em] [overflow-wrap:anywhere]',
                                 thumbnail ? 'pb-2' : 'py-4',
                                 isSelected ? 'text-[var(--kd-burgundy)]' : 'text-[var(--kd-muted)]',
                             ].join(' ')}

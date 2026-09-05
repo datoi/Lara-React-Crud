@@ -1,5 +1,6 @@
 import { ImageOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import PatternPaper from './PatternPaper';
 import PreviewCanvas from './PreviewCanvas';
 import ViewSwitcher from './ViewSwitcher';
 import type { Fabric, GarmentView, LayerCategory, LayerOption, OptionColor } from '../../types/customizer';
@@ -22,6 +23,12 @@ interface StagePanelProps {
     eyebrow: string;
     /** What the garment currently reads as */
     title: string;
+    /**
+     * No garment chosen yet. The stage has nothing to render and nothing to
+     * apologise for, so it shows the drafting sheet and names the heading the
+     * customer is starting from rather than a placeholder that failed to load.
+     */
+    awaitingGarment: boolean;
 }
 
 /**
@@ -44,8 +51,27 @@ export default function StagePanel({
     thumbnailFor,
     eyebrow,
     title,
+    awaitingGarment,
 }: StagePanelProps) {
     const { t } = useTranslation();
+
+    // Before a garment is chosen there is nothing to composite. The stage reads
+    // as the drafting sheet the garment will be cut from, with the heading the
+    // customer has started from named against it.
+    if (awaitingGarment) {
+        return (
+            <div className="relative flex min-h-[380px] flex-col justify-center overflow-hidden border border-[rgba(111,29,36,0.16)] bg-[var(--kd-stage)] p-[clamp(18px,2vw,28px)] min-[900px]:min-h-[calc(100vh-200px)]">
+                <PatternPaper className="pointer-events-none absolute inset-0 h-full w-full text-[rgba(111,29,36,0.16)]" />
+
+                <div className="relative ml-auto w-full max-w-[22ch] text-right">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--kd-muted)]">{eyebrow}</div>
+                    <div className="kd-display mt-1 text-[clamp(24px,4.4vw,38px)] leading-[1.08] text-[var(--kd-burgundy)] [overflow-wrap:anywhere] [text-wrap:balance]">
+                        {title}
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col border border-[rgba(111,29,36,0.16)] bg-[var(--kd-stage)] p-[clamp(18px,2vw,28px)] min-[900px]:min-h-[calc(100vh-200px)]">

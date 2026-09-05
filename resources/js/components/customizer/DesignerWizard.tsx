@@ -20,6 +20,7 @@ import SaveDesignModal from './SaveDesignModal';
 import StagePanel from './StagePanel';
 import StepRail from './StepRail';
 import { ColorFigure, OptionTile, TileGroup } from './WizardTiles';
+import { GarmentMark } from './GarmentIcons';
 import { depictsSelection } from './depicts';
 import { garmentColors } from './garmentColors';
 import { money } from './money';
@@ -361,15 +362,7 @@ export default function DesignerWizard({
                                     label={t(entry.tKey)}
                                     selected={category?.key === entry.key}
                                     onClick={() => onSelectCategory(entry)}
-                                    figure={entry.image
-                                        ? <img
-                                            src={entry.image}
-                                            alt=""
-                                            aria-hidden="true"
-                                            loading="lazy"
-                                            className="h-10 w-[34px] flex-none object-contain"
-                                          />
-                                        : <span className="h-10 w-[34px] flex-none" />}
+                                    figure={<GarmentMark category={entry.key} className="h-10 w-[34px] flex-none" />}
                                 />
                             ))}
                             <OptionTile
@@ -538,6 +531,7 @@ export default function DesignerWizard({
                     thumbnailFor={thumbnailFor}
                     eyebrow={stageEyebrow}
                     title={stageTitle}
+                    awaitingGarment={product === null}
                 />
             </div>
 

@@ -609,6 +609,61 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-06] Typecheck actually runs now — and a correction to what earlier entries claimed
+
+**What was done:** `npx tsc --noEmit` has been failing repo-wide on the config before checking a single file, which three separate entries below flagged as pre-existing and none fixed. It is fixed, and it is now wired as a gate anyone can run.
+
+- **The cause was one unnecessary line.** `tsconfig.json` carried `"ignoreDeprecations": "6.0"`, a value only TypeScript 6 accepts; 5.7.3 rejects it outright with `TS5103`. `ignoreDeprecations` exists to silence deprecated *compiler options* — `target: ES3`, `importsNotUsedAsValues`, `preserveValueImports`, `suppressImplicitAnyIndexErrors` and the like — and this config uses none of them. Deleting the line makes the bare command pass with zero errors; nothing needed to be suppressed in the first place.
+- **`npm run typecheck` added**, so it is a gate rather than something each person has to remember the invocation for. Confirmed it fails on a real error, not just when convenient: injecting `const _gate: number = "not a number"` produced `error TS2322` and removing it went clean again.
+
+**Correction to earlier entries.** Several entries below state "`tsc --noEmit` and `vite build` clean". The typechecking behind those claims was genuinely run and genuinely clean — but through a temporary `tsconfig.typecheck.json` that extended the base config and overrode `ignoreDeprecations` to `"5.0"`, because the bare command could not start. The entries did not say so, which reads as though `npx tsc --noEmit` passed as written. It did not, and would not have, for anyone else in the repo. The workaround is gone; from this entry forward the claim means the plain command.
+
+**Verified:** `npx tsc --noEmit` and `npm run typecheck` both exit 0 with no output; `vite build` clean.
+
+---
+
+### [2026-09-05] Line-art category marks, and a stage that reads as a draft before a garment is chosen
+
+**What was done:** Brought the designer's first step closer to the design mockup — technical-sketch marks on the category tiles instead of photographic cut-outs, and a stage panel that shows the drafting sheet rather than a "preview coming soon" apology while the customer has not chosen a garment yet.
+
+- **`GarmentIcons.tsx`** — twelve garment marks (8 women's, 4 men's) authored as inline SVG on one 48×64 grid, single 1.3 stroke, no fill. Each garment is **one continuous silhouette** — neck, shoulder, out along the sleeve, under the arm, down the side, across the hem — with interior lines only for what identifies it. A first pass drew the sleeves as separate open shapes and they read as wings at 40px; carrying the outline through them reads as a garment. Every stroke is `currentColor`, so a mark inverts to cream the moment its tile is selected, with no second asset and no recolouring.
+- **`PatternPaper.tsx`** — a bodice front, a set-in sleeve and a flared skirt panel, each with its seam-allowance offset, balance notches and grainline arrow. Decorative, so `aria-hidden`.
+- **`StagePanel`** takes `awaitingGarment` and, when no garment is chosen, renders the pattern sheet with the heading named against it — `TOPS / Your starting point` — in place of the dashed `ImageOff` placeholder. The wizard already produced exactly that eyebrow and title for this state, so no new copy was needed.
+
+**Two faults found and fixed while building it.** `preserveAspectRatio="slice"` magnified two pattern pieces to fill the panel instead of showing the sheet — now `meet`. And the heading was sized off the viewport with a `ch` cap, so a long Georgian word (`წერტილი`) ran straight off the panel edge — the same class of bug reported the day before. It is now bound to the panel with `[overflow-wrap:anywhere]`.
+
+**Left as photography, deliberately:** the upload-your-own-design branch (`DesignerApp`'s category picker) keeps its large photographic cards. It is a different screen with a different visual language, and it is the only remaining consumer of `GarmentCategory.image`, so that field stays live rather than becoming dead weight.
+
+**Honest limits.** The marks are drawn by me: they match the mockup's *style* — even stroke, no fill, technical-sketch feel — but not the exact drawing. Swapping in a designer's SVGs later is one file. And on the user's instruction the stage carries **no hero garment**: the mockup's burgundy satin blouse is an asset we do not hold, and inventing a substitute would have shown a garment that does not correspond to the heading.
+
+**Verified:** every category tile and both sections rendered and inspected at 4× zoom in `ka` and `en`; the selected tile inverts correctly; the designer scans clean — no overflow, no text outside its box — at 320 / 390 / 768 / 1440 / 1920 on every step, and the new stage panel is clean at those widths in both locales. `tsc --noEmit` and `vite build` clean.
+
+---
+
+### [2026-09-05] Designer responsive fixes — the step rail and the angle tiles on a phone
+
+**What was done:** Measured the designer at 320 / 360 / 390 / 430 / 640 / 768 / 899 / 900 / 1024 / 1440 in both locales, on every step, looking for content wider than its own box, elements past the viewport, and elements spilling their parent. Three real faults, all on phones.
+
+- **Step 05 was always partly scrolled out of view.** The rail's five numbers are fixed-width and need 229px; a phone strip gets 140–210px, so the row scrolled and the last step sat outside it at every phone width — 320, 360 and 390 alike. The numbers now share the row (`min-w-0 flex-1`, centred) instead of being `shrink-0`, so all five are visible at any width and nothing scrolls; the desktop column resets to intrinsic sizing with `min-[900px]:flex-none`. Measured after: content equals the strip box at 320/360/390/430, buttons 25 → 47px.
+- **The whole strip scrolled, taking the exit control with it.** `overflow-x-auto` sat on the outer rail, so the wordmark and the exit button were part of the scroll region — at 320 the exit sat at 334..378 against a 305px viewport, reachable only by scrolling sideways. The scroll now belongs to the step list alone; the wordmark and exit are pinned either side of it.
+- **The angle labels painted over their tiles.** Four view tiles across a phone leaves ~48px each, and the Georgian names overran by 6–12px — `მარცხენა მხარე` needed 58px in a 46px box. This is the "text over the boxes" reported. The tiles are two-up below 640px and four-up above, which takes them to 108–163px on a phone, and the label gained `[overflow-wrap:anywhere]` plus `leading-[1.3]` so a longer name in any locale breaks rather than spilling.
+- **Also reverted a regression of my own** from the review round: the 44×44 exit target was given `-mr-2`, which pushed it past the container's padding and 3px off the right edge at 390.
+
+**Second pass — labels painting over their tiles on desktop.** The first sweep missed these because it only tested leaf elements for `scrollWidth > clientWidth`; the overflow here was on the *button*, whose child refused to shrink. Fixed after re-testing at 1920 and 2560:
+
+- **Root cause: `flex-1` without `min-w-0`.** A flex item keeps `min-width: auto`, so it will not shrink below its content's intrinsic minimum — and a Georgian category name is frequently one unbreakable word. `ქვედაბოლოები` wanted 124px in a 100px label box and simply painted across the tile border; `კომბინიზონები` 122px, `კომპლექტები` 111px. The label is now `min-w-0` so it can shrink, with `[overflow-wrap:anywhere]` as a guard that can never let text escape the box.
+- **But shrinking alone broke words mid-character**, which is worse typography than the original overflow. The real problem was the track: `minmax(min(100%,168px),1fr)` yields 180px tiles and only 100px of label. Measuring the longest unbreakable word per tile (rather than guessing at padding) showed 124px was the number to beat, so the track went to 208px — two roomier columns instead of three cramped ones, 201px of label, and no word breaks at all. Tile padding tightened from `px-4 gap-3` to `px-3.5 gap-2.5` to help.
+- **The same fault in the rail**, where a 146px column left `დიზაინერიდან` (102px) with 94px: `min-w-0` on the label row, `gap-3` → `gap-2` between number and label, step padding `22/14` → `18/12`, exit `gap-1.5 px-[11px]`. Every rail label now has room for its longest word.
+- **The rail numerals at 320px**, where five buttons share 305px and get 25px each, step down to `text-[15px]` under 400px so a 19px numeral is not clipped.
+
+**Verified:** the designer scans clean — no page overflow, no text past its box, no container narrower than its content, nothing outside the viewport — at 320 / 360 / 390 / 430 / 768 / 1024 / 1440 / 1920 / 2560, on every step, in `ka` and `en`. Every tile and rail label was measured word-by-word against its available width and all now fit on one line. The fixed footer still clears the content at every width (145px tall on a phone against 184px of padding; 81px against 120px on desktop). The desktop rail keeps its column, labels, active marker and pinned exit.
+
+**Checked and found already clean:** `/marketplace`, `/cart`, `/section` and the designer's garment grid at 320/390/768. The landing page reports decorative hits only — the `kere-ellipse-*` background shapes, the draggable `kere-gallery-track` and its cards, and `sr-only` labels are all deliberately wider than their box, and the page itself never scrolls horizontally at any width.
+
+**Not addressed:** 320px still shows a horizontally scrollable *category* list on some pages by design, and the review sheet's longest attribute names wrap to two lines at 320 (`Normal / No change`) — legible, just tighter. Both are acceptable degradation at a width below the current phone floor.
+
+---
+
 ### [2026-09-05] Review round on the wizard rewrite — two blockers, dead machinery, wrong docs
 
 **What was done:** Acted on two independent reviews of the five-step designer rewrite. Both blockers were real and both are fixed; the majors were verified before acting, and one of them turned out to be a claim about a tree state that does not exist.
@@ -728,7 +783,7 @@ All features and fixes are logged here in reverse chronological order.
 
 **Verified in a real browser** (headless Edge over CDP, `/customize/womens-t-shirt`): opens at ₾45 on the burgundy cap-sleeve tee with no Style row and 5 spec cards; all five photographed sleeves swap the photo and keep the colour; Long/Sleeveless show the placeholder; Relaxed fit, Longline, V and Turtle each withhold the photo and each restores it on the way back, carrying the sleeve selection across; Back Design (not in `depicts`) correctly leaves the photo alone; all four angles resolve per sleeve and colour, and puff/black still offers the three that were shot; Camel and Turquoise carry across sleeves with correct fallback. Regression pass: unphotographed Tops (blouse, crop top) still show "we haven't photographed this garment yet"; men's garments, which keep their own `style` preview layer with `depicts: null`, render unchanged; a stale sessionStorage store pointing at the deleted `style` category recovers to defaults; no console errors; no horizontal overflow at 390px. `tsc --noEmit` clean.
 
-**Known, not fixed here:** `tsconfig.json` sets `"ignoreDeprecations": "6.0"`, which TypeScript 5.7.3 rejects — `npx tsc --noEmit` fails on the config before it type-checks anything (pre-existing; there is no `typecheck` npm script, so nothing caught it). Attribute and option names are stored in English in the database and rendered directly, so the spec panel stays English under the Georgian locale — pre-existing across all garments, not introduced here.
+**Known, not fixed here** *(fixed 2026-09-06 — see that entry)*: `tsconfig.json` sets `"ignoreDeprecations": "6.0"`, which TypeScript 5.7.3 rejects — `npx tsc --noEmit` fails on the config before it type-checks anything (pre-existing; there is no `typecheck` npm script, so nothing caught it). Attribute and option names are stored in English in the database and rendered directly, so the spec panel stays English under the Georgian locale — pre-existing across all garments, not introduced here.
 
 ---
 

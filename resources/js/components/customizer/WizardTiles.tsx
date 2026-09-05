@@ -25,7 +25,7 @@ export function OptionTile({ label, modifier = 0, figure, selected, onClick }: O
             onClick={onClick}
             aria-pressed={selected}
             className={[
-                'flex min-h-[62px] cursor-pointer items-center gap-3 px-4 py-3 text-left transition-colors duration-150',
+                'flex min-h-[62px] cursor-pointer items-center gap-2.5 px-3.5 py-3 text-left transition-colors duration-150',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--kd-burgundy)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--kd-cream)]',
                 selected
                     ? 'border border-[var(--kd-burgundy)] bg-[var(--kd-burgundy)] text-[var(--kd-rail-text)]'
@@ -33,7 +33,7 @@ export function OptionTile({ label, modifier = 0, figure, selected, onClick }: O
             ].join(' ')}
         >
             {figure}
-            <span className="flex-1 text-[15px] leading-[1.25]">{label}</span>
+            <span className="min-w-0 flex-1 text-[15px] leading-[1.25] [overflow-wrap:anywhere]">{label}</span>
             {modifier !== 0 && (
                 <span
                     className={[
@@ -70,7 +70,7 @@ export function TileGroup({ label, value, dense = false, children }: TileGroupPr
                 className={
                     dense
                         ? 'grid gap-2.5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,132px),1fr))]'
-                        : 'grid gap-2.5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,168px),1fr))]'
+                        : 'grid gap-2.5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,208px),1fr))]'
                 }
             >
                 {children}
