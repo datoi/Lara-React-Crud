@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { motion } from 'motion/react';
 
 export function FeaturesSection() {
   const { t } = useTranslation();
@@ -33,16 +34,26 @@ export function FeaturesSection() {
         </div>
 
         <div className="bg-[#F4F0E9] px-6 sm:px-10 lg:px-14 xl:px-20">
-          <header className="border-b border-black/15 py-10 sm:py-12 lg:py-14">
+          <motion.header
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.35 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="border-b border-black/15 py-8 sm:py-10 lg:py-14"
+          >
             <h2 className="max-w-[620px] font-serif text-[clamp(1.75rem,3vw,3.2rem)] font-medium leading-[0.98] tracking-[-0.03em] !text-[#111111]">
               {t('features.sectionTitle')}
             </h2>
-          </header>
+          </motion.header>
 
-          {guarantees.map((item) => (
-            <article
+          {guarantees.map((item, index) => (
+            <motion.article
               key={item.title}
-              className="flex min-h-[42vh] flex-col justify-center py-12 lg:min-h-[52vh] lg:py-16"
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
+              className="flex flex-col justify-center border-b border-black/10 py-8 last:border-b-0 sm:py-10 lg:min-h-[52vh] lg:py-16"
             >
               <h3 className="max-w-[560px] font-serif text-[clamp(1.45rem,2.3vw,2.7rem)] font-medium leading-[1.05] tracking-[-0.025em] !text-[#111111]">
                 {item.title}
@@ -50,7 +61,7 @@ export function FeaturesSection() {
               <p className="mt-5 max-w-[500px] text-sm leading-7 text-[#514843] sm:text-[15px] sm:leading-7">
                 {item.description}
               </p>
-            </article>
+            </motion.article>
           ))}
         </div>
       </div>

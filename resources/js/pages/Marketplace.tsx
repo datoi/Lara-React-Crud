@@ -7,7 +7,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import { ErrorFallback } from '../components/ErrorFallback';
 import { Navigation } from '../components/landing/Navigation';
 import { ProductCardSkeleton } from '../components/skeletons/ProductCardSkeleton';
-import { Button } from '../components/ui/button';
 import { addToCart, openCart } from '../hooks/useCart';
 import { getSection, setSection, type Section } from '../hooks/useSection';
 import { getAuthToken, saveReturnTo } from '../hooks/useAuth';
@@ -434,7 +433,7 @@ export default function Marketplace() {
             </Helmet>
             <Navigation />
 
-            <div className="w-full px-3 pb-8 pt-24 sm:px-3 sm:pt-11 lg:px-4">
+            <div className="w-full px-3 pb-8 pt-16 sm:px-3 sm:pt-11 lg:px-4">
                 <div className="hidden px-4 py-12 text-center sm:block sm:py-16 lg:py-20">
                     <div className="relative mx-auto w-full max-w-[620px]">
                     <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#6c625b]" />
@@ -450,11 +449,11 @@ export default function Marketplace() {
                 </div>
 
                 <div className="sm:hidden">
-                    <h1 className="px-2 font-serif text-[clamp(3.3rem,16vw,5rem)] font-normal leading-[0.92] tracking-[-0.055em] text-black">
+                    <h1 className="px-2 font-serif text-[clamp(2.15rem,10vw,3.25rem)] font-normal leading-[1.02] tracking-[-0.035em] text-black">
                         {t('marketplace.allClothing')}
                     </h1>
 
-                    <div className="marketplace-scrollbar-none -mx-3 mt-9 flex snap-x gap-2 overflow-x-auto px-3 pb-4" style={{ scrollbarWidth: 'none' }}>
+                    <div className="marketplace-scrollbar-none -mx-3 mt-5 flex snap-x gap-2 overflow-x-auto px-3 pb-3" style={{ scrollbarWidth: 'none' }}>
                         {categories
                             .filter((category) => audience !== 'men' || !WOMEN_ONLY_CATEGORY_SLUGS.includes(category.slug))
                             .map((category) => (
@@ -506,7 +505,7 @@ export default function Marketplace() {
                     </div>
                 </div>
 
-                <div className="sticky top-[50px] z-40 -mx-3 mb-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-y border-[#111111]/20 bg-[#E4E0D7] px-3 py-3 sm:mx-0 sm:px-3">
+                <div className="sticky top-[46px] z-40 -mx-3 mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-y border-[#111111]/20 bg-[#E4E0D7] px-3 py-2 sm:top-[50px] sm:mx-0 sm:px-3 sm:py-3">
                     <p className="order-2 hidden justify-self-center text-xs font-semibold whitespace-nowrap text-[#111111] uppercase sm:block">
                         {products.length === 1 ? t('marketplace.showingOne') : t('marketplace.showingMany', { n: products.length })}
                     </p>
@@ -530,7 +529,7 @@ export default function Marketplace() {
                                 setShowSort((v) => !v);
                                 setActiveFilter(null);
                             }}
-                            className={`flex min-h-11 items-center gap-1.5 border px-4 py-2.5 text-sm font-medium transition-colors ${
+                            className={`flex min-h-10 items-center gap-1.5 border px-3 py-2 text-sm font-medium transition-colors sm:min-h-11 sm:px-4 sm:py-2.5 ${
                                 sort
                                     ? 'border-[#111111] bg-[#111111] text-white'
                                     : 'border-[#111111]/15 bg-[#EEEAE0] text-[#514843] hover:bg-[#111111]/5'
@@ -722,9 +721,9 @@ export default function Marketplace() {
                                             }}
                                             disabled={wishlistSaving === product.id}
                                             aria-label={wishlistIds.has(product.id) ? t('wishlist.remove') : t('wishlist.add')}
-                                            className="absolute right-3 top-3 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-black shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-transform hover:scale-105 disabled:opacity-50"
+                                            className="visible absolute right-2 top-2 z-30 flex h-9 w-9 items-center justify-center rounded-full border border-black/15 bg-white text-black opacity-100 shadow-[0_4px_16px_rgba(0,0,0,0.14)] transition-transform hover:scale-105 disabled:opacity-50 sm:right-3 sm:top-3 sm:h-10 sm:w-10"
                                         >
-                                            <Heart className={`h-5 w-5 stroke-[1.4] ${wishlistIds.has(product.id) ? 'fill-black' : 'fill-transparent'}`} />
+                                            <Heart className={`h-4 w-4 stroke-[1.7] sm:h-5 sm:w-5 ${wishlistIds.has(product.id) ? 'fill-black' : 'fill-transparent'}`} />
                                         </button>
                                         {product.is_customizable && (
                                             <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 bg-white/90 px-2 py-1 text-[10px] font-semibold text-[#111111] shadow-sm backdrop-blur">
@@ -798,20 +797,8 @@ export default function Marketplace() {
                                         ) : (
                                             <p className="mb-2 hidden text-[10px] text-[#6c625b] sm:block">{t('marketplace.noReviews')}</p>
                                         )}
-                                        <div className="flex items-center justify-between">
+                                        <div className="flex items-center">
                                             <span className="text-sm font-bold text-[#111111]">₾{product.price}</span>
-                                            {!product.is_customizable && (
-                                                <Button
-                                                    size="sm"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        navigate(`/product/${product.id}`);
-                                                    }}
-                                                    className="rounded-none bg-[#111111] px-3 text-[10px] text-white hover:bg-[#333333] active:scale-95 sm:px-4"
-                                                >
-                                                    {t('marketplace.checkProduct')}
-                                                </Button>
-                                            )}
                                         </div>
                                         <button
                                             type="button"
@@ -819,7 +806,7 @@ export default function Marketplace() {
                                                 event.stopPropagation();
                                                 navigate(`/product/${product.id}`);
                                             }}
-                                            className="mt-4 min-h-11 w-full bg-black px-3 text-xs font-normal uppercase tracking-[0.04em] text-white sm:hidden"
+                                            className="mt-3 min-h-10 w-full bg-black px-3 text-xs font-normal uppercase tracking-[0.04em] text-white transition-colors hover:bg-[#333333] sm:min-h-11"
                                             style={{ color: '#ffffff' }}
                                         >
                                             {t('marketplace.quickBuy')}

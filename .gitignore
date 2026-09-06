@@ -28,3 +28,4 @@ yarn-error.log
 # Full-resolution garment photo masters — kept locally, never deployed.
 # The web-ready set lives in public/assets/garments/<Garment>/ (see WomensTopsSeeder).
 /public/assets/garments/Woman T-shirts/
+/public/assets/garments/WomanTshirtCassic2/

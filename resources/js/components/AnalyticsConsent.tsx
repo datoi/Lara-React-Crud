@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-import { Button } from './ui/button';
+import { X } from 'lucide-react';
 import {
     getConsent,
     setConsent,
@@ -86,23 +86,43 @@ export function AnalyticsConsent() {
                     aria-label={t('consent.title')}
                     ref={bannerRef}
                     data-testid="analytics-consent"
-                    className="fixed inset-x-0 bottom-0 z-[200] p-3 sm:p-6"
+                    className="fixed inset-x-0 bottom-0 z-[200]"
                 >
-                    <div className="mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5">
-                        <p className="text-xs leading-relaxed text-slate-600 sm:text-sm">
-                            {t('consent.message')}{' '}
-                            <a href="/privacy" className="font-medium text-brand underline underline-offset-2 hover:opacity-80">
-                                {t('consent.learnMore')}
-                            </a>
+                    <div className="relative border-t border-black/20 bg-[#F7F5F0] px-5 py-6 text-black shadow-[0_-10px_35px_rgba(0,0,0,0.08)] sm:px-10 sm:py-8 lg:px-14">
+                        <button
+                            type="button"
+                            onClick={decline}
+                            aria-label={t('consent.decline')}
+                            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center text-black transition-opacity hover:opacity-55 sm:right-7 sm:top-6"
+                        >
+                            <X className="h-7 w-7 stroke-[1.6]" />
+                        </button>
+
+                        <p className="max-w-5xl pr-12 text-sm font-normal leading-6 uppercase tracking-[0.01em] sm:text-base sm:leading-7">
+                            {t('consent.message')}
                         </p>
 
-                        <div className="flex shrink-0 gap-2">
-                            <Button variant="outline" size="sm" onClick={decline}>
+                        <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:items-center sm:gap-5">
+                            <button
+                                type="button"
+                                onClick={decline}
+                                className="min-h-12 border border-black bg-transparent px-7 text-sm font-normal uppercase tracking-[0.02em] text-black transition-colors hover:bg-black hover:text-white sm:min-w-[260px] sm:text-base"
+                            >
                                 {t('consent.decline')}
-                            </Button>
-                            <Button variant="default" size="sm" onClick={accept}>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={accept}
+                                className="min-h-12 border border-black bg-black px-7 text-sm font-normal uppercase tracking-[0.02em] text-white transition-colors hover:bg-[#292929] sm:min-w-[200px] sm:text-base"
+                            >
                                 {t('consent.accept')}
-                            </Button>
+                            </button>
+                            <a
+                                href="/privacy"
+                                className="w-fit border-b border-black pb-1 text-sm font-normal uppercase tracking-[0.02em] text-black transition-opacity hover:opacity-55 sm:ml-1 sm:text-base"
+                            >
+                                {t('consent.learnMore')}
+                            </a>
                         </div>
                     </div>
                 </motion.div>

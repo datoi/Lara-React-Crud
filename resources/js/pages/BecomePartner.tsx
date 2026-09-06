@@ -638,8 +638,8 @@ export default function BecomePartner() {
 
             {/* ── 7. Final CTA ── */}
             <section className="relative overflow-hidden bg-[#E4E0D7] px-4 py-16 sm:px-6 md:py-20 lg:px-8">
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[#6F1D24]/15" />
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[#6F1D24]/15" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-black/15" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-black/15" />
                 <div className="relative mx-auto max-w-[980px] text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -650,25 +650,24 @@ export default function BecomePartner() {
                             ease: [0.22, 1, 0.36, 1],
                         }}
                     >
-                        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-[#6F1D24]/20 text-[#6F1D24]">
+                        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-black/25 text-black">
                             <Scissors className="h-4 w-4 stroke-[1.4]" />
                         </div>
 
-                        <h2 className="mx-auto mt-7 max-w-[850px] font-serif text-[clamp(2.7rem,5.8vw,5.6rem)] font-medium leading-[0.92] tracking-[-0.055em] text-[#6F1D24]">
+                        <h2 className="mx-auto mt-7 max-w-[850px] font-serif text-[clamp(2.25rem,5.8vw,5.6rem)] font-medium leading-[0.96] tracking-[-0.045em] text-black">
                             {t('partners.finalTitle')}
                         </h2>
 
-                        <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                        <div className="mt-9 flex flex-col items-center justify-center gap-5 sm:flex-row sm:gap-6">
                             <PartnerCTA
                                 label={t('partners.createProfile')}
                                 className="partners-final-primary-cta group inline-flex min-h-[50px] w-full items-center justify-center gap-3 rounded-full bg-[#1D1D1D] px-8 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#363636] sm:w-auto"
                             />
                             <Link
                                 to="/contact"
-                                className="inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-full border border-[#111111] px-8 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-[#111111] hover:text-white sm:w-auto"
+                                className="inline-flex w-fit items-center justify-center border-0 border-b border-black bg-transparent px-0 pb-1 text-xs font-medium uppercase tracking-[0.05em] text-black transition-opacity hover:opacity-55"
                             >
                                 {t('partners.haveQuestion')}
-                                <ArrowRight className="h-4 w-4" />
                             </Link>
                         </div>
                     </motion.div>
