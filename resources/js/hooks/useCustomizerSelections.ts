@@ -8,6 +8,12 @@ export interface StoredSelections {
     subSelections: Record<number, number>;
     colorSelections: Record<number, number>;
     fabricId: number | null;
+    /**
+     * The colour the customer chose, by name. Colour rows belong to the option
+     * that carries the photography, so the per-option ids above cannot express
+     * a colour the currently selected option was never shot in — this can.
+     */
+    colorName?: string | null;
 }
 
 const KEY = 'kere_customizer_selections';

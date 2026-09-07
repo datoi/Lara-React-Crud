@@ -344,7 +344,7 @@ export default function Marketplace() {
         (menu === 'more' && priceMax < 500);
 
     const checkboxRow = (label: string, checked: boolean, onClick: () => void, swatch?: string) => (
-        <button onClick={onClick} className="flex w-full items-center gap-4 py-2.5 text-left text-sm font-semibold text-[#2c2926] hover:opacity-60">
+        <button key={label} onClick={onClick} className="flex w-full items-center gap-4 py-2.5 text-left text-sm font-semibold text-[#2c2926] hover:opacity-60">
             <span
                 className={`flex h-6 w-6 shrink-0 items-center justify-center border ${checked ? 'border-[#111111] bg-[#111111]' : 'border-[#111111]/60'}`}
             >
@@ -610,15 +610,36 @@ export default function Marketplace() {
                         </div>
                     </div>
 
+                    {/* Mobile uses one reachable panel for every filter menu. */}
                     <AnimatePresence>
-                        {activeFilter === 'category' && (
+                        {activeFilter && (
                             <motion.div
                                 initial={{ opacity: 0, y: 6 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 6 }}
+                                transition={{ duration: 0.15 }}
                                 className="absolute left-3 right-3 top-full z-30 border border-black/15 bg-[#F4F1E7] p-5 shadow-xl sm:hidden"
                             >
-                                {renderFilterContent('category')}
+                                <div className="marketplace-scrollbar-none -mx-1 flex gap-4 overflow-x-auto border-b border-[#111111]/15 pb-3" style={{ scrollbarWidth: 'none' }}>
+                                    {(['category', 'colour', 'size', 'fabric', 'more'] as FilterMenu[]).map((menu) => (
+                                        <button
+                                            key={menu}
+                                            onClick={() => setActiveFilter(menu)}
+                                            className={`shrink-0 px-1 text-[11px] font-semibold uppercase transition-colors ${
+                                                activeFilter === menu || filterIsActive(menu) ? 'text-[#111111]' : 'text-[#514843]'
+                                            }`}
+                                        >
+                                            {filterLabel(menu)}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="max-h-[46vh] overflow-y-auto py-4">{renderFilterContent(activeFilter)}</div>
+                                <button
+                                    onClick={() => resetFilter(activeFilter)}
+                                    className="border-t border-[#111111]/15 pt-4 text-sm font-semibold text-[#111111] underline underline-offset-4"
+                                >
+                                    {t('marketplace.resetFilter')}
+                                </button>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -699,7 +720,7 @@ export default function Marketplace() {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-10 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
                         {products.map((product, i) => {
                             const isNew = newProductIdsRef.current === null || newProductIdsRef.current.has(product.id);
                             const newBatchIndex = newProductIdsRef.current ? [...newProductIdsRef.current].indexOf(product.id) : i;
@@ -761,7 +782,7 @@ export default function Marketplace() {
                                     </div>
 
                                     <div className="px-0 py-3 sm:border-t sm:border-[#111111]/12 sm:px-3">
-                                        <h3 className="mb-1 text-sm leading-tight font-normal uppercase text-[#111111] sm:text-sm sm:font-bold sm:normal-case">{product.name}</h3>
+                                        <h3 className="mb-1 text-xs leading-tight font-normal uppercase text-[#111111] sm:text-sm sm:font-bold sm:normal-case">{product.name}</h3>
                                         <p className="mb-2 hidden flex-wrap items-center gap-1 text-[10px] text-[#6c625b] sm:flex">
                                             <span>
                                                 {t('marketplace.by')}{' '}
@@ -798,19 +819,8 @@ export default function Marketplace() {
                                             <p className="mb-2 hidden text-[10px] text-[#6c625b] sm:block">{t('marketplace.noReviews')}</p>
                                         )}
                                         <div className="flex items-center">
-                                            <span className="text-sm font-bold text-[#111111]">₾{product.price}</span>
+                                            <span className="text-xs font-semibold text-[#111111] sm:text-sm sm:font-bold">₾{product.price}</span>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={(event) => {
-                                                event.stopPropagation();
-                                                navigate(`/product/${product.id}`);
-                                            }}
-                                            className="mt-3 min-h-10 w-full bg-black px-3 text-xs font-normal uppercase tracking-[0.04em] text-white transition-colors hover:bg-[#333333] sm:min-h-11"
-                                            style={{ color: '#ffffff' }}
-                                        >
-                                            {t('marketplace.quickBuy')}
-                                        </button>
                                     </div>
                                 </motion.div>
                             );

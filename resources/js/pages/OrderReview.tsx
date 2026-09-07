@@ -7,7 +7,7 @@ import { getDraft, clearDraft } from '../hooks/useCustomOrderDraft';
 import { getAuthUser, getAuthToken } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
 import { useTranslation } from 'react-i18next';
-import DesignSpecList, { readSpec } from '../components/DesignSpecList';
+import DesignSpecList, { readProductName, readSpec } from '../components/DesignSpecList';
 
 const SHIPPING = 15;
 
@@ -122,7 +122,10 @@ export default function OrderReview() {
         'jumpsuits': 'orderReview.garment_jumpsuits',
         'suits': 'orderReview.garment_suits',
     };
-    const garmentLabel = garmentKeyMap[draft.garment_type] ? t(garmentKeyMap[draft.garment_type]) : draft.garment_type;
+    // The configured garment names itself; the taxonomy label is the fallback
+    // for upload-path orders and anything placed before the name was carried.
+    const garmentLabel = readProductName(draft.customization)
+        ?? (garmentKeyMap[draft.garment_type] ? t(garmentKeyMap[draft.garment_type]) : draft.garment_type);
     const isAutoMatch  = draft.assignment_mode === 'random' || draft.tailor_id === null;
 
     return (

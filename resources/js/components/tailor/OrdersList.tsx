@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Loader2, MessageCircle, Package } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import DesignSpecList, { readSpec } from '../DesignSpecList';
+import DesignSpecList, { readProductName, readSpec } from '../DesignSpecList';
 import { Button } from '../ui/button';
 import { OrderChat } from '../OrderChat';
 import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
@@ -284,7 +284,11 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                 )}
                                 {readSpec(cd.customization).length > 0 && (
                                     <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                                        <DesignSpecList spec={readSpec(cd.customization)} label={t('tailorComponents.studioSpec')} />
+                                        <DesignSpecList
+                                            spec={readSpec(cd.customization)}
+                                            garment={readProductName(cd.customization)}
+                                            label={t('tailorComponents.studioSpec')}
+                                        />
                                     </div>
                                 )}
 

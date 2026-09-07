@@ -20,6 +20,7 @@ class LayerOption extends Model
         'left_image_path',
         'right_image_path',
         'color_hex',
+        'depicts',
         'display_scale',
         'price_modifier',
         'is_default',
@@ -28,6 +29,7 @@ class LayerOption extends Model
     ];
 
     protected $casts = [
+        'depicts' => 'array',
         'display_scale' => 'float',
         'price_modifier' => 'float',
         'is_default' => 'boolean',

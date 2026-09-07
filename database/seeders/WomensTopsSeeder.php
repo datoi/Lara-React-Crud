@@ -12,7 +12,7 @@ use Illuminate\Database\Seeder;
  * attributes (fit, length, neckline, back design, sleeves).
  *
  * Shape:  CustomizerProduct = garment
- *         LayerCategory     = attribute   (is_preview_layer = false — selector only)
+ *         LayerCategory     = attribute
  *         LayerOption       = option      (label + price, artwork optional)
  *
  * Attributes are declared once in ATTRIBUTES and applied to every garment.
@@ -20,6 +20,13 @@ use Illuminate\Database\Seeder;
  * (blacklist) so impossible combinations — sleeves on a camisole, a longline
  * crop top — never reach the customer. Adding a garment is one GARMENTS row;
  * adding an attribute is one ATTRIBUTES row.
+ *
+ * Photography, where a garment has any, belongs to the attribute the shoot
+ * varies: that attribute becomes the preview layer, its photographed options
+ * carry the images and the colourways, and each of them records in 'depicts'
+ * the rest of the cut it was shot in. There is no separate "style" selector —
+ * the customer specifies the garment and the canvas answers with a photograph
+ * when, and only when, one exists for what they specified.
  */
 class WomensTopsSeeder extends Seeder
 {
@@ -95,12 +102,151 @@ class WomensTopsSeeder extends Seeder
                 'elbow'         => ['Elbow', 5],
                 'three-quarter' => ['Three-quarter', 7],
                 'long'          => ['Long', 9],
+                'wide'          => ['Wide', 4],
+                'dropped'       => ['Dropped Shoulder', 4],
+                'oversized'     => ['Oversized', 6],
                 'puff'          => ['Puff', 16],
                 'bell'          => ['Bell', 15],
                 'balloon'       => ['Balloon', 16],
                 'bishop'        => ['Bishop', 17],
                 'one-sleeve'    => ['One sleeve', 13],
             ],
+        ],
+    ];
+
+    /**
+     * The T-shirt photography, keyed by the sleeve each shoot depicts.
+     *
+     * The 2026 studio set photographs one cropped crew tee in five sleeve
+     * constructions. They differ in the sleeve alone: measured across all 102
+     * configurations the body is one garment (hem 584-625px, unchanged between
+     * shoots) while the sleeve runs from a set-in cap ending 48% down the body
+     * to a dropped shoulder ending at 71%. So the shoots are options of the
+     * Sleeves attribute, and fit, length and neckline stay what the file names
+     * declare them to be for every frame — body-fitting, cropped, crew.
+     *
+     * Both the masters and the derived set are named by the sleeve slug, so a
+     * key here is also the file prefix on disk — see photoPath().
+     *
+     * Every sleeve opens on the same 'cover' colour, so the tiles differ only in
+     * the sleeve and changing sleeve never changes the colour the customer is
+     * looking at. Hexes are sampled from the photographs themselves, which is
+     * why one colour word differs in shade between sleeves — they are separate
+     * shoots of separate dye lots. Both the files and the hexes come from
+     * scripts/prepare-tshirt-photos.mjs.
+     */
+    private const TSHIRT_SLEEVES = [
+        'cap' => [
+            ['slug' => 'black',           'name' => 'Black',        'hex' => '#151515'],
+            ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#3c4249'],
+            ['slug' => 'navy',            'name' => 'Navy',         'hex' => '#02116e'],
+            ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#6b4129'],
+            ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#c69661'],
+            ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#e4cbad'],
+            ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#fef0cf'],
+            ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#f2eadc'],
+            ['slug' => 'white',           'name' => 'White',        'hex' => '#e6e5e8'],
+            ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#cccccc'],
+            ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#fccfd0'],
+            ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#fd2a87'],
+            ['slug' => 'red',             'name' => 'Red',          'hex' => '#d8111b'],
+            ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#780423'],
+            ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fe6d03'],
+            ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#fed72b'],
+            ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#6c7e25'],
+            ['slug' => 'emerald',         'name' => 'Emerald',      'hex' => '#017b58'],
+            ['slug' => 'turquoise',       'name' => 'Turquoise',    'hex' => '#5ce4da'],
+            ['slug' => 'sky',             'name' => 'Sky',          'hex' => '#9bd2f2'],
+            ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#3b6fec'],
+            ['slug' => 'lavender',        'name' => 'Lavender',     'hex' => '#c38be3'],
+            ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#620991'],
+        ],
+        'wide' => [
+            ['slug' => 'black',           'name' => 'Black',        'hex' => '#1e1e1f'],
+            ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#454446'],
+            ['slug' => 'navy',            'name' => 'Navy',         'hex' => '#182042'],
+            ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#5b392b'],
+            ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#cd9b6e'],
+            ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#e9daca'],
+            ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#f7edd6'],
+            ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#f2e9e0'],
+            ['slug' => 'white',           'name' => 'White',        'hex' => '#e9e8ea'],
+            ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#d3d3d8'],
+            ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#fcdedd'],
+            ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#fd398f'],
+            ['slug' => 'red',             'name' => 'Red',          'hex' => '#e71223'],
+            ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#662032'],
+            ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fd670d'],
+            ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#fdd318'],
+            ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#6c6d3f'],
+            ['slug' => 'green',           'name' => 'Green',        'hex' => '#018f5c'],
+            ['slug' => 'turquoise',       'name' => 'Turquoise',    'hex' => '#36ced1'],
+            ['slug' => 'sky',             'name' => 'Sky',          'hex' => '#9dd4f4'],
+            ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#164bd2'],
+            ['slug' => 'lavender',        'name' => 'Lavender',     'hex' => '#cdb2e9'],
+            ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#6e24a3'],
+        ],
+        'dropped' => [
+            ['slug' => 'black',           'name' => 'Black',        'hex' => '#171717'],
+            ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#4d4d4f'],
+            ['slug' => 'navy',            'name' => 'Navy',         'hex' => '#1d2234'],
+            ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#4a322b'],
+            ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#d79d68'],
+            ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#ebdcc9'],
+            ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#f6ead9'],
+            ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#ece8e0'],
+            ['slug' => 'white',           'name' => 'White',        'hex' => '#e8e8ea'],
+            ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#dfdfdf'],
+            ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#fcdfde'],
+            ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#fc4292'],
+            ['slug' => 'red',             'name' => 'Red',          'hex' => '#f20c21'],
+            ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#681628'],
+            ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fd6710'],
+            ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#fee03e'],
+            ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#68684a'],
+            ['slug' => 'green',           'name' => 'Green',        'hex' => '#006f4e'],
+            ['slug' => 'sky',             'name' => 'Sky',          'hex' => '#d6e7f8'],
+            ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#1952d9'],
+        ],
+        'oversized' => [
+            ['slug' => 'black',           'name' => 'Black',        'hex' => '#1c1c1c'],
+            ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#474747'],
+            ['slug' => 'navy',            'name' => 'Navy',         'hex' => '#1c243b'],
+            ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#643a29'],
+            ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#cb935f'],
+            ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#eedfcf'],
+            ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#f6ead6'],
+            ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#eee8df'],
+            ['slug' => 'white',           'name' => 'White',        'hex' => '#e8e8ea'],
+            ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#ceced0'],
+            ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#fadedd'],
+            ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#fc559b'],
+            ['slug' => 'red',             'name' => 'Red',          'hex' => '#e50d1c'],
+            ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#591729'],
+            ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fd640e'],
+            ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#fdca0d'],
+            ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#6e6e4f'],
+            ['slug' => 'green',           'name' => 'Green',        'hex' => '#006c4a'],
+            ['slug' => 'turquoise',       'name' => 'Turquoise',    'hex' => '#23cfe4'],
+            ['slug' => 'sky',             'name' => 'Sky',          'hex' => '#b9daf7'],
+            ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#0f44c3'],
+            ['slug' => 'lavender',        'name' => 'Lavender',     'hex' => '#d6c5ed'],
+            ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#572e88'],
+        ],
+        'puff' => [
+            ['slug' => 'black',           'name' => 'Black',        'hex' => '#1f1f1f'],
+            ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#48474a'],
+            ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#6e4b3a'],
+            ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#d09c74'],
+            ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#ead6c0'],
+            ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#f3e9da'],
+            ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#eee9e1'],
+            ['slug' => 'white',           'name' => 'White',        'hex' => '#e8e7e9'],
+            ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#c1c1c3'],
+            ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#f9dad9'],
+            ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#f6357f'],
+            ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#5a192b'],
+            ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fd6b1f'],
         ],
     ];
 
@@ -117,26 +263,27 @@ class WomensTopsSeeder extends Seeder
                 'sleeves'  => ['one-sleeve'],
             ],
             'photos' => [
-                'folder' => 'WomanTshirtKere',
-                'front_only' => true,
-                'style'  => ['slug' => 'classic', 'name' => 'Classic'],
-                // The cut the photography actually shows. Pinned as this
-                // garment's defaults so the preview and the spec panel agree
-                // the moment the page opens.
+                // Sleeves is the attribute the shoot varies — five constructions
+                // of one tee — so its options carry the photographs and the
+                // colourways, and it is the layer the canvas paints.
+                'attribute' => 'sleeves',
+                'options'   => self::TSHIRT_SLEEVES,
+                'default'   => 'cap',
+                'cover'     => 'burgundy',
+                // The rest of the cut every photograph shows, read off the file
+                // names. Pinned as this garment's defaults so the preview and
+                // the spec panel agree the moment the page opens, and recorded
+                // on each photographed option so the canvas can withhold a
+                // picture of a tee the customer is no longer specifying.
                 'depicts' => [
-                    'fit'      => 'body-fitting',
-                    'length'   => 'cropped',
-                    'neckline' => 'crew',
-                    'sleeves'  => 'cap',
-                ],
-                // First colour is the default — it becomes the card preview and
-                // the opening customizer view. Swatch hexes sampled from the
-                // photographs themselves.
-                'colors' => [
-                    ['slug' => 'navy',     'name' => 'Navy',     'hex' => '#171c3c'],
-                    ['slug' => 'black',    'name' => 'Black',    'hex' => '#181818'],
-                    ['slug' => 'ivory',    'name' => 'Ivory',    'hex' => '#eee9dd'],
-                    ['slug' => 'burgundy', 'name' => 'Burgundy', 'hex' => '#6f1d24'],
+                    'fit'         => 'body-fitting',
+                    'length'      => 'cropped',
+                    'neckline'    => 'crew',
+                    // The shoot delivered a back view of every colourway, and
+                    // every one of them is plain and closed — so the back is
+                    // photographed too, and asking for a lace-up back leaves
+                    // the picture wrong from behind.
+                    'back-design' => 'normal',
                 ],
             ],
         ],
@@ -224,20 +371,6 @@ class WomensTopsSeeder extends Seeder
                 'neckline' => ['halter', 'sweetheart', 'one-shoulder'],
                 'sleeves'  => ['cap', 'one-sleeve'],
             ],
-            'photos' => [
-                'folder' => 'WomanSweaterKere',
-                'front_only' => true,
-                'style' => ['slug' => 'quarter-zip', 'name' => 'Quarter Zip'],
-                'depicts' => [
-                    'fit' => 'relaxed',
-                    'length' => 'hip-length',
-                    'neckline' => 'high',
-                    'sleeves' => 'long',
-                ],
-                'colors' => [
-                    ['slug' => 'black', 'name' => 'Black', 'hex' => '#181818'],
-                ],
-            ],
         ],
         [
             'slug' => 'cardigan', 'name' => 'Cardigan', 'price' => 95,
@@ -285,7 +418,6 @@ class WomensTopsSeeder extends Seeder
     private function seedGarment(array $garment): void
     {
         $photos = $garment['photos'] ?? null;
-        $defaultColor = $photos['colors'][0]['slug'] ?? null;
 
         $product = CustomizerProduct::updateOrCreate(
             ['slug' => "womens-{$garment['slug']}"],
@@ -297,94 +429,90 @@ class WomensTopsSeeder extends Seeder
                 'base_price' => $garment['price'],
                 'is_active' => true,
                 'preview_image_path' => $photos
-                    ? "/assets/garments/{$photos['folder']}/{$defaultColor}-front.png"
+                    ? self::photoPath($photos, $photos['default'], $photos['cover'], 'front')
                     : null,
             ],
         );
 
-        // Display order 0 is reserved for the photographed style layer, so the
-        // garment and its colours sit above the tailoring spec.
+        $seeded = [];
         foreach (self::ATTRIBUTES as $order => $attribute) {
-            $this->seedAttribute($product, $attribute, $order + 1, $garment);
+            if ($this->seedAttribute($product, $attribute, $order, $garment)) {
+                $seeded[] = $attribute['slug'];
+            }
         }
 
-        if ($photos) {
-            $this->seedPhotoLayer($product, $photos);
-        }
+        // Retires attributes this garment no longer has — including the 'style'
+        // selector the photography used to sit behind, now that its five shoots
+        // are sleeve options. Cascades to their options and colours; a saved
+        // design holding a removed id falls back to the category default when
+        // it is reopened.
+        $product->layerCategories()->whereNotIn('slug', $seeded)->delete();
     }
 
     /**
-     * The photographed garment: one style option carrying a colour variant per
-     * shot set. Same shape the customizer admin produces, and the same shape
-     * MensGarmentsSeeder uses — the canvas composites it, the colour dots swap it.
+     * Angles the T-shirt is offered in — every angle the shoot delivered.
+     *
+     * One caveat, measured and knowingly accepted: the side masters are posed
+     * less consistently than the fronts. Within a single style the side profile
+     * varies 9-13% between colours, where the fronts vary 0.3-0.8%, so changing
+     * colour while looking at a side view can read as a slightly different cut.
+     * That is drape and rotation in the photography, not a mapping fault — every
+     * file was checked to be the right colour, the right style, and a true mirror
+     * of its pair. It shows only when flipping colours on a side view, which is
+     * narrow enough that hiding 203 photographs to avoid it costs more than it
+     * saves. A consistently posed re-shoot of the side angles would settle it.
+     *
+     * A view still resolves to null when its file is genuinely absent, so
+     * puff/black offers three angles rather than a wrong fourth.
      */
-    private function seedPhotoLayer(CustomizerProduct $product, array $photos): void
+    private const PHOTO_VIEWS = ['front', 'back', 'left', 'right'];
+
+    /** Folder the prepared T-shirt photography is served from. */
+    private const PHOTO_FOLDER = 'WomanTshirtStudio';
+
+    /**
+     * Public path of one photograph — /assets/garments/<folder>/<prefix><colour>-<view>.png
+     * — or null when the angle is not offered, the option is not photographed,
+     * or the shoot did not deliver it. A rotation view pointing at a file that
+     * is not on disk would give the customer a tile that 404s; null instead
+     * leaves the angle out of the switcher, which already offers only views
+     * every rendered layer has. See scripts/prepare-tshirt-photos.mjs.
+     */
+    private static function photoPath(array $photos, string $option, string $color, string $view): ?string
     {
-        $base = "/assets/garments/{$photos['folder']}";
-        $default = $photos['colors'][0]['slug'];
-
-        $category = LayerCategory::updateOrCreate(
-            ['customizer_product_id' => $product->id, 'slug' => 'style'],
-            [
-                'name' => 'Style',
-                'children_label' => null,
-                'z_index' => 1,
-                'is_required' => true,
-                // Real colour photography — never tint it with a fabric swatch.
-                'is_colorable' => false,
-                'is_preview_layer' => true,
-                'display_order' => 0,
-            ],
-        );
-
-        $style = LayerOption::updateOrCreate(
-            ['layer_category_id' => $category->id, 'slug' => $photos['style']['slug']],
-            [
-                'parent_option_id' => null,
-                'name' => $photos['style']['name'],
-                'image_path' => "{$base}/{$default}-front.png",
-                'thumbnail_path' => "{$base}/{$default}-front.png",
-                'back_image_path' => ($photos['front_only'] ?? false) ? null : "{$base}/{$default}-back.png",
-                'left_image_path' => ($photos['front_only'] ?? false) ? null : "{$base}/{$default}-left.png",
-                'right_image_path' => ($photos['front_only'] ?? false) ? null : "{$base}/{$default}-right.png",
-                'color_hex' => null,
-                'price_modifier' => 0,
-                'is_default' => true,
-                'is_active' => true,
-                'display_order' => 0,
-            ],
-        );
-
-        foreach ($photos['colors'] as $index => $color) {
-            $style->colors()->updateOrCreate(
-                ['name' => $color['name']],
-                [
-                    'color_hex' => $color['hex'],
-                    'image_path' => "{$base}/{$color['slug']}-front.png",
-                    'back_image_path' => ($photos['front_only'] ?? false) ? null : "{$base}/{$color['slug']}-back.png",
-                    'left_image_path' => ($photos['front_only'] ?? false) ? null : "{$base}/{$color['slug']}-left.png",
-                    'right_image_path' => ($photos['front_only'] ?? false) ? null : "{$base}/{$color['slug']}-right.png",
-                    'is_default' => $index === 0,
-                    'display_order' => $index,
-                ],
-            );
+        if (! isset($photos['options'][$option]) || ! in_array($view, self::PHOTO_VIEWS, true)) {
+            return null;
         }
 
-        $style->colors()
-            ->whereNotIn('name', array_column($photos['colors'], 'name'))
-            ->delete();
+        $path = '/assets/garments/'.self::PHOTO_FOLDER."/{$option}-{$color}-{$view}.png";
+
+        return file_exists(public_path($path)) ? $path : null;
     }
 
+    /**
+     * One attribute of one garment. Returns false when this garment offers none
+     * of the attribute's options, so the caller can retire the category.
+     *
+     * The attribute a garment's photography varies is also its preview layer:
+     * its options carry the photographs and their colourways, and the canvas
+     * paints whichever one is selected. Every other attribute stays a labelled
+     * choice the customizer must not try to composite.
+     */
     private function seedAttribute(
         CustomizerProduct $product,
         array $attribute,
         int $order,
         array $garment,
-    ): void {
+    ): bool {
         $slugs = $this->allowedOptionSlugs($attribute, $garment);
         if ($slugs === []) {
-            return;
+            return false;
         }
+
+        $photos = $garment['photos'] ?? null;
+        $shoots = $photos !== null && $photos['attribute'] === $attribute['slug']
+            ? $photos['options']
+            : [];
 
         $category = LayerCategory::updateOrCreate(
             ['customizer_product_id' => $product->id, 'slug' => $attribute['slug']],
@@ -393,24 +521,33 @@ class WomensTopsSeeder extends Seeder
                 'children_label' => null,
                 'z_index' => $order + 1,
                 'is_required' => true,
+                // Real colour photography — never tint it with a fabric swatch.
                 'is_colorable' => false,
-                // Labelled choice, not a canvas layer — the customizer must not
-                // try to composite a photo for it.
-                'is_preview_layer' => false,
+                'is_preview_layer' => $shoots !== [],
                 'display_order' => $order,
             ],
         );
 
-        // A photographed garment pins the attributes its shots depict; otherwise
-        // the line-wide default applies. Either can have been filtered out for
-        // this garment (a camisole has no 'short' sleeve), so fall back through
-        // to the first surviving option.
+        // A photographed garment opens on the option its shoot leads with, and
+        // pins the cut those photographs show; otherwise the line-wide default
+        // applies. Any of them can have been filtered out for this garment (a
+        // camisole has no 'short' sleeve), so fall back through to the first
+        // surviving option.
         $default = $this->firstAvailable([
-            $garment['photos']['depicts'][$attribute['slug']] ?? null,
+            $shoots !== [] ? $photos['default'] : null,
+            $photos['depicts'][$attribute['slug']] ?? null,
             $attribute['default'],
         ], $slugs) ?? $slugs[0];
 
-        $depicted = $garment['photos']['depicts'][$attribute['slug']] ?? null;
+        // The options the photography shows: every photographed sleeve, or the
+        // single value the shoot pins on a labelled attribute. The base price
+        // buys the garment as it was photographed — the same tee, cut
+        // differently at the shoulder — so none of them carries a surcharge and
+        // only deviating from the shoot costs extra. Keeps the opening total
+        // equal to the "starting from" price on the garment card.
+        $free = $shoots !== []
+            ? array_keys($shoots)
+            : array_filter([$photos['depicts'][$attribute['slug']] ?? null]);
 
         // Narrowing can remove every zero-cost option — an Off-shoulder Top has
         // no plain neckline, a Tunic no short length — which left base_price
@@ -422,29 +559,36 @@ class WomensTopsSeeder extends Seeder
 
         foreach ($slugs as $index => $slug) {
             [$label, $priceModifier] = $attribute['options'][$slug];
-            $priceModifier -= $cheapest;
+            $priceModifier = in_array($slug, $free, true) ? 0 : $priceModifier - $cheapest;
 
-            // On a photographed garment the base price buys the cut in the
-            // photos, so those options carry no surcharge — only deviating
-            // from what was shot costs extra. Keeps the opening total equal to
-            // the "starting from" price on the garment card.
-            if ($slug === $depicted) {
-                $priceModifier = 0;
-            }
+            $shot = isset($shoots[$slug]);
+            $cover = fn (string $view) => $shot
+                ? self::photoPath($photos, $slug, $photos['cover'], $view)
+                : null;
 
-            LayerOption::updateOrCreate(
+            $option = LayerOption::updateOrCreate(
                 ['layer_category_id' => $category->id, 'slug' => $slug],
                 [
                     'parent_option_id' => null,
                     'name' => $label,
-                    'image_path' => null,
-                    'thumbnail_path' => null,
+                    'image_path' => $cover('front'),
+                    'thumbnail_path' => $cover('front'),
+                    'back_image_path' => $cover('back'),
+                    'left_image_path' => $cover('left'),
+                    'right_image_path' => $cover('right'),
+                    'color_hex' => null,
+                    // What the photograph shows besides this option, so the
+                    // canvas can withhold it once the customer specifies a
+                    // garment the shoot never covered.
+                    'depicts' => $shot ? $photos['depicts'] : null,
                     'price_modifier' => $priceModifier,
                     'is_default' => $slug === $default,
                     'is_active' => true,
                     'display_order' => $index,
                 ],
             );
+
+            $this->seedColors($option, $photos, $slug, $shoots[$slug] ?? null);
         }
 
         // A re-run with tightened restrictions retires the options that no longer
@@ -452,6 +596,48 @@ class WomensTopsSeeder extends Seeder
         $category->allOptions()
             ->whereNotIn('slug', $slugs)
             ->update(['is_active' => false]);
+
+        return true;
+    }
+
+    /**
+     * The colourways of one option, or none when it is not photographed.
+     *
+     * Colours hang off the option rather than the garment because each shoot
+     * has its own set — the puff sleeve was shot in 13 colours, the others in
+     * 20 to 23 — and its own sampled hexes. Every sleeve leads with the same
+     * cover colour, so the dots do not move when the customer changes sleeve.
+     */
+    private function seedColors(LayerOption $option, ?array $photos, string $slug, ?array $colors): void
+    {
+        if ($colors === null) {
+            $option->colors()->delete();
+
+            return;
+        }
+
+        $names = [];
+
+        foreach ($colors as $index => $color) {
+            $names[] = $color['name'];
+
+            $option->colors()->updateOrCreate(
+                ['name' => $color['name']],
+                [
+                    'color_hex' => $color['hex'],
+                    'image_path' => self::photoPath($photos, $slug, $color['slug'], 'front'),
+                    'back_image_path' => self::photoPath($photos, $slug, $color['slug'], 'back'),
+                    'left_image_path' => self::photoPath($photos, $slug, $color['slug'], 'left'),
+                    'right_image_path' => self::photoPath($photos, $slug, $color['slug'], 'right'),
+                    'is_default' => $color['slug'] === $photos['cover'],
+                    'display_order' => $index,
+                ],
+            );
+        }
+
+        // A colour dropped from the shoot must not linger as a dot pointing at
+        // a file that is no longer served.
+        $option->colors()->whereNotIn('name', $names)->delete();
     }
 
     /**

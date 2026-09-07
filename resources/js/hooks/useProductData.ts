@@ -6,7 +6,8 @@ interface ProductData {
     layerCategories: LayerCategory[];
     fabrics: Fabric[];
     loading: boolean;
-    error: string | null;
+    /** Whether the request failed — the caller words and translates it */
+    error: boolean;
 }
 
 /**
@@ -18,13 +19,25 @@ export function useProductData(slug: string | undefined): ProductData {
     const [layerCategories, setLayerCategories] = useState<LayerCategory[]>([]);
     const [fabrics, setFabrics]               = useState<Fabric[]>([]);
     const [loading, setLoading]               = useState(true);
-    const [error, setError]                   = useState<string | null>(null);
+    const [error, setError]                   = useState(false);
 
     useEffect(() => {
-        if (!slug) return;
+        // Leaving the garment behind — switching heading or section both drop it
+        // from the URL — has to take its catalogue with it. Holding the last one
+        // would leave the wizard advancing on a garment the customer can no
+        // longer see, and writing its name into an order filed under the new
+        // heading's garment_type.
+        if (!slug) {
+            setProduct(null);
+            setLayerCategories([]);
+            setFabrics([]);
+            setError(false);
+            setLoading(false);
+            return;
+        }
 
         setLoading(true);
-        setError(null);
+        setError(false);
 
         fetch(`/api/customizer/products/${slug}`)
             .then(r => {
@@ -36,9 +49,7 @@ export function useProductData(slug: string | undefined): ProductData {
                 setLayerCategories(data.layer_categories ?? []);
                 setFabrics(data.fabrics ?? []);
             })
-            .catch(err => {
-                setError(err.message ?? 'Failed to load product.');
-            })
+            .catch(() => setError(true))
             .finally(() => setLoading(false));
     }, [slug]);
 

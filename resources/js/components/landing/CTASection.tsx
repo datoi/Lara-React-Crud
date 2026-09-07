@@ -16,14 +16,14 @@ export function CTASection() {
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
                 >
-                    <h2 className="mx-auto max-w-3xl font-serif text-[clamp(1.65rem,3.1vw,3rem)] font-medium uppercase leading-[1] tracking-normal text-[#111111]">
+                    <h2 className="mx-auto max-w-3xl font-sans text-[clamp(1.25rem,2.5vw,2.25rem)] font-medium leading-[1.15] tracking-normal text-[#111111]">
                         {t('cta.title')}<br className="hidden sm:block" /> {t('cta.titleLine2')}
                     </h2>
                     <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
                         <Button
                             asChild
                             variant="ghost"
-                            className="min-h-[50px] w-full rounded-none border border-black/30 bg-transparent px-7 text-[11px] font-bold uppercase tracking-[0.14em] text-[#111111] transition-colors duration-200 hover:bg-[#111111] hover:text-white sm:w-auto"
+                            className="min-h-[46px] w-full rounded-none border border-black/30 bg-transparent px-5 font-sans text-[10px] font-semibold tracking-normal text-[#111111] transition-colors duration-200 hover:bg-[#111111] hover:text-white sm:w-auto sm:text-xs"
                         >
                             <Link to="/marketplace">
                                 <ShoppingBag className="h-4 w-4" />
@@ -33,7 +33,7 @@ export function CTASection() {
                         <Button
                             asChild
                             variant="ghost"
-                            className="min-h-[50px] w-full rounded-none border border-black/30 bg-transparent px-7 text-[11px] font-bold uppercase tracking-[0.14em] text-[#111111] transition-colors duration-200 hover:bg-[#111111] hover:text-white sm:w-auto"
+                            className="min-h-[46px] w-full rounded-none border border-black/30 bg-transparent px-5 font-sans text-[10px] font-semibold tracking-normal text-[#111111] transition-colors duration-200 hover:bg-[#111111] hover:text-white sm:w-auto sm:text-xs"
                         >
                             <Link to="/design">
                                 <Scissors className="h-4 w-4" />

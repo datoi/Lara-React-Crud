@@ -263,9 +263,25 @@ class OrderController extends Controller
             'custom_design_data.tailor_notes' => 'nullable|string|max:500',
             'custom_design_data.customization_request' => 'nullable|string|max:1000',
             'custom_design_data.customization' => 'nullable|array|max:50',
-            // Readable spec snapshot from the studio. Bounded and typed because
-            // the parent array only limits its top-level key count, so nested
+            // Every key of customization needs its own rule. validate() returns
+            // only the sub-paths it was given rules for, so once spec.* was
+            // added the id maps beside it were silently dropped from the stored
+            // order — the design could still be read by a tailor but never
+            // reopened, re-ordered or reported on. Bounded and typed because the
+            // parent array only limits its top-level key count, so nested
             // content would otherwise be unvalidated free-form JSON.
+            'custom_design_data.customization.selections' => 'nullable|array|max:30',
+            'custom_design_data.customization.selections.*' => 'nullable|integer|min:1',
+            'custom_design_data.customization.color_selections' => 'nullable|array|max:60',
+            'custom_design_data.customization.color_selections.*' => 'nullable|integer|min:1',
+            'custom_design_data.customization.sub_selections' => 'nullable|array|max:30',
+            'custom_design_data.customization.sub_selections.*' => 'nullable|integer|min:1',
+            'custom_design_data.customization.fabric_id' => 'nullable|integer|min:1',
+            // What the customer was actually looking at, so an order names the
+            // garment rather than only the taxonomy bucket it is filed under.
+            'custom_design_data.customization.product_name' => 'nullable|string|max:120',
+            'custom_design_data.customization.product_slug' => 'nullable|string|max:120',
+            // Readable spec snapshot from the studio.
             'custom_design_data.customization.spec' => 'nullable|array|max:30',
             'custom_design_data.customization.spec.*.attribute' => 'required_with:custom_design_data.customization.spec|string|max:60',
             'custom_design_data.customization.spec.*.option' => 'required_with:custom_design_data.customization.spec|string|max:120',

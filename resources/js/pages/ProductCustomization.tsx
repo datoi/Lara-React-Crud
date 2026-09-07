@@ -576,7 +576,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                                 <Button
                                     onClick={handleAddToCart}
                                     variant="outline"
-                                    className="mb-2 h-auto w-full rounded-none border-[#111111] py-3 text-xs font-semibold tracking-[0.08em] text-[#111111] uppercase hover:bg-[#111111] hover:text-white active:scale-[0.99]"
+                                    className="mb-2 h-auto w-full rounded-none border-[#111111] py-2.5 font-sans text-[11px] font-semibold tracking-normal text-[#111111] hover:bg-[#111111] hover:text-white active:scale-[0.99]"
                                 >
                                     <ShoppingBag className="h-4 w-4" />
                                     {t('cart.addToCart')}
@@ -584,7 +584,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                                 <Button
                                     onClick={handleOrder}
                                     disabled={placing}
-                                    className="h-auto w-full rounded-none bg-[#111111] py-3 text-xs font-semibold tracking-[0.08em] text-white uppercase hover:bg-[#333333] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="h-auto w-full rounded-none bg-[#111111] py-2.5 font-sans text-[11px] font-semibold tracking-normal text-white hover:bg-[#333333] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     {placing && <Loader2 className="h-4 w-4 animate-spin" />}
                                     {placing ? t('productCustomization.placingOrder') : t('productCustomization.placeOrder')}

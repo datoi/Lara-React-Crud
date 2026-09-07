@@ -35,6 +35,13 @@ export interface LayerOption {
     right_image_url: string | null;
     /** Dot colour for swatch-style pickers — null renders as an image thumbnail */
     color_hex: string | null;
+    /**
+     * The rest of the specification this option's photography was shot in, as
+     * layer_category.slug → layer_option.slug. Null on options that carry no
+     * photography, and on photography that holds for any specification.
+     * See depictsSelection() in components/customizer/depicts.ts.
+     */
+    depicts: Record<string, string> | null;
     /** CSS scale factor to normalise photos taken at different zoom levels (default 1.0) */
     display_scale: number;
     price_modifier: number;
@@ -126,6 +133,12 @@ export interface DesignConfiguration {
     color_selections: Record<number, number>;
     /** Chosen sub-style per parent option id (e.g. collar variants) */
     sub_selections: Record<number, number>;
+    /**
+     * The colour the customer chose, by name. The per-option ids above cannot
+     * express a colour the selected option was never photographed in, and the
+     * garment is made to order in the colour asked for either way.
+     */
+    color_name?: string | null;
     fabric_id: number | null;
     /** Readable snapshot of the same choices — see DesignSpecLine */
     spec: DesignSpecLine[];

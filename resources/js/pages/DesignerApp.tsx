@@ -9,121 +9,24 @@ import { saveDraft } from '../hooks/useCustomOrderDraft';
 import { Button } from '../components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { Navigation } from '../components/landing/Navigation';
-import StudioBreadcrumb from '../components/StudioBreadcrumb';
-import { categoriesFor, findCategory, type GarmentCategory } from '../data/garmentTaxonomy';
+import { categoriesFor, categoryForProduct, findCategory, type GarmentCategory } from '../data/garmentTaxonomy';
+import DesignerWizard, { type WizardProduct } from '../components/customizer/DesignerWizard';
+import { submitDesign } from '../components/customizer/submitDesign';
+import { useCategoryProducts } from '../hooks/useCategoryProducts';
+import { useProductData } from '../hooks/useProductData';
+import type { DesignConfiguration } from '../types/customizer';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf', 'image/svg+xml'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 // ─── Flow state ───────────────────────────────────────────────────────────────
-// The design branch is derived from ?cat= so the browser back button and a
-// shared link both land on the level the customer was actually looking at.
-// The upload branch keeps its own local step — it has no shareable levels.
+// The guided designer is the page. The upload branch is the one way out of it:
+// a customer who already has a drawing has nothing to configure, so it keeps
+// its own local step rather than a level in the rail.
 
 type UploadStep =
     | { step: 'upload-type' }
     | { step: 'upload-file'; category: GarmentCategory };
-
-type FlowState =
-    | { step: 'category' }
-    | { step: 'design'; category: GarmentCategory }
-    | UploadStep;
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Product {
-    id: number;
-    name: string;
-    slug: string;
-    category: string;
-    description: string;
-    base_price: number;
-    preview_image_url: string | null;
-}
-
-// ─── Step: Category picker ────────────────────────────────────────────────────
-
-function CategoryStep({
-    gender,
-    onSelectDesign,
-    onSelectUpload,
-}: {
-    gender: Section;
-    onSelectDesign: (category: GarmentCategory) => void;
-    onSelectUpload: () => void;
-}) {
-    const { t } = useTranslation();
-    const categories = categoriesFor(gender);
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="relative mx-auto max-w-[760px]"
-        >
-            <div className="mx-auto mb-6 max-w-[620px] text-center">
-                <h1 className="mt-3 font-serif text-[clamp(2.15rem,4vw,3.7rem)] font-medium leading-[0.92] tracking-[-0.05em] text-[#111111]">
-                    {t('design.categoryTitle')}
-                </h1>
-            </div>
-
-            <motion.button
-                onClick={onSelectUpload}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: categories.length * 0.07 }}
-                className="group relative mx-auto mb-8 block w-full max-w-[300px] text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6F1D24] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7] sm:max-w-[340px] lg:rotate-[1deg]"
-            >
-                <span className="pointer-events-none absolute -top-2 left-1/2 z-20 h-4 w-16 -translate-x-1/2 rotate-[2deg] bg-white/60 shadow-sm" />
-                <article className="border border-[#8A6A2B]/45 bg-[url('/assets/design-categories/gold-upload-bg.jpg')] bg-cover bg-center px-4 py-4 text-center text-white shadow-[0_12px_28px_rgba(88,68,29,0.18)] transition-all duration-500 group-hover:-translate-y-1.5 group-hover:rotate-[-1deg]">
-                    <span className="mx-auto flex h-8 w-8 items-center justify-center rounded-full border border-white/35 bg-black/10 text-white">
-                        <Upload className="h-3.5 w-3.5 stroke-[1.4]" />
-                    </span>
-                    <h2 className="mt-3 font-serif text-xl font-medium tracking-[-0.035em]">
-                        {t('design.uploadMyDesign')}
-                    </h2>
-                </article>
-            </motion.button>
-
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3 lg:gap-5">
-                {categories.map((cat, i) => (
-                    <motion.button
-                        key={cat.key}
-                        onClick={() => onSelectDesign(cat)}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: i * 0.07 }}
-                        className="group block h-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-4 focus-visible:ring-offset-[#E4E0D7]"
-                    >
-                        {/* Bottom-aligned so a two-line category name keeps every
-                            card in the row on the same baseline. */}
-                        <article className="flex h-full flex-col">
-                            <p className="mb-2 text-[10px] font-semibold leading-[1.2] tracking-[-0.02em] text-[#111111] sm:text-[11px]">
-                                {t(cat.tKey)}
-                            </p>
-
-                            <div className="mt-auto flex h-[132px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-3 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[156px] sm:p-4 lg:h-[178px]">
-                                {cat.image ? (
-                                    <img
-                                        src={cat.image}
-                                        alt={t(cat.tKey)}
-                                        className="h-full w-full object-contain mix-blend-multiply"
-                                    />
-                                ) : (
-                                    /* No cut-out drawn yet — the typographic card
-                                       already used elsewhere in the studio stands in. */
-                                    <span className="font-serif text-[clamp(1.15rem,2.6vw,1.75rem)] font-medium leading-[0.95] tracking-[-0.04em] text-[#111111]">
-                                        {t(cat.tKey)}
-                                    </span>
-                                )}
-                            </div>
-                        </article>
-                    </motion.button>
-                ))}
-            </div>
-        </motion.div>
-    );
-}
 
 // ─── Step: Pick garment type for upload ───────────────────────────────────────
 
@@ -490,130 +393,6 @@ function UploadPanel({
     );
 }
 
-// ─── Step: Product list for designer path ─────────────────────────────────────
-
-function ProductStep({
-    category,
-    gender,
-}: {
-    category: GarmentCategory;
-    gender: Section;
-}) {
-    const navigate = useNavigate();
-    const { t } = useTranslation();
-    const [products, setProducts] = useState<Product[]>([]);
-    const [loading,  setLoading]  = useState(true);
-    const [error,    setError]    = useState<string | null>(null);
-
-    const catLabel = t(category.tKey);
-
-    useEffect(() => {
-        setLoading(true);
-        setError(null);
-        fetch(`/api/customizer/products?gender=${gender}`)
-            .then(r => {
-                if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                return r.json();
-            })
-            .then(data => {
-                const all: Product[] = (data as { products?: Product[] }).products ?? [];
-                setProducts(all.filter(p => category.productCategories.includes(p.category)));
-            })
-            .catch(err => setError((err as Error).message ?? 'Failed to load products.'))
-            .finally(() => setLoading(false));
-    }, [category, gender]);
-
-    const handleProductClick = (product: Product) => {
-        saveDraft({ garment_type: category.orderKey, customization: null, design_file_url: null, estimated_price: product.base_price ?? 0 });
-        navigate(`/customize/${product.slug}`);
-    };
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="relative mx-auto max-w-[1050px]"
-        >
-            <StudioBreadcrumb
-                tone="paper"
-                className="mb-8"
-                crumbs={[
-                    { label: t(`section.${gender}`), to: `/design?gender=${gender}` },
-                    { label: catLabel },
-                ]}
-            />
-
-            <h1 className="font-serif text-[clamp(2.45rem,5vw,4.7rem)] font-medium leading-[0.92] tracking-[-0.055em] text-[#6F1D24]">{catLabel}</h1>
-            <p className="mb-10 mt-5 max-w-[560px] text-sm leading-7 text-[#776158]">{t('design.chooseStyle')}</p>
-
-            {loading && (
-                <div className="flex justify-center py-16">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#6F1D24]/55" />
-                </div>
-            )}
-
-            {error && <p className="text-destructive text-sm">{error}</p>}
-
-            {!loading && !error && products.length === 0 && (
-                <div className="border border-[#6F1D24]/15 bg-[#FDFBF5] p-10 text-center shadow-[0_18px_45px_rgba(72,54,45,0.10)]">
-                    <p className="font-serif text-[clamp(1.5rem,3vw,2.15rem)] font-medium leading-[0.95] tracking-[-0.04em] text-[#6F1D24]">
-                        {t('design.comingSoon')}
-                    </p>
-                    <p className="mt-3 text-sm text-[#92615E]">{t('design.noStyles')}</p>
-                </div>
-            )}
-
-            {!loading && !error && products.length > 0 && (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    {products.map((product, i) => (
-                        <motion.button
-                            key={product.id}
-                            onClick={() => handleProductClick(product)}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: i * 0.1 }}
-                            className="group bg-[#FDFBF5] p-3 pb-0 text-left shadow-[0_18px_45px_rgba(72,54,45,0.12)] transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_28px_65px_rgba(72,54,45,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6F1D24] focus-visible:ring-offset-4 focus-visible:ring-offset-[#F4EBD4]"
-                        >
-                            <div className={`w-full overflow-hidden bg-[#EAE6E4] ${product.category === 'trousers' ? 'aspect-[3/4]' : 'aspect-[4/3]'}`}>
-                                {product.preview_image_url ? (
-                                    <img
-                                        src={product.preview_image_url}
-                                        alt={product.name}
-                                        loading="lazy"
-                                        decoding="async"
-                                        className="h-full w-full object-contain transition-transform duration-700 group-hover:scale-[1.035]"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                        <span className="text-4xl opacity-30">
-                                            {category.emoji}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="p-4">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div>
-                                        <h3 className="font-serif text-2xl font-medium tracking-[-0.035em] text-[#6F1D24]">{product.name}</h3>
-                                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#92615E]">
-                                            {product.description}
-                                        </p>
-                                    </div>
-                                    <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#6F1D24]/35 transition-transform group-hover:translate-x-1" />
-                                </div>
-                                <div className="mt-3 flex items-center justify-between border-t border-[#6F1D24]/10 pt-3">
-                                    <span className="text-xs text-[#92615E]">{t('design.startingFrom')}</span>
-                                    <span className="text-sm font-bold text-[#261D1B]">₾{product.base_price}</span>
-                                </div>
-                            </div>
-                        </motion.button>
-                    ))}
-                </div>
-            )}
-        </motion.div>
-    );
-}
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
@@ -645,41 +424,112 @@ export default function DesignerApp() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [section]);
 
-    // The open category comes from the URL. An unknown key — a stale link, or a
-    // women's category left in the URL after switching to men — resolves to
-    // undefined and falls back to the category grid rather than an empty screen.
-    const activeCategory = section ? findCategory(section, searchParams.get('cat')) : undefined;
+    // Heading and garment both live in the URL, so the browser back button walks
+    // the choices and a shared link opens on the garment it names. An unknown
+    // key — a stale link, or a women's heading left in the URL after switching
+    // to men — resolves to undefined and falls back to the heading grid.
+    const garmentSlug = searchParams.get('garment');
 
-    const flow: FlowState = uploadStep
-        ?? (activeCategory ? { step: 'design', category: activeCategory } : { step: 'category' });
+    // The step lives here rather than in the wizard. Choosing a garment loads a
+    // new catalogue, which remounts the wizard so its selections seed from it —
+    // and the customer must not be thrown back to step 01 for that. Arriving on
+    // a named garment — a shared link, or "edit" from My Designs — opens on the
+    // shape, since the garment step is already answered.
+    const [step, setStep] = useState(() => (garmentSlug ? 1 : 0));
+
+    const { product, layerCategories, fabrics, error: productError } = useProductData(garmentSlug ?? undefined);
+
+    // The heading being browsed. A link that names only the garment carries no
+    // heading, so the garment's own filing stands in — it is what garment_type
+    // and the style list are read from.
+    const activeCategory = section
+        ? findCategory(section, searchParams.get('cat'))
+            ?? (product ? categoryForProduct(section, product.category) : undefined)
+        : undefined;
+
+    const { products, loading: productsLoading, error: productsError } = useCategoryProducts(section, activeCategory);
+
+    // A garment that will not load is reported where the customer is standing,
+    // rather than leaving them on a step whose CTA silently does nothing. The
+    // hooks report only that the request failed; the wording belongs here, where
+    // it can be translated.
+    const styleError = productsError || (Boolean(garmentSlug) && productError)
+        ? t('designer.loadFailed')
+        : null;
+
+    /**
+     * Reopening a saved design. My Designs links here with ?design=<id>; without
+     * it the page behaves exactly as before. The wizard must not mount until
+     * this has resolved, or it would seed from defaults and then be re-seeded,
+     * flashing the wrong configuration and overwriting the session copy.
+     */
+    const designId = searchParams.get('design');
+    const [savedConfiguration, setSavedConfiguration] = useState<DesignConfiguration | null>(null);
+    const [designLoading, setDesignLoading] = useState(Boolean(designId));
+
+    useEffect(() => {
+        if (!designId) { setSavedConfiguration(null); setDesignLoading(false); return; }
+
+        let cancelled = false;
+        setDesignLoading(true);
+        fetch(`/api/customizer/designs/${designId}`, {
+            headers: { Authorization: `Bearer ${getAuthToken()}`, Accept: 'application/json' },
+        })
+            .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+            .then(data => {
+                if (cancelled) return;
+                setSavedConfiguration((data.design?.configuration ?? null) as DesignConfiguration | null);
+            })
+            // A design that cannot be loaded (deleted, or someone else's) falls
+            // back to a fresh garment rather than blocking the page.
+            .catch(() => { if (!cancelled) setSavedConfiguration(null); })
+            .finally(() => { if (!cancelled) setDesignLoading(false); });
+
+        return () => { cancelled = true; };
+    }, [designId]);
 
     const openCategory = (category: GarmentCategory) => {
         const params = new URLSearchParams(searchParams);
         params.set('cat', category.key);
-        // Pushed, not replaced, so browser back returns to the category grid.
+        // Changing heading abandons the garment chosen under the old one.
+        params.delete('garment');
+        // Pushed, not replaced, so browser back returns to the heading grid.
         setSearchParams(params);
     };
 
-    const switchSection = (s: Section) => {
-        if (s === section) return;
-        setSection(scope, s);
+    const switchSection = (next: Section) => {
+        if (next === section) return;
+        setSection(scope, next);
         const params = new URLSearchParams(searchParams);
-        params.set('gender', s);
-        // Categories differ per section — drop the open one instead of carrying
-        // a key the new section does not have.
+        params.set('gender', next);
+        // Headings differ per section — drop the open one, and the garment under
+        // it, instead of carrying keys the new section does not have.
         params.delete('cat');
+        params.delete('garment');
         setSearchParams(params, { replace: true });
     };
 
+    const openProduct = (chosen: WizardProduct) => {
+        saveDraft({
+            garment_type:    activeCategory?.orderKey ?? chosen.category,
+            customization:   null,
+            design_file_url: null,
+            estimated_price: chosen.base_price ?? 0,
+        });
+        const params = new URLSearchParams(searchParams);
+        params.set('garment', chosen.slug);
+        setSearchParams(params);
+    };
+
     const handleUploadContinue = (result: UploadResult) => {
-        if (flow.step !== 'upload-file') return;
+        if (!uploadStep || uploadStep.step !== 'upload-file') return;
 
         const filledMeasurements = Object.fromEntries(
             Object.entries(result.measurements).filter(([, v]) => v !== '')
         );
 
         saveDraft({
-            garment_type:          flow.category.orderKey,
+            garment_type:          uploadStep.category.orderKey,
             customization:         null,
             design_file_url:       result.fileUrl || null,
             measurements:          filledMeasurements,
@@ -687,8 +537,7 @@ export default function DesignerApp() {
             tailor_notes:          result.notes,
         });
 
-        const user = getAuthUser();
-        if (!user) {
+        if (!getAuthUser()) {
             saveReturnTo('/design/tailor-select');
             navigate('/login/customer');
             return;
@@ -697,76 +546,88 @@ export default function DesignerApp() {
         navigate('/design/tailor-select');
     };
 
+    const handleOrder = (configuration: DesignConfiguration, totalPrice: number) => {
+        if (!product) return;
+        submitDesign({ product, category: activeCategory, configuration, totalPrice, navigate });
+    };
+
     if (!section) return null; // awaiting redirect to the section chooser
 
+    const head = (
+        <Helmet>
+            <title>Design Studio | Kere</title>
+            <meta name="description" content="Design your custom garment — choose a style and customise it to your taste." />
+        </Helmet>
+    );
+
+    // The upload branch keeps the studio's own chrome: it is a form, not a
+    // guided walk, so it has no steps for the rail to hold.
+    if (uploadStep) {
+        return (
+            <div className="design-page min-h-screen bg-[#E4E0D7] text-[#261D1B]">
+                {head}
+                <Navigation />
+                <main className="relative overflow-hidden px-5 pb-8 pt-10 sm:px-8 sm:pt-12 md:pb-10 md:pt-14 lg:px-12">
+                    <AnimatePresence mode="wait">
+                        {uploadStep.step === 'upload-type' && (
+                            <UploadTypeStep
+                                key="upload-type"
+                                gender={section}
+                                onSelect={category => setUploadStep({ step: 'upload-file', category })}
+                                onBack={() => searchParams.get('upload') === '1' ? navigate(-1) : setUploadStep(null)}
+                            />
+                        )}
+
+                        {uploadStep.step === 'upload-file' && (
+                            <UploadPanel
+                                key={`upload-${uploadStep.category.key}`}
+                                category={uploadStep.category}
+                                onContinue={handleUploadContinue}
+                                onBack={() => setUploadStep({ step: 'upload-type' })}
+                            />
+                        )}
+                    </AnimatePresence>
+                </main>
+            </div>
+        );
+    }
+
+    if (designLoading) {
+        return (
+            <div className="kere-designer flex min-h-screen items-center justify-center">
+                {head}
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--kd-burgundy)]/55" />
+            </div>
+        );
+    }
+
     return (
-        <div className="design-page min-h-screen bg-[#E4E0D7] text-[#261D1B]">
-            <Helmet>
-                <title>Design Studio | Kere</title>
-                <meta name="description" content="Design your custom garment — choose a style and customise it to your taste." />
-            </Helmet>
-
-            <Navigation />
-
-            <main className="relative overflow-hidden px-5 pb-8 pt-10 sm:px-8 sm:pt-12 md:pb-10 md:pt-14 lg:px-12">
-                <div className="relative z-10 mx-auto mb-4 flex max-w-[1050px] items-center justify-end gap-2">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#776158]">{t('section.shoppingFor')}</span>
-                    <div className="flex items-center rounded-full border border-[#111111]/25 p-0.5">
-                        {(['women', 'men'] as Section[]).map(s => (
-                            <button
-                                key={s}
-                                onClick={() => switchSection(s)}
-                                className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${
-                                    section === s ? 'bg-[#111111] text-white' : 'text-[#111111]/70 hover:text-[#111111]'
-                                }`}
-                            >
-                                {t(`section.${s}`)}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                <div className="pointer-events-none absolute inset-0">
-                    <div className="absolute left-[8%] top-0 h-full w-px bg-[#6F1D24]/8" />
-                    <div className="absolute right-[8%] top-0 h-full w-px bg-[#6F1D24]/8" />
-                    <div className="absolute left-0 top-[25%] h-px w-full bg-[#6F1D24]/8" />
-                </div>
-                <AnimatePresence mode="wait">
-                    {flow.step === 'category' && (
-                        <CategoryStep
-                            key="category"
-                            gender={section}
-                            onSelectDesign={openCategory}
-                            onSelectUpload={() => setUploadStep({ step: 'upload-type' })}
-                        />
-                    )}
-
-                    {flow.step === 'design' && (
-                        <ProductStep
-                            key={`design-${flow.category.key}`}
-                            category={flow.category}
-                            gender={section}
-                        />
-                    )}
-
-                    {flow.step === 'upload-type' && (
-                        <UploadTypeStep
-                            key="upload-type"
-                            gender={section}
-                            onSelect={category => setUploadStep({ step: 'upload-file', category })}
-                            onBack={() => searchParams.get('upload') === '1' ? navigate(-1) : setUploadStep(null)}
-                        />
-                    )}
-
-                    {flow.step === 'upload-file' && (
-                        <UploadPanel
-                            key={`upload-${flow.category.key}`}
-                            category={flow.category}
-                            onContinue={handleUploadContinue}
-                            onBack={() => setUploadStep({ step: 'upload-type' })}
-                        />
-                    )}
-                </AnimatePresence>
-            </main>
-        </div>
+        <>
+            {head}
+            <DesignerWizard
+                // Keyed on the garment actually loaded, and on the saved design
+                // being reopened: the wizard seeds its selections when it mounts,
+                // so either changing needs a new mount rather than a re-seed.
+                key={`${product?.slug ?? 'browse'}:${designId ?? ''}`}
+                section={section}
+                category={activeCategory}
+                onSelectCategory={openCategory}
+                onSwitchSection={switchSection}
+                onUpload={() => setUploadStep({ step: 'upload-type' })}
+                products={products}
+                productsLoading={productsLoading}
+                productsError={styleError}
+                product={product}
+                selectedSlug={garmentSlug}
+                layerCategories={layerCategories}
+                fabrics={fabrics}
+                savedConfiguration={savedConfiguration}
+                onSelectProduct={openProduct}
+                step={step}
+                onStep={setStep}
+                onExit={() => navigate('/')}
+                onOrder={handleOrder}
+            />
+        </>
     );
 }

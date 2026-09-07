@@ -27,7 +27,7 @@ export function FeaturesSection() {
       <div className="grid lg:grid-cols-2">
         <div className="h-[68vh] min-h-[520px] lg:sticky lg:top-[50px] lg:h-[calc(100dvh-50px)] lg:min-h-0 lg:self-start">
           <img
-            src="/assets/hero/kere-look-2.jpeg"
+            src="/assets/hero/kere-look-5.webp"
             alt=""
             className="h-full w-full object-cover object-center"
           />

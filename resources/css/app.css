@@ -1628,3 +1628,27 @@
 body {
   padding-bottom: var(--kere-consent-h, 0px);
 }
+
+/* ── Guided designer ────────────────────────────────────────────────────────
+   The designer uses the same restrained ink-and-ivory system as the storefront.
+   It stays scoped because its drafting surfaces need slightly different neutral
+   steps from the surrounding marketplace. */
+.kere-designer {
+  --kd-burgundy:  #111111;
+  --kd-rail-text: #f4f0e9;
+  --kd-cream:     #e4e0d7;
+  --kd-stage:     #eeeae0;
+  --kd-tile:      #f4f0e9;
+  --kd-ink:       #111111;
+  --kd-body:      #514843;
+  --kd-muted:     #776d66;
+  --kd-hairline:  rgba(17, 17, 17, 0.18);
+
+  background: var(--kd-cream);
+  color: var(--kd-ink);
+}
+
+.kere-designer .kd-display {
+  font-family: 'Cormorant Garamond', 'Noto Serif Georgian', Georgia, serif;
+  font-weight: 400;
+}

@@ -4,7 +4,7 @@ import { Loader2, Check, FileText, ChevronDown, ChevronUp, Sparkles, Scissors } 
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { getAuthToken } from '../../hooks/useAuth';
-import DesignSpecList, { readSpec } from '../DesignSpecList';
+import DesignSpecList, { readProductName, readSpec } from '../DesignSpecList';
 
 interface OpenOrderDesign {
     garment_type?: string;
@@ -144,7 +144,11 @@ function OpenOrderCard({ order, onRequested }: { order: OpenOrder; onRequested: 
 
                     {readSpec(design?.customization).length > 0 && (
                         <div className="mt-3">
-                            <DesignSpecList spec={readSpec(design?.customization)} label={t('tailorComponents.studioSpec')} />
+                            <DesignSpecList
+                                spec={readSpec(design?.customization)}
+                                garment={readProductName(design?.customization)}
+                                label={t('tailorComponents.studioSpec')}
+                            />
                         </div>
                     )}
 
