@@ -29,7 +29,7 @@ function AnimatedNavText({ children, showUnderline = true }: { children: ReactNo
     );
 }
 
-function LanguageToggle({ isOverDark }: { isOverDark: boolean }) {
+function LanguageToggle({ toneClass }: { toneClass: string }) {
     const { i18n } = useTranslation();
     const isKa = i18n.language === 'ka';
 
@@ -42,7 +42,7 @@ function LanguageToggle({ isOverDark }: { isOverDark: boolean }) {
     return (
         <button
             onClick={toggle}
-            className={`text-[10px] font-bold tracking-[0.12em] uppercase transition-opacity hover:opacity-55 ${isOverDark ? 'text-white' : 'text-[#111111]'}`}
+            className={`text-[10px] font-bold tracking-[0.12em] uppercase transition-opacity hover:opacity-55 ${toneClass}`}
             title={isKa ? 'Switch to English' : 'ქართულზე გადართვა'}
         >
             {isKa ? 'EN' : 'ქართ'}
@@ -106,17 +106,21 @@ export function Navigation() {
     }, [pathname]);
 
     const isCustomizer = pathname.startsWith('/customize/');
-    const isMarketplace = pathname === '/marketplace';
-    const navIsDark = isOverDark && !isLanding && !isCustomizer && !isMarketplace;
-    const navTextClass = navIsDark ? 'text-white' : 'text-[#111111]';
-    const navDividerClass = navIsDark ? 'border-white/25' : 'border-black/15';
+    // The marketplace and the product page run the art-directed warm palette, so
+    // their bar is burgundy at every scroll position rather than taking its tone
+    // from the probe. Deliberately not site-wide: the landing page pins its own
+    // header in CSS and the dashboards were built on the light palette.
+    const isWarmSurface = pathname === '/marketplace' || pathname.startsWith('/product/');
+    const navIsDark = isOverDark && !isLanding && !isCustomizer && !isWarmSurface;
+    const navTextClass = isWarmSurface ? 'text-[#F6ECE6]' : navIsDark ? 'text-white' : 'text-[#111111]';
+    const navDividerClass = isWarmSurface ? 'border-[#F6ECE6]/30' : navIsDark ? 'border-white/25' : 'border-black/15';
     const itemCount = cartCount(cartItems);
 
     return (
         <header
-            data-nav-tone={navIsDark ? 'dark' : 'light'}
+            data-nav-tone={navIsDark || isWarmSurface ? 'dark' : 'light'}
             data-scrolled={isScrolled ? 'true' : 'false'}
-            className={`kere-site-header fixed inset-x-0 top-0 z-[100] pt-1.5 backdrop-blur-xl transition-all duration-500 ${isLanding ? 'bg-[#E4E0D7] text-[#111111] shadow-none' : isCustomizer || isMarketplace ? 'bg-[#E4E0D7] text-[#111111] shadow-[0_1px_0_rgba(0,0,0,0.06)]' : navIsDark ? 'bg-[#1c1c1c] text-white shadow-[0_1px_0_rgba(255,255,255,0.08)]' : 'bg-[#F4F0E9] text-[#111111] shadow-[0_1px_0_rgba(0,0,0,0.06)]'}`}
+            className={`kere-site-header fixed inset-x-0 top-0 z-[100] pt-1.5 backdrop-blur-xl transition-all duration-500 ${isWarmSurface ? 'bg-[#6F1D24] text-[#F6ECE6] shadow-[0_1px_0_rgba(0,0,0,0.14)]' : isLanding ? 'bg-[#E4E0D7] text-[#111111] shadow-none' : isCustomizer ? 'bg-[#E4E0D7] text-[#111111] shadow-[0_1px_0_rgba(0,0,0,0.06)]' : navIsDark ? 'bg-[#1c1c1c] text-white shadow-[0_1px_0_rgba(255,255,255,0.08)]' : 'bg-[#F4F0E9] text-[#111111] shadow-[0_1px_0_rgba(0,0,0,0.06)]'}`}
         >
             <div className="kere-site-header-bar mx-auto grid h-10 max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center px-4 sm:h-11 sm:px-6 lg:h-11 lg:px-10">
                 <div className="col-start-1 flex min-w-0 items-center gap-4 sm:gap-7">
@@ -187,7 +191,7 @@ export function Navigation() {
                     </Link>
 
                     <div className="inline-flex sm:hidden">
-                        <LanguageToggle isOverDark={navIsDark} />
+                        <LanguageToggle toneClass={navTextClass} />
                     </div>
 
                     <button
@@ -198,7 +202,9 @@ export function Navigation() {
                     >
                         <ShoppingBag className="h-4 w-4 stroke-[1.5]" />
                         {itemCount > 0 && (
-                            <span className="absolute -top-1.5 -right-2 min-w-4 rounded-full bg-[var(--color-brand)] px-1 text-center text-[9px] leading-4 font-bold text-white">
+                            <span
+                                className={`absolute -top-1.5 -right-2 min-w-4 rounded-full px-1 text-center text-[9px] leading-4 font-bold ${isWarmSurface ? 'bg-[#F6ECE6] text-[#6F1D24]' : 'bg-[var(--color-brand)] text-white'}`}
+                            >
                                 {itemCount > 99 ? '99+' : itemCount}
                             </span>
                         )}
@@ -220,14 +226,18 @@ export function Navigation() {
                             </Link>
 
                             <div>
-                                <NotificationBell />
+                                <NotificationBell onDark={isWarmSurface} />
                             </div>
                         </>
                     ) : (
                         <>
                             <Link
                                 to="/signin"
-                                className="kere-sign-in-link group hidden min-h-9 items-center bg-[#111111] px-4 text-sm font-normal !text-white transition-colors hover:bg-[#2b2b2b] hover:!text-white sm:inline-flex"
+                                className={`group hidden items-center px-4 text-sm font-normal transition-colors sm:inline-flex ${
+                                    isWarmSurface
+                                        ? 'min-h-10 border border-[#F6ECE6]/50 text-[#F6ECE6] hover:bg-black/[0.18]'
+                                        : 'kere-sign-in-link min-h-9 bg-[#111111] !text-white hover:bg-[#2b2b2b] hover:!text-white'
+                                }`}
                             >
                                 <span className="whitespace-nowrap">{t('nav.signIn')}</span>
                             </Link>
@@ -243,7 +253,7 @@ export function Navigation() {
                     )}
 
                     <div className={`hidden h-5 items-center border-l pl-5 lg:flex ${navDividerClass}`}>
-                        <LanguageToggle isOverDark={navIsDark} />
+                        <LanguageToggle toneClass={navTextClass} />
                     </div>
                 </div>
             </div>
@@ -287,7 +297,7 @@ export function Navigation() {
                                 </Link>
 
                                 <div className="flex items-center justify-end gap-4">
-                                    <LanguageToggle isOverDark={false} />
+                                    <LanguageToggle toneClass="text-[#111111]" />
 
                                     <Link
                                         to="/marketplace"

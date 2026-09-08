@@ -21,7 +21,7 @@ export function HowItWorksSection() {
     },
     {
       title: t('howItWorks.s3Title'),
-      image: '/assets/size-fit/measurements-3d-reference.png',
+      image: '/assets/size-fit/measurement-mannequin.jpg',
       tone: 'bg-[#F4EBD4]',
     },
     {

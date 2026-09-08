@@ -609,6 +609,115 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-08] QA round: seven fixes, three rule reverts, and the i18n gap closed
+
+**What was done:** Two review passes came back on the uncommitted redesign work. No functional defect was found in what the redesigns claimed to do — every stated measurement reproduced — but seven real problems surfaced around the edges. All seven are fixed, the three §8 departures the landing import brought in are reverted to spec, and the i18n gap both reports flagged from different angles is closed in one pass.
+
+**Fixed:**
+
+- **Two measurement thresholds contradicted each other on one screen.** The sanity banner ran a flat `n > 150 || n < 30` while each field ran the per-garment ranges in `measurementSanity.ts` (chest 55–175, length 25–155…), and they disagreed in both directions: a 160cm chest raised the banner with nothing flagged, a 50cm chest reddened the field and the banner stayed silent. The flat rule was pre-existing, but this redesign hoisted it out of the JSX into a named constant sitting directly beside the util it contradicts. Both now read `measurementWarning()`. Verified across chest 50 / 160 / 180 / 90: field and banner agree at every value, where the old pair disagreed at two of them.
+- **The banner outlived its own fields.** It was not gated on `customize`, but the inputs are. Enter 200cm on `/customize`, get bounced to sign-in, come back to plain `/product/:id`, and the pending-order thaw restored the measurement and raised a banner on a page with no measurement inputs. Now gated. Verified: after the thaw the plain page has one number input (quantity) and no banner.
+- **A failed `/api/products/:id` was presented as "product not found".** Every failure — 500, offline, timeout — fell into the same branch as a genuine 404, with no retry. The `catch` was pre-existing, but the marketplace got a proper error state and retry in the same redesign, so the two surfaces answered the same failure differently. There is now a distinct error branch with `ErrorFallback` and a working retry. Verified by blocking the endpoint: shows the error, not "not found", and retry recovers the real product.
+- **A failed `/api/categories` was silent.** `.catch(() => {})` used to be survivable when categories lived in a popover; with the rail it leaves the CATEGORY block as a heading over nothing, which reads as broken rather than as something a customer can retry. The facet now takes an optional `onRetry` and renders it in place of the empty grid. Verified by blocking the endpoint: the retry appears, the other facets and all six products still render, and the retry repopulates the six categories.
+- **The rating strip asserted "no reviews yet" on a failed request.** `avgRating` defaulted to `null`, which the strip read as "this product has no reviews" — a claim, not an absence. Rating is now one nullable object: `null` means unknown and renders nothing; a loaded value with `average: null` still says no reviews.
+- **Cormorant Garamond has no ₾ glyph.** Measured: a digit advances 11.26px in Cormorant while ₾ advances 21.25px — identical to the generic serif fallback it drops through to, so display prices were setting two faces mid-string and the lari sign came out nearly twice a digit's width. A `Lari` component sets the sign in the UI face at 0.66em. Confirmed in the page: sign is Instrument Sans 18.48px, number Cormorant 28px. **Still outstanding:** the designer's footer total goes through `money()` and has the same problem — out of scope here.
+- **Three accessibility fixes.** The quantity stepper announced itself as "−" and "+"; it now uses `cart.decrease` / `cart.increase`. The colour swatch announced a bare `#1E293B`; it now announces the colour label with it. And the 3-second post-order redirect timer is cleared on unmount.
+- **`ProductCardSkeleton` moved** from `components/skeletons/` to `components/marketplace/`. It paints in `--kd-*` tokens that only exist under the three warm surfaces, so a generically-named, generically-filed component would have rendered invisible on invisible anywhere else. Its only caller is the marketplace.
+
+**Three §8 departures reverted.** All three came in with the `mariam-changes` landing import and were verified against HEAD as introduced by it, not inherited. Ruled back to spec:
+
+1. `GuaranteeSection.tsx` `duration: 0.75` → `0.6` (§8 allows 0.5 and 0.6 only).
+2. `CTASection.tsx`'s `<h2>` `font-sans` → `font-serif`. `FAQSection` directly beneath it never stopped being serif, so the two headings were disagreeing on one screen; both now resolve to Newsreader.
+3. `FeaturesSection.tsx` stagger `delay: index * 0.04` → `index * 0.1` (§8 specifies 0.1 or 0.2 increments).
+
+The three fade-ups keep `ease: [0.22, 1, 0.36, 1]`, which §8 names neither way — the only piece of the import's animation language still outside the rules as written.
+
+**The i18n gap is closed.** All three sources that were rendering English inside the Georgian UI now go through `t()`, with 27 new key pairs added to both locales (they stay key-for-key in sync at 1408 each):
+
+- `measurementWarning()` returned hardcoded English sentences. It now returns an i18n *key* — `measurementSanity.tooSmall` / `.tooLarge` — so the util stays pure and translation happens at the render layer. Both call sites updated (`ProductCustomization`, `DesignCanvas`).
+- `COLOUR_OPTIONS` and `FABRIC_OPTIONS` carried English labels. Each entry is now `{ key, value }`: the **value** is untouched, so the API contract is identical (`colour[]=#1B1B1B`, `fabric[]=Cotton`), and only the label resolves through `marketplace.colours.*` / `.fabrics.*`.
+- Category names arrive from `/api/categories` in English. They now resolve by slug through `marketplace.categories.*` with `defaultValue` falling back to whatever the API said, so a category the locales have not caught up with degrades to its English name instead of a raw key. Applied on the marketplace rail and the product page's category eyebrow.
+
+Measured before and after: the Georgian rail's 40 controls included 34 English labels; it is now zero, with the eight size codes correctly left as they are. English still reads English on all 32 non-size controls.
+
+**Deleted:** `size-campaign-background.mp4` (676 kB), `size-campaign-wide.png` (1.6 MB) and `measurements-3d-reference.png` (1.85 MB) — 4.1 MB with no references left anywhere in `resources/`, `public/`, `app/` or `database/`. Recoverable from history. `hero/kere-look-2.jpeg` was checked and kept: `HeroSection` and `MarketplaceCarousel` still use it.
+
+**Still flagged, not fixed:** the designer's footer total goes through `money()` and hits the same missing-₾-glyph problem the product page just fixed.
+
+**Verified:** `npx tsc --noEmit`, `eslint` and `vite build` clean; both locales parse and stay key-for-key in sync; all nine routes re-checked for header tone with only the three warm surfaces changed; the Georgian marketplace rail carries no untranslated label and no raw i18n key leaks in either locale; CTA and FAQ headings both resolve to Newsreader; zero page errors and zero failed requests across every case above.
+
+---
+### [2026-09-07] The product page on the warm palette, and a button hierarchy that picks a side
+
+**What was done:** `/product/:id` and `/product/:id/customize` move onto the art-directed palette the designer and marketplace already run, with three structural changes rather than a re-skin. Every fetch, param and price rule is untouched: same `/api/products/:id`, same `related` and `shipping_cost` override, same pending-order thaw, same `POST /api/orders` body, same success-then-redirect.
+
+- **The image stops being a wall.** The full-bleed `lg:h-[calc(100vh-3rem)]` panel becomes a framed 4:5 card on the image bed, with the maker and rating on a strip directly beneath it. The rating used to sit in its own bar below the image, reading as a separate component rather than as this product's provenance. The 👗 emoji fallback becomes `ImageOff`, as on the marketplace card.
+- **The order summary picks a primary.** `placeOrder` was a black button *under* an outlined `addToCart`, so the outlined one read as the main action by position and the black one by weight — they cancelled out. Now `placeOrder` is the burgundy primary at `flex: 1 1 220px` and `addToCart` the outlined secondary beside it, both 52px.
+- **The name gets display type.** Small uppercase sans becomes Cormorant at `clamp(34px,5vw,52px)` in burgundy, with the price in Cormorant beneath, and the whole detail column reorganised into ruled 22px blocks.
+- **Reviews came off the page** at the client's request; the rating summary stays on the gallery strip, so `/api/products/:id/reviews` is still fetched — but only its count and average are kept in state now, not the review objects. **Correcting the handoff on this:** it says the write-review CTA was "the only entry point to reviewing". It was not an entry point at all — it linked to `/customer-dashboard` (or `/signin`), and reviewing actually happens there, on a *delivered* order, through `ReviewModal` → `POST /api/reviews`, which requires an `order_id`. Nothing about writing a review is lost. What is lost is reading review text, which now appears nowhere on the site.
+- **Also cleaned up in passing:** the colour swatches carried a hand-rolled `onKeyDown` for Space/Enter, which a native `<button>` already does; the `slate-*` ring and `boxShadow` double-ring went with the redesign. The quantity field used to *ignore* any typed value outside 1–1000, so typing 2000 silently did nothing; it now clamps to the ceiling. The separate `User`-avatar tailor block is gone — the maker moved to the gallery strip, which is where the design puts it.
+- **Kept, though the prototype does not draw them:** the `Footer`, and the login-required modal that carries the whole unauthenticated order path (`savePendingOrder` → `saveReturnTo` → sign-in). Both restyled to square edges and the warm palette rather than reproduced as the rounded white card.
+- **Label keys** ship with trailing colons (`"ფერი:"`). The rail sets them as uppercase eyebrows where a colon reads as a typo, so a `stripColon` helper trims it in-component — no new keys, per the handoff.
+
+**Header scope.** `/product/*` joins `/marketplace` on the burgundy bar, so `Navigation`'s `isMarketplace` became `isWarmSurface`. Still deliberately not site-wide: the landing page pins its own header in `.kere-landing` CSS and the dashboards were built light. The `--kd-*` palette block now covers `.kere-designer, .kere-market, .kere-product` — one definition, three surfaces.
+
+**One deviation considered and rejected.** The gallery is `lg:sticky top-74px`, and on this product it barely pins — the detail column is only ~66px taller than the gallery, which is the whole travel a sticky element gets. Capping the card's height to guarantee it fits the viewport was tried and reverted: `aspect-ratio` with a binding `max-height` shrinks the *width* too, so the card pulled 195px off the column edge on a 760px-tall viewport in exchange for a few more pixels of pinning. The card now fills the column at exactly 4:5 as drawn. Sticky earns its keep where the column is actually taller — on `/customize`, with a 476px range, it pins at 74px through most of the scroll.
+
+**Verified in a browser** (headless Edge over CDP, 1440×950, 1440×760, 390×844, Georgian): palette resolves to spec and the gallery measures 4:5 exactly at every width; `placeOrder` renders burgundy/cream at 52px *before* the outlined `addToCart`, in that DOM order; swatches 44×44 with one pressed, sizes 56×48, stepper 48/54/48 with minus disabled at 1; add-to-cart put `Cashmere Scarf / M / #1E293B` in the bag; ordering while logged out opens the restyled modal and freezes `{color:#7F1D1D, size:L, quantity:3}` with `returnTo: /product/23`; ₾180 + ₾15 = ₾195 checks out; the `/customize` variant shows the note counter, four measurement fields with guide triggers, hides the customize CTA, and a 200cm entry turns the field border burgundy and raises the sanity banner; no `$`, no horizontal overflow, no page errors, no failed requests. All nine routes re-checked for header tone — only the two product routes changed. `npm run typecheck`, `eslint` and `vite build` clean.
+
+**Noted, not changed:** `measurementWarning()` in `utils/measurementSanity.ts` returns hardcoded English ("That seems a bit large! …") and renders inside the Georgian UI on this page. Pre-existing, and the util is shared with `DesignCanvas`, so fixing it means two locale keys plus both call sites — out of scope here, but it is a real i18n gap. Four keys are now orphaned by the reviews removal (`customerReviews`, `verifiedPurchase`, `noReviewsWriteOne`, `writeReview`); left in both locales rather than deleted, since the decision to drop reviews may be revisited.
+
+---
+### [2026-09-07] Home page pass from `mariam-changes`, taken on its own
+
+**What was done:** Mariam's landing work was pulled across from `origin/mariam-changes` and nothing else from that branch was. `origin/mariami` now points at this branch's own HEAD (`7abc030`) and carries nothing new; the branch with her recent work is `origin/mariam-changes`, two commits ahead.
+
+**Five components and three assets:**
+
+- **`SizeFitSection`** drops the autoplaying `<video>` (`size-campaign-background.mp4` + its poster) for a still, `garment-rack-motion.jpg`, at 54 kB and `loading="lazy"`. The scrim is darkened to compensate (`from-black/60 via-black/30` against the old `from-black/45 via-black/10`), since a still has none of a video's incidental dark frames to sit the white copy against.
+- **`FeaturesSection`** swaps its sticky editorial image for `kere-look-5.webp`, gives the header and each guarantee article a fade-up on scroll, adds a hairline rule between articles (`border-b … last:border-b-0`), and drops the `min-h-[42vh]` floor below `lg` so a short article no longer holds half a phone screen open.
+- **`HowItWorksSection`** swaps step 2's art for `measurement-mannequin.jpg`.
+- **`GuaranteeSection`** deepens its entrance (y 24 → 48) and triggers it earlier (`amount: 0.18`).
+- **`CTASection`** takes its heading from serif uppercase to sans sentence case at a smaller size, and trims the two buttons from 50px to 46px.
+
+**What was deliberately left on the branch.** The two commits also carry a whole wishlist feature (`WishlistController`, a migration, `WishlistPage`, routes, `Product`/`User` relations, 9 i18n keys per locale), a marketplace revision, a `BecomePartner` change, an `AnalyticsConsent` rewrite, and designer/customizer work. None of it is the home page. Two of those would have done real damage if they had come along:
+
+- **`app.css`** on that branch rewrites the `--kd-*` block from the warm burgundy palette to ink-and-ivory (`--kd-burgundy: #111111`, `--kd-cream: #e4e0d7`). That block is now shared by the designer *and* the marketplace, so taking it would have silently repainted the marketplace redesign in the entry above.
+- **`AnalyticsConsent`** replaces `<Button variant size>` with hand-styled raw `<button>` elements and drops the privacy-policy link out of the banner. It renders on every page, so it is not a home-page change either way.
+
+**Two rules the pulled design breaks** — imported as authored rather than quietly corrected, because they are design decisions, not defects:
+
+1. `GuaranteeSection` runs its entrance at `duration: 0.75`. §8 allows 0.5 and 0.6 only.
+2. `CTASection`'s `<h2>` is now `font-sans`. §8 says every landing `h2` is `font-serif` — and the FAQ heading immediately below it is still serif, so the two now disagree on the same screen.
+
+All three new fade-ups also carry `ease: [0.22, 1, 0.36, 1]`, a custom curve the rules do not name either way.
+
+**Verified in a browser** (headless Edge over CDP, 1440 and 390, Georgian): all three new assets load and no local image 404s; zero `<video>` elements remain; every section reaches full opacity after a scroll pass; no horizontal overflow at either width; no page errors and no failed requests. `npx tsc --noEmit`, `eslint` and `vite build` clean. The marketplace `--kd-*` block was confirmed untouched afterwards.
+
+**Now unreferenced** by anything in `resources/` or `public/`: `size-fit/size-campaign-background.mp4`, `size-fit/size-campaign-wide.png`, `size-fit/measurements-3d-reference.png`. Left on disk rather than deleted. `hero/kere-look-2.jpeg` is *not* orphaned — `HeroSection` and `MarketplaceCarousel` still use it.
+
+---
+### [2026-09-07] The marketplace as a filter rail, on the designer's warm palette
+
+**What was done:** The catalogue's five dropdown menus become a persistent left rail with every facet visible, and the page moves onto the art-directed palette the guided designer already runs. Nothing about the data, the query params or the `/api/products` contract changed — the same `gender / category / colour[] / size[] / fabric[] / search / max_price / sort / page` go out, with the same reset-to-page-1 and the same `AbortController`.
+
+- **The palette stopped being the designer's alone.** `app.css` carried a `--kd-*` block scoped to `.kere-designer`, with a comment saying the marketplace kept the palette it was built in. It no longer does, so the block is now shared by `.kere-designer, .kere-market` rather than copied, and gained two rules the marketplace needed named (`--kd-rule` 0.16, `--kd-rule-soft` 0.12) instead of leaving them as raw rgba scattered through the JSX. The dashboards and landing page are untouched.
+- **Burgundy header, marketplace only.** `Navigation.tsx` already branches per route for tone, so `/marketplace` joins `isLanding` / `isCustomizer` with a `#6F1D24` bar and `#F6ECE6` text. Rolling it out site-wide was considered and declined — the landing page's header is pinned by its own `.kere-landing` CSS and the dashboards were built light. Three things had to follow the tone or they would have gone invisible on burgundy: the cart count badge (`bg-brand` is burgundy on burgundy), the notification badge (`NotificationBell` gained an optional `onDark`, default off, so its three other call sites are unchanged), and the sign-in CTA, which drops the `kere-sign-in-link` class on this route — that class exists only to force `!important` white onto the black button, and the marketplace uses the design's outlined treatment instead. `LanguageToggle` now takes a tone class rather than an `isOverDark` boolean; the EN toggle stays, contrary to the prototype, because it is a real control.
+- **`MarketplaceFilterRail.tsx`** replaces `renderFilterContent`, `checkboxRow`, both `AnimatePresence` popovers, the mobile filter sheet, the sort dropdown, the `LayoutGrid` glyph and the click-outside overlay. Category is still single-select — the API takes one `category` and the page mirrors it to `?category=` — so re-picking the open one clears it, which is what "nothing selected means all" comes to here. The chips above the grid are derived from the same facet array the rail draws from, so a selection cannot be shown in one place and missing from the other.
+- **Cards are real links now.** The old card was a `div` with an `onClick`, with `stopPropagation` on everything inside it. It is now a stretched link on the product name (`before:absolute before:inset-0`), which makes the whole card clickable, gives it an accessible name, and keeps the tailor link and the size strip as siblings at `z-2` rather than anchors nested inside an anchor. Verified: zero nested anchors, card centre resolves to `/product/{id}`, tailor name to `/tailor/{id}`.
+- **Add-to-cart survived the redesign.** The design dropped the hover size-strip and the mobile "quick buy". The strip is the only genuine add-to-cart on the card, so it stays, restyled, and now reveals on `focus-within` as well as hover so it is reachable by keyboard. Quick-buy and "check product" only called `navigate('/product/{id}')`, which the card itself now does, so they went.
+- **Fixed while in here:** `clearFilters()` called `setSearchParams({})`, which dropped `?gender=` and made the section effect immediately put it back. It now deletes only `category` and `sort`.
+
+**Three deviations from the handoff, all for legibility:**
+1. **Colour facet is one column at the rail width**, not two. Measured in the browser: the label box is 59px and "Burgundy" needs 64px, and it is a 22px outlier over every other colour, so tightening the row buys one pixel. Two columns again below the breakpoint, where the rail runs the page width.
+2. **Size rows are centred chips with no checkbox.** Four columns of a 252px rail is a 48px cell; a 16px box plus its gap leaves nothing to write "XXS" in. Colour rows lead with their swatch for the same reason. The burgundy fill is what states selection in every case, so nothing is lost.
+3. **The rail collapses below 1024px** behind its own heading, and caps at `calc(100vh-98px)` with internal scroll above it. Unrolled, the full facet set is 1221px — most of a phone screen before the first product, and taller than a short desktop viewport, which would strand the price slider out of reach of a sticky block. The single 1024px breakpoint the handoff asked for is preserved: the rail unsticks and goes full-width at the same width it stops being a column.
+
+**Verified in a browser** (headless Edge over CDP, 1440 / 900 / 390, both locales): palette resolves to spec (`#6F1D24` header, `#FAF5EF` page, `#2A1418` ink, Cormorant on the H1 at 60px); no facet label wraps or clips at any of the three widths; filters reach the API as `colour[]=#FFFFFF&size[]=XL&gender=women&page=1`; sort syncs to `?sort=popular` and clear-all keeps `?gender=women`; the men's tab drops `dresses`/`skirts` and clears a selected women-only category; adding from the hover strip put `Cashmere Scarf / S / ₾60` in the cart without navigating; sticky pins at exactly 74px, clearing the 50px fixed header; blocking `/api/products` renders the error state with a retry and suppresses the count rather than showing "0"; no page errors, no failed requests, no horizontal overflow, no raw i18n keys in either locale. `npm run typecheck` and `eslint` clean.
+
+**Noted, not changed:** `COLOUR_OPTIONS` and `FABRIC_OPTIONS` labels are hardcoded English and render untranslated inside the Georgian UI ("Black", "Cotton" among Georgian copy). Pre-existing — the old popovers had it too — and out of scope for a redesign the handoff scoped to existing keys, but it is a real i18n gap. The mobile grid is now one column rather than two, which follows the handoff's `minmax(min(100%,240px),1fr)` track; worth a look if scanning density matters more than card size.
+
+---
 ### [2026-09-06] Typecheck actually runs now — and a correction to what earlier entries claimed
 
 **What was done:** `npx tsc --noEmit` has been failing repo-wide on the config before checking a single file, which three separate entries below flagged as pre-existing and none fixed. It is fixed, and it is now wired as a gate anyone can run.

@@ -12,19 +12,14 @@ export function SizeFitSection() {
         className="relative mb-10 min-h-[520px] overflow-hidden bg-white sm:mb-14 sm:min-h-[620px] lg:mb-16 lg:min-h-[720px]"
         aria-labelledby="size-fit-title"
       >
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          poster="/assets/size-fit/size-campaign-wide.png"
-          className="absolute inset-0 h-full w-full object-cover object-[66%_center] sm:object-center"
+        <img
+          src="/assets/size-fit/garment-rack-motion.jpg"
+          alt=""
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover object-center"
           aria-hidden="true"
-        >
-          <source src="/assets/size-fit/size-campaign-background.mp4" type="video/mp4" />
-        </video>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/10 to-transparent sm:from-black/35" />
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-black/10 sm:from-black/55 sm:via-black/20" />
 
         <div className="relative z-10 mx-auto flex min-h-[520px] max-w-[1500px] items-center px-6 py-14 sm:min-h-[620px] sm:px-10 lg:min-h-[720px] lg:px-16">
           <div className="max-w-2xl text-center text-white sm:text-left">

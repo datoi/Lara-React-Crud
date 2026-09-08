@@ -1,9 +1,10 @@
-import { Check, HelpCircle, Info, Loader2, Minus, Palette, Pencil, Plus, ShoppingBag, Star, User } from 'lucide-react';
+import { Check, HelpCircle, ImageOff, Info, Loader2, Minus, Palette, Plus, ShoppingBag, Star } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router';
+import { ErrorFallback } from '../components/ErrorFallback';
 import { MeasurementGuideModal, type MeasurementKey } from '../components/MeasurementGuideModal';
 import { Footer } from '../components/landing/Footer';
 import { Navigation } from '../components/landing/Navigation';
@@ -11,7 +12,6 @@ import { Button } from '../components/ui/button';
 import {
     clearPendingOrder,
     getAuthToken,
-    getAuthUser,
     getPendingOrder,
     savePendingOrder,
     saveReturnTo,
@@ -32,6 +32,26 @@ interface ApiProduct {
     category: { id: number; name: string; slug: string };
     tailor_id: number | null;
     tailor_name: string | null;
+}
+
+/**
+ * The label keys ship with a trailing colon ("ფერი:"), which read as a typo
+ * once the labels are set as uppercase eyebrows rather than inline prefixes.
+ */
+const stripColon = (label: string) => label.replace(/\s*[:：]\s*$/, '');
+
+/** Shared by the detail column's blocks, each ruled off from the next. */
+const BLOCK = 'border-b border-[var(--kd-rule)] py-[22px]';
+const EYEBROW = 'text-[11px] tracking-[0.14em] text-[var(--kd-muted)] uppercase';
+
+/**
+ * Cormorant Garamond has no ₾ glyph — measured, the symbol advances 21.25px
+ * against a digit's 11.26px, identical to the generic serif fallback it drops
+ * through to. Set the sign in the UI face at the digits' optical size so the
+ * display prices stop mixing two faces mid-string.
+ */
+function Lari() {
+    return <span className="font-sans text-[0.66em] tracking-normal">₾</span>;
 }
 
 export default function ProductCustomization({ customize = false }: { customize?: boolean }) {
@@ -55,27 +75,37 @@ export default function ProductCustomization({ customize = false }: { customize?
     const [orderError, setOrderError] = useState('');
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
     const [guideStep, setGuideStep] = useState<MeasurementKey | null>(null);
-    const [reviews, setReviews] = useState<{ id: number; rating: number; comment: string; reviewer: string; created_at: string }[]>([]);
-    const [avgRating, setAvgRating] = useState<number | null>(null);
+    // The review list came off the page with the redesign; only the summary the
+    // gallery strip shows is still needed. null means the call has not landed
+    // (or failed) — distinct from a product that genuinely has no reviews, which
+    // would otherwise be asserted on the strength of a failed request.
+    const [rating, setRating] = useState<{ average: number | null; count: number } | null>(null);
+    const [fetchError, setFetchError] = useState(false);
+    const [retryKey, setRetryKey] = useState(0);
+    const redirectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const authUser = getAuthUser();
+    useEffect(() => () => {
+        if (redirectRef.current) clearTimeout(redirectRef.current);
+    }, []);
 
     const openGuide = (key: string) => {
         const valid: MeasurementKey[] = ['chest', 'waist', 'hips', 'length'];
         setGuideStep(valid.includes(key as MeasurementKey) ? (key as MeasurementKey) : 'chest');
     };
+
     useEffect(() => {
         if (!id) return;
         fetch(`/api/products/${id}/reviews`)
             .then((r) => r.json())
             .then((d) => {
-                setReviews(d.reviews ?? []);
-                setAvgRating(d.average_rating ?? null);
+                setRating({ average: d.average_rating ?? null, count: (d.reviews ?? []).length });
             })
             .catch(() => {});
     }, [id]);
 
     useEffect(() => {
+        setLoading(true);
+        setFetchError(false);
         fetch(`/api/products/${id}`)
             .then((r) => {
                 if (r.status === 404) {
@@ -116,22 +146,47 @@ export default function ProductCustomization({ customize = false }: { customize?
 
                 setLoading(false);
             })
-            .catch(() => setLoading(false));
-    }, [id]);
+            .catch(() => {
+                // A 500, a timeout or a dropped connection is not "no such
+                // product" — the 404 branch below says that, and only that.
+                setFetchError(true);
+                setLoading(false);
+            });
+    }, [id, retryKey]);
 
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-[#E4E0D7]">
-                <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+            <div className="kere-product flex min-h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--kd-muted)]" />
+            </div>
+        );
+    }
+
+    if (fetchError) {
+        return (
+            <div className="kere-product flex min-h-screen flex-col items-center justify-center px-4">
+                <ErrorFallback
+                    message={t('productCustomization.errorSomethingWrong')}
+                    onRetry={() => setRetryKey((k) => k + 1)}
+                />
+                <Link
+                    to="/marketplace"
+                    className="mt-4 text-[14px] text-[var(--kd-body)] underline underline-offset-4 transition-colors duration-150 hover:text-[var(--kd-burgundy)]"
+                >
+                    {t('productCustomization.backToMarketplace')}
+                </Link>
             </div>
         );
     }
 
     if (!product) {
         return (
-            <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#E4E0D7]">
-                <p className="text-slate-500">{t('productCustomization.productNotFound')}</p>
-                <Link to="/marketplace" className="text-sm text-slate-900 underline">
+            <div className="kere-product flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
+                <p className="kd-display text-[24px] text-[var(--kd-ink)]">{t('productCustomization.productNotFound')}</p>
+                <Link
+                    to="/marketplace"
+                    className="text-[14px] text-[var(--kd-body)] underline underline-offset-4 transition-colors duration-150 hover:text-[var(--kd-burgundy)]"
+                >
                     {t('productCustomization.backToMarketplace')}
                 </Link>
             </div>
@@ -212,7 +267,7 @@ export default function ProductCustomization({ customize = false }: { customize?
             clearPendingOrder();
             setAssignedTailor(data.tailor_name ?? product!.tailor_name ?? t('productCustomization.yourTailorFallback'));
             setOrdered(true);
-            setTimeout(() => navigate('/customer-dashboard'), 3000);
+            redirectRef.current = setTimeout(() => navigate('/customer-dashboard'), 3000);
         } catch {
             setOrderError(t('productCustomization.errorConnection'));
         } finally {
@@ -229,8 +284,23 @@ export default function ProductCustomization({ customize = false }: { customize?
         return (r * 299 + g * 587 + b * 114) / 1000 > 180;
     };
 
+    const measurementFields = [
+        { key: 'chest', label: t('productCustomization.measureChest') },
+        { key: 'waist', label: t('productCustomization.measureWaist') },
+        { key: 'hips', label: t('productCustomization.measureHips') },
+        { key: 'length', label: t('productCustomization.measureLength') },
+    ];
+
+    // The banner used to run its own flat 30–150 rule while each field ran the
+    // per-garment ranges in measurementSanity, and the two disagreed in both
+    // directions: a 160cm chest raised the banner with no field flagged, a 50cm
+    // one flagged the field and said nothing. Both now read the same function.
+    // Gated on `customize` too — the inputs only exist there, and a thawed
+    // pending order used to raise the banner on a page with no fields on it.
+    const showMeasurementBanner = customize && Object.entries(measurements).some(([key, value]) => measurementWarning(key, value) !== '');
+
     return (
-        <div className="min-h-screen bg-[#E4E0D7] text-[#111111]">
+        <div className="kere-product min-h-screen pt-[46px] sm:pt-[50px]">
             <Helmet>
                 <title>
                     {product.name} — Custom {product.category?.name ?? 'Garment'} | Kere
@@ -260,211 +330,191 @@ export default function ProductCustomization({ customize = false }: { customize?
                 </script>
             </Helmet>
             <Navigation />
-            <div className="h-11" />
 
             {ordered ? (
                 <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
                     <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ duration: 0.6 }}
-                        className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="mb-6 flex h-20 w-20 items-center justify-center border border-[var(--kd-burgundy)] bg-[var(--kd-tile)]"
                     >
-                        <Check className="h-10 w-10 text-slate-600" />
+                        <Check className="h-9 w-9 text-[var(--kd-burgundy)]" strokeWidth={1.6} />
                     </motion.div>
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
-                        <h2 className="mb-2 text-2xl font-bold text-slate-900">{t('productCustomization.orderSuccess')}</h2>
-                        <p className="text-slate-500">{t('productCustomization.orderSuccessSent', { tailor: assignedTailor })}</p>
-                        <p className="mt-4 text-sm text-slate-400">{t('productCustomization.orderSuccessRedirect')}</p>
+                        <h2 className="kd-display text-[clamp(28px,4vw,40px)] leading-tight text-[var(--kd-burgundy)]">
+                            {t('productCustomization.orderSuccess')}
+                        </h2>
+                        <p className="mt-3 text-[15px] text-[var(--kd-body)]">{t('productCustomization.orderSuccessSent', { tailor: assignedTailor })}</p>
+                        <p className="mt-4 text-[13px] text-[var(--kd-muted)]">{t('productCustomization.orderSuccessRedirect')}</p>
                     </motion.div>
                 </div>
             ) : (
-                <div className="w-full">
-                    <div className="grid items-start lg:grid-cols-[55%_45%]">
-                        {/* Product image */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                            <div className="aspect-[3/4] overflow-hidden bg-[#F2F1ED] lg:aspect-auto lg:h-[calc(100vh-3rem)]">
+                <>
+                    <div className="mx-auto w-full max-w-[1440px] px-[clamp(16px,3vw,40px)] pt-[18px]">
+                        <Link
+                            to="/marketplace"
+                            className="inline-flex items-center gap-2 text-[13px] text-[var(--kd-body)] transition-colors duration-150 hover:text-[var(--kd-burgundy)]"
+                        >
+                            ← {t('tailorProfile.backToMarketplace')}
+                        </Link>
+                    </div>
+
+                    <div className="mx-auto grid w-full max-w-[1440px] items-start gap-[clamp(24px,4vw,56px)] px-[clamp(16px,3vw,40px)] pt-[18px] pb-[clamp(40px,6vw,72px)] lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+                        {/* Gallery */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                            className="min-w-0 lg:sticky lg:top-[74px]"
+                        >
+                            <div className="relative aspect-[4/5] overflow-hidden border border-[var(--kd-rule)] bg-[var(--kd-stage)]">
                                 {product.images?.[0] ? (
-                                    <img src={product.images[0]} alt={product.name} className="h-full w-full object-contain" />
+                                    <img
+                                        src={product.images[0]}
+                                        alt={product.name}
+                                        className="h-full w-full object-contain p-[clamp(16px,3vw,46px)]"
+                                    />
                                 ) : (
-                                    <div className="flex h-full w-full items-center justify-center text-6xl text-slate-300">👗</div>
+                                    <div className="flex h-full w-full items-center justify-center text-[var(--kd-muted)]/40">
+                                        <ImageOff className="h-12 w-12 stroke-[1.4]" />
+                                    </div>
+                                )}
+                                {product.is_customizable && (
+                                    <span className="absolute top-3.5 left-3.5 inline-flex items-center gap-1.5 border border-[rgba(111,29,36,0.18)] bg-[rgba(255,252,248,0.94)] px-2.5 py-1.5 text-[10px] tracking-[0.07em] text-[var(--kd-burgundy)] uppercase">
+                                        <Palette className="h-[11px] w-[11px]" />
+                                        {t('marketplace.customizableBadge')}
+                                    </span>
                                 )}
                             </div>
-                            <div className="border-b border-[#111111]/15 bg-[#E4E0D7] px-4 py-3 sm:px-6">
-                                <p className="mb-1 text-sm text-slate-500">
-                                    by{' '}
+
+                            <div className="flex flex-wrap items-center justify-between gap-x-[18px] gap-y-2.5 px-0.5 pt-3.5">
+                                <span className="flex items-center gap-[7px] text-[13px] text-[var(--kd-body)]">
+                                    <span className="text-[var(--kd-muted)]">{t('productCustomization.madeby')}</span>
                                     {product.tailor_id ? (
                                         <Link
                                             to={`/tailor/${product.tailor_id}`}
-                                            className="font-medium text-slate-800 transition-colors hover:text-slate-600 hover:underline"
+                                            className="border-b border-[rgba(111,29,36,0.3)] pb-px transition-colors duration-150 hover:text-[var(--kd-burgundy)]"
                                         >
                                             {product.tailor_name}
                                         </Link>
                                     ) : (
-                                        <span className="font-medium text-slate-800">{product.tailor_name}</span>
+                                        <span>{product.tailor_name}</span>
                                     )}
-                                </p>
-                                <div className="flex items-center gap-1">
-                                    {avgRating !== null ? (
-                                        <>
-                                            <Star className="h-4 w-4 fill-slate-400 text-slate-400" />
-                                            <span className="text-sm font-medium text-slate-700">{avgRating.toFixed(1)}</span>
-                                            <span className="text-sm text-slate-400">
-                                                ({reviews.length}{' '}
-                                                {reviews.length === 1
-                                                    ? t('productCustomization.reviewCount_one')
-                                                    : t('productCustomization.reviewCount_other')}
-                                                )
-                                            </span>
-                                        </>
-                                    ) : (
-                                        <span className="text-sm text-slate-400">{t('productCustomization.noReviewsYet')}</span>
-                                    )}
-                                </div>
+                                </span>
+
+                                {rating && (
+                                    <span className="flex items-center gap-1.5 text-[13px] text-[var(--kd-body)]">
+                                        {rating.average !== null ? (
+                                            <>
+                                                <Star className="h-3.5 w-3.5 fill-[var(--kd-burgundy)] text-[var(--kd-burgundy)]" />
+                                                <span className="tabular-nums">
+                                                    {rating.average.toFixed(1)} ({rating.count}{' '}
+                                                    {rating.count === 1
+                                                        ? t('productCustomization.reviewCount_one')
+                                                        : t('productCustomization.reviewCount_other')}
+                                                    )
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <span className="text-[var(--kd-muted)]">{t('productCustomization.noReviewsYet')}</span>
+                                        )}
+                                    </span>
+                                )}
                             </div>
                         </motion.div>
 
-                        {/* Customization panel */}
+                        {/* Detail */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: 0.1 }}
-                            className="bg-[#E4E0D7] px-5 py-8 sm:px-8 lg:min-h-[calc(100vh-3rem)] lg:px-12 lg:py-10"
+                            className="min-w-0"
                         >
-                            <div className="border-b border-[#111111]/20 pb-6">
-                                <div className="mb-2 text-[10px] font-medium tracking-[0.08em] text-[#6c625b] uppercase">
-                                    {product.category?.name}
+                            <div className="border-b border-[var(--kd-rule)] pb-[22px]">
+                                <div className="text-[11px] tracking-[0.18em] text-[var(--kd-muted)] uppercase">
+                                    {product.category ? t(`marketplace.categories.${product.category.slug}`, { defaultValue: product.category.name }) : ''}
                                 </div>
-                                <h1 className="text-lg leading-tight font-medium text-[#111111] uppercase">{product.name}</h1>
-                                <p className="mt-2 text-sm font-medium text-[#111111]">₾{product.price}</p>
-                                <p className="mt-5 max-w-xl text-xs leading-5 text-[#514843]">{product.description}</p>
+                                <h1 className="kd-display mt-1.5 text-[clamp(34px,5vw,52px)] leading-[1.02] tracking-[-0.02em] text-[var(--kd-burgundy)] [text-wrap:pretty]">
+                                    {product.name}
+                                </h1>
+                                <div className="kd-display mt-3 text-[28px] text-[var(--kd-ink)] tabular-nums">
+                                    <Lari />
+                                    {product.price}
+                                </div>
+                                {product.description && (
+                                    <p className="mt-3.5 max-w-[44ch] text-[15px] leading-[1.55] text-[var(--kd-body)] [text-wrap:pretty]">
+                                        {product.description}
+                                    </p>
+                                )}
                             </div>
 
-                            {/* Color */}
+                            {/* Colour */}
                             {product.colors?.length > 0 && (
-                                <div className="border-b border-[#111111]/20 py-6">
-                                    <div className="mb-3 text-sm font-semibold text-slate-700">
-                                        {t('productCustomization.colorLabel')} <span className="font-normal text-slate-500">{selectedColor}</span>
+                                <div className={BLOCK}>
+                                    <div className="flex items-baseline justify-between gap-3.5 pb-3">
+                                        <span className={EYEBROW}>{stripColon(t('productCustomization.colorLabel'))}</span>
+                                        <span className="text-[13px] text-[var(--kd-body)] tabular-nums">{selectedColor}</span>
                                     </div>
-                                    <div className="flex flex-wrap gap-3">
-                                        {product.colors.map((hex) => (
-                                            <button
-                                                key={hex}
-                                                onClick={() => setSelectedColor(hex)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === ' ' || e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        setSelectedColor(hex);
-                                                    }
-                                                }}
-                                                tabIndex={0}
-                                                title={hex}
-                                                className="relative h-7 w-7 rounded-full border transition-all hover:scale-105"
-                                                style={{
-                                                    backgroundColor: hex,
-                                                    borderColor: selectedColor === hex ? '#0F172A' : '#E2E8F0',
-                                                    boxShadow: selectedColor === hex ? '0 0 0 2px white, 0 0 0 4px #0F172A' : undefined,
-                                                }}
-                                            >
-                                                {selectedColor === hex && (
-                                                    <Check
-                                                        className="absolute inset-0 m-auto h-4 w-4"
-                                                        style={{ color: isLight(hex) ? '#1a1a1a' : 'white' }}
-                                                    />
-                                                )}
-                                            </button>
-                                        ))}
+                                    <div className="flex flex-wrap gap-2.5">
+                                        {product.colors.map((hex) => {
+                                            const selected = selectedColor === hex;
+                                            return (
+                                                <button
+                                                    key={hex}
+                                                    type="button"
+                                                    onClick={() => setSelectedColor(hex)}
+                                                    title={hex}
+                                                    aria-label={`${stripColon(t('productCustomization.colorLabel'))} ${hex}`}
+                                                    aria-pressed={selected}
+                                                    className={`flex h-11 w-11 items-center justify-center border bg-[var(--kd-tile)] p-[3px] transition-colors duration-150 ${
+                                                        selected
+                                                            ? 'border-[var(--kd-ink)]'
+                                                            : 'border-[var(--kd-rule)] hover:border-[var(--kd-burgundy)]'
+                                                    }`}
+                                                >
+                                                    <span
+                                                        className="flex h-full w-full items-center justify-center rounded-full border border-black/[0.14]"
+                                                        style={{ backgroundColor: hex }}
+                                                    >
+                                                        {selected && (
+                                                            <Check
+                                                                className="h-3.5 w-3.5"
+                                                                strokeWidth={3}
+                                                                style={{ color: isLight(hex) ? '#1a1a1a' : '#ffffff' }}
+                                                            />
+                                                        )}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
 
                             {/* Size */}
                             {showSizePicker && (
-                                <div className="border-b border-[#111111]/20 py-6">
-                                    <div className="mb-3 text-sm font-semibold text-slate-700">
-                                        {t('productCustomization.sizeLabel')} <span className="font-normal text-slate-500">{selectedSize}</span>
+                                <div className={BLOCK}>
+                                    <div className="flex items-baseline justify-between gap-3.5 pb-3">
+                                        <span className={EYEBROW}>{stripColon(t('productCustomization.sizeLabel'))}</span>
+                                        <span className="text-[13px] text-[var(--kd-body)]">{selectedSize}</span>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
                                         {product.sizes.map((s) => (
-                                            <Button
+                                            <button
                                                 key={s}
                                                 type="button"
-                                                variant={selectedSize === s ? 'default' : 'outline'}
                                                 onClick={() => setSelectedSize(s)}
-                                                className={`h-auto rounded-none px-4 py-2 ${
+                                                aria-pressed={selectedSize === s}
+                                                className={`inline-flex h-12 min-w-14 items-center justify-center border px-3 text-[14px] transition-colors duration-150 ${
                                                     selectedSize === s
-                                                        ? 'border border-slate-900 bg-slate-900 text-white hover:bg-slate-900'
-                                                        : 'border-slate-200 text-slate-600 hover:border-slate-400 hover:bg-transparent hover:text-slate-600'
+                                                        ? 'border-[var(--kd-ink)] bg-[var(--kd-ink)] text-[var(--kd-rail-text)]'
+                                                        : 'border-[var(--kd-hairline)] bg-[var(--kd-tile)] text-[var(--kd-ink)] hover:border-[var(--kd-burgundy)]'
                                                 }`}
                                             >
                                                 {s}
-                                            </Button>
+                                            </button>
                                         ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Customization details — only when customizing */}
-                            {customize && (
-                                <div className="border-b border-[#111111]/20 py-6">
-                                    <div className="mb-1 text-sm font-semibold text-slate-700">{t('productCustomization.customizationDetails')}</div>
-                                    <p className="mb-3 text-xs text-slate-500">{t('productCustomization.customizationDetailsHint')}</p>
-                                    <textarea
-                                        value={customizationNote}
-                                        onChange={(e) => setCustomizationNote(e.target.value.slice(0, 1000))}
-                                        rows={4}
-                                        maxLength={1000}
-                                        placeholder={t('productCustomization.customizationPlaceholder')}
-                                        className="w-full resize-none border border-[#111111]/25 px-3 py-2 text-sm text-[#111111] placeholder:text-[#6c625b]/60 focus:ring-1 focus:ring-[#111111] focus:outline-none"
-                                    />
-                                    <p className="mt-1 text-right text-[10px] text-slate-400">{customizationNote.length}/1000</p>
-                                </div>
-                            )}
-
-                            {/* Measurements — only when customizing */}
-                            {customize && (
-                                <div className="border-b border-[#111111]/20 py-6">
-                                    <div className="mb-1 text-sm font-semibold text-slate-700">
-                                        {t('productCustomization.customMeasurements')}{' '}
-                                        <span className="font-normal text-slate-400">{t('productCustomization.measurementsOptional')}</span>
-                                    </div>
-                                    <p className="mb-4 text-xs text-slate-500">{t('productCustomization.measurementsHint')}</p>
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                        {[
-                                            { key: 'chest', label: t('productCustomization.measureChest') },
-                                            { key: 'waist', label: t('productCustomization.measureWaist') },
-                                            { key: 'hips', label: t('productCustomization.measureHips') },
-                                            { key: 'length', label: t('productCustomization.measureLength') },
-                                        ].map(({ key, label }) => {
-                                            const val = measurements[key as keyof typeof measurements];
-                                            const warning = measurementWarning(key, val);
-                                            return (
-                                                <div key={key}>
-                                                    <div className="mb-1 flex items-center gap-1">
-                                                        <label className="text-xs text-slate-500">{label}</label>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => openGuide(key)}
-                                                            className="text-slate-300 transition-colors hover:text-slate-600"
-                                                            aria-label={t('productCustomization.helpFor', { label })}
-                                                        >
-                                                            <HelpCircle className="h-3 w-3" />
-                                                        </button>
-                                                    </div>
-                                                    <div className="relative">
-                                                        <input
-                                                            type="number"
-                                                            placeholder="0"
-                                                            value={val}
-                                                            onChange={(e) => setMeasurements((m) => ({ ...m, [key]: e.target.value }))}
-                                                            className={`w-full border px-3 py-2 pr-8 text-sm focus:ring-1 focus:ring-[#111111] focus:outline-none ${warning ? 'border-[#111111]/50' : 'border-[#111111]/20'}`}
-                                                        />
-                                                        <span className="absolute top-1/2 right-3 -translate-y-1/2 text-xs text-slate-400">cm</span>
-                                                    </div>
-                                                    {warning && <p className="mt-1 text-[10px] leading-tight text-slate-500">{warning}</p>}
-                                                </div>
-                                            );
-                                        })}
                                     </div>
                                 </div>
                             )}
@@ -472,269 +522,258 @@ export default function ProductCustomization({ customize = false }: { customize?
                             {/* Customize CTA — shown on the plain product view for customizable products */}
                             {!customize && product.is_customizable && (
                                 <Button
+                                    asChild
                                     variant="outline"
-                                    onClick={() => navigate(`/product/${product.id}/customize`)}
-                                    className="my-6 h-auto w-full rounded-none border-[#111111] py-3 text-xs font-semibold tracking-[0.08em] text-[#111111] uppercase hover:bg-[#111111] hover:text-white active:scale-[0.99]"
+                                    className="mt-[22px] h-[54px] w-full rounded-none border-[var(--kd-burgundy)] bg-[var(--kd-tile)] px-5 text-[14px] font-normal tracking-[0.02em] text-[var(--kd-burgundy)] hover:bg-[var(--kd-burgundy)] hover:text-[var(--kd-rail-text)]"
                                 >
-                                    <Palette className="h-4 w-4" />
-                                    {t('productCustomization.customizeThis')}
+                                    <Link to={`/product/${product.id}/customize`}>
+                                        <Palette className="h-[15px] w-[15px]" />
+                                        {t('productCustomization.customizeThis')}
+                                    </Link>
                                 </Button>
                             )}
 
+                            {/* Customization note — only when customizing */}
+                            {customize && (
+                                <div className={BLOCK}>
+                                    <div className={`${EYEBROW} pb-1.5`}>{t('productCustomization.customizationDetails')}</div>
+                                    <p className="pb-3 text-[13px] text-[var(--kd-muted)]">{t('productCustomization.customizationDetailsHint')}</p>
+                                    <textarea
+                                        value={customizationNote}
+                                        onChange={(e) => setCustomizationNote(e.target.value.slice(0, 1000))}
+                                        rows={4}
+                                        maxLength={1000}
+                                        placeholder={t('productCustomization.customizationPlaceholder')}
+                                        className="w-full resize-none border border-[var(--kd-hairline)] bg-[var(--kd-tile)] px-3 py-2.5 text-[14px] text-[var(--kd-ink)] placeholder:text-[var(--kd-muted)] focus:border-[var(--kd-burgundy)] focus:ring-1 focus:ring-[var(--kd-burgundy)] focus:outline-none"
+                                    />
+                                    <p className="pt-1 text-right text-[11px] text-[var(--kd-muted)] tabular-nums">{customizationNote.length}/1000</p>
+                                </div>
+                            )}
+
+                            {/* Measurements — only when customizing */}
+                            {customize && (
+                                <div className={BLOCK}>
+                                    <div className={`${EYEBROW} pb-1.5`}>
+                                        {t('productCustomization.customMeasurements')}{' '}
+                                        <span className="normal-case">{t('productCustomization.measurementsOptional')}</span>
+                                    </div>
+                                    <p className="pb-4 text-[13px] text-[var(--kd-muted)]">{t('productCustomization.measurementsHint')}</p>
+                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                        {measurementFields.map(({ key, label }) => {
+                                            const val = measurements[key as keyof typeof measurements];
+                                            const warning = measurementWarning(key, val);
+                                            return (
+                                                <div key={key}>
+                                                    <div className="flex items-center gap-1.5 pb-1.5">
+                                                        <label htmlFor={`measure-${key}`} className="text-[11px] tracking-[0.14em] text-[var(--kd-muted)] uppercase">
+                                                            {label}
+                                                        </label>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openGuide(key)}
+                                                            className="text-[var(--kd-muted)] transition-colors duration-150 hover:text-[var(--kd-burgundy)]"
+                                                            aria-label={t('productCustomization.helpFor', { label })}
+                                                        >
+                                                            <HelpCircle className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="relative">
+                                                        <input
+                                                            id={`measure-${key}`}
+                                                            type="number"
+                                                            placeholder="0"
+                                                            value={val}
+                                                            onChange={(e) => setMeasurements((m) => ({ ...m, [key]: e.target.value }))}
+                                                            className={`h-12 w-full border bg-[var(--kd-tile)] px-3 pr-9 text-[14px] text-[var(--kd-ink)] tabular-nums focus:border-[var(--kd-burgundy)] focus:ring-1 focus:ring-[var(--kd-burgundy)] focus:outline-none ${
+                                                                warning ? 'border-[var(--kd-burgundy)]' : 'border-[var(--kd-hairline)]'
+                                                            }`}
+                                                        />
+                                                        <span className="absolute top-1/2 right-3 -translate-y-1/2 text-[12px] text-[var(--kd-muted)]">cm</span>
+                                                    </div>
+                                                    {warning && <p className="pt-1 text-[11px] leading-tight text-[var(--kd-body)]">{t(warning)}</p>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Quantity */}
-                            <div className="border-b border-[#111111]/20 py-6">
-                                <div className="mb-3 text-sm font-semibold text-slate-700">{t('productCustomization.quantity')}</div>
-                                <div className="flex items-center gap-4">
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
+                            <div className={BLOCK}>
+                                <div className={`${EYEBROW} pb-3`}>{t('productCustomization.quantity')}</div>
+                                <div className="flex w-max border border-[var(--kd-hairline)] bg-[var(--kd-tile)]">
+                                    <button
+                                        type="button"
                                         onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                                        disabled={quantity === 1}
-                                        className="h-9 w-9 rounded-none border-[#111111]/25 text-[#514843] hover:bg-[#111111] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                                        disabled={quantity <= 1}
+                                        aria-label={t('cart.decrease')}
+                                        className="flex h-12 w-12 items-center justify-center text-[var(--kd-ink)] transition-colors duration-150 hover:bg-[rgba(111,29,36,0.07)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                                     >
-                                        <Minus className="h-4 w-4" />
-                                    </Button>
+                                        <Minus className="h-3.5 w-3.5" />
+                                    </button>
                                     <input
                                         type="number"
                                         min={1}
                                         max={1000}
                                         value={quantity}
+                                        aria-label={t('productCustomization.quantity')}
                                         onChange={(e) => {
                                             const v = parseInt(e.target.value, 10);
-                                            if (!isNaN(v) && v >= 1 && v <= 1000) setQuantity(v);
+                                            // Ignore a mid-edit empty field; clamp anything else, so typing
+                                            // 2000 lands on the ceiling instead of being silently dropped.
+                                            if (Number.isNaN(v)) return;
+                                            setQuantity(Math.min(1000, Math.max(1, v)));
                                         }}
-                                        className="w-14 border border-[#111111]/25 py-1 text-center text-sm font-medium text-[#111111] focus:ring-1 focus:ring-[#111111] focus:outline-none"
+                                        className="kd-display h-12 w-[54px] border-x border-[var(--kd-rule)] bg-transparent text-center text-[22px] text-[var(--kd-ink)] tabular-nums focus:outline-none"
                                     />
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
+                                    <button
+                                        type="button"
                                         onClick={() => setQuantity((q) => Math.min(q + 1, 1000))}
                                         disabled={quantity >= 1000}
-                                        className="h-9 w-9 rounded-none border-[#111111]/25 text-[#514843] hover:bg-[#111111] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                                        aria-label={t('cart.increase')}
+                                        className="flex h-12 w-12 items-center justify-center text-[var(--kd-ink)] transition-colors duration-150 hover:bg-[rgba(111,29,36,0.07)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                                     >
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
+                                        <Plus className="h-3.5 w-3.5" />
+                                    </button>
                                 </div>
                             </div>
 
                             {/* Tailor review notice */}
-                            <div className="flex items-start gap-2.5 border-b border-[#111111]/20 py-5">
-                                <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                                <p className="text-sm leading-relaxed text-slate-600">{t('productCustomization.tailorReviewNotice')}</p>
+                            <div className="flex items-start gap-[11px] border-b border-[var(--kd-rule)] py-[18px]">
+                                <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--kd-muted)]" />
+                                <p className="max-w-[48ch] text-[14px] leading-[1.5] text-[var(--kd-body)] [text-wrap:pretty]">
+                                    {t('productCustomization.tailorReviewNotice')}
+                                </p>
                             </div>
 
-                            {/* Tailor — fixed to the product's tailor */}
-                            {product.tailor_name && (
-                                <div className="flex items-center gap-3 border-b border-[#111111]/20 py-5">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100">
-                                        <User className="h-4 w-4 text-slate-500" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-slate-400">{t('productCustomization.madeby')}</p>
-                                        {product.tailor_id ? (
-                                            <Link
-                                                to={`/tailor/${product.tailor_id}`}
-                                                className="text-sm font-semibold text-slate-900 hover:underline"
-                                            >
-                                                {product.tailor_name}
-                                            </Link>
-                                        ) : (
-                                            <p className="text-sm font-semibold text-slate-900">{product.tailor_name}</p>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
                             {/* Measurement sanity banner */}
-                            {Object.values(measurements).some((v) => {
-                                const n = parseFloat(v);
-                                return v !== '' && !isNaN(n) && (n > 150 || n < 30);
-                            }) && (
-                                <div className="flex items-start gap-2.5 border-b border-[#111111]/20 py-5">
-                                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                                    <p className="text-sm leading-relaxed text-slate-700">{t('productCustomization.measurementWarning')}</p>
+                            {showMeasurementBanner && (
+                                <div className="flex items-start gap-[11px] border-b border-[var(--kd-rule)] py-[18px]">
+                                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--kd-burgundy)]" />
+                                    <p className="max-w-[48ch] text-[14px] leading-[1.5] text-[var(--kd-body)] [text-wrap:pretty]">
+                                        {t('productCustomization.measurementWarning')}
+                                    </p>
                                 </div>
                             )}
 
                             {/* Order summary */}
-                            <div className="mt-6 border border-[#111111] bg-[#E4E0D7] p-5 text-[#111111]">
-                                <div className="mb-4 space-y-2 text-sm">
-                                    <div className="flex justify-between text-[#6c625b]">
+                            <div className="mt-[22px] border border-[var(--kd-hairline)] bg-[var(--kd-tile)] p-5">
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex justify-between text-[14px] text-[var(--kd-body)]">
                                         <span>{t('productCustomization.subtotal')}</span>
-                                        <span>₾{subtotal}</span>
+                                        <span className="tabular-nums">₾{subtotal}</span>
                                     </div>
-                                    <div className="flex justify-between text-[#6c625b]">
+                                    <div className="flex justify-between text-[14px] text-[var(--kd-body)]">
                                         <span>{t('productCustomization.delivery')}</span>
-                                        <span>₾{shipping}</span>
+                                        <span className="tabular-nums">₾{shipping}</span>
                                     </div>
-                                    <div className="flex justify-between border-t border-[#111111]/20 pt-2 text-base font-semibold text-[#111111]">
-                                        <span>{t('productCustomization.total')}</span>
-                                        <span>₾{total}</span>
+                                    <div className="mt-1 flex items-baseline justify-between border-t border-[var(--kd-rule)] pt-3">
+                                        <span className="text-[15px] font-semibold text-[var(--kd-ink)]">{t('productCustomization.total')}</span>
+                                        <span className="kd-display text-[26px] text-[var(--kd-burgundy)] tabular-nums">
+                                            <Lari />
+                                            {total}
+                                        </span>
                                     </div>
                                 </div>
-                                {orderError && <p className="text-destructive mb-2 text-center text-xs">{orderError}</p>}
-                                <Button
-                                    onClick={handleAddToCart}
-                                    variant="outline"
-                                    className="mb-2 h-auto w-full rounded-none border-[#111111] py-3 text-xs font-semibold tracking-[0.08em] text-[#111111] uppercase hover:bg-[#111111] hover:text-white active:scale-[0.99]"
-                                >
-                                    <ShoppingBag className="h-4 w-4" />
-                                    {t('cart.addToCart')}
-                                </Button>
-                                <Button
-                                    onClick={handleOrder}
-                                    disabled={placing}
-                                    className="h-auto w-full rounded-none bg-[#111111] py-3 text-xs font-semibold tracking-[0.08em] text-white uppercase hover:bg-[#333333] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    {placing && <Loader2 className="h-4 w-4 animate-spin" />}
-                                    {placing ? t('productCustomization.placingOrder') : t('productCustomization.placeOrder')}
-                                </Button>
-                                <p className="mt-3 text-center text-xs text-[#6c625b]">{t('productCustomization.noPaymentNow')}</p>
+
+                                {orderError && <p className="mt-3 text-center text-[12px] text-[var(--kd-burgundy)]">{orderError}</p>}
+
+                                <div className="mt-[18px] flex flex-wrap gap-2.5">
+                                    <Button
+                                        onClick={handleOrder}
+                                        disabled={placing}
+                                        className="h-auto min-h-[52px] flex-[1_1_220px] rounded-none bg-[var(--kd-burgundy)] px-5 text-[15px] font-medium text-[var(--kd-rail-text)] hover:bg-[var(--kd-ink)] disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {placing && <Loader2 className="h-4 w-4 animate-spin" />}
+                                        {placing ? t('productCustomization.placingOrder') : t('productCustomization.placeOrder')}
+                                    </Button>
+                                    <Button
+                                        onClick={handleAddToCart}
+                                        variant="outline"
+                                        className="h-auto min-h-[52px] rounded-none border-[rgba(111,29,36,0.28)] bg-transparent px-5 text-[14px] font-normal text-[var(--kd-ink)] hover:border-[var(--kd-burgundy)] hover:bg-transparent hover:text-[var(--kd-ink)]"
+                                    >
+                                        <ShoppingBag className="h-[15px] w-[15px]" />
+                                        {t('cart.addToCart')}
+                                    </Button>
+                                </div>
+
+                                <p className="mt-3.5 text-[12px] text-[var(--kd-muted)]">{t('productCustomization.noPaymentNow')}</p>
                             </div>
                         </motion.div>
                     </div>
-                </div>
+                </>
             )}
 
             {relatedProducts.length > 0 && (
-                <section className="border-t border-[#111111]/15 bg-[#F4F1E7] py-12 sm:py-16">
-                    <h2 className="mb-9 text-center text-lg font-semibold tracking-[0.04em] text-[#111111] uppercase sm:text-xl">
-                        {t('productCustomization.customersAlsoViewed')}
-                    </h2>
-                    <div className="flex snap-x overflow-x-auto">
-                        {relatedProducts.map((related) => (
-                            <Link
-                                key={related.id}
-                                to={`/product/${related.id}`}
-                                className="group w-[78vw] max-w-[460px] min-w-[260px] shrink-0 snap-start border-r border-[#111111]/15 sm:w-[46vw] lg:w-[32vw]"
-                            >
-                                <div className="aspect-[3/4] overflow-hidden bg-[#E4E0D7]">
-                                    {related.images?.[0] ? (
-                                        <img
-                                            src={related.images[0]}
-                                            alt={related.name}
-                                            className="h-full w-full object-contain p-5 transition-transform duration-500 group-hover:scale-[1.03]"
-                                        />
-                                    ) : (
-                                        <div className="flex h-full items-center justify-center text-[#111111]/20">Kere</div>
-                                    )}
-                                </div>
-                                <div className="min-h-28 bg-[#F4F1E7] px-5 py-4">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <h3 className="text-sm font-semibold text-[#111111] uppercase">{related.name}</h3>
-                                        <span className="shrink-0 text-sm font-semibold text-[#111111]">₾{related.price}</span>
+                <section className="border-t border-[var(--kd-rule)] bg-[var(--kd-stage)]">
+                    <div className="mx-auto w-full max-w-[1440px] px-[clamp(16px,3vw,40px)] py-[clamp(32px,5vw,60px)]">
+                        <div className="text-[11px] tracking-[0.18em] text-[var(--kd-muted)] uppercase">
+                            {t('productCustomization.customersAlsoViewed')}
+                        </div>
+                        <div className="mt-5 grid gap-[clamp(14px,2vw,22px)] grid-cols-[repeat(auto-fill,minmax(min(100%,230px),1fr))]">
+                            {relatedProducts.map((related) => (
+                                <Link
+                                    key={related.id}
+                                    to={`/product/${related.id}`}
+                                    className="flex flex-col border border-[var(--kd-rule)] bg-[var(--kd-tile)] transition-colors duration-150 hover:border-[var(--kd-burgundy)]"
+                                >
+                                    <div className="aspect-[4/5] bg-[var(--kd-stage)]">
+                                        {related.images?.[0] ? (
+                                            <img src={related.images[0]} alt={related.name} className="h-full w-full object-contain p-3.5" />
+                                        ) : (
+                                            <div className="flex h-full w-full items-center justify-center text-[var(--kd-muted)]/40">
+                                                <ImageOff className="h-9 w-9 stroke-[1.4]" />
+                                            </div>
+                                        )}
                                     </div>
-                                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#6c625b]">{related.description}</p>
-                                </div>
-                            </Link>
-                        ))}
+                                    <div className="flex items-baseline justify-between gap-3 border-t border-[var(--kd-rule-soft)] px-4 py-3.5">
+                                        <span className="kd-display text-[19px] leading-[1.15] text-[var(--kd-ink)] [text-wrap:pretty]">
+                                            {related.name}
+                                        </span>
+                                        <span className="shrink-0 text-[14px] text-[var(--kd-burgundy)] tabular-nums">₾{related.price}</span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
                     </div>
                 </section>
             )}
-
-            {/* ── Reviews ── */}
-            <section className="border-t border-[#111111]/15 bg-[#F4F1E7] px-5 py-16 sm:px-8 sm:py-20">
-                <div className="mx-auto max-w-[1100px]">
-                    {reviews.length > 0 ? (
-                        <div>
-                        <div className="mb-5 flex items-center gap-3">
-                            <h2 className="text-xl font-semibold text-[#111111] uppercase">{t('productCustomization.customerReviews')}</h2>
-                            {avgRating !== null && (
-                                <div className="flex items-center gap-1.5">
-                                    <div className="flex">
-                                        {[1, 2, 3, 4, 5].map((n) => (
-                                            <Star
-                                                key={n}
-                                                className="h-4 w-4"
-                                                fill={avgRating >= n ? '#fbbf24' : 'none'}
-                                                stroke={avgRating >= n ? '#fbbf24' : '#cbd5e1'}
-                                                strokeWidth={1.5}
-                                            />
-                                        ))}
-                                    </div>
-                                    <span className="text-sm font-semibold text-slate-700">{avgRating}</span>
-                                    <span className="text-xs text-slate-400">({reviews.length})</span>
-                                </div>
-                            )}
-                        </div>
-                        <div className="mt-8 grid gap-6 sm:grid-cols-2">
-                            {reviews.map((r, i) => (
-                                <motion.div
-                                    key={r.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.5, delay: i * 0.05 }}
-                                    className="border-t border-[#111111]/20 py-5"
-                                >
-                                    <div className="mb-1.5 flex items-center gap-2">
-                                        <div className="flex">
-                                            {[1, 2, 3, 4, 5].map((n) => (
-                                                <Star
-                                                    key={n}
-                                                    className="h-3.5 w-3.5"
-                                                    fill={r.rating >= n ? '#fbbf24' : 'none'}
-                                                    stroke={r.rating >= n ? '#fbbf24' : '#cbd5e1'}
-                                                    strokeWidth={1.5}
-                                                />
-                                            ))}
-                                        </div>
-                                        <span className="text-sm font-medium text-slate-900">{r.reviewer}</span>
-                                        <span className="text-xs text-slate-400">{t('productCustomization.verifiedPurchase')}</span>
-                                    </div>
-                                    <p className="text-sm leading-relaxed text-slate-600">{r.comment}</p>
-                                </motion.div>
-                            ))}
-                        </div>
-                        </div>
-                    ) : (
-                        <div className="py-8 text-center">
-                            <p className="text-lg text-[#111111]">{t('productCustomization.noReviewsWriteOne')}</p>
-                            <Link
-                                to={authUser ? '/customer-dashboard' : '/signin'}
-                                className="mt-8 inline-flex min-h-12 items-center justify-center gap-3 border border-[#111111] px-8 py-3 text-sm font-semibold text-[#111111] uppercase transition-colors hover:bg-[#111111] hover:text-white"
-                            >
-                                <Pencil className="h-4 w-4" />
-                                {t('productCustomization.writeReview')}
-                            </Link>
-                        </div>
-                    )}
-                </div>
-            </section>
 
             <Footer />
 
             {/* ── Login required prompt ── */}
             {showLoginPrompt && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowLoginPrompt(false)} />
+                <div className="kere-product fixed inset-0 z-50 flex items-center justify-center bg-transparent p-4">
+                    <div className="absolute inset-0 bg-[#2A1418]/55" onClick={() => setShowLoginPrompt(false)} />
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.96, y: 12 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xl"
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={t('productCustomization.signInToOrder')}
+                        className="relative z-10 w-full max-w-sm border border-[var(--kd-hairline)] bg-[var(--kd-tile)] p-8 text-center"
                     >
-                        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl">🔒</div>
-                        <h3 className="mb-2 text-lg font-bold text-slate-900">{t('productCustomization.signInToOrder')}</h3>
-                        <p className="mb-6 text-sm leading-relaxed text-slate-500">{t('productCustomization.signInHint')}</p>
-                        <div className="flex flex-col gap-3">
+                        <h3 className="kd-display text-[26px] leading-tight text-[var(--kd-burgundy)]">{t('productCustomization.signInToOrder')}</h3>
+                        <p className="mt-2.5 text-[14px] leading-[1.5] text-[var(--kd-body)]">{t('productCustomization.signInHint')}</p>
+                        <div className="mt-6 flex flex-col gap-2.5">
                             <Button
                                 onClick={() => navigate('/login/customer')}
-                                className="h-auto w-full rounded-xl bg-slate-900 py-3 font-semibold text-white hover:bg-slate-700"
+                                className="h-[52px] rounded-none bg-[var(--kd-burgundy)] text-[15px] font-medium text-[var(--kd-rail-text)] hover:bg-[var(--kd-ink)]"
                             >
                                 {t('productCustomization.signIn')}
                             </Button>
                             <Button
                                 variant="outline"
                                 onClick={() => navigate('/register')}
-                                className="h-auto w-full rounded-xl border-slate-200 py-3 font-medium text-slate-700 hover:bg-slate-50"
+                                className="h-[52px] rounded-none border-[rgba(111,29,36,0.28)] bg-transparent text-[14px] font-normal text-[var(--kd-ink)] hover:border-[var(--kd-burgundy)] hover:bg-transparent hover:text-[var(--kd-ink)]"
                             >
                                 {t('productCustomization.createAccount')}
                             </Button>
                             <Button
-                                variant="ghost"
+                                variant="link"
                                 onClick={() => setShowLoginPrompt(false)}
-                                className="h-auto pt-1 text-sm text-slate-400 hover:bg-transparent hover:text-slate-600"
+                                className="h-auto pt-1 text-[13px] font-normal text-[var(--kd-muted)] no-underline hover:text-[var(--kd-burgundy)]"
                             >
                                 {t('productCustomization.cancel')}
                             </Button>

@@ -619,7 +619,38 @@
         "subtotal": "Subtotal",
         "checkout": "Checkout",
         "youMayAlsoLike": "You may also like",
-        "pageTitle": "Browse Custom Clothing | Kere Marketplace"
+        "pageTitle": "Browse Custom Clothing | Kere Marketplace",
+        "colours": {
+            "black": "Black",
+            "white": "White",
+            "blue": "Blue",
+            "burgundy": "Burgundy",
+            "beige": "Beige",
+            "brown": "Brown",
+            "grey": "Grey",
+            "green": "Green"
+        },
+        "fabrics": {
+            "cotton": "Cotton",
+            "linen": "Linen",
+            "wool": "Wool",
+            "silk": "Silk",
+            "denim": "Denim",
+            "leather": "Leather",
+            "viscose": "Viscose",
+            "chiffon": "Chiffon",
+            "crepe": "Crepe",
+            "jersey": "Jersey"
+        },
+        "categories": {
+            "dresses": "Dresses",
+            "shirts": "Shirts",
+            "pants": "Pants",
+            "jackets": "Jackets",
+            "scarves": "Scarves",
+            "hats": "Hats",
+            "skirts": "Skirts"
+        }
     },
     "ourTailors": {
         "eyebrow": "The Makers",
@@ -1481,5 +1512,9 @@
         "savedAs": "✓ \"{{name}}\" saved to your designs.",
         "loadFailed": "We could not load this garment. Please try again.",
         "backToGarments": "Back to garments"
+    },
+    "measurementSanity": {
+        "tooSmall": "That seems a bit small! Double-check the guide to ensure you're measuring correctly.",
+        "tooLarge": "That seems a bit large! Double-check the guide to ensure you're measuring correctly."
     }
 }

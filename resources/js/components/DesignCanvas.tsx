@@ -232,7 +232,7 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                                                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">cm</span>
                                             </div>
                                             {warning && (
-                                                <p className="text-[10px] text-slate-600 mt-1 leading-tight">{warning}</p>
+                                                <p className="text-[10px] text-slate-600 mt-1 leading-tight">{t(warning)}</p>
                                             )}
                                         </div>
                                     );

@@ -1629,14 +1629,16 @@ body {
   padding-bottom: var(--kere-consent-h, 0px);
 }
 
-/* ── Guided designer ────────────────────────────────────────────────────────
-   The five-step designer runs the art-directed palette from the design pass:
-   warmer and lighter than the studio's --kere-ivory, with Cormorant Garamond
-   on the display type. Scoped to the flow rather than adopted app-wide so the
-   marketplace, dashboards and landing page keep the palette they were built
-   in. Georgian sets wider than Latin, so the display face falls through to
-   Noto Serif Georgian for ka. */
-.kere-designer {
+/* ── Art-directed warm palette ──────────────────────────────────────────────
+   The guided designer, the marketplace and the product page run the palette
+   from the design pass: warmer and lighter than the studio's --kere-ivory,
+   with Cormorant Garamond on the display type. Scoped to the surfaces that
+   were art directed rather than adopted app-wide, so the dashboards and
+   landing page keep the palette they were built in. Georgian sets wider than
+   Latin, so the display face falls through to Noto Serif Georgian for ka. */
+.kere-designer,
+.kere-market,
+.kere-product {
   --kd-burgundy:  #6f1d24;
   --kd-rail-text: #f6ece6;
   --kd-cream:     #faf5ef;
@@ -1646,12 +1648,14 @@ body {
   --kd-body:      #6b4a4a;
   --kd-muted:     #9c7a73;
   --kd-hairline:  rgba(111, 29, 36, 0.22);
+  --kd-rule:      rgba(111, 29, 36, 0.16);
+  --kd-rule-soft: rgba(111, 29, 36, 0.12);
 
   background: var(--kd-cream);
   color: var(--kd-ink);
 }
 
-.kere-designer .kd-display {
+:is(.kere-designer, .kere-market, .kere-product) .kd-display {
   font-family: 'Cormorant Garamond', 'Noto Serif Georgian', Georgia, serif;
   font-weight: 400;
 }
