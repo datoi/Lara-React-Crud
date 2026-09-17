@@ -19,14 +19,20 @@
  *
  * Framing: the masters are shot larger and lower than WomanTshirtClassic/, and
  * the side views are shot at a different zoom again (garment height 1000±44px
- * against the front's 904±6). Each image is therefore scaled to a fixed garment
- * height and pinned to the same shoulder line, so rotating the garment or
- * changing sleeve never makes it jump. Height is the safe axis to normalise on:
- * it is constant across all five sleeves (904±6 across the whole front set),
- * while width — 1149 cap to 1231 oversized — is what distinguishes them, and
- * scaling by height preserves those ratios exactly.
+ * against the sleeved front's 904±6). Each image is therefore scaled to a fixed
+ * garment height and pinned to the same shoulder line, so rotating the garment
+ * or changing sleeve never makes it jump. Height is the safe axis to normalise
+ * on: it is constant within a shoot, while width — 1149 cap to 1231 oversized —
+ * is what distinguishes the sleeves, and scaling by height preserves those
+ * ratios exactly. It is also what lets a shoot framed at another zoom join the
+ * set unchanged: the sleeveless masters carry the garment at 1136-1170px and
+ * land on the same shoulder line as the rest once scaled.
  *
- * Usage: node scripts/prepare-tshirt-photos.mjs [--dry-run]
+ * The seeder's swatch hexes are sampled from these photographs rather than
+ * picked by eye, so --hexes reads the derived set back and prints them; see
+ * sampleHex() for where in the garment it reads.
+ *
+ * Usage: node scripts/prepare-tshirt-photos.mjs [--dry-run | --hexes]
  */
 import sharp from 'sharp';
 import { mkdir, readdir, writeFile } from 'node:fs/promises';
@@ -75,6 +81,53 @@ function bounds(data, info) {
     return { minX, minY, width: maxX - minX + 1, height: maxY - minY + 1, maxX, maxY };
 }
 
+/**
+ * The colour the seeder's dot should show for a derived photo.
+ *
+ * Read from the core of the body — the middle 40% across, 45-80% down from the
+ * shoulder — because the neckline, the hem and the sleeve edges all carry
+ * shading or the white sweep, and a mean over the whole garment comes back
+ * washed out. Within that core the modal colour wins rather than the mean, so
+ * a fold crossing the chest cannot drag the swatch off the dye; channels are
+ * bucketed to 5 levels before the vote so a smooth gradient still lands in one
+ * bucket, and the bucket's own mean is what gets returned.
+ */
+async function sampleHex(file) {
+    const { data, info } = await sharp(file).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    const box = bounds(data, info);
+    const x0 = Math.round(box.minX + box.width * 0.30), x1 = Math.round(box.minX + box.width * 0.70);
+    const y0 = Math.round(box.minY + box.height * 0.45), y1 = Math.round(box.minY + box.height * 0.80);
+
+    const votes = new Map();
+    for (let y = y0; y < y1; y++) {
+        for (let x = x0; x < x1; x++) {
+            const i = (y * info.width + x) * info.channels;
+            const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
+            if ((r + g + b) / 3 >= INK) continue;
+            const key = `${Math.round(r / 51)},${Math.round(g / 51)},${Math.round(b / 51)}`;
+            const vote = votes.get(key) ?? { n: 0, r: 0, g: 0, b: 0 };
+            vote.n++; vote.r += r; vote.g += g; vote.b += b;
+            votes.set(key, vote);
+        }
+    }
+    if (!votes.size) throw new Error(`no garment pixels in the sampling window: ${file}`);
+
+    const top = [...votes.values()].sort((a, b) => b.n - a.n)[0];
+    const channel = value => Math.round(value / top.n).toString(16).padStart(2, '0');
+    return `#${channel(top.r)}${channel(top.g)}${channel(top.b)}`;
+}
+
+// Reads the derived set back rather than the masters, so re-sampling after a
+// palette change costs a second instead of a full re-derive.
+if (process.argv.includes('--hexes')) {
+    const derived = (await readdir(OUT)).filter(file => file.endsWith('-front.png')).sort();
+    for (const file of derived) {
+        const [sleeve, ...rest] = file.replace('-front.png', '').split('-');
+        console.log(`${sleeve}\t${rest.join('-')}\t${await sampleHex(path.join(OUT, file))}`);
+    }
+    process.exit(0);
+}
+
 const dryRun = process.argv.includes('--dry-run');
 const files = (await readdir(SRC)).filter(file => file.endsWith('.png'));
 if (!dryRun) await mkdir(OUT, { recursive: true });
@@ -105,7 +158,7 @@ for (const file of files) {
     const out = await sharp({ create: { width: CANVAS, height: CANVAS, channels: 3, background: '#ffffff' } })
         .composite([{ input: garment, left: Math.round((CANVAS - width) / 2), top: TOP }])
         // Quantised to 200 colours: indistinguishable from lossless at 4x zoom
-        // on the fabric shadows, and a quarter of the weight across 408 files.
+        // on the fabric shadows, and a quarter of the weight across 429 files.
         .png({ compressionLevel: 9, palette: true, quality: 95, colours: 200 })
         .toBuffer();
 

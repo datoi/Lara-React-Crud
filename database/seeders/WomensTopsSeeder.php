@@ -117,13 +117,36 @@ class WomensTopsSeeder extends Seeder
     /**
      * The T-shirt photography, keyed by the sleeve each shoot depicts.
      *
-     * The 2026 studio set photographs one cropped crew tee in five sleeve
-     * constructions. They differ in the sleeve alone: measured across all 102
-     * configurations the body is one garment (hem 584-625px, unchanged between
-     * shoots) while the sleeve runs from a set-in cap ending 48% down the body
-     * to a dropped shoulder ending at 71%. So the shoots are options of the
-     * Sleeves attribute, and fit, length and neckline stay what the file names
-     * declare them to be for every frame — body-fitting, cropped, crew.
+     * Two shoots stand behind these six sleeves, and they photograph different
+     * garments. Cap, Wide, Dropped Shoulder and Oversized come from the 2026
+     * studio set, where the sleeve is the only thing that varies: scaled to a
+     * common garment height their fronts measure 516-563px across, one body
+     * within 4%, while the sleeve runs from a set-in cap ending 48% down the
+     * body to a dropped shoulder ending at 71%. Fit, length and neckline stay
+     * what the file names declare for every frame — body-fitting, cropped, crew.
+     *
+     * Sleeveless and Puff come instead from the 'Fitted' drop (imported
+     * 2026-09-13, 23 colourways each, five views of which four are stored).
+     * That is a visibly trimmer garment: puff fronts measure 415-454px and
+     * sleeveless 297-403px against the studio set's 516-563. Changing sleeve
+     * between the two groups therefore changes the body, not only the sleeve —
+     * the one place this attribute does not hold its own invariant. It buys
+     * Sleeveless a left view it never had and takes Puff from 13 colourways to
+     * 23; reverting Puff to the studio shoot restores the invariant at that
+     * price, and a Wide/Dropped/Oversized re-shoot in the Fitted drop's
+     * vocabulary is what settles it properly.
+     *
+     * Within Sleeveless the spread is wider still — 297-403px, 35.7%, against
+     * 0.5-1.6% inside each studio sleeve — because its neutrals (off-white,
+     * beige, camel, charcoal, light-gray) were shot on a longer tank than its
+     * brights. The two groups separate cleanly, those five at 297-330 and the
+     * other eighteen at 345-403, and this is not only a number: Off-White and
+     * White are neighbours in the palette, so clicking from one to the other
+     * shows the garment 36% wider at the same height — a slimmer long tank
+     * against a wide crop top, which reads as two garments rather than one in
+     * two colours. Accepted rather than corrected, because rescaling one group
+     * to match the other would misrepresent what was photographed; re-shooting
+     * the five neutrals on the body the brights were shot on is the fix.
      *
      * Both the masters and the derived set are named by the sleeve slug, so a
      * key here is also the file prefix on disk — see photoPath().
@@ -136,6 +159,31 @@ class WomensTopsSeeder extends Seeder
      * scripts/prepare-tshirt-photos.mjs.
      */
     private const TSHIRT_SLEEVES = [
+        'sleeveless' => [
+            ['slug' => 'black',           'name' => 'Black',        'hex' => '#131314'],
+            ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#414042'],
+            ['slug' => 'navy',            'name' => 'Navy',         'hex' => '#171f37'],
+            ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#452b20'],
+            ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#b77641'],
+            ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#d6bea0'],
+            ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#f4e2bd'],
+            ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#eeeae1'],
+            ['slug' => 'white',           'name' => 'White',        'hex' => '#e8e8ea'],
+            ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#bbbbbb'],
+            ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#d99193'],
+            ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#f52965'],
+            ['slug' => 'red',             'name' => 'Red',          'hex' => '#d60d21'],
+            ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#6a1021'],
+            ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fa5f0c'],
+            ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#f9cd0d'],
+            ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#5c5c32'],
+            ['slug' => 'green',           'name' => 'Green',        'hex' => '#31763a'],
+            ['slug' => 'turquoise',       'name' => 'Turquoise',    'hex' => '#21b5b8'],
+            ['slug' => 'sky',             'name' => 'Sky',          'hex' => '#8dcbea'],
+            ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#356db9'],
+            ['slug' => 'lavender',        'name' => 'Lavender',     'hex' => '#bda6e2'],
+            ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#6334a4'],
+        ],
         'cap' => [
             ['slug' => 'black',           'name' => 'Black',        'hex' => '#151515'],
             ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#3c4249'],
@@ -234,20 +282,50 @@ class WomensTopsSeeder extends Seeder
             ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#572e88'],
         ],
         'puff' => [
-            ['slug' => 'black',           'name' => 'Black',        'hex' => '#1f1f1f'],
-            ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#48474a'],
-            ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#6e4b3a'],
-            ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#d09c74'],
-            ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#ead6c0'],
-            ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#f3e9da'],
-            ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#eee9e1'],
-            ['slug' => 'white',           'name' => 'White',        'hex' => '#e8e7e9'],
-            ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#c1c1c3'],
-            ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#f9dad9'],
-            ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#f6357f'],
-            ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#5a192b'],
-            ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fd6b1f'],
+            ['slug' => 'black',           'name' => 'Black',        'hex' => '#1f1f20'],
+            ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#525254'],
+            ['slug' => 'navy',            'name' => 'Navy',         'hex' => '#1f3055'],
+            ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#482c21'],
+            ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#b78d69'],
+            ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#d0bba7'],
+            ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#ebe0d0'],
+            ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#e2ded7'],
+            ['slug' => 'white',           'name' => 'White',        'hex' => '#dddde1'],
+            ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#c2c2c5'],
+            ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#d99ea2'],
+            ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#ec7291'],
+            ['slug' => 'red',             'name' => 'Red',          'hex' => '#b9171e'],
+            ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#79141f'],
+            ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#ee6016'],
+            ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#f4c81e'],
+            ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#6a7247'],
+            ['slug' => 'green',           'name' => 'Green',        'hex' => '#468840'],
+            ['slug' => 'turquoise',       'name' => 'Turquoise',    'hex' => '#0eaabb'],
+            ['slug' => 'sky',             'name' => 'Sky',          'hex' => '#63bbee'],
+            ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#367acb'],
+            ['slug' => 'lavender',        'name' => 'Lavender',     'hex' => '#b79cde'],
+            ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#7c50ad'],
         ],
+    ];
+
+    /**
+     * The palette's canonical order, and the source of every colour's
+     * display_order.
+     *
+     * The picker is the union of the shoots' colour sets (see garmentColors.ts),
+     * ordered by the lowest display_order a colour holds anywhere. That reads a
+     * colour's place in the palette off its position in a shoot only while every
+     * shoot covers the palette densely enough for the positions to agree — and
+     * they do not. Dropped carries 20 of the 24 and Emerald is unique to Cap,
+     * so a shoot's own indices would have renumbered most of the palette from
+     * whatever it happened to skip. Ordering is a property of the palette, not
+     * of whichever shoot included a colour, so it is stated here once and every
+     * shoot writes the same number for the same colour.
+     */
+    private const TSHIRT_PALETTE = [
+        'black', 'charcoal', 'navy', 'brown', 'camel', 'beige', 'cream', 'off-white',
+        'white', 'light-gray', 'blush', 'pink', 'red', 'burgundy', 'orange', 'yellow',
+        'olive', 'emerald', 'green', 'turquoise', 'sky', 'blue', 'lavender', 'purple',
     ];
 
     /**
@@ -263,7 +341,7 @@ class WomensTopsSeeder extends Seeder
                 'sleeves'  => ['one-sleeve'],
             ],
             'photos' => [
-                // Sleeves is the attribute the shoot varies — five constructions
+                // Sleeves is the attribute the shoot varies — six constructions
                 // of one tee — so its options carry the photographs and the
                 // colourways, and it is the layer the canvas paints.
                 'attribute' => 'sleeves',
@@ -442,7 +520,7 @@ class WomensTopsSeeder extends Seeder
         }
 
         // Retires attributes this garment no longer has — including the 'style'
-        // selector the photography used to sit behind, now that its five shoots
+        // selector the photography used to sit behind, now that its six shoots
         // are sleeve options. Cascades to their options and colours; a saved
         // design holding a removed id falls back to the category default when
         // it is reopened.
@@ -604,9 +682,13 @@ class WomensTopsSeeder extends Seeder
      * The colourways of one option, or none when it is not photographed.
      *
      * Colours hang off the option rather than the garment because each shoot
-     * has its own set — the puff sleeve was shot in 13 colours, the others in
-     * 20 to 23 — and its own sampled hexes. Every sleeve leads with the same
-     * cover colour, so the dots do not move when the customer changes sleeve.
+     * has its own set — Dropped Shoulder carries 20 of the palette's 24 and the
+     * other five carry 23, but not the same 23: Emerald is unique to Cap, which
+     * is in turn the only sleeve without Green — and its own sampled hexes.
+     * Every sleeve leads with
+     * the same cover colour, so the dots do not move when the customer changes
+     * sleeve, and every shoot numbers a colour from TSHIRT_PALETTE rather than
+     * from its own position, so a sparse set cannot renumber the picker.
      */
     private function seedColors(LayerOption $option, ?array $photos, string $slug, ?array $colors): void
     {
@@ -618,7 +700,7 @@ class WomensTopsSeeder extends Seeder
 
         $names = [];
 
-        foreach ($colors as $index => $color) {
+        foreach ($colors as $color) {
             $names[] = $color['name'];
 
             $option->colors()->updateOrCreate(
@@ -630,7 +712,7 @@ class WomensTopsSeeder extends Seeder
                     'left_image_path' => self::photoPath($photos, $slug, $color['slug'], 'left'),
                     'right_image_path' => self::photoPath($photos, $slug, $color['slug'], 'right'),
                     'is_default' => $color['slug'] === $photos['cover'],
-                    'display_order' => $index,
+                    'display_order' => self::paletteOrder($color['slug']),
                 ],
             );
         }
@@ -638,6 +720,25 @@ class WomensTopsSeeder extends Seeder
         // A colour dropped from the shoot must not linger as a dot pointing at
         // a file that is no longer served.
         $option->colors()->whereNotIn('name', $names)->delete();
+    }
+
+    /**
+     * A colour's place in the palette.
+     *
+     * Throws rather than sorting an unlisted colour to the end: a shoot that
+     * introduces a colour word TSHIRT_PALETTE has not placed is a decision about
+     * where it belongs, and guessing it silently is how the ordering drifted in
+     * the first place.
+     */
+    private static function paletteOrder(string $slug): int
+    {
+        $index = array_search($slug, self::TSHIRT_PALETTE, true);
+
+        if ($index === false) {
+            throw new \InvalidArgumentException("Colour '{$slug}' has no place in TSHIRT_PALETTE.");
+        }
+
+        return $index;
     }
 
     /**

@@ -30,3 +30,9 @@ yarn-error.log
 /public/assets/garments/Woman T-shirts/
 /public/assets/garments/WomanTshirtCassic2/
 /public/assets/garments/New Tshirts/
+
+# Raw studio drops exactly as delivered — the source the masters above are renamed from.
+/garment-masters/
+
+# Source briefs and local agent settings — not part of the app.
+/.claude/
