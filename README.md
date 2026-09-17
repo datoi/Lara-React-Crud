@@ -609,6 +609,22 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-18] Uploads survive a deploy
+
+**Uploads move to object storage, because the container does not keep them.** Railway replaces the container on every release, so a file written to its own disk is gone by the next deploy. That was survivable while it only cost product photos; it is not survivable for the identity document a tailor is verified against, which could be uploaded on Monday and gone on Tuesday without anyone noticing it had been.
+
+- **Two disks over one bucket**, because the two kinds of file want opposite things. `uploads` is public and answers with the bucket's own hostname, so product photos come off a CDN instead of through PHP. `documents` is private, lives under a `private/` prefix, and hands out no URL at all.
+- **Nothing in the code names a disk.** `filesystems.uploads_disk` and `filesystems.documents_disk` resolve to object storage when `R2_BUCKET` is set and to the local disks when it is not, so a laptop and a test run behave exactly as they did before and production behaves as it should. URLs are asked of the disk rather than assembled from `APP_URL`, which is what lets the same call return `/storage/...` locally and a CDN URL deployed.
+- **Cloudflare R2** by default — S3-compatible, so the driver is `s3` and any other provider works by pointing `R2_ENDPOINT` elsewhere. R2 charges nothing for egress, which matters for a site that mostly serves images. `league/flysystem-aws-s3-v3` added, pinned to `^3.0`.
+- **Old files are not migrated.** Anything already uploaded keeps the URL it has; on a deployed container most of those files are gone already, which is the problem being fixed rather than one being introduced.
+
+**Verified:** with no bucket configured the disks resolve to `public`/`local` and a product URL still reads `http://127.0.0.1:8000/storage/products/x.png` — byte-identical to the previous behaviour. With a bucket configured they resolve to `uploads`/`documents` and the same URL reads `https://cdn.example.com/products/x.png`, with documents private under `private/`. Seven tests cover both sides of that switch, the private document answering with no URL, a re-upload replacing rather than duplicating identity papers, and the S3 adapter actually being installed — which otherwise fails at runtime rather than at deploy. Suite 82 green.
+
+**Still to do:** set the five `R2_*` variables in Railway. Until they are set the app runs exactly as it does now, losing uploads on each deploy — the fallback is deliberate, so a missing bucket degrades rather than breaks, but it is not a state to leave production in.
+
+
+---
+
 ### [2026-09-17] Customer registration asks how old you are, and means it
 
 **What was done:** Customer sign-up follows the four screens the spec lays out — account, verify, age, terms — and the two new ones do something rather than collect a claim. Someone under sixteen is refused. Someone sixteen or seventeen registers, but cannot order until a parent or legal guardian confirms by following a link sent to their own email.
