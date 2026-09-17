@@ -73,6 +73,8 @@ export default function ProductCustomization({ customize = false }: { customize?
     const [ordered, setOrdered] = useState(false);
     const [placing, setPlacing] = useState(false);
     const [orderError, setOrderError] = useState('');
+    /** The order was placed but payment could not be started — pay from the dashboard. */
+    const [paymentDeferred, setPaymentDeferred] = useState(false);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
     const [guideStep, setGuideStep] = useState<MeasurementKey | null>(null);
     // The review list came off the page with the redesign; only the summary the
@@ -266,12 +268,55 @@ export default function ProductCustomization({ customize = false }: { customize?
             const data = await res.json();
             clearPendingOrder();
             setAssignedTailor(data.tailor_name ?? product!.tailor_name ?? t('productCustomization.yourTailorFallback'));
+
+            // The order exists but is unpaid, so payment is the next step rather
+            // than a later errand: go straight to the gateway. Everything below
+            // is the fallback — the order is already placed, so a payment that
+            // cannot be started must not read as a failed order. The customer
+            // lands on the dashboard, where the same order is waiting with a Pay
+            // button, and is told that is what happened.
+            if (await openPayment(data.id)) return;
+
             setOrdered(true);
             redirectRef.current = setTimeout(() => navigate('/customer-dashboard'), 3000);
         } catch {
             setOrderError(t('productCustomization.errorConnection'));
         } finally {
             setPlacing(false);
+        }
+    };
+
+    /**
+     * Start payment for a freshly placed order and hand the browser to Flitt.
+     *
+     * Returns false if the payment could not be started, leaving the caller to
+     * fall back — never throws, because by this point the order is placed and
+     * losing it to a gateway hiccup would be worse than an unpaid order.
+     */
+    const openPayment = async (orderId?: number): Promise<boolean> => {
+        const authToken = getAuthToken();
+        if (!orderId || !authToken) return false;
+
+        try {
+            const res = await fetch(`/api/orders/${orderId}/pay`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${authToken}`, Accept: 'application/json' },
+            });
+            const data = await res.json();
+
+            if (!res.ok || !data.checkout_url) {
+                setPaymentDeferred(true);
+
+                return false;
+            }
+
+            window.location.href = data.checkout_url;
+
+            return true;
+        } catch {
+            setPaymentDeferred(true);
+
+            return false;
         }
     };
 
@@ -346,6 +391,12 @@ export default function ProductCustomization({ customize = false }: { customize?
                             {t('productCustomization.orderSuccess')}
                         </h2>
                         <p className="mt-3 text-[15px] text-[var(--kd-body)]">{t('productCustomization.orderSuccessSent', { tailor: assignedTailor })}</p>
+                        {/* The order is placed either way; this says which of the
+                            two things just happened rather than leaving the
+                            customer to discover an unpaid order on their own. */}
+                        {paymentDeferred && (
+                            <p className="mt-4 text-[14px] text-[var(--kd-burgundy)]">{t('productCustomization.paymentDeferred')}</p>
+                        )}
                         <p className="mt-4 text-[13px] text-[var(--kd-muted)]">{t('productCustomization.orderSuccessRedirect')}</p>
                     </motion.div>
                 </div>

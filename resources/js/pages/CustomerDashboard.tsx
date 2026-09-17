@@ -13,6 +13,7 @@ import { NotificationBell } from '../components/NotificationBell';
 import { ReviewModal } from '../components/ReviewModal';
 import { OrderChat } from '../components/OrderChat';
 import { OrderCardSkeleton } from '../components/skeletons/OrderCardSkeleton';
+import { translateServerMessage } from '../lib/serverMessage';
 
 interface OrderItem {
     id: number;
@@ -60,6 +61,11 @@ interface CustomerOrder {
     id: number;
     order_type: 'marketplace' | 'custom' | 'remodel';
     status: string;
+    /**
+     * Absent on orders placed before card payment existed. 'expired' is written
+     * when an unpaid order is cancelled, which closes it to payment.
+     */
+    payment_status?: 'unpaid' | 'paid' | 'expired' | 'not_required';
     total: number;
     expected_price?: number | null;
     tailor_id: number | null;
@@ -98,6 +104,13 @@ const STATUS_CONFIG: Record<string, { labelKey: string; color: string; icon: typ
     delivered:  { labelKey: 'customerDashboard.statusDelivered',  color: 'bg-slate-900 text-white',      icon: CheckCircle },
     cancelled:  { labelKey: 'customerDashboard.statusCancelled',  color: 'bg-slate-200 text-slate-600',  icon: X },
 };
+
+/**
+ * Orders that still have work ahead of them, and so may be paid for. Mirrors
+ * PaymentController::PAYABLE_STATUSES — the server is the one that enforces it,
+ * this only keeps the button from appearing where the server would refuse.
+ */
+const PAYABLE_STATUSES = new Set(['pending', 'pending_assignment', 'processing']);
 
 function StatusBadge({ status }: { status: string }) {
     const { t } = useTranslation();
@@ -487,7 +500,89 @@ export default function CustomerDashboard() {
     const [selectedOrder, setSelected]  = useState<CustomerOrder | null>(null);
     const [openTab, setOpenTab]         = useState<'details' | 'messages'>('details');
     const [reviewOrder, setReviewOrder] = useState<CustomerOrder | null>(null);
+    const [payingOrderId, setPayingOrderId] = useState<number | null>(null);
+    const [payError, setPayError]       = useState<string | null>(null);
+    /** Set while a 16–17 year old is waiting on a parent or guardian. */
+    const [consentPending, setConsentPending] = useState<{ email: string | null } | null>(null);
+    const [resending, setResending]     = useState(false);
+    const [resent, setResent]           = useState(false);
     const [msgCounts, setMsgCounts]     = useState<Record<number, number>>({});
+
+    /**
+     * Hand the customer to the gateway to pay an order they have already placed.
+     *
+     * The checkout URL is built server-side, so this only follows where it is
+     * sent. Navigation away is the success path — the flag is cleared only when
+     * something goes wrong, since on success this page is gone.
+     */
+    const startPayment = async (orderId: number) => {
+        setPayingOrderId(orderId);
+        setPayError(null);
+
+        try {
+            const res = await fetch(`/api/orders/${orderId}/pay`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+            });
+            const data = await res.json();
+
+            if (!res.ok || !data.checkout_url) {
+                // Never data.message: it is English, and this page is not.
+                setPayError(translateServerMessage(data, t, 'customerDashboard.payFailed'));
+                setPayingOrderId(null);
+
+                // The order moved under us — settled or cancelled in another tab
+                // — so the list is stale and the Pay button should not still be
+                // sitting there inviting a second attempt.
+                if (res.status === 409) {
+                    setRetryKey((k) => k + 1);
+                }
+
+                return;
+            }
+
+            window.location.href = data.checkout_url;
+        } catch {
+            setPayError(t('customerDashboard.payFailed'));
+            setPayingOrderId(null);
+        }
+    };
+
+    /**
+     * Ask the server whether this account is waiting on a guardian.
+     *
+     * Read from /api/me rather than the stored auth user, because consent can
+     * be given from another device entirely — the adult's — and the copy in
+     * sessionStorage would never learn about it.
+     */
+    useEffect(() => {
+        if (!token) return;
+
+        fetch('/api/me', { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } })
+            .then(r => (r.ok ? r.json() : null))
+            .then(data => {
+                const me = data?.user;
+                setConsentPending(me?.guardian_consent_pending ? { email: me.guardian_email ?? null } : null);
+            })
+            .catch(() => { /* the banner is a courtesy; the server is the gate */ });
+    }, [token, retryKey]);
+
+    const resendConsent = async () => {
+        setResending(true);
+
+        try {
+            const res = await fetch('/api/register/guardian-consent/resend', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+            });
+
+            setResent(res.ok);
+        } catch {
+            setResent(false);
+        } finally {
+            setResending(false);
+        }
+    };
 
     useEffect(() => {
         if (!token) { navigate('/login/customer'); return; }
@@ -585,6 +680,37 @@ export default function CustomerDashboard() {
                     </div>
                 </div>
 
+                {/* Waiting on an adult. Placed above everything because it is the
+                    reason ordering does not work, and the customer has no other
+                    way to find that out. */}
+                {consentPending && (
+                    <div className="mb-8 rounded-xl border border-brand/20 bg-brand/5 px-4 py-4 sm:px-5">
+                        <p className="text-sm font-medium text-slate-900">
+                            {t('customerDashboard.guardianPendingTitle')}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-600">
+                            {consentPending.email
+                                ? t('customerDashboard.guardianPendingBody', { email: consentPending.email })
+                                : t('customerDashboard.guardianPendingBodyNoEmail')}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={resending || resent}
+                                onClick={() => void resendConsent()}
+                            >
+                                {resending
+                                    ? t('customerDashboard.guardianResending')
+                                    : resent
+                                        ? t('customerDashboard.guardianResent')
+                                        : t('customerDashboard.guardianResend')}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-8">
                     {[
@@ -649,6 +775,11 @@ export default function CustomerDashboard() {
                         </div>
                     ) : (
                         <div className="divide-y divide-slate-50">
+                            {payError && (
+                                <p role="alert" className="px-3 sm:px-5 py-3 text-sm text-destructive bg-destructive/5">
+                                    {payError}
+                                </p>
+                            )}
                             {orders.map((order, i) => (
                                 <motion.div
                                     key={order.id}
@@ -695,6 +826,23 @@ export default function CustomerDashboard() {
                                         </p>
                                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                             <StatusBadge status={order.status} />
+                                            {order.order_type === 'marketplace' && order.payment_status === 'unpaid' && PAYABLE_STATUSES.has(order.status) && (
+                                                <>
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-brand bg-brand/10 rounded-full px-2 py-0.5">
+                                                        {t('customerDashboard.awaitingPayment')}
+                                                    </span>
+                                                    <Button
+                                                        size="sm"
+                                                        disabled={payingOrderId === order.id}
+                                                        onClick={e => { e.stopPropagation(); void startPayment(order.id); }}
+                                                        className="h-7 px-3 text-xs"
+                                                    >
+                                                        {payingOrderId === order.id
+                                                            ? t('customerDashboard.payStarting')
+                                                            : t('customerDashboard.payNow')}
+                                                    </Button>
+                                                </>
+                                            )}
                                             {order.status === 'pending_assignment' && order.tailor_requests_count > 0 && (
                                                 <span className="inline-flex items-center gap-1 text-[10px] font-medium text-white bg-slate-900 rounded-full px-2 py-0.5">
                                                     <Users className="w-3 h-3" />

@@ -8,6 +8,8 @@ import { OtpStep } from '../components/OtpStep';
 import { saveAuth, type AuthUser } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { Navigation } from '../components/landing/Navigation';
+import { CustomerProfileSteps } from '../components/CustomerProfileSteps';
+import { serverMessageKey } from '../lib/serverMessage';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -20,7 +22,7 @@ interface FormState {
     password_confirmation: string;
 }
 
-type Step = 'form' | 'email-otp';
+type Step = 'form' | 'email-otp' | 'profile';
 
 const EMPTY: FormState = {
     first_name: '',
@@ -61,6 +63,8 @@ export default function RegisterCustomer() {
         if (!form.phone.trim())       e.phone      = t('register.errorRequired');
         if (!form.password)           e.password   = t('register.errorRequired');
         else if (form.password.length < 8) e.password = t('register.errorMinPassword');
+        // The spec asks for a digit as well as the length.
+        else if (!/\d/.test(form.password)) e.password = t('register.errorPasswordNeedsNumber');
         if (form.password !== form.password_confirmation) e.password_confirmation = t('register.errorPasswordMatch');
         setFormErrors(e);
         return Object.keys(e).length === 0;
@@ -84,11 +88,14 @@ export default function RegisterCustomer() {
                 if (data.errors) {
                     const mapped: Partial<FormState> = {};
                     for (const [k, v] of Object.entries(data.errors)) {
-                        (mapped as Record<string, string>)[k] = (v as string[])[0];
+                        // The server answers with a code; its prose is English.
+                        (mapped as Record<string, string>)[k] = t(
+                            serverMessageKey((v as string[])[0]) ?? 'register.errorFieldInvalid',
+                        );
                     }
                     setFormErrors(mapped);
                 } else {
-                    setFormErrors({ general: data.message ?? t('register.errorRegistrationFailed') });
+                    setFormErrors({ general: t(serverMessageKey(data.code) ?? 'register.errorRegistrationFailed') });
                 }
                 return;
             }
@@ -121,7 +128,7 @@ export default function RegisterCustomer() {
                                 transition={{ duration: 0.35 }}
                                 className="mx-auto w-full max-w-[520px] bg-black/42 px-5 py-6 backdrop-blur-[2px] sm:px-6"
                             >
-                                <StepProgress current={1 as 1 | 2} />
+                                <StepProgress current={1} />
 
                                 <div className="mb-8 text-center">
                                     <Link
@@ -254,7 +261,7 @@ export default function RegisterCustomer() {
                                 transition={{ duration: 0.35 }}
                                 className="mx-auto w-full max-w-[420px] bg-black/42 px-5 py-6 backdrop-blur-[2px] sm:px-6"
                             >
-                                <StepProgress current={2 as 1 | 2} />
+                                <StepProgress current={2} />
                                 <OtpStep
                                     icon={<Mail className="h-6 w-6 text-white" />}
                                     title={t('register.verifyEmailTitle')}
@@ -263,12 +270,29 @@ export default function RegisterCustomer() {
                                     otpType="email"
                                     endpoint="/api/register/verify-email"
                                     onSuccess={(data) => {
+                                        // The account exists now, but the spec asks for
+                                        // age and the terms after verification — so sign in
+                                        // and carry on rather than leaving for the dashboard.
                                         saveAuth(data.user as AuthUser, data.token as string);
-                                        navigate('/customer-dashboard');
+                                        setStep('profile');
                                     }}
                                     onBack={() => setStep('form')}
                                     isLastStep
                                 />
+                            </motion.div>
+                        )}
+
+                        {step === 'profile' && (
+                            <motion.div
+                                key="profile"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.35 }}
+                                className="mx-auto w-full max-w-[460px] bg-black/42 px-5 py-6 backdrop-blur-[2px] sm:px-6"
+                            >
+                                <StepProgress current={3} />
+                                <CustomerProfileSteps onDone={() => navigate('/customer-dashboard')} />
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -280,11 +304,13 @@ export default function RegisterCustomer() {
 
 // ─── Step progress indicator ─────────────────────────────────────────────────
 
-function StepProgress({ current }: { current: 1 | 2 }) {
+function StepProgress({ current }: { current: 1 | 2 | 3 | 4 }) {
     const { t } = useTranslation();
     const steps = [
         { n: 1, label: t('register.stepDetails') },
         { n: 2, label: t('register.stepEmail') },
+        { n: 3, label: t('register.stepAge') },
+        { n: 4, label: t('register.stepTerms') },
     ];
     return (
         <div className="mb-8 flex items-center justify-center gap-2">

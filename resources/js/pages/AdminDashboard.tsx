@@ -33,6 +33,8 @@ interface AdminUser {
     phone: string | null;
     role: string;
     is_suspended: boolean;
+    /** A 16-17 year old whose guardian has not confirmed; they cannot order. */
+    guardian_consent_pending?: boolean;
     created_at: string;
 }
 
@@ -792,6 +794,14 @@ export default function AdminDashboard() {
                                                     }`}>
                                                         {t(`adminDashboard.role${u.role.charAt(0).toUpperCase()}${u.role.slice(1)}`) || u.role}
                                                     </span>
+                                                    {/* Nothing else in this row would show that the
+                                                        account is held: it is not suspended, and the
+                                                        approval status belongs to tailors. */}
+                                                    {u.guardian_consent_pending && (
+                                                        <span className="ml-1.5 inline-flex items-center rounded-full border border-brand/20 bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand">
+                                                            {t('adminDashboard.awaitingGuardian')}
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {u.is_suspended ? (

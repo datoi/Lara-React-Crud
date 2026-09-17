@@ -62,4 +62,52 @@ class UploadController extends Controller
             'url' => asset('storage/' . $path),
         ], 201);
     }
+
+    /**
+     * POST /api/tailor/id-document
+     *
+     * A tailor's identity document, for Kere's verification and nothing else.
+     *
+     * Uploaded after the account exists rather than alongside the rest of the
+     * registration form, and deliberately: the form is submitted before the OTP
+     * is checked, so accepting the file there would mean taking identity
+     * documents from anyone who can reach the endpoint, with no verified phone
+     * behind them and an orphaned file every time a registration is abandoned.
+     * Here the caller is authenticated and the document belongs to a real
+     * account from the moment it lands.
+     *
+     * It goes to the 'local' disk, which is not served over HTTP — no URL is
+     * returned, because there is nothing anyone should be able to fetch. Only
+     * the stored path goes on the user, and that is in the model's $hidden.
+     */
+    public function tailorIdDocument(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'tailor') {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $request->validate([
+            'document' => 'required|file|mimes:jpeg,png,webp,pdf|max:10240', // 10 MB
+        ]);
+
+        $file = $request->file('document');
+        $path = $file->storeAs(
+            'tailor-ids',
+            $user->id . '-' . Str::uuid() . '.' . $file->getClientOriginalExtension(),
+            'local'
+        );
+
+        // A tailor who re-uploads replaces the old document rather than leaving
+        // a second copy of their identity papers on disk.
+        $previous = $user->id_document_path;
+        $user->forceFill(['id_document_path' => $path])->save();
+
+        if ($previous && $previous !== $path) {
+            Storage::disk('local')->delete($previous);
+        }
+
+        return response()->json(['message' => 'Document received.'], 201);
+    }
 }

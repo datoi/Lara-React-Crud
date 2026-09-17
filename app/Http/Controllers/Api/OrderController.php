@@ -47,6 +47,27 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
+        $user = $request->user();
+
+        // One gate for every kind of order, at the only door into them.
+        //
+        // An account exists from the moment its one-time code checks out, which
+        // is before date of birth and the terms are asked for — and a sixteen-
+        // or seventeen-year-old's account waits on an adult besides. Neither is
+        // a state that may buy anything, and putting the check here rather than
+        // in each of the three branches means a fourth kind of order cannot
+        // quietly miss it.
+        if (! $user->mayPlaceOrders()) {
+            return response()->json([
+                'message' => $user->registrationComplete()
+                    ? 'This account is waiting for a parent or guardian to confirm.'
+                    : 'Please finish setting up your account first.',
+                'code' => $user->registrationComplete()
+                    ? 'guardian_consent_pending'
+                    : 'registration_incomplete',
+            ], 403);
+        }
+
         $type = $request->input('order_type', 'marketplace');
 
         if ($type === 'custom') {
@@ -178,6 +199,9 @@ class OrderController extends Controller
                     'order_number' => 'ORD-'.strtoupper(Str::random(8)),
                     'order_type' => 'marketplace',
                     'status' => 'pending',
+                    // Stated rather than left to the column default, so the
+                    // response carries it and the order is explicitly owed.
+                    'payment_status' => 'unpaid',
                     'subtotal' => $subtotal,
                     'shipping' => $shipping,
                     'total' => $subtotal + $shipping,
@@ -206,20 +230,12 @@ class OrderController extends Controller
                     ]);
                 }
 
-                $leadProduct = $products[$lines[0]['product_id']];
-                $extra = count($lines) - 1;
-                $label = $extra > 0
-                    ? "\"{$leadProduct->name}\" and {$extra} more item(s)"
-                    : "\"{$leadProduct->name}\"";
-
-                $this->notify(
-                    $tailor->id,
-                    'new_order',
-                    'New Order Received!',
-                    "You received a new order for {$label} from {$user->getFullName()}.",
-                    $order->id,
-                    ['product_name' => $leadProduct->name]
-                );
+                // Nobody is told about this order yet. A marketplace order is
+                // created unpaid and the customer goes straight to the gateway,
+                // where plenty of them will change their mind — announcing it
+                // here puts tailors to work on orders that were never paid for.
+                // PaymentController::markPaid does the announcing, once money
+                // has actually arrived.
 
                 return $order;
             });
@@ -230,22 +246,18 @@ class OrderController extends Controller
             throw $e;
         }
 
-        try {
-            $order->load('items');
-            Mail::to($user->email)->send(new OrderConfirmation($order));
-        } catch (\Throwable $e) {
-            Log::error('OrderConfirmation email failed: '.$e->getMessage());
-        }
-
-        (new Notifier)->dual(
-            $tailor,
-            "Kere: ახალი შეკვეთა #{$order->order_number} — იხილეთ დეტალები თქვენს პანელზე.",
-            new NewOrderAlert($order, $user)
-        );
+        // The confirmation email and the tailor's SMS both wait for payment too
+        // — see PaymentController::announcePaidOrder. Confirming an order the
+        // customer has not paid for tells them the wrong thing just as surely as
+        // it tells the tailor the wrong thing.
 
         return response()->json([
+            // The id is what the client needs to open payment on the order it
+            // has just placed; the number is what it shows the customer.
+            'id' => $order->id,
             'order_number' => $order->order_number,
             'total' => $order->total,
+            'payment_status' => $order->payment_status,
             'tailor_name' => $tailor->getFullName(),
         ], 201);
     }
@@ -338,6 +350,10 @@ class OrderController extends Controller
                 'tailor_id' => $tailor?->id,
                 'order_number' => 'ORD-'.strtoupper(Str::random(8)),
                 'order_type' => 'custom',
+                // Priced and settled offline once a tailor takes the job — never
+                // card-paid here, so it must not sit at the 'unpaid' default that
+                // the payment path and the expiry job both read as "owes money".
+                'payment_status' => 'not_required',
                 'tailor_assignment_mode' => $assignmentMode,
                 'status' => $status,
                 'subtotal' => 0,
@@ -433,6 +449,8 @@ class OrderController extends Controller
                 'tailor_id' => null,
                 'order_number' => 'RMD-'.strtoupper(Str::random(8)),
                 'order_type' => 'remodel',
+                // As with custom: priced and settled offline, never card-paid here.
+                'payment_status' => 'not_required',
                 'tailor_assignment_mode' => 'manual',
                 'status' => 'pending_assignment',
                 'subtotal' => 0,
@@ -666,7 +684,13 @@ class OrderController extends Controller
             return response()->json(['message' => 'Invalid status transition.'], 422);
         }
 
-        $order->update(['status' => $newStatus]);
+        // Cancelling closes the order to payment as well. Writing `status` alone
+        // would leave payment_status 'unpaid', which is what PaymentController
+        // reads to decide an order is payable — a cancelled order would keep
+        // offering a Pay button and keep minting checkout tokens.
+        $order->update($newStatus === 'cancelled' && $order->payment_status === 'unpaid'
+            ? ['status' => $newStatus, 'payment_status' => 'expired']
+            : ['status' => $newStatus]);
 
         $notifyStatuses = ['processing', 'finished', 'cancelled'];
         $shouldNotify = in_array($data['status'], $notifyStatuses) && $data['status'] !== $oldStatus;

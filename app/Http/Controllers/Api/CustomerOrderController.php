@@ -52,6 +52,7 @@ class CustomerOrderController extends Controller
                 'id' => $order->id,
                 'order_type' => $order->order_type ?? 'marketplace',
                 'status' => $order->status,
+                'payment_status' => $order->payment_status,
                 'total' => $order->total,
                 'tailor_id' => $order->tailor_id,
                 'tailor_name' => $tailorName,
