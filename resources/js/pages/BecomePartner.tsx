@@ -272,11 +272,11 @@ export default function BecomePartner() {
     ];
 
     return (
-        <div className="kere-landing partners-page min-h-screen overflow-x-hidden bg-[#E4E0D7]">
+        <div className="kere-landing partners-page min-h-screen overflow-x-hidden bg-[var(--store-paper)]">
             <Navigation />
 
             {/* ── Partner Hero ── */}
-            <section className="partners-hero-design relative overflow-hidden bg-[#E4E0D7] px-4 pb-14 pt-28 sm:px-6 md:pb-20 md:pt-32 lg:px-8">
+            <section className="partners-hero-design relative overflow-hidden bg-[var(--store-paper)] px-4 pb-14 pt-28 sm:px-6 md:pb-20 md:pt-32 lg:px-8">
                 <div className="pointer-events-none absolute inset-0">
                     <div className="absolute left-0 top-[29%] h-px w-full bg-[#6F1D24]/10" />
                     <div className="absolute bottom-[18%] left-0 h-px w-full bg-[#6F1D24]/10" />
@@ -337,7 +337,7 @@ export default function BecomePartner() {
                         >
                             <div className="absolute left-1/2 top-1/2 h-[82%] w-[82%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#E7D3C6]/70 blur-3xl" />
 
-                            <div className="relative aspect-[4/5] overflow-hidden rounded-[44%_44%_10%_10%/25%_25%_8%_8%] border border-[#6F1D24]/10 bg-[#E4E0D7]">
+                            <div className="relative aspect-[4/5] overflow-hidden rounded-[44%_44%_10%_10%/25%_25%_8%_8%] border border-[#6F1D24]/10 bg-[var(--store-paper)]">
                                 <img
                                     src="/assets/partners/kere-partner-hero.jpg"
                                     alt="Tailor fitting a garment on a dress form"
@@ -449,7 +449,7 @@ export default function BecomePartner() {
                 </div>
             </section>
 
-            <section id="how-it-works" className="partners-process-design scroll-mt-20 overflow-hidden bg-[#E4E0D7] px-4 py-14 sm:px-6 md:py-20 lg:px-8">
+            <section id="how-it-works" className="partners-process-design scroll-mt-20 overflow-hidden bg-[var(--store-paper)] px-4 py-14 sm:px-6 md:py-20 lg:px-8">
                 <div className="mx-auto max-w-[1320px]">
                     <ProcessExperience
                         steps={[
@@ -481,14 +481,14 @@ export default function BecomePartner() {
                     <div className="mt-9 flex flex-col gap-5 border-t border-[#6F1D24]/15 pt-7 sm:flex-row sm:items-center sm:justify-end">
                         <PartnerCTA
                             label={t('partners.getStarted')}
-                            className="group inline-flex min-h-[46px] items-center justify-center gap-3 rounded-full bg-[#1D1D1D] px-7 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#333333]"
+                            className="group inline-flex min-h-[46px] items-center justify-center gap-3 rounded-full bg-brand px-7 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-dark"
                         />
                     </div>
                 </div>
             </section>
 
             {/* ── 5. Featured tailors ── */}
-            <section className="py-20 md:py-28 bg-[#E4E0D7]">
+            <section className="py-20 md:py-28 bg-[var(--store-paper)]">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
@@ -608,7 +608,7 @@ export default function BecomePartner() {
             </section>
 
             {/* ── 6. FAQ ── */}
-            <section id="faq" className="scroll-mt-20 py-20 md:py-28 bg-[#E4E0D7]">
+            <section id="faq" className="scroll-mt-20 py-20 md:py-28 bg-[var(--store-paper)]">
                 <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
@@ -637,7 +637,7 @@ export default function BecomePartner() {
             </section>
 
             {/* ── 7. Final CTA ── */}
-            <section className="relative overflow-hidden bg-[#E4E0D7] px-4 py-16 sm:px-6 md:py-20 lg:px-8">
+            <section className="relative overflow-hidden bg-[var(--store-paper)] px-4 py-16 sm:px-6 md:py-20 lg:px-8">
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[#6F1D24]/15" />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[#6F1D24]/15" />
                 <div className="relative mx-auto max-w-[980px] text-center">
@@ -661,7 +661,7 @@ export default function BecomePartner() {
                         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
                             <PartnerCTA
                                 label={t('partners.createProfile')}
-                                className="partners-final-primary-cta group inline-flex min-h-[50px] w-full items-center justify-center gap-3 rounded-full bg-[#1D1D1D] px-8 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#363636] sm:w-auto"
+                                className="partners-final-primary-cta group inline-flex min-h-[50px] w-full items-center justify-center gap-3 rounded-full bg-brand px-8 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-dark sm:w-auto"
                             />
                             <Link
                                 to="/contact"

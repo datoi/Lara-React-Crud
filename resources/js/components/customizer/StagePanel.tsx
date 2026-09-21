@@ -19,10 +19,6 @@ interface StagePanelProps {
     view: GarmentView;
     onView: (view: GarmentView) => void;
     thumbnailFor: (view: GarmentView) => string | null;
-    /** Small-caps line above the caption — the step the customer is on */
-    eyebrow: string;
-    /** What the garment currently reads as */
-    title: string;
     /**
      * No garment chosen yet. The stage has nothing to render and nothing to
      * apologise for, so it shows the drafting sheet and names the heading the
@@ -49,8 +45,6 @@ export default function StagePanel({
     view,
     onView,
     thumbnailFor,
-    eyebrow,
-    title,
     awaitingGarment,
 }: StagePanelProps) {
     const { t } = useTranslation();
@@ -60,28 +54,22 @@ export default function StagePanel({
     // customer has started from named against it.
     if (awaitingGarment) {
         return (
-            <div className="relative flex min-h-[380px] flex-col justify-center overflow-hidden border border-[rgba(111,29,36,0.16)] bg-[var(--kd-stage)] p-[clamp(18px,2vw,28px)] min-[900px]:min-h-[calc(100vh-200px)]">
-                <PatternPaper className="pointer-events-none absolute inset-0 h-full w-full text-[rgba(111,29,36,0.16)]" />
+            <div className="order-3 relative flex min-h-[260px] flex-col justify-center overflow-hidden border border-[var(--kd-hairline)] bg-[var(--kd-stage)] p-[clamp(14px,2vw,28px)] min-[900px]:order-none min-[900px]:sticky min-[900px]:top-6 min-[900px]:min-h-[calc(100vh-152px)]">
+                <PatternPaper className="pointer-events-none absolute inset-0 h-full w-full text-black/10" />
 
-                <div className="relative ml-auto w-full max-w-[22ch] text-right">
-                    <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--kd-muted)]">{eyebrow}</div>
-                    <div className="kd-display mt-1 text-[clamp(24px,4.4vw,38px)] leading-[1.08] text-[var(--kd-burgundy)] [overflow-wrap:anywhere] [text-wrap:balance]">
-                        {title}
-                    </div>
-                </div>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col border border-[rgba(111,29,36,0.16)] bg-[var(--kd-stage)] p-[clamp(18px,2vw,28px)] min-[900px]:min-h-[calc(100vh-200px)]">
-            <div className="relative flex min-h-[380px] flex-1 items-center justify-center overflow-hidden">
+        <div className="designer-preview order-1 sticky top-[61px] z-10 flex max-h-[34vh] flex-col overflow-hidden border border-[var(--kd-hairline)] bg-[var(--kd-stage)] p-2 shadow-[0_8px_24px_rgba(17,17,17,0.08)] min-[900px]:order-none min-[900px]:top-6 min-[900px]:z-auto min-[900px]:max-h-none min-[900px]:min-h-[calc(100vh-152px)] min-[900px]:p-[clamp(18px,2vw,28px)] min-[900px]:shadow-none">
+            <div className="relative flex min-h-[145px] flex-1 items-center justify-center overflow-hidden min-[900px]:min-h-[340px]">
                 <div
                     className="absolute inset-0"
                     style={{
                         backgroundImage:
-                            'repeating-linear-gradient(90deg, rgba(111,29,36,0.13) 0 1px, transparent 1px 46px),' +
-                            'repeating-linear-gradient(0deg, rgba(111,29,36,0.09) 0 1px, transparent 1px 46px)',
+                            'repeating-linear-gradient(90deg, rgba(17,17,17,0.08) 0 1px, transparent 1px 46px),' +
+                            'repeating-linear-gradient(0deg, rgba(17,17,17,0.055) 0 1px, transparent 1px 46px)',
                     }}
                 />
 
@@ -91,7 +79,7 @@ export default function StagePanel({
                     which reads as a photograph pinned to the draft rather than
                     as a rectangle that failed to knock out. */}
                 <div className={[
-                    'relative w-[min(88%,420px)]',
+                    'relative w-[min(48%,170px)] min-[900px]:w-[min(88%,420px)]',
                     showPhoto ? 'border border-[var(--kd-hairline)] bg-white' : '',
                 ].join(' ')}>
                     {showPhoto ? (
@@ -105,11 +93,11 @@ export default function StagePanel({
                             bare
                         />
                     ) : (
-                        <div className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-3 border border-dashed border-[rgba(111,29,36,0.34)] px-6 text-center">
+                        <div className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-3 border border-dashed border-[var(--kd-hairline)] px-6 text-center">
                             <span className="flex h-11 w-11 items-center justify-center border border-[var(--kd-hairline)] text-[var(--kd-muted)]">
                                 <ImageOff className="h-5 w-5 stroke-[1.4]" />
                             </span>
-                            <p className="kd-display text-[22px] leading-[1.1] text-[var(--kd-burgundy)]">
+                            <p className="kd-display text-[22px] leading-[1.1] text-black">
                                 {t('customizer.previewComingSoon')}
                             </p>
                             <p className="max-w-[24ch] text-xs leading-relaxed text-[var(--kd-body)]">
@@ -123,19 +111,11 @@ export default function StagePanel({
             </div>
 
             {showPhoto && (
-                <div className="relative mt-4">
+                <div className="relative mt-2 hidden min-[900px]:block">
                     <ViewSwitcher views={views} view={view} onChange={onView} thumbnailFor={thumbnailFor} />
                 </div>
             )}
 
-            <div className="flex items-end justify-between gap-6 px-1 pt-[22px]">
-                <div>
-                    <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--kd-muted)]">{eyebrow}</div>
-                    <div className="kd-display max-w-[12ch] text-[30px] leading-[1.1] text-[var(--kd-burgundy)] [text-wrap:pretty]">
-                        {title}
-                    </div>
-                </div>
-            </div>
         </div>
     );
 }

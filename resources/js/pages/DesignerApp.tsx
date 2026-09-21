@@ -84,7 +84,7 @@ function UploadTypeStep({
                             </div>
 
                             {gender === 'women' && cat.image ? (
-                                <div className="mt-auto flex h-[132px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-3 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[156px] sm:p-4 lg:h-[178px]">
+                                <div className="mt-auto flex h-[132px] items-center justify-center border border-[#111111]/45 bg-[var(--store-paper)] p-3 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[156px] sm:p-4 lg:h-[178px]">
                                     <img
                                         src={cat.image}
                                         alt={t(cat.tKey)}
@@ -92,7 +92,7 @@ function UploadTypeStep({
                                     />
                                 </div>
                             ) : (
-                                <div className="mt-auto flex h-[112px] items-end border border-[#111111]/45 bg-[#E4E0D7] p-4 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[132px] sm:p-5 lg:h-[150px]">
+                                <div className="mt-auto flex h-[112px] items-end border border-[#111111]/45 bg-[var(--store-paper)] p-4 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[132px] sm:p-5 lg:h-[150px]">
                                     <p className="font-serif text-[clamp(1.35rem,3vw,2rem)] font-medium leading-[0.95] tracking-[-0.04em] text-[#111111]">
                                         {t(cat.tKey)}
                                     </p>
@@ -241,7 +241,7 @@ function UploadPanel({
                         const file = e.dataTransfer.files[0];
                         if (file) handleFile(file);
                     }}
-                    className="cursor-pointer border border-dashed border-[#111111]/45 bg-[#E4E0D7] p-10 text-center transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(17,17,17,0.12)]"
+                    className="cursor-pointer border border-dashed border-[#111111]/45 bg-[var(--store-paper)] p-10 text-center transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(17,17,17,0.12)]"
                     onClick={() => inputRef.current?.click()}
                 >
                     <input
@@ -265,7 +265,7 @@ function UploadPanel({
                             {previewUrl ? (
                                 <img src={previewUrl} alt="Design preview" className="max-h-40 object-contain border border-[#111111]/20" />
                             ) : (
-                                <div className="flex h-12 w-12 items-center justify-center border border-[#111111]/20 bg-[#E4E0D7]">
+                                <div className="flex h-12 w-12 items-center justify-center border border-[#111111]/20 bg-[var(--store-paper)]">
                                     <FileText className="h-6 w-6 text-[#111111]/45" />
                                 </div>
                             )}
@@ -281,7 +281,7 @@ function UploadPanel({
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center border border-[#111111]/25 bg-[#E4E0D7]">
+                            <div className="flex h-12 w-12 items-center justify-center border border-[#111111]/25 bg-[var(--store-paper)]">
                                 <Upload className="h-6 w-6 text-[#111111]/50" />
                             </div>
                             <div>
@@ -315,7 +315,7 @@ function UploadPanel({
                                         value={measurements[field.key] ?? ''}
                                         onChange={e => setMeasurement(field.key, e.target.value)}
                                         placeholder="—"
-                                        className="w-full border border-[#111111]/25 bg-[#E4E0D7] py-2.5 pl-3 pr-9 text-sm text-[#111111] placeholder:text-[#111111]/30 focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                                        className="w-full border border-[#111111]/25 bg-[var(--store-paper)] py-2.5 pl-3 pr-9 text-sm text-[#111111] placeholder:text-[#111111]/30 focus:outline-none focus:ring-2 focus:ring-[#111111]"
                                     />
                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#776158]">{t('design.cmUnit')}</span>
                                 </div>
@@ -331,7 +331,7 @@ function UploadPanel({
                             type="checkbox"
                             checked={wantsCustomization}
                             onChange={e => setWantsCustomization(e.target.checked)}
-                            className="mt-0.5 h-4 w-4 cursor-pointer border-[#111111]/35 bg-[#E4E0D7] accent-[#111111]"
+                            className="mt-0.5 h-4 w-4 cursor-pointer border-[#111111]/35 bg-[var(--store-paper)] accent-[#111111]"
                         />
                         <span>
                             <span className="block text-sm font-medium text-[#261D1B]">{t('design.customizeLabel')}</span>
@@ -351,7 +351,7 @@ function UploadPanel({
                                 placeholder={t('design.customizePlaceholder')}
                                 rows={4}
                                 maxLength={1000}
-                                className="w-full resize-none border border-[#111111]/25 bg-[#E4E0D7] px-4 py-3 text-sm text-[#111111] placeholder:text-[#776158] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                                className="w-full resize-none border border-[#111111]/25 bg-[var(--store-paper)] px-4 py-3 text-sm text-[#111111] placeholder:text-[#776158] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                             />
                             <p className={`mt-1 text-right text-xs ${customizationRequest.length > 900 ? 'text-[#111111]' : 'text-[#776158]'}`}>{customizationRequest.length} / 1000</p>
                         </motion.div>
@@ -369,7 +369,7 @@ function UploadPanel({
                         placeholder={t('design.notesPlaceholder')}
                         rows={2}
                         maxLength={500}
-                        className="w-full resize-none border border-[#111111]/25 bg-[#E4E0D7] px-4 py-2.5 text-sm text-[#111111] placeholder:text-[#776158] focus:outline-none focus:ring-2 focus:ring-[#111111]"
+                        className="w-full resize-none border border-[#111111]/25 bg-[var(--store-paper)] px-4 py-2.5 text-sm text-[#111111] placeholder:text-[#776158] focus:outline-none focus:ring-2 focus:ring-[#111111]"
                     />
                     <p className={`mt-1 text-right text-xs ${notes.length > 450 ? 'text-[#111111]' : 'text-[#776158]'}`}>{notes.length} / 500</p>
                 </div>
@@ -383,7 +383,7 @@ function UploadPanel({
                         customizationRequest: wantsCustomization ? customizationRequest : '',
                         notes,
                     })}
-                    className="w-full rounded-none bg-[#111111] text-white hover:bg-[#333333]"
+                    className="w-full rounded-none bg-brand text-white hover:bg-brand-dark"
                 >
                     {t('design.continueToTailor')}
                     <ArrowRight className="w-4 h-4 ml-1.5" />
@@ -518,6 +518,7 @@ export default function DesignerApp() {
         });
         const params = new URLSearchParams(searchParams);
         params.set('garment', chosen.slug);
+        setStep(1);
         setSearchParams(params);
     };
 
@@ -564,7 +565,7 @@ export default function DesignerApp() {
     // guided walk, so it has no steps for the rail to hold.
     if (uploadStep) {
         return (
-            <div className="design-page min-h-screen bg-[#E4E0D7] text-[#261D1B]">
+            <div className="design-page min-h-screen bg-[var(--store-paper)] text-[#261D1B]">
                 {head}
                 <Navigation />
                 <main className="relative overflow-hidden px-5 pb-8 pt-10 sm:px-8 sm:pt-12 md:pb-10 md:pt-14 lg:px-12">

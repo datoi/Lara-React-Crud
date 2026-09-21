@@ -144,7 +144,7 @@ export default function OurTailors() {
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
                         <h2 className="text-3xl font-black text-slate-900 mb-4">{t('ourTailors.ctaTitle')}</h2>
                         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-                            <Link to="/register/tailor" className="bg-slate-900 text-white font-semibold px-8 py-3 rounded-full hover:bg-slate-700 transition-colors">
+                            <Link to="/register/tailor" className="bg-brand text-white font-semibold px-8 py-3 rounded-full hover:bg-brand-dark transition-colors">
                                 {t('ourTailors.applyAsTailor')}
                             </Link>
                             <Link to="/marketplace" className="border border-slate-300 text-slate-700 font-semibold px-8 py-3 rounded-full hover:border-slate-500 transition-colors">

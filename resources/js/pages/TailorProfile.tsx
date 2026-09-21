@@ -54,7 +54,7 @@ export default function TailorProfile() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#F4EBD4] flex items-center justify-center">
+            <div className="min-h-screen bg-[var(--store-paper)] flex items-center justify-center">
                 <Loader2 className="w-8 h-8 text-[#631E26] animate-spin" />
             </div>
         );
@@ -62,7 +62,7 @@ export default function TailorProfile() {
 
     if (!tailor) {
         return (
-            <div className="tailor-profile-page kere-landing min-h-screen bg-[#F4EBD4] flex flex-col items-center justify-center gap-4">
+            <div className="tailor-profile-page kere-landing min-h-screen bg-[var(--store-paper)] flex flex-col items-center justify-center gap-4">
                 <p className="text-[#92615E]">{t('tailorProfile.notFound')}</p>
                 <Link to="/marketplace" className="border-b border-[#631E26] text-sm font-semibold text-[#631E26]">{t('tailorProfile.backToMarketplace')}</Link>
             </div>
@@ -70,7 +70,7 @@ export default function TailorProfile() {
     }
 
     return (
-        <div className="tailor-profile-page kere-landing min-h-screen bg-[#F4EBD4]">
+        <div className="tailor-profile-page kere-landing min-h-screen bg-[var(--store-paper)]">
             <Helmet>
                 <title>{tailor.name} — Tailor Profile | Kere</title>
                 <meta name="description" content={tailor.bio ?? `Browse handcrafted designs by ${tailor.name} on Kere.`} />
@@ -136,15 +136,15 @@ export default function TailorProfile() {
                         {tailor.bio && <p className="mb-6 max-w-2xl text-base leading-8 text-[#92615E]">{tailor.bio}</p>}
 
                         <div className="flex flex-wrap gap-2">
-                            <span className="inline-flex items-center gap-1.5 border border-[#631E26]/20 bg-[#F4EBD4]/70 px-3 py-1.5 text-xs font-medium text-[#631E26]">
+                            <span className="inline-flex items-center gap-1.5 border border-[#631E26]/20 bg-[var(--store-paper)]/70 px-3 py-1.5 text-xs font-medium text-[#631E26]">
                                 <ShieldCheck className="w-3.5 h-3.5 text-[#92615E]" />
                                 {t('tailorProfile.fitGuarantee')}
                             </span>
-                            <span className="inline-flex items-center gap-1.5 border border-[#631E26]/20 bg-[#F4EBD4]/70 px-3 py-1.5 text-xs font-medium text-[#631E26]">
+                            <span className="inline-flex items-center gap-1.5 border border-[#631E26]/20 bg-[var(--store-paper)]/70 px-3 py-1.5 text-xs font-medium text-[#631E26]">
                                 <ShieldCheck className="w-3.5 h-3.5 text-[#92615E]" />
                                 {t('tailorProfile.kereVetted')}
                             </span>
-                            <span className="inline-flex items-center gap-1.5 border border-[#631E26]/20 bg-[#F4EBD4]/70 px-3 py-1.5 text-xs font-medium text-[#631E26]">
+                            <span className="inline-flex items-center gap-1.5 border border-[#631E26]/20 bg-[var(--store-paper)]/70 px-3 py-1.5 text-xs font-medium text-[#631E26]">
                                 <ShieldCheck className="w-3.5 h-3.5 text-[#92615E]" />
                                 {t('tailorProfile.tbilisiBased')}
                             </span>
@@ -168,7 +168,7 @@ export default function TailorProfile() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.4, delay: idx * 0.05 }}
                                     onClick={() => navigate(`/product/${product.id}`)}
-                                    className="group cursor-pointer overflow-hidden border border-[#631E26]/18 bg-[#F4EBD4]/80 transition-all duration-300 hover:-translate-y-1 hover:border-[#631E26]/35 hover:shadow-[0_24px_70px_rgba(99,30,38,0.14)]"
+                                    className="group cursor-pointer overflow-hidden border border-[#631E26]/18 bg-[var(--store-paper)]/80 transition-all duration-300 hover:-translate-y-1 hover:border-[#631E26]/35 hover:shadow-[0_24px_70px_rgba(99,30,38,0.14)]"
                                 >
                                     <div className="aspect-[3/4] overflow-hidden bg-[#E9DCC4]">
                                         {product.images?.[0] ? (

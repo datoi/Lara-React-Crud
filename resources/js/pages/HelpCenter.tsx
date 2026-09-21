@@ -122,7 +122,7 @@ export default function HelpCenter() {
                     <h2 className="text-2xl font-black text-slate-900 mb-3">{t('helpCenter.stillNeedHelp')}</h2>
                     <Link
                         to="/"
-                        className="inline-block bg-slate-900 text-white font-semibold px-8 py-3 rounded-full hover:bg-slate-700 transition-colors"
+                        className="inline-block bg-brand text-white font-semibold px-8 py-3 rounded-full hover:bg-brand-dark transition-colors"
                     >
                         {t('helpCenter.emailSupport')}
                     </Link>

@@ -87,7 +87,7 @@ export default function SaveDesignModal({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 12 }}
                         transition={{ duration: 0.25 }}
-                        className="relative z-10 bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-sm p-6"
+                        className="kere-modal relative z-10 bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-sm p-6"
                     >
                         {/* Close button */}
                         <Button

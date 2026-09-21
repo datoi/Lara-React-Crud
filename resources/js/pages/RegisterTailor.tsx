@@ -405,7 +405,7 @@ export default function RegisterTailor() {
 
                     <Link
                         to="/"
-                        className="mt-8 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#181818] px-6 text-sm font-medium text-white transition hover:bg-black/80"
+                        className="mt-8 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-brand px-6 text-sm font-medium text-white transition hover:bg-brand-dark"
                     >
                         {t('register.tailorPendingBack')}
                         <ArrowRight className="h-4 w-4" />
@@ -416,7 +416,7 @@ export default function RegisterTailor() {
     }
 
     return (
-        <div className="kere-workflow-page min-h-screen bg-[#F3F2EF] px-4 py-6 text-[#181818] sm:px-6 md:py-10">
+        <div className="tailor-registration-page kere-workflow-page min-h-screen bg-[#F3F2EF] px-3 py-3 text-[#181818] sm:px-6 md:py-10">
             <motion.main
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -424,12 +424,12 @@ export default function RegisterTailor() {
                 className="mx-auto grid min-h-[calc(100vh-80px)] w-full max-w-[1280px] overflow-hidden bg-white lg:grid-cols-[0.92fr_1.08fr]"
             >
                 {/* Left: registration form */}
-                <section className="flex min-h-[720px] flex-col px-6 py-6 sm:px-10 sm:py-8 lg:px-14 xl:px-20">
+                <section className="flex min-w-0 flex-col px-4 py-5 lg:min-h-[720px] sm:px-10 sm:py-8 lg:px-14 xl:px-20">
                     <header className="flex items-center justify-between">
                         <Link
                             to="/partners"
                             aria-label="Back"
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 transition hover:bg-black hover:text-white"
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 transition hover:bg-brand-dark hover:text-white"
                         >
                             <ArrowLeft className="h-4 w-4" />
                         </Link>
@@ -449,7 +449,7 @@ export default function RegisterTailor() {
                         </Link>
                     </header>
 
-                    <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center py-12">
+                    <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center py-6 sm:py-12">
                         <AnimatePresence mode="wait">
                         {step === 'form' && (
                         <motion.div
@@ -460,7 +460,7 @@ export default function RegisterTailor() {
                             transition={{ duration: 0.5 }}
                         >
                             <div className="mb-8 text-center">
-                                <h1 className="font-serif text-[clamp(2.4rem,4vw,3.7rem)] font-medium leading-[0.96] tracking-[-0.05em]">
+                                <h1 className="font-serif text-[clamp(1.6rem,4vw,3.7rem)] font-medium leading-[1.15] tracking-[-0.05em]">
                                     {t('register.tailorTitle')}
                                 </h1>
 
@@ -896,7 +896,7 @@ export default function RegisterTailor() {
                                     <button
                                         type="button"
                                         onClick={() => setPage(page - 1)}
-                                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-black/15 px-6 text-sm font-medium transition hover:bg-black/[0.03]"
+                                        className="inline-flex min-h-11 h-auto w-full items-center justify-center gap-2 whitespace-normal rounded-none py-3 border border-black/15 px-6 text-sm font-medium transition hover:bg-black/[0.03]"
                                     >
                                         <ArrowLeft className="h-4 w-4" />
                                         {t('register.back')}
@@ -906,7 +906,7 @@ export default function RegisterTailor() {
                                 <button
                                     type="submit"
                                     disabled={loading || checkingContact}
-                                    className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#181818] px-6 text-sm font-medium text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="mt-2 inline-flex min-h-11 h-auto w-full items-center justify-center gap-2 whitespace-normal rounded-none py-3 bg-brand px-6 text-sm font-medium text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     {loading ? (
                                         <>

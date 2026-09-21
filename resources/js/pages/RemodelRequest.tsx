@@ -152,7 +152,7 @@ export default function RemodelRequest() {
     };
 
     return (
-        <div className="remodel-page min-h-screen bg-[#E4E0D7] text-[#261D1B]">
+        <div className="remodel-page min-h-screen bg-[var(--store-paper)] text-[#261D1B]">
             <Helmet>
                 <title>{t('remodel.pageTitle')} | Kere</title>
                 <meta name="description" content={t('remodel.subtitle')} />
@@ -160,36 +160,36 @@ export default function RemodelRequest() {
 
             <Navigation />
 
-            <main className="relative overflow-hidden px-5 pt-11 pb-20 sm:px-8 lg:px-12 lg:pb-28">
+            <main className="relative overflow-hidden px-5 pt-[50px] pb-12 sm:px-8 lg:px-12 lg:pb-28">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full">
                     <div
-                        className="relative left-1/2 flex h-[52svh] min-h-[430px] w-screen -translate-x-1/2 items-center justify-center overflow-hidden bg-cover bg-center px-5 text-center sm:min-h-[500px] sm:px-8 lg:h-[58svh] lg:px-12"
+                        className="relative left-1/2 flex h-[38svh] min-h-[250px] w-screen -translate-x-1/2 items-center justify-center overflow-hidden bg-cover bg-center px-5 text-center sm:min-h-[500px] sm:px-8 lg:h-[58svh] lg:px-12"
                         style={{ backgroundImage: "url('/assets/backgrounds/remodel-gold-texture.jpg')" }}
                     >
                         <div className="absolute inset-0 bg-[#261D1B]/32" aria-hidden="true" />
                         <div className="relative mx-auto w-full">
                             <p className="mb-4 text-[10px] font-semibold tracking-[0.16em] text-[#FFF8E8] uppercase sm:text-xs">{t('remodel.eyebrow')}</p>
-                            <h1 className="font-serif text-[clamp(3.25rem,9vw,9.5rem)] leading-[0.82] font-normal tracking-[-0.055em] text-[#FFF8E8] drop-shadow-[0_4px_30px_rgba(38,29,27,0.28)]">
+                            <h1 className="font-serif text-[clamp(2.25rem,8vw,9.5rem)] leading-[0.82] font-normal tracking-[-0.055em] text-[#FFF8E8] drop-shadow-[0_4px_30px_rgba(38,29,27,0.28)]">
                                 {t('nav.remodel')}
                             </h1>
                         </div>
                     </div>
 
-                    <div className="relative left-1/2 w-screen -translate-x-1/2 bg-[#E4E0D7] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-                        <div className="mx-auto mb-14 w-full max-w-[1050px] text-center sm:mb-20">
+                    <div className="relative left-1/2 w-screen -translate-x-1/2 bg-[var(--store-paper)] px-4 py-8 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+                        <div className="mx-auto mb-8 w-full max-w-[1050px] text-center sm:mb-20">
                             <p className="mb-5 text-left text-[10px] font-semibold tracking-[0.12em] text-[#111111] uppercase">
                                 <Link to="/" className="transition-opacity hover:opacity-55">Kere</Link> / {t('nav.remodel')}
                             </p>
                             <p className="mx-auto max-w-[620px] text-sm leading-6 text-[#4F463E] sm:text-base sm:leading-7">{t('remodel.subtitle')}</p>
                         </div>
 
-                        <div className="relative mx-auto w-full max-w-[1050px] border border-[#261D1B]/12 bg-[#F2EAD7] px-6 py-10 sm:px-12 sm:py-14 lg:px-16 lg:py-16">
+                        <div className="remodel-form relative mx-auto w-full max-w-[1050px] border border-[#261D1B]/12 bg-[#F2EAD7] px-4 py-6 sm:px-12 sm:py-14 lg:px-16 lg:py-16">
                             {/* Garment photos */}
-                            <section className="mb-14">
+                            <section className="mb-8 sm:mb-14">
                                 <h2 className="mb-2 text-lg font-semibold tracking-normal text-[#17130F]">{t('remodel.photosLabel')}</h2>
                                 <p className="mb-6 text-sm leading-5 text-[#5C5148]">{t('remodel.photosHint', { max: MAX_IMAGES })}</p>
 
-                                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                                <div className="grid grid-cols-2 gap-3 min-[400px]:grid-cols-3 sm:grid-cols-4 lg:grid-cols-6">
                                     {images.map((img, i) => (
                                         <div key={i} className="group relative aspect-square overflow-hidden border border-[#261D1B]/25 bg-[#E8DECA]">
                                             <img src={img.preview} alt="" className="h-full w-full object-cover" />
@@ -197,7 +197,7 @@ export default function RemodelRequest() {
                                                 type="button"
                                                 onClick={() => removeImage(i)}
                                                 aria-label={t('remodel.removePhoto')}
-                                                className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition-opacity hover:bg-black/80"
+                                                className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-brand/90 text-white transition-opacity hover:bg-brand-dark"
                                             >
                                                 <X className="h-3.5 w-3.5" />
                                             </button>
@@ -229,7 +229,7 @@ export default function RemodelRequest() {
                             </section>
 
                             {/* What to change */}
-                            <section className="mb-14">
+                            <section className="mb-8 sm:mb-14">
                                 <label htmlFor="change" className="mb-2 block text-lg font-semibold tracking-normal text-[#17130F]">
                                     {t('remodel.changeLabel')}
                                 </label>
@@ -245,46 +245,56 @@ export default function RemodelRequest() {
                             </section>
 
                             {/* Pickup / return address */}
-                            <section className="mb-14">
+                            <section className="mb-8 sm:mb-14">
                                 <h2 className="mb-2 text-lg font-semibold tracking-normal text-[#17130F]">{t('remodel.addressLabel')}</h2>
 
                                 <div className="grid max-w-[1100px] grid-cols-1 gap-3 sm:grid-cols-6">
                                     <input
                                         value={firstName}
                                         onChange={(e) => setFirstName(e.target.value)}
+                                        aria-label={t('remodel.firstName')}
                                         placeholder={t('remodel.firstName')}
                                         className={`${inputClass} sm:col-span-3`}
                                     />
                                     <input
                                         value={lastName}
                                         onChange={(e) => setLastName(e.target.value)}
+                                        aria-label={t('remodel.lastName')}
                                         placeholder={t('remodel.lastName')}
                                         className={`${inputClass} sm:col-span-3`}
                                     />
                                     <input
+                                        type="tel"
+                                        autoComplete="tel"
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
+                                        aria-label={t('remodel.phone')}
                                         placeholder={t('remodel.phone')}
                                         className={`${inputClass} sm:col-span-6`}
                                     />
                                     <input
                                         value={city}
                                         onChange={(e) => setCity(e.target.value)}
+                                        aria-label={t('remodel.city')}
                                         placeholder={t('remodel.city')}
                                         className={`${inputClass} sm:col-span-6`}
                                     />
                                     <input
                                         value={address}
                                         onChange={(e) => setAddress(e.target.value)}
+                                        aria-label={t('remodel.address')}
                                         placeholder={t('remodel.address')}
                                         className={`${inputClass} sm:col-span-4`}
                                     />
+                                    <label className="min-w-0 text-xs leading-5 text-[#5C5148] sm:col-span-2">
+                                        {t('remodel.zip')}
                                     <input
+                                        autoComplete="postal-code"
                                         value={zip}
                                         onChange={(e) => setZip(e.target.value)}
-                                        placeholder={t('remodel.zip')}
-                                        className={`${inputClass} sm:col-span-2`}
+                                        className={inputClass}
                                     />
+                                    </label>
                                 </div>
                             </section>
 
@@ -318,7 +328,7 @@ export default function RemodelRequest() {
                             <Button
                                 onClick={handleSubmit}
                                 disabled={!canSubmit}
-                                className="mx-auto flex min-h-11 w-fit rounded-none bg-[#111111] px-10 text-[11px] font-semibold tracking-[0.12em] text-white uppercase hover:bg-[#2B2B2B] disabled:bg-[#111111] disabled:text-white disabled:opacity-100"
+                                className="mx-auto flex h-auto min-h-11 w-full max-w-full whitespace-normal rounded-none bg-brand px-3 py-3 text-center text-[11px] leading-5 font-semibold tracking-normal sm:w-fit sm:px-10 text-white uppercase hover:bg-brand-dark disabled:bg-brand disabled:text-white disabled:opacity-100"
                             >
                                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                                 {t('remodel.submit')}

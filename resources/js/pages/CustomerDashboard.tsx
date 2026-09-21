@@ -264,7 +264,7 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 16 }}
                 transition={{ duration: 0.5 }}
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+                className="kere-modal bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
@@ -747,7 +747,7 @@ export default function CustomerDashboard() {
                             <p className="text-slate-500 font-medium mb-2">{t('customerDashboard.failedToLoad')}</p>
                             <button
                                 onClick={() => setRetryKey(k => k + 1)}
-                                className="text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
+                                className="text-sm bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors"
                             >
                                 {t('customerDashboard.retry')}
                             </button>
@@ -759,7 +759,7 @@ export default function CustomerDashboard() {
                             <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2">
                                 <Link
                                     to="/marketplace"
-                                    className="inline-flex items-center gap-1.5 text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
+                                    className="inline-flex items-center gap-1.5 text-sm bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors"
                                 >
                                     {t('customerDashboard.browseMarketplace')}
                                     <ChevronRight className="w-4 h-4" />
@@ -871,7 +871,7 @@ export default function CustomerDashboard() {
                                             title={t('customerDashboard.messageBtn')}
                                             className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-colors cursor-pointer ${
                                                 hasUnread(order.id)
-                                                    ? 'bg-slate-900 text-white border-slate-900'
+                                                    ? 'bg-brand text-white border-brand'
                                                     : 'bg-white text-slate-400 border-slate-200 hover:text-slate-700 hover:bg-slate-50'
                                             }`}
                                         >

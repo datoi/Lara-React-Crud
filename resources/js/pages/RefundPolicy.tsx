@@ -111,7 +111,7 @@ export default function RefundPolicy() {
                     >
                         <h2 className="text-xl font-black text-slate-900 mb-3">{t('refund.ctaTitle')}</h2>
                         <p className="text-slate-500 text-sm mb-6">{t('refund.ctaDesc')}</p>
-                        <Link to="/" className="inline-block bg-slate-900 text-white font-semibold px-8 py-3 rounded-full hover:bg-slate-700 transition-colors">
+                        <Link to="/" className="inline-block bg-brand text-white font-semibold px-8 py-3 rounded-full hover:bg-brand-dark transition-colors">
                             {t('refund.contactSupport')}
                         </Link>
                     </motion.div>

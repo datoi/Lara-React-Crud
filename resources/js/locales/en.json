@@ -351,6 +351,7 @@
         "dashboard": "Dashboard"
     },
     "aboutUs": {
+        "locationCountry": "Georgia",
         "eyebrow": "Our Story",
         "heroTitle": "We're Kere.",
         "heroDesc": "Kere was founded in Tbilisi with a simple belief: clothing should fit the person wearing it, not the other way around. We built a marketplace that connects customers directly with Georgia's most talented independent tailors.",
@@ -628,6 +629,12 @@
         "viewOrders": "View my orders"
     },
     "marketplace": {
+        "resultCount": "{{count}} Results",
+        "removeFilter": "Remove filter",
+        "filterAndSort": "Filter and sort",
+        "applyFilters": "Apply",
+        "quickBuy": "Quick buy",
+        "availableColours": "Available colours",
         "title": "Marketplace",
         "allClothing": "All Clothing",
         "quickBuy": "Quick buy",
@@ -1577,6 +1584,7 @@
         "subhead2": "Each is cut to order, so nothing here is off the rack.",
         "subhead3": "Every colour is made in the same fabric, cut to your measurements.",
         "subhead4": "Review your design. Measurements are taken after you choose a tailor.",
+        "changeCategory": "Change category",
         "groupCategory": "Category",
         "groupStyle": "Style",
         "groupColor": "Colour",
@@ -1624,5 +1632,11 @@
         "doneTitle": "Thank you — that's confirmed",
         "doneBody": "{{name}} can now use their Kere account.",
         "backHome": "Go to Kere"
+    },
+    "store": {
+        "search": "Search designs",
+        "menu": "Navigation",
+        "skip": "Skip to content",
+        "imageUnavailable": "Image unavailable"
     }
 }

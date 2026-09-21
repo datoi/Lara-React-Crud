@@ -163,7 +163,7 @@ export function OtpStep({ icon, title, description, verificationId, otpType, end
                     type="button"
                     disabled={code.length < 6 || loading}
                     onClick={() => submitCode(code)}
-                    className="w-full bg-slate-900 hover:bg-slate-700 text-white h-11"
+                    className="w-full bg-brand hover:bg-brand-dark text-white h-11"
                 >
                     {loading
                         ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />{isLastStep ? t('register.creatingAccount') : t('register.verifying')}</>

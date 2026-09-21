@@ -241,7 +241,7 @@ export function CartDrawer() {
                                 <button
                                     type="button"
                                     onClick={goToCart}
-                                    className="w-full bg-[#111111] px-5 py-4 text-sm font-bold text-white uppercase transition-colors hover:bg-[#333333]"
+                                    className="w-full bg-brand px-5 py-4 text-sm font-bold text-white uppercase transition-colors hover:bg-brand-dark"
                                 >
                                     {t('cart.checkout')}
                                 </button>

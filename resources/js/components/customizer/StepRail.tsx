@@ -1,4 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
 export interface RailStep {
@@ -16,23 +17,34 @@ interface StepRailProps {
 }
 
 /**
- * The designer's spine: the five steps, numbered, always on screen.
+ * The designer's spine: five line segments, always on screen.
  *
  * Vertical and pinned on desktop; below the two-column breakpoint it becomes a
  * horizontal strip above the content, since a 146px column of a phone's width
- * is a third of the screen. The numbers carry the progress either way, so the
- * strip drops the labels rather than scrolling them.
+ * is a third of the screen. The line carries progress on phones; desktop also
+ * shows each short stage label.
  */
 export default function StepRail({ steps, step, onStep, onExit }: StepRailProps) {
     const { t } = useTranslation();
 
     return (
-        <div className="sticky top-0 z-20 flex shrink-0 flex-row items-center gap-1 bg-[var(--kd-burgundy)] px-4 py-3 min-[900px]:h-screen min-[900px]:w-[146px] min-[900px]:flex-col min-[900px]:items-stretch min-[900px]:gap-1 min-[900px]:overflow-visible min-[900px]:px-0 min-[900px]:py-0">
-            <div className="kd-display shrink-0 pr-4 text-[22px] tracking-[0.14em] text-[var(--kd-rail-text)] min-[900px]:pl-[22px] min-[900px]:pr-0 min-[900px]:pt-[26px] min-[900px]:text-[30px]">
+        <div className="designer-rail sticky top-0 z-20 flex shrink-0 flex-row items-center gap-1 border-b border-white/15 bg-brand px-3 py-2 min-[900px]:h-screen min-[900px]:w-[118px] min-[900px]:flex-col min-[900px]:items-stretch min-[900px]:gap-1 min-[900px]:overflow-visible min-[900px]:border-b-0 min-[900px]:border-r min-[900px]:px-0 min-[900px]:py-0">
+            <Link
+                to="/"
+                aria-label="Kere home"
+                className="kd-display shrink-0 pr-3 text-[18px] tracking-[0.16em] text-[var(--kd-rail-text)] transition-opacity hover:opacity-65 min-[900px]:pl-[17px] min-[900px]:pr-0 min-[900px]:pt-[22px] min-[900px]:text-[20px]"
+            >
                 KERE
+            </Link>
+
+            <div className="pointer-events-none absolute bottom-[88px] left-[28px] top-[112px] hidden w-px bg-white/30 min-[900px]:block">
+                <span
+                    className="absolute left-0 top-0 w-px bg-white transition-[height] duration-500"
+                    style={{ height: `${(step / Math.max(steps.length - 1, 1)) * 100}%` }}
+                />
             </div>
 
-            <div className="flex min-w-0 flex-1 flex-row gap-1 overflow-x-auto min-[900px]:mt-[54px] min-[900px]:flex-none min-[900px]:flex-col min-[900px]:overflow-visible">
+            <div className="flex min-w-0 flex-1 flex-row gap-1 overflow-hidden px-1 min-[900px]:mt-10 min-[900px]:flex-col min-[900px]:justify-between min-[900px]:gap-0 min-[900px]:overflow-visible min-[900px]:px-0 min-[900px]:pb-[76px]">
                 {steps.map((railStep, i) => {
                     const isActive = i === step;
                     return (
@@ -43,28 +55,19 @@ export default function StepRail({ steps, step, onStep, onExit }: StepRailProps)
                             disabled={!railStep.reachable}
                             aria-current={isActive ? 'step' : undefined}
                             className={[
-                                'relative flex min-w-0 flex-1 items-center justify-center gap-3 px-0.5 py-2 text-left transition-colors duration-150 min-[400px]:px-1',
-                                'min-[900px]:min-h-[52px] min-[900px]:flex-none min-[900px]:justify-between min-[900px]:py-[15px] min-[900px]:pl-[18px] min-[900px]:pr-[12px]',
+                                'relative flex min-w-0 flex-1 items-center py-4 text-left transition-colors duration-150',
+                                'min-[900px]:min-h-[48px] min-[900px]:flex-none min-[900px]:gap-3 min-[900px]:py-3 min-[900px]:pl-[23px] min-[900px]:pr-2.5',
                                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--kd-rail-text)] focus-visible:ring-inset',
-                                isActive ? 'bg-black/[0.16] text-[var(--kd-rail-text)]' : 'text-[var(--kd-rail-text)]/50',
+                                isActive ? 'text-[var(--kd-rail-text)]' : 'text-[var(--kd-rail-text)]/45',
                                 railStep.reachable ? 'cursor-pointer hover:text-[var(--kd-rail-text)]' : 'cursor-not-allowed',
                             ].join(' ')}
                         >
-                            <span className="flex min-w-0 items-baseline gap-3 min-[900px]:gap-2">
-                                <span className="kd-display text-[15px] tabular-nums min-[400px]:text-[19px] min-[900px]:text-[21px]">
-                                    {String(i + 1).padStart(2, '0')}
-                                </span>
-                                <span className="hidden min-w-0 text-sm [overflow-wrap:anywhere] min-[900px]:inline">{t(railStep.tKey)}</span>
-                            </span>
-                            {isActive && (
-                                <span className="absolute right-0 hidden h-[22px] w-[3px] bg-[var(--kd-rail-text)] min-[900px]:block" />
-                            )}
+                            <span className={`h-px min-w-0 flex-1 transition-colors duration-300 min-[900px]:relative min-[900px]:z-10 min-[900px]:h-3 min-[900px]:w-3 min-[900px]:flex-none min-[900px]:rounded-full min-[900px]:ring-2 min-[900px]:ring-brand ${i <= step ? 'bg-white min-[900px]:ring-white' : 'bg-white/25 min-[900px]:ring-white/30'}`} />
+                            <span className={`hidden min-w-0 text-[9px] leading-tight tracking-[0.01em] [overflow-wrap:anywhere] min-[900px]:inline ${isActive ? 'text-white' : ''}`}>{t(railStep.tKey)}</span>
                         </button>
                     );
                 })}
             </div>
-
-            <div className="hidden flex-1 min-[900px]:block" />
 
             {/* The strip drops the label on a phone, which left the icon alone as
                 a 14px target — the one control on the page under the 44px

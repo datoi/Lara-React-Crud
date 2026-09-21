@@ -158,7 +158,7 @@ export default function TailorDashboard() {
     // ─── Approval gate ────────────────────────────────────────────────────────
     if (user?.approval_status === 'pending') {
         return (
-            <div className="tailor-dashboard-page min-h-screen bg-[#F4EBD4] flex flex-col">
+            <div className="tailor-dashboard-page min-h-screen bg-[var(--store-paper)] flex flex-col">
                 <nav className="bg-white border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                         <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
@@ -183,7 +183,7 @@ export default function TailorDashboard() {
 
     if (user?.approval_status === 'rejected') {
         return (
-            <div className="tailor-dashboard-page min-h-screen bg-[#F4EBD4] flex flex-col">
+            <div className="tailor-dashboard-page min-h-screen bg-[var(--store-paper)] flex flex-col">
                 <nav className="bg-white border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                         <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
@@ -199,7 +199,7 @@ export default function TailorDashboard() {
                         </div>
                         <h1 className="text-2xl font-bold text-slate-900 mb-3">{t('tailorDashboard.rejectedTitle')}</h1>
                         <p className="text-slate-500 leading-relaxed mb-8">{t('tailorDashboard.rejectedDesc')}</p>
-                        <Link to="/" className="inline-flex items-center justify-center bg-slate-900 hover:bg-slate-700 text-white text-sm font-medium px-6 py-3 rounded-lg transition-colors">
+                        <Link to="/" className="inline-flex items-center justify-center bg-brand hover:bg-brand-dark text-white text-sm font-medium px-6 py-3 rounded-lg transition-colors">
                             {t('register.tailorPendingBack')}
                         </Link>
                     </motion.div>
@@ -209,7 +209,7 @@ export default function TailorDashboard() {
     }
 
     return (
-        <div className="tailor-dashboard-page min-h-screen bg-[#F4EBD4] text-[#631E26]">
+        <div className="tailor-dashboard-page min-h-screen bg-[var(--store-paper)] text-[#631E26]">
             <DashboardHeader earnings={stats.revenue} />
 
             {/* ── Post-add success toast ── */}

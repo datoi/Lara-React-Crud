@@ -23,7 +23,7 @@ export function CTASection() {
                         <Button
                             asChild
                             variant="ghost"
-                            className="min-h-[46px] w-full rounded-none border border-black/30 bg-transparent px-5 font-sans text-[10px] font-semibold tracking-normal text-[#111111] transition-colors duration-200 hover:bg-[#111111] hover:text-white sm:w-auto sm:text-xs"
+                            className="min-h-[46px] w-full rounded-none border border-black/30 bg-transparent px-5 font-sans text-[10px] font-semibold tracking-normal text-[#111111] transition-colors duration-200 hover:bg-brand-dark hover:text-white sm:w-auto sm:text-xs"
                         >
                             <Link to="/marketplace">
                                 <ShoppingBag className="h-4 w-4" />
@@ -33,7 +33,7 @@ export function CTASection() {
                         <Button
                             asChild
                             variant="ghost"
-                            className="min-h-[46px] w-full rounded-none border border-black/30 bg-transparent px-5 font-sans text-[10px] font-semibold tracking-normal text-[#111111] transition-colors duration-200 hover:bg-[#111111] hover:text-white sm:w-auto sm:text-xs"
+                            className="min-h-[46px] w-full rounded-none border border-black/30 bg-transparent px-5 font-sans text-[10px] font-semibold tracking-normal text-[#111111] transition-colors duration-200 hover:bg-brand-dark hover:text-white sm:w-auto sm:text-xs"
                         >
                             <Link to="/design">
                                 <Scissors className="h-4 w-4" />

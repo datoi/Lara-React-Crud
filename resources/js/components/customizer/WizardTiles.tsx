@@ -25,15 +25,15 @@ export function OptionTile({ label, modifier = 0, figure, selected, onClick }: O
             onClick={onClick}
             aria-pressed={selected}
             className={[
-                'flex min-h-[62px] cursor-pointer items-center gap-2.5 px-3.5 py-3 text-left transition-colors duration-150',
+                'flex min-h-11 cursor-pointer items-center gap-2 px-2.5 py-2 text-left transition-colors duration-150 min-[900px]:min-h-[54px] min-[900px]:gap-2.5 min-[900px]:px-3 min-[900px]:py-2.5',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--kd-burgundy)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--kd-cream)]',
                 selected
-                    ? 'border border-[var(--kd-burgundy)] bg-[var(--kd-burgundy)] text-[var(--kd-rail-text)]'
+                    ? 'border border-brand bg-brand text-[var(--kd-rail-text)]'
                     : 'border border-[var(--kd-hairline)] bg-[var(--kd-tile)] text-[var(--kd-ink)] hover:border-[var(--kd-burgundy)]',
             ].join(' ')}
         >
             {figure}
-            <span className="min-w-0 flex-1 text-[15px] leading-[1.25] [overflow-wrap:anywhere]">{label}</span>
+            <span className="min-w-0 flex-1 text-xs leading-[1.2] [overflow-wrap:anywhere] min-[900px]:text-sm">{label}</span>
             {modifier !== 0 && (
                 <span
                     className={[
@@ -55,22 +55,25 @@ interface TileGroupProps {
     value?: string | null;
     /** Narrower track for round swatches, which need less room than a worded option */
     dense?: boolean;
+    hideHeader?: boolean;
     children: ReactNode;
 }
 
 /** One attribute: its name, the answer it is currently on, and its tiles. */
-export function TileGroup({ label, value, dense = false, children }: TileGroupProps) {
+export function TileGroup({ label, value, dense = false, hideHeader = false, children }: TileGroupProps) {
     return (
         <div>
-            <div className="mb-3 flex items-baseline justify-between gap-4">
-                <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--kd-muted)]">{label}</span>
-                {value && <span className="text-[13px] text-[var(--kd-body)]">{value}</span>}
-            </div>
+            {!hideHeader && (
+                <div className="mb-2 flex items-baseline justify-between gap-4">
+                    <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--kd-muted)]">{label}</span>
+                    {value && <span className="text-[13px] text-[var(--kd-body)]">{value}</span>}
+                </div>
+            )}
             <div
                 className={
                     dense
-                        ? 'grid gap-2.5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,132px),1fr))]'
-                        : 'grid gap-2.5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,208px),1fr))]'
+                        ? 'designer-tile-options grid grid-cols-2 gap-2 min-[900px]:gap-2.5 min-[900px]:[grid-template-columns:repeat(auto-fit,minmax(min(100%,132px),1fr))]'
+                        : 'designer-tile-options grid grid-cols-2 gap-2 min-[900px]:gap-2.5 min-[900px]:[grid-template-columns:repeat(auto-fit,minmax(min(100%,208px),1fr))]'
                 }
             >
                 {children}
@@ -83,7 +86,7 @@ export function TileGroup({ label, value, dense = false, children }: TileGroupPr
 export function ColorFigure({ hex }: { hex: string }) {
     return (
         <span
-            className="h-[34px] w-[34px] flex-none rounded-full border border-[rgba(17,17,17,0.14)]"
+            className="h-7 w-7 flex-none rounded-full border border-[rgba(17,17,17,0.14)] min-[900px]:h-[34px] min-[900px]:w-[34px]"
             style={{ backgroundColor: hex }}
         />
     );

@@ -368,7 +368,7 @@ export default function AdminDashboard() {
                             onClick={() => setTab(tabKey)}
                             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                                 tab === tabKey
-                                    ? 'bg-slate-900 text-white'
+                                    ? 'bg-brand text-white'
                                     : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                             }`}
                         >

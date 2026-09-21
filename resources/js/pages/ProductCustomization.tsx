@@ -559,7 +559,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                                                 aria-pressed={selectedSize === s}
                                                 className={`inline-flex h-12 min-w-14 items-center justify-center border px-3 text-[14px] transition-colors duration-150 ${
                                                     selectedSize === s
-                                                        ? 'border-[var(--kd-ink)] bg-[var(--kd-ink)] text-[var(--kd-rail-text)]'
+                                                        ? 'border-brand bg-brand text-[var(--kd-rail-text)]'
                                                         : 'border-[var(--kd-hairline)] bg-[var(--kd-tile)] text-[var(--kd-ink)] hover:border-[var(--kd-burgundy)]'
                                                 }`}
                                             >
@@ -575,7 +575,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                                 <Button
                                     asChild
                                     variant="outline"
-                                    className="mt-[22px] h-[54px] w-full rounded-none border-[var(--kd-burgundy)] bg-[var(--kd-tile)] px-5 text-[14px] font-normal tracking-[0.02em] text-[var(--kd-burgundy)] hover:bg-[var(--kd-burgundy)] hover:text-[var(--kd-rail-text)]"
+                                    className="mt-[22px] h-[54px] w-full rounded-none border-brand bg-[var(--kd-tile)] px-5 text-[14px] font-normal tracking-[0.02em] text-[var(--kd-burgundy)] hover:bg-brand-dark hover:text-[var(--kd-rail-text)]"
                                 >
                                     <Link to={`/product/${product.id}/customize`}>
                                         <Palette className="h-[15px] w-[15px]" />
@@ -733,7 +733,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                                     <Button
                                         onClick={handleOrder}
                                         disabled={placing}
-                                        className="h-auto min-h-[52px] flex-[1_1_220px] rounded-none bg-[var(--kd-burgundy)] px-5 text-[15px] font-medium text-[var(--kd-rail-text)] hover:bg-[var(--kd-ink)] disabled:cursor-not-allowed disabled:opacity-60"
+                                        className="h-auto min-h-[52px] flex-[1_1_220px] rounded-none bg-brand px-5 text-[15px] font-medium text-[var(--kd-rail-text)] hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
                                     >
                                         {placing && <Loader2 className="h-4 w-4 animate-spin" />}
                                         {placing ? t('productCustomization.placingOrder') : t('productCustomization.placeOrder')}
@@ -803,14 +803,14 @@ export default function ProductCustomization({ customize = false }: { customize?
                         role="dialog"
                         aria-modal="true"
                         aria-label={t('productCustomization.signInToOrder')}
-                        className="relative z-10 w-full max-w-sm border border-[var(--kd-hairline)] bg-[var(--kd-tile)] p-8 text-center"
+                        className="kere-modal relative z-10 w-full max-w-sm border border-[var(--kd-hairline)] bg-[var(--kd-tile)] p-8 text-center"
                     >
                         <h3 className="kd-display text-[26px] leading-tight text-[var(--kd-burgundy)]">{t('productCustomization.signInToOrder')}</h3>
                         <p className="mt-2.5 text-[14px] leading-[1.5] text-[var(--kd-body)]">{t('productCustomization.signInHint')}</p>
                         <div className="mt-6 flex flex-col gap-2.5">
                             <Button
                                 onClick={() => navigate('/login/customer')}
-                                className="h-[52px] rounded-none bg-[var(--kd-burgundy)] text-[15px] font-medium text-[var(--kd-rail-text)] hover:bg-[var(--kd-ink)]"
+                                className="h-[52px] rounded-none bg-brand text-[15px] font-medium text-[var(--kd-rail-text)] hover:bg-brand-dark"
                             >
                                 {t('productCustomization.signIn')}
                             </Button>

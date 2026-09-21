@@ -137,7 +137,7 @@ export default function Contact() {
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white text-sm font-medium px-6 py-3 rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-60"
+                                    className="w-full flex items-center justify-center gap-2 bg-brand text-white text-sm font-medium px-6 py-3 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-60"
                                 >
                                     {submitting ? (
                                         <span>{t('contact.sending')}</span>
