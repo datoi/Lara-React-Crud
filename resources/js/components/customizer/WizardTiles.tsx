@@ -88,3 +88,36 @@ export function ColorFigure({ hex }: { hex: string }) {
         />
     );
 }
+
+interface SpecListProps {
+    label: string;
+    items: { id: number; name: string; value: string }[];
+}
+
+/**
+ * Attributes the garment has exactly one of, shown as facts rather than choices.
+ *
+ * A row of tiles with a single tile in it reads as something half-loaded, and
+ * asks a question that has one answer. These are the parts of the cut the
+ * photography fixes — this tee is cropped and crew-necked — so they are stated
+ * and not offered.
+ */
+export function SpecList({ label, items }: SpecListProps) {
+    if (items.length === 0) return null;
+
+    return (
+        <div>
+            <div className="mb-3 flex items-baseline justify-between gap-4">
+                <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--kd-muted)]">{label}</span>
+            </div>
+            <dl className="divide-y divide-[var(--kd-rule-soft)] border-y border-[var(--kd-rule-soft)]">
+                {items.map(item => (
+                    <div key={item.id} className="flex items-baseline justify-between gap-4 py-2.5">
+                        <dt className="text-[13px] text-[var(--kd-body)]">{item.name}</dt>
+                        <dd className="text-[13px] font-medium text-[var(--kd-ink)]">{item.value}</dd>
+                    </div>
+                ))}
+            </dl>
+        </div>
+    );
+}

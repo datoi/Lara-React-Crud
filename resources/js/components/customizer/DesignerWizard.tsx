@@ -19,7 +19,7 @@ import ReviewSheet, { type ReviewRow } from './ReviewSheet';
 import SaveDesignModal from './SaveDesignModal';
 import StagePanel from './StagePanel';
 import StepRail from './StepRail';
-import { ColorFigure, OptionTile, TileGroup } from './WizardTiles';
+import { ColorFigure, OptionTile, SpecList, TileGroup } from './WizardTiles';
 import { GarmentMark } from './GarmentIcons';
 import { depictsSelection } from './depicts';
 import { garmentColors } from './garmentColors';
@@ -276,19 +276,45 @@ export default function DesignerWizard({
 
     // ── Left column ─────────────────────────────────────────────────────────
 
-    const attributeGroups = (attributes: LayerCategory[]) => attributes.map(attribute => (
-        <TileGroup key={attribute.id} label={attribute.name} value={optionName(attribute)}>
-            {attribute.options.map(option => (
-                <OptionTile
-                    key={option.id}
-                    label={option.name}
-                    modifier={option.price_modifier}
-                    selected={resolveOption(attribute)?.id === option.id}
-                    onClick={() => { selectOption(attribute.id, option.id); setCaption(option.name); }}
-                />
-            ))}
-        </TileGroup>
-    ));
+    /**
+     * Attributes with something to decide become tiles; attributes the garment
+     * has exactly one of become facts.
+     *
+     * The catalogue offers only what the photography can show, so an attribute
+     * can arrive already settled — this tee is cropped and crew-necked in every
+     * frame that exists of it. Rendering that as a row containing one tile asks
+     * a question with one answer and reads like a half-loaded list, so it is
+     * stated underneath instead.
+     */
+    const attributeGroups = (attributes: LayerCategory[]) => {
+        const choices = attributes.filter(attribute => attribute.options.length > 1);
+        const settled = attributes.filter(attribute => attribute.options.length === 1);
+
+        return [
+            ...choices.map(attribute => (
+                <TileGroup key={attribute.id} label={attribute.name} value={optionName(attribute)}>
+                    {attribute.options.map(option => (
+                        <OptionTile
+                            key={option.id}
+                            label={option.name}
+                            modifier={option.price_modifier}
+                            selected={resolveOption(attribute)?.id === option.id}
+                            onClick={() => { selectOption(attribute.id, option.id); setCaption(option.name); }}
+                        />
+                    ))}
+                </TileGroup>
+            )),
+            <SpecList
+                key="settled"
+                label={t('designer.groupThisGarment')}
+                items={settled.map(attribute => ({
+                    id: attribute.id,
+                    name: attribute.name,
+                    value: attribute.options[0].name,
+                }))}
+            />,
+        ];
+    };
 
     const stepContent = () => {
         // A garment named in the URL that will not load leaves every step after

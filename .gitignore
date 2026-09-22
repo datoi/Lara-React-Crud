@@ -30,6 +30,10 @@ yarn-error.log
 /public/assets/garments/Woman T-shirts/
 /public/assets/garments/WomanTshirtCassic2/
 /public/assets/garments/New Tshirts/
+# Raw drops sometimes get re-extracted here; the copy that matters is in
+# /garment-masters/. Never committable from either place.
+/public/assets/garments/01. Fitted-*/
+/public/assets/garments/drive-download-*/
 
 # Raw studio drops exactly as delivered — the source the masters above are renamed from.
 /garment-masters/

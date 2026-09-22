@@ -22,8 +22,16 @@ class CustomizerProductController extends Controller
                 // Section split: a men/women shopper sees their gender plus unisex products.
                 $q->whereIn('gender', [$request->gender, 'unisex']);
             })
+            ->with('layerCategories.options.colors')
             ->orderBy('name')
-            ->get();
+            ->get()
+            // Only garments there is something to show. A garment with no
+            // photography can be picked and specified in full before the canvas
+            // admits it has never been shot, which is a dead end the customer
+            // had to walk into to discover. They return on their own the moment
+            // a photograph exists, because this is read from the photography.
+            ->filter->isShowable()
+            ->values();
 
         return response()->json([
             'products' => CustomizerProductResource::collection($products),
@@ -41,6 +49,25 @@ class CustomizerProductController extends Controller
                 'fabrics' => fn ($q) => $q->where('is_active', true)->orderBy('display_order'),
             ])
             ->firstOrFail();
+
+        // Offer only what this garment can actually be shown in. Everything the
+        // photography does not speak to is withheld rather than presented as a
+        // choice that answers with an empty canvas — an attribute no photograph
+        // mentions is left whole, because silence is not the same as absence.
+        $available = $product->availableOptionSlugs();
+
+        foreach ($product->layerCategories as $category) {
+            if (! isset($available[$category->slug])) {
+                continue;
+            }
+
+            $category->setRelation(
+                'options',
+                $category->options
+                    ->filter(fn ($option) => in_array($option->slug, $available[$category->slug], true))
+                    ->values()
+            );
+        }
 
         // Merge global fabrics (product_id = null) with product-specific ones
         $globalFabrics = Fabric::whereNull('customizer_product_id')

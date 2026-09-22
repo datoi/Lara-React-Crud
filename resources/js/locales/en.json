@@ -1590,7 +1590,8 @@
         "exit": "Exit designer",
         "savedAs": "✓ \"{{name}}\" saved to your designs.",
         "loadFailed": "We could not load this garment. Please try again.",
-        "backToGarments": "Back to garments"
+        "backToGarments": "Back to garments",
+        "groupThisGarment": "This garment"
     },
     "measurementSanity": {
         "tooSmall": "That seems a bit small! Double-check the guide to ensure you're measuring correctly.",

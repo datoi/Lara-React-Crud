@@ -609,6 +609,20 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-22] The designer offers only what it can show
+
+**What was done:** The customiser listed everything the catalogue could describe, not everything it could make. A customer browsing women's tops chose between 25 garments, 23 of which had never been photographed, and a T-shirt offered 38 options of which 6 existed — so finding the few real ones meant discovering the rest by elimination. Both are now filtered to what the photography actually covers.
+
+**Availability is read off the photographs, not maintained by hand.** A photographed option is available by definition. Every other attribute takes its values from what those photographs *depict* — each shot records the rest of the cut it captured, so a tee shot body-fitting and cropped says so, and the fits and lengths it was never shot in are not offered. Nothing needs updating as the shoots grow: a garment reappears the day it has a photograph.
+
+- **Garments with no photography are not listed.** Picking one used to mean specifying it in full before the canvas admitted it had never been shot — a dead end the customer had to walk into to find. The women's designer is honest about being small rather than broad and empty.
+- **An attribute with one real value is stated, not asked.** The T-shirt's photographs are all one cut, so Fit, Length, Neckline and Back Design each collapse to a single choice; they now read as facts under "this garment" instead of rows holding one tile, which asks a question with one answer and looks half-loaded besides.
+- **Silence is not absence.** An attribute no photograph mentions is left whole — the rule withholds what it knows to be unavailable rather than everything it cannot confirm.
+
+**Verified in a real browser** (headless Edge over CDP, Georgian): the Shape step reads `ეს ნაწარმი — Fit: Body-Fitting, Length: Cropped` with nothing to pick, Details offers the six photographed sleeves and states Neckline and Back Design beneath them, and none of the eighteen unavailable option names appears as a control anywhere in the flow. The API offers 2 women's garments and 7 men's, against 25 and 7 before. No console errors; 82 tests green; locales in sync at 1513.
+
+---
+
 ### [2026-09-18] Uploads survive a deploy
 
 **Uploads move to object storage, because the container does not keep them.** Railway replaces the container on every release, so a file written to its own disk is gone by the next deploy. That was survivable while it only cost product photos; it is not survivable for the identity document a tailor is verified against, which could be uploaded on Monday and gone on Tuesday without anyone noticing it had been.
