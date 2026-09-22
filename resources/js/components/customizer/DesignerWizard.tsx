@@ -143,13 +143,9 @@ export default function DesignerWizard({
     const [savedName, setSavedName] = useState<string | null>(null);
     const savedTimer = useRef(0);
     useEffect(() => () => window.clearTimeout(savedTimer.current), []);
-    // What the stage caption reads while the customer is inside a step. Cleared
-    // on every step change so it never describes a question they have left.
-    const [caption, setCaption] = useState<string | null>(null);
     const productsRef = useRef<HTMLDivElement>(null);
     const focusProductsAfterCategory = useRef(false);
 
-    useEffect(() => { setCaption(null); }, [step]);
 
     // Each mobile stage should open at its beginning rather than retaining the
     // previous stage's scroll depth beneath the fixed progress strip.
@@ -159,13 +155,15 @@ export default function DesignerWizard({
         }
     }, [step]);
 
+    const selectedProductId = product?.id;
+
     // A newly loaded style creates the visual stage. Bring it into view
     // immediately so the customer sees the exact garment they selected.
     useEffect(() => {
-        if (product && window.matchMedia('(max-width: 899px)').matches) {
+        if (selectedProductId && window.matchMedia('(max-width: 899px)').matches) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-    }, [product?.id]);
+    }, [selectedProductId]);
 
     // Category and style live in the same first stage. Once a customer chooses
     // a category, take them directly to the newly revealed garments instead of
@@ -249,6 +247,7 @@ export default function DesignerWizard({
     const optionName = (attribute: LayerCategory): string => resolveOption(attribute)?.name ?? '—';
 
     const categories = categoriesFor(section);
+    const [changingCategory, setChangingCategory] = useState(false);
 
     // ── Step plumbing ───────────────────────────────────────────────────────
 
@@ -303,7 +302,7 @@ export default function DesignerWizard({
                     label={option.name}
                     modifier={option.price_modifier}
                     selected={resolveOption(attribute)?.id === option.id}
-                    onClick={() => { selectOption(attribute.id, option.id); setCaption(option.name); }}
+                    onClick={() => { selectOption(attribute.id, option.id); }}
                 />
             ))}
         </TileGroup>
@@ -356,7 +355,7 @@ export default function DesignerWizard({
                                     className={[
                                         'h-9 rounded-none px-3 text-[13px] font-normal transition-colors duration-150',
                                         section === candidate
-                                            ? 'bg-black text-white hover:bg-[#292929]'
+                                            ? 'bg-brand text-white hover:bg-brand-dark'
                                             : 'text-[var(--kd-body)] hover:bg-transparent hover:text-[var(--kd-burgundy)]',
                                     ].join(' ')}
                                 >
@@ -372,33 +371,39 @@ export default function DesignerWizard({
                         )}
 
                         <TileGroup label={t('designer.groupCategory')} value={category ? t(category.tKey) : null} hideHeader>
-                            {categories.map(entry => (
+                            {categories.filter(entry => !category || changingCategory || entry.key === category.key).map(entry => (
                                 <OptionTile
                                     key={entry.key}
                                     label={t(entry.tKey)}
                                     selected={category?.key === entry.key}
                                     onClick={() => {
                                         focusProductsAfterCategory.current = true;
+                                        setChangingCategory(false);
                                         onSelectCategory(entry);
                                     }}
                                     figure={<GarmentMark category={entry.key} className="h-7 w-6 flex-none min-[900px]:h-10 min-[900px]:w-[34px]" />}
                                 />
                             ))}
-                            <OptionTile
+                            {(!category || changingCategory) && <OptionTile
                                 label={t('design.uploadMyDesign')}
                                 selected={false}
                                 onClick={onUpload}
                                 figure={
-                                    <span className="flex h-7 w-6 flex-none items-center justify-center border border-dashed border-black/30 min-[900px]:h-10 min-[900px]:w-[34px]">
+                                    <span className="flex h-7 w-6 flex-none items-center justify-center border border-dashed border-[var(--kd-hairline)] min-[900px]:h-10 min-[900px]:w-[34px]">
                                         <Upload className="h-3.5 w-3.5 stroke-[1.4]" />
                                     </span>
                                 }
-                            />
+                            />}
                         </TileGroup>
+                        {category && !changingCategory && (
+                            <button type="button" onClick={() => setChangingCategory(true)} className="self-start text-xs text-[var(--kd-body)] underline underline-offset-4">
+                                {t('designer.changeCategory')}
+                            </button>
+                        )}
 
-                        {category && (
+                        {category && !changingCategory && (
                             <div ref={productsRef} className="scroll-mt-20">
-                            <TileGroup label={t('designer.groupStyle')} value={product?.name ?? null} hideHeader>
+                            <TileGroup label={t('designer.groupStyle')} value={product?.name ?? null}>
                                 {productsLoading && (
                                     <div className="col-span-full flex justify-center py-8">
                                         <Loader2 className="h-6 w-6 animate-spin text-[var(--kd-burgundy)]/55" />
@@ -425,7 +430,7 @@ export default function DesignerWizard({
                                                 loading="lazy"
                                                 className="h-7 w-6 flex-none object-contain min-[900px]:h-10 min-[900px]:w-[34px]"
                                               />
-                                            : <span className="h-7 w-6 flex-none min-[900px]:h-10 min-[900px]:w-[34px]" />}
+                                            : <GarmentMark category={category.key} className="h-7 w-6 flex-none min-[900px]:h-10 min-[900px]:w-[34px]" />}
                                     />
                                 ))}
                             </TileGroup>
@@ -449,7 +454,7 @@ export default function DesignerWizard({
                                     key={colour.name}
                                     label={colour.name}
                                     selected={currentColor === colour.name}
-                                    onClick={() => { selectColorByName(colour.name); setCaption(colour.name); }}
+                                    onClick={() => { selectColorByName(colour.name); }}
                                     figure={<ColorFigure hex={colour.hex} />}
                                 />
                             ))}
@@ -465,7 +470,7 @@ export default function DesignerWizard({
                                     label={fabric.name}
                                     modifier={fabric.price_modifier}
                                     selected={fabricId === fabric.id}
-                                    onClick={() => { selectFabric(fabric.id); setCaption(fabric.name); }}
+                                    onClick={() => { selectFabric(fabric.id); }}
                                     figure={<ColorFigure hex={fabric.color_hex} />}
                                 />
                             ))}
@@ -494,7 +499,7 @@ export default function DesignerWizard({
                             <Button
                                 variant="link"
                                 size="sm"
-                                onClick={() => { reset(); setCaption(null); }}
+                                onClick={() => { reset(); }}
                                 className="h-auto p-0 text-[13px] font-normal text-[var(--kd-muted)] underline underline-offset-4 transition-colors duration-150 hover:text-[var(--kd-burgundy)]"
                             >
                                 {t('customizer.reset')}
@@ -514,25 +519,25 @@ export default function DesignerWizard({
     };
 
     return (
-        <div className="kere-designer flex min-h-screen flex-col min-[900px]:grid min-[900px]:grid-cols-[118px_minmax(0,1fr)]">
+        <div className={`kere-designer ${step === STEP_GARMENT ? 'designer-selecting' : 'designer-configuring'} flex min-h-screen flex-col min-[900px]:grid min-[900px]:grid-cols-[118px_minmax(0,1fr)]`}>
             <StepRail steps={railSteps} step={step} onStep={onStep} onExit={onExit} />
 
-            <div className="grid items-start gap-[clamp(28px,4vw,72px)] px-[clamp(18px,3.5vw,56px)] pb-[164px] pt-[clamp(22px,3vw,42px)] min-[900px]:grid-cols-[minmax(300px,460px)_minmax(420px,1fr)] min-[900px]:pb-[104px]">
+            <div className="designer-workspace grid items-start gap-[clamp(28px,4vw,72px)] px-[clamp(18px,3.5vw,56px)] pb-[164px] pt-[clamp(22px,3vw,42px)] min-[900px]:grid-cols-[minmax(300px,460px)_minmax(420px,1fr)] min-[900px]:pb-[104px]">
                 <motion.div
                     key={step}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="order-2 w-full max-w-[460px] min-[900px]:order-none"
+                    className="designer-options order-2 w-full max-w-[460px] min-[900px]:order-none"
                 >
-                    <h1 className="kd-display max-w-[18ch] text-[clamp(23px,3vw,36px)] leading-[1.06] tracking-[-0.008em] text-[var(--kd-ink)] [text-wrap:pretty]">
+                    {step === STEP_GARMENT && <h1 className="kd-display max-w-[18ch] text-[clamp(23px,3vw,36px)] leading-[1.06] tracking-[-0.008em] text-[var(--kd-ink)] [text-wrap:pretty]">
                         {t(`designer.headline${step}`)}
-                    </h1>
+                    </h1>}
 
                     <div className="mt-5 flex flex-col gap-5">{stepContent()}</div>
                 </motion.div>
 
-                <StagePanel
+                {step !== STEP_GARMENT && product && <StagePanel
                     layerCategories={layerCategories}
                     selections={selections}
                     selectedFabric={selectedFabric}
@@ -544,11 +549,11 @@ export default function DesignerWizard({
                     view={view}
                     onView={setView}
                     thumbnailFor={thumbnailFor}
-                    awaitingGarment={product === null}
-                />
+                    awaitingGarment={false}
+                />}
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 z-30 flex flex-wrap items-center justify-end gap-2 border-t border-[var(--kd-hairline)] bg-[var(--kd-cream)]/95 px-[clamp(18px,3.5vw,56px)] py-3 backdrop-blur-md min-[900px]:left-[118px]">
+            <div className="designer-footer fixed bottom-0 left-0 right-0 z-30 flex flex-wrap items-center justify-end gap-2 border-t border-[var(--kd-hairline)] bg-[var(--kd-cream)]/95 px-[clamp(18px,3.5vw,56px)] py-3 backdrop-blur-md min-[900px]:left-[118px]">
                 {product && (
                     <span className="kd-display mr-auto text-xl tabular-nums text-[var(--kd-ink)] min-[900px]:text-2xl">
                         {money(totalPrice)}
@@ -560,7 +565,7 @@ export default function DesignerWizard({
                     size="default"
                     disabled={!canAdvance}
                     onClick={advance}
-                    className="h-10 rounded-none bg-black px-4 text-xs font-medium text-white hover:bg-[#292929] min-[900px]:h-11 min-[900px]:px-5 min-[900px]:text-sm"
+                    className="h-10 rounded-none bg-brand px-4 text-xs font-medium text-white hover:bg-brand-dark min-[900px]:h-11 min-[900px]:px-5 min-[900px]:text-sm"
                 >
                     {step === STEP_REVIEW
                         ? t('designer.chooseTailor')

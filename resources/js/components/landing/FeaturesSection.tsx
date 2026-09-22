@@ -52,7 +52,7 @@ export function FeaturesSection() {
               initial={{ opacity: 0, y: 28 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.5, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.5, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
               className="flex flex-col justify-center border-b border-black/10 py-8 last:border-b-0 sm:py-10 lg:min-h-[52vh] lg:py-16"
             >
               <h3 className="max-w-[560px] font-serif text-[clamp(1.45rem,2.3vw,2.7rem)] font-medium leading-[1.05] tracking-[-0.025em] !text-[#111111]">

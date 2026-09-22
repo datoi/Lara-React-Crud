@@ -1,4 +1,6 @@
-import { BadgeCheck, Check, ChevronDown, Heart, ImageOff, LayoutGrid, Palette, Search, Star, X } from 'lucide-react';
+import * as Dialog from '@radix-ui/react-dialog';
+import { ProductImage } from '../components/marketplace/ProductImage';
+import { BadgeCheck, ChevronDown, ImageOff, LayoutGrid, Search, Star, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -9,7 +11,6 @@ import { Navigation } from '../components/landing/Navigation';
 import { ProductCardSkeleton } from '../components/skeletons/ProductCardSkeleton';
 import { addToCart, openCart } from '../hooks/useCart';
 import { getSection, setSection, type Section } from '../hooks/useSection';
-import { getAuthToken, saveReturnTo } from '../hooks/useAuth';
 
 interface ApiProduct {
     id: number;
@@ -88,7 +89,6 @@ export default function Marketplace() {
 
     const switchSection = (s: Section) => {
         setAudience(s);
-        setSelectedCategory('');
         setPage(1);
         const next = new URLSearchParams(searchParams);
         next.set('gender', s);
@@ -110,30 +110,17 @@ export default function Marketplace() {
 
     const [search, setSearch] = useState('');
     const [audience, setAudience] = useState<'all' | Section>(() => section ?? 'all');
-    const [selectedCategory, setSelectedCategory] = useState(() => searchParams.get('category') ?? '');
+    const selectedCategory = searchParams.get('category') ?? '';
     const [selectedColours, setSelectedColours] = useState<string[]>([]);
     const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
     const [selectedFabrics, setSelectedFabrics] = useState<string[]>([]);
+    const [customizableOnly, setCustomizableOnly] = useState(false);
     const [priceMax, setPriceMax] = useState(500);
     const [sort, setSort] = useState(() => searchParams.get('sort') ?? '');
     const [activeFilter, setActiveFilter] = useState<FilterMenu | null>(null);
     const [showSort, setShowSort] = useState(false);
-    const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
-    const [wishlistProduct, setWishlistProduct] = useState<ApiProduct | null>(null);
-    const [wishlistSaving, setWishlistSaving] = useState<number | null>(null);
-
-    useEffect(() => {
-        const token = getAuthToken();
-        if (!token) return;
-        fetch('/api/wishlist', {
-            headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-        })
-            .then((response) => response.ok ? response.json() : null)
-            .then((data) => {
-                if (data) setWishlistIds(new Set((data.products ?? []).map((product: ApiProduct) => product.id)));
-            });
-    }, []);
-
+    const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+    const [quickBuyId, setQuickBuyId] = useState<number | null>(null);
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -144,7 +131,6 @@ export default function Marketplace() {
     };
 
     const handleCategoryChange = (slug: string) => {
-        setSelectedCategory(slug);
         const next = new URLSearchParams(searchParams);
         if (slug) next.set('category', slug);
         else next.delete('category');
@@ -173,7 +159,7 @@ export default function Marketplace() {
             .catch(() => {});
     }, []);
 
-    const prevFiltersRef = useRef({ audience, selectedCategory, selectedColours, selectedSizes, selectedFabrics, debouncedSearch, priceMax, sort, retryKey });
+    const prevFiltersRef = useRef({ audience, selectedCategory, selectedColours, selectedSizes, selectedFabrics, debouncedSearch, priceMax, customizableOnly, sort, retryKey });
 
     useEffect(() => {
         if (!section) return; // awaiting redirect to the section chooser
@@ -186,10 +172,11 @@ export default function Marketplace() {
             prev.selectedFabrics !== selectedFabrics ||
             prev.debouncedSearch !== debouncedSearch ||
             prev.priceMax !== priceMax ||
+            prev.customizableOnly !== customizableOnly ||
             prev.sort !== sort ||
             prev.retryKey !== retryKey;
 
-        prevFiltersRef.current = { audience, selectedCategory, selectedColours, selectedSizes, selectedFabrics, debouncedSearch, priceMax, sort, retryKey };
+        prevFiltersRef.current = { audience, selectedCategory, selectedColours, selectedSizes, selectedFabrics, debouncedSearch, priceMax, customizableOnly, sort, retryKey };
 
         if (filtersChanged && page !== 1) {
             isAppendRef.current = false;
@@ -215,6 +202,7 @@ export default function Marketplace() {
         selectedFabrics.forEach((fabric) => params.append('fabric[]', fabric));
         if (debouncedSearch) params.set('search', debouncedSearch);
         if (priceMax < 500) params.set('max_price', String(priceMax));
+        if (customizableOnly) params.set('customizable', '1');
         if (sort) params.set('sort', sort);
         params.set('page', String(page));
 
@@ -241,7 +229,7 @@ export default function Marketplace() {
             });
 
         return () => controller.abort();
-    }, [section, audience, selectedCategory, selectedColours, selectedSizes, selectedFabrics, debouncedSearch, priceMax, sort, page, retryKey]);
+    }, [section, audience, selectedCategory, selectedColours, selectedSizes, selectedFabrics, debouncedSearch, priceMax, customizableOnly, sort, page, retryKey]);
 
     const handleLoadMore = () => {
         isAppendRef.current = true;
@@ -265,41 +253,15 @@ export default function Marketplace() {
         openCart();
     };
 
-    const toggleWishlist = async (product: ApiProduct) => {
-        const token = getAuthToken();
-        if (!token) {
-            saveReturnTo('/marketplace');
-            navigate('/login/customer');
-            return;
-        }
-
-        const isSaved = wishlistIds.has(product.id);
-        setWishlistSaving(product.id);
-        const response = await fetch(`/api/wishlist/${product.id}`, {
-            method: isSaved ? 'DELETE' : 'POST',
-            headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-        });
-        if (response.ok) {
-            setWishlistIds((current) => {
-                const next = new Set(current);
-                if (isSaved) next.delete(product.id);
-                else next.add(product.id);
-                return next;
-            });
-            if (!isSaved) setWishlistProduct(product);
-        }
-        setWishlistSaving(null);
-    };
-
     const hasActiveFilters =
-        selectedCategory !== '' || selectedColours.length > 0 || selectedSizes.length > 0 || selectedFabrics.length > 0 || priceMax < 500;
+        customizableOnly || selectedCategory !== '' || selectedColours.length > 0 || selectedSizes.length > 0 || selectedFabrics.length > 0 || priceMax < 500;
 
     const clearFilters = () => {
-        setSelectedCategory('');
         setSelectedColours([]);
         setSelectedSizes([]);
         setSelectedFabrics([]);
         setPriceMax(500);
+        setCustomizableOnly(false);
         setSort('');
         setPage(1);
         setActiveFilter(null);
@@ -328,12 +290,21 @@ export default function Marketplace() {
             more: t('marketplace.moreFilters'),
         })[menu];
 
+    const filterSummary = (menu: FilterMenu) => {
+        const all = t('marketplace.allCategories');
+        if (menu === 'category') return categories.find(item => item.slug === selectedCategory)?.name ?? all;
+        if (menu === 'colour') return selectedColours.map(value => COLOUR_OPTIONS.find(item => item.value === value)?.label ?? value).join(', ') || all;
+        if (menu === 'size') return selectedSizes.join(', ') || all;
+        if (menu === 'fabric') return selectedFabrics.join(', ') || all;
+        return [priceMax < 500 ? `${t('marketplace.maxPrice')} ₾${priceMax}` : '', customizableOnly ? t('marketplace.customizableBadge') : ''].filter(Boolean).join(' · ') || all;
+    };
+
     const resetFilter = (menu: FilterMenu) => {
         if (menu === 'category') handleCategoryChange('');
         if (menu === 'colour') setSelectedColours([]);
         if (menu === 'size') setSelectedSizes([]);
         if (menu === 'fabric') setSelectedFabrics([]);
-        if (menu === 'more') setPriceMax(500);
+        if (menu === 'more') { setPriceMax(500); setCustomizableOnly(false); }
     };
 
     const filterIsActive = (menu: FilterMenu) =>
@@ -341,12 +312,12 @@ export default function Marketplace() {
         (menu === 'colour' && selectedColours.length > 0) ||
         (menu === 'size' && selectedSizes.length > 0) ||
         (menu === 'fabric' && selectedFabrics.length > 0) ||
-        (menu === 'more' && priceMax < 500);
+        (menu === 'more' && (priceMax < 500 || customizableOnly));
 
     const checkboxRow = (label: string, checked: boolean, onClick: () => void, swatch?: string) => (
         <button key={label} onClick={onClick} className="flex w-full items-center gap-4 py-2.5 text-left text-sm font-semibold text-[#2c2926] hover:opacity-60">
             <span
-                className={`flex h-6 w-6 shrink-0 items-center justify-center border ${checked ? 'border-[#111111] bg-[#111111]' : 'border-[#111111]/60'}`}
+                className={`flex h-6 w-6 shrink-0 items-center justify-center border ${checked ? 'border-brand bg-brand' : 'border-[#111111]/60'}`}
             >
                 {checked && <span className="h-2 w-2 bg-white" />}
             </span>
@@ -400,6 +371,7 @@ export default function Marketplace() {
         }
         return (
             <div className="py-2">
+                {checkboxRow(t('marketplace.customizableBadge'), customizableOnly, () => setCustomizableOnly(!customizableOnly))}
                 <p className="mb-4 text-sm font-semibold text-[#2c2926]">
                     {t('marketplace.maxPrice')} {priceMax < 500 ? `₾${priceMax}` : t('marketplace.maxPriceAny')}
                 </p>
@@ -423,7 +395,7 @@ export default function Marketplace() {
     if (!section) return null; // awaiting redirect to the section chooser
 
     return (
-        <div className="marketplace-catalog-page min-h-screen bg-[#E4E0D7] text-[#111111]">
+        <div className="marketplace-catalog-page min-h-screen bg-[var(--store-paper)] text-[#111111]">
             <Helmet>
                 <title>{t('marketplace.pageTitle')}</title>
                 <meta
@@ -464,7 +436,7 @@ export default function Marketplace() {
                                     className={`w-[42vw] max-w-[190px] shrink-0 snap-start border p-2 pb-4 text-black ${selectedCategory === category.slug ? 'border-black' : 'border-black/5 bg-white/35'}`}
                                 >
                                     <div className="aspect-[3/4] bg-[#efefed]">
-                                        <img
+                                        <ProductImage
                                             src={CATEGORY_IMAGES[category.slug] ?? '/assets/design-categories/dress-cutout.png'}
                                             alt=""
                                             className="h-full w-full object-contain p-2"
@@ -485,7 +457,7 @@ export default function Marketplace() {
                                 setPage(1);
                             }}
                             className={`inline-flex min-h-11 items-center px-5 py-3 text-[11px] font-semibold uppercase transition-colors ${
-                                audience === 'all' ? 'bg-[#111111] text-white' : 'bg-[#EEEAE0] text-[#111111] hover:bg-[#111111]/10'
+                                audience === 'all' ? 'bg-brand text-white' : 'bg-[#EEEAE0] text-[#111111] hover:bg-[#111111]/10'
                             }`}
                         >
                             {t('marketplace.allCategories')}
@@ -496,7 +468,7 @@ export default function Marketplace() {
                                 type="button"
                                 onClick={() => switchSection(option)}
                                 className={`inline-flex min-h-11 items-center px-5 py-3 text-[11px] font-semibold uppercase transition-colors ${
-                                    audience === option ? 'bg-[#111111] text-white' : 'bg-[#EEEAE0] text-[#111111] hover:bg-[#111111]/10'
+                                    audience === option ? 'bg-brand text-white' : 'bg-[#EEEAE0] text-[#111111] hover:bg-[#111111]/10'
                                 }`}
                             >
                                 {t(`section.${option}`)}
@@ -505,25 +477,45 @@ export default function Marketplace() {
                     </div>
                 </div>
 
-                <div className="sticky top-[46px] z-40 -mx-3 mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-y border-[#111111]/20 bg-[#E4E0D7] px-3 py-2 sm:top-[50px] sm:mx-0 sm:px-3 sm:py-3">
-                    <p className="order-2 hidden justify-self-center text-xs font-semibold whitespace-nowrap text-[#111111] uppercase sm:block">
-                        {products.length === 1 ? t('marketplace.showingOne') : t('marketplace.showingMany', { n: products.length })}
+                <div className="sticky top-[46px] z-40 -mx-3 mb-4 grid grid-cols-[auto_1fr_auto] lg:grid-cols-[1fr_auto_1fr] items-center gap-2 border-y border-[#111111]/20 bg-[var(--store-paper)] px-3 py-2 sm:top-[50px] sm:mx-0 sm:px-3 sm:py-3">
+                    <p className="order-2 justify-self-start text-[10px] font-normal whitespace-nowrap text-[#887870] lg:justify-self-center lg:text-xs">
+                        {loading ? '…' : t('marketplace.resultCount', { count: total })}
                     </p>
 
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setActiveFilter((current) => current === 'category' ? null : 'category');
-                            setShowSort(false);
-                        }}
-                        className="order-1 justify-self-start text-sm font-normal uppercase text-black sm:hidden"
-                    >
-                        {t('marketplace.filtersLabel')} <ChevronDown className="ml-1 inline h-4 w-4" />
-                    </button>
+                    <Dialog.Root open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                        <Dialog.Trigger className="market-filter-trigger order-1 justify-self-start py-2 text-[10px] font-normal uppercase lg:hidden">
+                            {t('marketplace.filterAndSort')} <ChevronDown className="inline h-4 w-4" />
+                        </Dialog.Trigger>
+                        <Dialog.Portal>
+                            <Dialog.Overlay className="fixed inset-0 z-[120] bg-black/20" />
+                            <Dialog.Content className="market-filter-panel" aria-describedby={undefined}>
+                                <div className="flex items-center justify-between border-b border-black/15 p-5">
+                                    <Dialog.Title className="text-lg font-semibold uppercase">{t('marketplace.filtersLabel')}</Dialog.Title>
+                                    <Dialog.Close aria-label={t('newsletterPopup.close')} className="p-2"><X /></Dialog.Close>
+                                </div>
+                                <div className="min-h-0 flex-1 overflow-y-auto p-5">
+                                    <details className="market-filter-section">
+                                        <summary><span>{t('marketplace.sortLabel')}<span className="market-filter-selection">{sortLabel}</span></span></summary>
+                                        {sortOptions.map((option) => <button key={option.value} onClick={() => handleSortChange(option.value)} aria-pressed={sort === option.value} className={`block w-full py-3 text-left ${sort === option.value ? 'text-brand font-semibold' : 'text-[#655D55]'}`}>{option.label}</button>)}
+                                    </details>
+                                    {(['category', 'colour', 'size', 'fabric', 'more'] as FilterMenu[]).map((menu) => (
+                                        <details key={menu} className="market-filter-section">
+                                            <summary><span>{filterLabel(menu)}<span className="market-filter-selection">{filterSummary(menu)}</span></span></summary>
+                                            {renderFilterContent(menu)}
+                                            <button onClick={() => resetFilter(menu)} className="py-3 text-sm underline">{t('marketplace.resetFilter')}</button>
+                                        </details>
+                                    ))}
+                                </div>
+                                <div className="market-filter-actions">
+                                    <button type="button" onClick={clearFilters} className="border border-[#d5cec5] bg-transparent text-[var(--store-ink)]">{t('marketplace.clearAllFilters')}</button>
+                                    <Dialog.Close className="bg-brand text-white hover:bg-brand-dark">{t('marketplace.applyFilters')}</Dialog.Close>
+                                </div>
+                            </Dialog.Content>
+                        </Dialog.Portal>
+                    </Dialog.Root>
+                    <LayoutGrid className="order-3 h-5 w-5 justify-self-end lg:hidden" aria-hidden="true" />
 
-                    <LayoutGrid className="order-2 h-5 w-5 text-black sm:hidden" aria-hidden="true" />
-
-                    <div className="relative order-3 h-fit justify-self-end sm:order-1 sm:justify-self-start">
+                    <div className="relative order-3 hidden h-fit justify-self-end lg:block">
                         <button
                             onClick={() => {
                                 setShowSort((v) => !v);
@@ -531,7 +523,7 @@ export default function Marketplace() {
                             }}
                             className={`flex min-h-10 items-center gap-1.5 border px-3 py-2 text-sm font-medium transition-colors sm:min-h-11 sm:px-4 sm:py-2.5 ${
                                 sort
-                                    ? 'border-[#111111] bg-[#111111] text-white'
+                                    ? 'border-brand bg-brand text-white'
                                     : 'border-[#111111]/15 bg-[#EEEAE0] text-[#514843] hover:bg-[#111111]/5'
                             }`}
                         >
@@ -553,7 +545,7 @@ export default function Marketplace() {
                                             key={opt.value}
                                             onClick={() => handleSortChange(opt.value)}
                                             className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                                                sort === opt.value ? 'bg-[#111111] text-white' : 'text-[#514843] hover:bg-[#111111]/5'
+                                                sort === opt.value ? 'bg-brand text-white' : 'text-[#514843] hover:bg-[#111111]/5'
                                             }`}
                                         >
                                             {opt.label}
@@ -564,8 +556,8 @@ export default function Marketplace() {
                         </AnimatePresence>
                     </div>
 
-                    <div className="relative order-1 hidden min-w-0 sm:order-3 sm:block sm:justify-self-end">
-                        <div className="flex min-h-11 max-w-full flex-wrap items-center justify-end gap-x-4 gap-y-1 overflow-visible pl-3">
+                    <div className="relative order-1 hidden min-w-0 lg:block lg:justify-self-start">
+                        <div className="flex min-h-11 max-w-full flex-wrap items-center justify-start gap-x-4 gap-y-1 overflow-visible">
                             {(['category', 'colour', 'size', 'fabric', 'more'] as FilterMenu[]).map((menu) => (
                                 <div key={menu} className="relative shrink-0">
                                     <button
@@ -590,7 +582,7 @@ export default function Marketplace() {
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: 6 }}
                                                 transition={{ duration: 0.15 }}
-                                                className="absolute top-full right-0 z-20 mt-2 max-h-[calc(100vh-130px)] w-[min(380px,calc(100vw-1.5rem))] overflow-y-auto border border-[#111111]/15 bg-[#F4F1E7] px-6 py-6 shadow-[0_18px_48px_rgba(17,17,17,0.16)]"
+                                                className="absolute top-full left-0 z-20 mt-2 max-h-[calc(100vh-130px)] w-[min(380px,calc(100vw-1.5rem))] overflow-y-auto border border-[#111111]/15 bg-[var(--store-paper)] px-6 py-6 shadow-[0_18px_48px_rgba(17,17,17,0.16)]"
                                             >
                                                 <h3 className="border-b border-[#111111]/15 pb-5 text-xl font-medium text-[#6c625b]">
                                                     {t('marketplace.filterPrefix')} {filterLabel(menu)}
@@ -610,83 +602,25 @@ export default function Marketplace() {
                         </div>
                     </div>
 
-                    {/* Mobile uses one reachable panel for every filter menu. */}
-                    <AnimatePresence>
-                        {activeFilter && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 6 }}
-                                transition={{ duration: 0.15 }}
-                                className="absolute left-3 right-3 top-full z-30 border border-black/15 bg-[#F4F1E7] p-5 shadow-xl sm:hidden"
-                            >
-                                <div className="marketplace-scrollbar-none -mx-1 flex gap-4 overflow-x-auto border-b border-[#111111]/15 pb-3" style={{ scrollbarWidth: 'none' }}>
-                                    {(['category', 'colour', 'size', 'fabric', 'more'] as FilterMenu[]).map((menu) => (
-                                        <button
-                                            key={menu}
-                                            onClick={() => setActiveFilter(menu)}
-                                            className={`shrink-0 px-1 text-[11px] font-semibold uppercase transition-colors ${
-                                                activeFilter === menu || filterIsActive(menu) ? 'text-[#111111]' : 'text-[#514843]'
-                                            }`}
-                                        >
-                                            {filterLabel(menu)}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="max-h-[46vh] overflow-y-auto py-4">{renderFilterContent(activeFilter)}</div>
-                                <button
-                                    onClick={() => resetFilter(activeFilter)}
-                                    className="border-t border-[#111111]/15 pt-4 text-sm font-semibold text-[#111111] underline underline-offset-4"
-                                >
-                                    {t('marketplace.resetFilter')}
-                                </button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+
                 </div>
 
                 {(hasActiveFilters || sort) && (
-                    <div className="mb-4 flex flex-wrap gap-2">
-                        {selectedCategory && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700">
-                                {categories.find((c) => c.slug === selectedCategory)?.name ?? selectedCategory}
-                                <button onClick={() => handleCategoryChange('')} className="hover:text-slate-900">
-                                    <X className="h-3 w-3" />
-                                </button>
-                            </span>
-                        )}
-                        {priceMax < 500 && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700">
-                                {t('marketplace.maxPrice')} ₾{priceMax}
-                                <button onClick={() => setPriceMax(500)} className="hover:text-slate-900">
-                                    <X className="h-3 w-3" />
-                                </button>
-                            </span>
-                        )}
-                        {sort && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700">
-                                {sortLabel}
-                                <button onClick={() => handleSortChange('')} className="hover:text-slate-900">
-                                    <X className="h-3 w-3" />
-                                </button>
-                            </span>
-                        )}
-                        <button onClick={clearFilters} className="text-xs text-slate-400 underline hover:text-slate-700">
-                            {t('marketplace.clearAll')}
-                        </button>
+                    <div className="market-active-filters">
+                        {[
+                            ...(selectedCategory ? [{ key: 'category', label: categories.find(c => c.slug === selectedCategory)?.name ?? selectedCategory, remove: () => handleCategoryChange('') }] : []),
+                            ...selectedColours.map(value => ({ key: `colour-${value}`, label: COLOUR_OPTIONS.find(c => c.value === value)?.label ?? value, remove: () => setSelectedColours(selectedColours.filter(c => c !== value)) })),
+                            ...selectedSizes.map(value => ({ key: `size-${value}`, label: value, remove: () => setSelectedSizes(selectedSizes.filter(c => c !== value)) })),
+                            ...selectedFabrics.map(value => ({ key: `fabric-${value}`, label: value, remove: () => setSelectedFabrics(selectedFabrics.filter(c => c !== value)) })),
+                            ...(priceMax < 500 ? [{ key: 'price', label: `${t('marketplace.maxPrice')} ₾${priceMax}`, remove: () => setPriceMax(500) }] : []),
+                            ...(customizableOnly ? [{ key: 'customizable', label: t('marketplace.customizableBadge'), remove: () => setCustomizableOnly(false) }] : []),
+                            ...(sort ? [{ key: 'sort', label: sortLabel, remove: () => handleSortChange('') }] : []),
+                        ].map(filter => (
+                            <button type="button" key={filter.key} onClick={filter.remove} className="market-filter-chip" aria-label={`${t('marketplace.removeFilter')}: ${filter.label}`}>
+                                <span>{filter.label}</span><X aria-hidden="true" />
+                            </button>
+                        ))}
                     </div>
-                )}
-
-                {!loading && (
-                    <p className="mb-5 text-sm text-[#6c625b] lg:hidden">
-                        {products.length === 1 ? t('marketplace.showingOne') : t('marketplace.showingMany', { n: products.length })}
-                        {debouncedSearch && (
-                            <>
-                                {' '}
-                                {t('marketplace.forSearch')} "<span className="font-medium text-[#111111]">{debouncedSearch}</span>"
-                            </>
-                        )}
-                    </p>
                 )}
 
                 {fetchError ? (
@@ -714,7 +648,7 @@ export default function Marketplace() {
                                 handleSearchChange('');
                                 clearFilters();
                             }}
-                            className="bg-[#111111] px-4 py-2 text-sm text-white transition-colors hover:bg-[#333333]"
+                            className="bg-brand px-4 py-2 text-sm text-white transition-colors hover:bg-brand-dark"
                         >
                             {t('marketplace.clearAllFilters')}
                         </button>
@@ -730,59 +664,34 @@ export default function Marketplace() {
                                     initial={isNew ? { opacity: 0, y: 16 } : false}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: isNew ? 0.4 : 0, delay: isNew ? newBatchIndex * 0.04 : 0 }}
-                                    className="group cursor-pointer overflow-hidden border-0 bg-transparent transition-transform duration-300 sm:border sm:border-[#111111]/18 sm:hover:-translate-y-1 sm:hover:shadow-[0_24px_60px_rgba(17,17,17,0.14)]"
+                                    className="group cursor-pointer overflow-hidden border-0 bg-transparent sm:border sm:border-[#111111]/18"
                                     onClick={() => navigate(`/product/${product.id}`)}
                                 >
                                     <div className="relative aspect-[4/5] overflow-hidden bg-[#EEEAE0]">
-                                        <button
-                                            type="button"
-                                            onClick={(event) => {
-                                                event.stopPropagation();
-                                                toggleWishlist(product);
-                                            }}
-                                            disabled={wishlistSaving === product.id}
-                                            aria-label={wishlistIds.has(product.id) ? t('wishlist.remove') : t('wishlist.add')}
-                                            className="visible absolute right-2 top-2 z-30 flex h-9 w-9 items-center justify-center rounded-full border border-black/15 bg-white text-black opacity-100 shadow-[0_4px_16px_rgba(0,0,0,0.14)] transition-transform hover:scale-105 disabled:opacity-50 sm:right-3 sm:top-3 sm:h-10 sm:w-10"
-                                        >
-                                            <Heart className={`h-4 w-4 stroke-[1.7] sm:h-5 sm:w-5 ${wishlistIds.has(product.id) ? 'fill-black' : 'fill-transparent'}`} />
-                                        </button>
-                                        {product.is_customizable && (
-                                            <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 bg-white/90 px-2 py-1 text-[10px] font-semibold text-[#111111] shadow-sm backdrop-blur">
-                                                <Palette className="h-3 w-3" />
-                                                {t('marketplace.customizableBadge')}
-                                            </span>
-                                        )}
                                         {product.images?.[0] ? (
-                                            <img
+                                            <ProductImage
                                                 src={product.images[0]}
                                                 alt={product.name}
-                                                className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-105 sm:p-5"
+                                                className="h-full w-full object-contain p-2 sm:p-5"
                                             />
                                         ) : (
                                             <div className="flex h-full w-full items-center justify-center text-[#6c625b]/28">
                                                 <ImageOff className="h-10 w-10 stroke-[1.4]" />
                                             </div>
                                         )}
-                                        <div className="absolute inset-x-0 bottom-0 z-10 hidden items-center overflow-x-auto border-t border-[#111111]/15 bg-[#F4F1E7]/96 transition-transform duration-300 md:flex md:translate-y-full md:group-hover:translate-y-0">
-                                            {(product.sizes?.length ? product.sizes : ['XS', 'S', 'M', 'L', 'XL']).map((size) => (
-                                                <button
-                                                    key={size}
-                                                    type="button"
-                                                    onClick={(event) => {
-                                                        event.stopPropagation();
-                                                        addProductToCart(product, size);
-                                                    }}
-                                                    className="min-w-14 flex-1 px-3 py-3 text-center text-[11px] font-semibold text-[#111111] transition-colors hover:bg-[#111111] hover:text-white sm:text-xs"
-                                                    aria-label={`${t('marketplace.chooseSize')} ${size}`}
-                                                >
-                                                    {size}
-                                                </button>
-                                            ))}
+                                        <div className="market-quick-buy" onClick={(event) => event.stopPropagation()}>
+                                            {quickBuyId === product.id && (product.sizes?.length ?? 0) > 0 ? (
+                                                <div className="flex flex-wrap bg-[var(--store-paper)]">
+                                                    {product.sizes!.map((size) => <button key={size} className="min-h-12 min-w-12 flex-1 px-3 text-sm hover:bg-brand hover:text-white" onClick={() => addProductToCart(product, size)} aria-label={`${t('marketplace.chooseSize')} ${size}`}>{size}</button>)}
+                                                </div>
+                                            ) : (
+                                                <button className="w-full py-2 text-[10px] font-medium uppercase sm:py-2.5 sm:text-[11px]" onClick={() => product.colors && product.colors.length > 1 ? navigate(`/product/${product.id}`) : product.sizes?.length ? setQuickBuyId(product.id) : navigate(`/product/${product.id}`)}>{t('marketplace.quickBuy')}</button>
+                                            )}
                                         </div>
                                     </div>
 
                                     <div className="px-0 py-3 sm:border-t sm:border-[#111111]/12 sm:px-3">
-                                        <h3 className="mb-1 text-xs leading-tight font-normal uppercase text-[#111111] sm:text-sm sm:font-bold sm:normal-case">{product.name}</h3>
+                                        <h3 className="market-product-name mb-1 text-[10px] leading-snug font-normal text-[#111111] sm:text-xs">{product.name}</h3>
                                         <p className="mb-2 hidden flex-wrap items-center gap-1 text-[10px] text-[#6c625b] sm:flex">
                                             <span>
                                                 {t('marketplace.by')}{' '}
@@ -818,6 +727,11 @@ export default function Marketplace() {
                                         ) : (
                                             <p className="mb-2 hidden text-[10px] text-[#6c625b] sm:block">{t('marketplace.noReviews')}</p>
                                         )}
+                                        {product.colors && product.colors.length > 0 && (
+                                            <div className="market-product-colours mb-2 flex flex-wrap gap-1" aria-label={t('marketplace.availableColours')}>
+                                                {product.colors.map((color) => <span key={color} title={color} aria-label={color} role="img" className="h-2.5 w-2.5 border border-black/20 sm:h-3 sm:w-3" style={{ backgroundColor: color }} />)}
+                                            </div>
+                                        )}
                                         <div className="flex items-center">
                                             <span className="text-xs font-semibold text-[#111111] sm:text-sm sm:font-bold">₾{product.price}</span>
                                         </div>
@@ -833,7 +747,7 @@ export default function Marketplace() {
                         <button
                             onClick={handleLoadMore}
                             disabled={loadingMore}
-                            className="border border-[#111111]/18 px-6 py-2.5 text-sm font-medium text-[#111111] transition-colors hover:bg-[#111111] hover:text-white disabled:opacity-50"
+                            className="border border-[#111111]/18 px-6 py-2.5 text-sm font-medium text-[#111111] transition-colors hover:bg-brand-dark hover:text-white disabled:opacity-50"
                         >
                             {loadingMore ? t('marketplace.loading') : t('marketplace.loadMore', { n: total - products.length })}
                         </button>
@@ -841,63 +755,7 @@ export default function Marketplace() {
                 )}
             </div>
 
-            <AnimatePresence>
-                {wishlistProduct && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[140] flex items-center justify-center bg-black/45 p-4"
-                        onClick={() => setWishlistProduct(null)}
-                    >
-                        <motion.section
-                            role="dialog"
-                            aria-modal="true"
-                            aria-labelledby="wishlist-added-title"
-                            initial={{ opacity: 0, y: 14, scale: 0.98 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 14, scale: 0.98 }}
-                            className="relative w-full max-w-2xl bg-white p-5 text-black shadow-2xl sm:p-7"
-                            onClick={(event) => event.stopPropagation()}
-                        >
-                            <div className="flex items-center gap-3 border-b border-black/10 pb-4 pr-10">
-                                <Check className="h-6 w-6 stroke-[1.4]" />
-                                <h2 id="wishlist-added-title" className="text-lg font-normal uppercase tracking-[0.04em]">
-                                    {t('wishlist.addedTitle')}
-                                </h2>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setWishlistProduct(null)}
-                                aria-label={t('wishlist.close')}
-                                className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center"
-                            >
-                                <X className="h-5 w-5" />
-                            </button>
 
-                            <div className="grid gap-6 pt-5 sm:grid-cols-[180px_1fr] sm:items-center">
-                                <div className="aspect-[4/5] bg-[#EEEAE0]">
-                                    {wishlistProduct.images?.[0] && (
-                                        <img src={wishlistProduct.images[0]} alt={wishlistProduct.name} className="h-full w-full object-contain p-4" />
-                                    )}
-                                </div>
-                                <div>
-                                    <p className="text-sm leading-6">
-                                        {t('wishlist.addedMessage', { name: wishlistProduct.name })}
-                                    </p>
-                                    <button
-                                        type="button"
-                                        onClick={() => navigate('/wishlist')}
-                                        className="mt-6 min-h-12 w-full border border-black bg-white px-5 text-xs font-normal uppercase tracking-[0.08em] text-black transition-colors hover:bg-black hover:text-white"
-                                    >
-                                        {t('wishlist.view')}
-                                    </button>
-                                </div>
-                            </div>
-                        </motion.section>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             {(activeFilter || showSort) && (
                 <div

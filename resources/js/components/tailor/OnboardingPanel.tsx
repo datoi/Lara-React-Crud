@@ -5,9 +5,10 @@ import { Button } from '../ui/button';
 
 interface Props {
     onAddProduct: () => void;
+    onEditProfile: () => void;
 }
 
-export function OnboardingPanel({ onAddProduct }: Props) {
+export function OnboardingPanel({ onAddProduct, onEditProfile }: Props) {
     const { t } = useTranslation();
 
     const STEPS = [
@@ -21,39 +22,40 @@ export function OnboardingPanel({ onAddProduct }: Props) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-slate-900 rounded-2xl p-6 sm:p-8 text-white"
+            className="tailor-studio-onboarding"
         >
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">
+            <p className="text-[10px] font-normal uppercase tracking-widest text-[var(--store-muted)] mb-3">
                 {t('tailorComponents.gettingStarted')}
             </p>
-            <h2 className="text-xl sm:text-2xl font-bold mb-1.5">{t('tailorComponents.onboardingHeading')}</h2>
+            <h2 className="font-serif text-xl sm:text-2xl font-normal mb-1.5">{t('tailorComponents.onboardingHeading')}</h2>
             <div className="mt-7 flex flex-col sm:flex-row gap-5 mb-8">
-                {STEPS.map((step, i) => (
-                    <div key={step.num} className="flex items-start gap-3 flex-1 relative">
-                        {/* Connector line */}
-                        {i < STEPS.length - 1 && (
-                            <div className="hidden sm:block absolute left-4 top-4 w-full h-px bg-white/10 -translate-y-1/2 z-0" />
-                        )}
-                        <div className="relative z-10 w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-bold text-white">{step.num}</span>
+                {STEPS.map((step) => (
+                    <div key={step.num.padStart(2, '0')} className="flex items-start gap-3 flex-1 relative">
+                        <div className="w-7 shrink-0 pt-0.5">
+                            <span className="font-serif text-xl font-normal text-brand">{step.num.padStart(2, '0')}</span>
                         </div>
                         <div className="pt-0.5">
-                            <p className="text-sm font-semibold text-white leading-tight">{step.label}</p>
-                            <p className="text-xs text-slate-400 mt-1 leading-relaxed">{step.desc}</p>
+                            <p className="text-xs font-medium text-[var(--store-ink)] leading-relaxed">{step.label}</p>
+                            <p className="text-[11px] text-[var(--store-muted)] mt-1 leading-relaxed">{step.desc}</p>
                         </div>
                     </div>
                 ))}
             </div>
 
+            <div className="flex flex-wrap items-center gap-3">
             <Button
                 variant="default"
                 size="default"
                 onClick={onAddProduct}
-                className="bg-white text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2"
+                className="rounded-none bg-brand text-white hover:bg-brand-dark text-xs font-normal flex items-center gap-2"
             >
                 {t('tailorComponents.addFirstProductBtn')}
                 <ArrowRight className="w-4 h-4" />
             </Button>
+            <Button variant="outline" onClick={onEditProfile} className="rounded-none border-[var(--store-rule)] bg-transparent text-xs font-normal text-[var(--store-ink)]">
+                {t('tailorComponents.editProfileTitle')}
+            </Button>
+            </div>
         </motion.div>
     );
 }

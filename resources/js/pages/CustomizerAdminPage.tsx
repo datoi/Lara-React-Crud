@@ -67,7 +67,7 @@ export default function CustomizerAdminPage() {
                             className={[
                                 'px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize',
                                 tab === t
-                                    ? 'bg-slate-900 text-white'
+                                    ? 'bg-brand text-white'
                                     : 'text-slate-500 hover:bg-slate-100',
                             ].join(' ')}
                         >

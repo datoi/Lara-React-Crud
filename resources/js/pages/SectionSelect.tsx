@@ -38,7 +38,7 @@ export default function SectionSelect() {
     };
 
     return (
-        <div className="design-page min-h-screen bg-[#E4E0D7] text-[#261D1B]">
+        <div className="design-page min-h-screen bg-[var(--store-paper)] text-[#261D1B]">
             <Helmet>
                 <title>{t('section.pageTitle')}</title>
             </Helmet>
@@ -82,7 +82,7 @@ export default function SectionSelect() {
                                     </p>
                                 </div>
 
-                                <div className="flex h-[178px] items-center justify-center border border-[#111111]/45 bg-[#E4E0D7] p-4 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[230px] sm:p-5">
+                                <div className="flex h-[178px] items-center justify-center border border-[#111111]/45 bg-[var(--store-paper)] p-4 transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.035] group-hover:shadow-[0_18px_40px_rgba(17,17,17,0.14)] sm:h-[230px] sm:p-5">
                                     <img
                                         src={opt.image}
                                         alt={t(opt.tKey)}

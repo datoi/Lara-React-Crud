@@ -9,34 +9,34 @@ export default function RoleSelection() {
     const { t } = useTranslation();
 
     return (
-        <div className="min-h-screen bg-[#111111] text-white">
+        <div className="kere-auth-page min-h-screen bg-[var(--store-paper)] text-[#2a1418]">
             <Navigation />
 
-            <main data-nav-theme="dark" className="grid min-h-screen lg:grid-cols-[minmax(0,0.48fr)_minmax(0,0.52fr)]">
-                <section className="flex min-h-screen flex-col bg-[#080808] px-5 pb-6 pt-24 sm:px-8 lg:px-12">
+            <main  className="grid min-h-screen lg:grid-cols-[minmax(0,0.48fr)_minmax(0,0.52fr)]">
+                <section className="flex min-h-screen flex-col bg-[var(--store-paper)] px-5 pb-6 pt-24 sm:px-8 lg:px-12">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                         className="flex flex-1 flex-col justify-center py-12"
                     >
-                        <h1 className="max-w-[500px] font-serif text-[clamp(1.9rem,3.9vw,3.9rem)] font-medium leading-[0.94] tracking-[-0.04em] text-white">
+                        <h1 className="max-w-[500px] font-serif text-[clamp(1.6rem,3vw,2.5rem)] font-medium leading-tight tracking-[-0.04em] text-[#2a1418]">
                             {t('signIn.pageTitle')}
                         </h1>
-                        <div className="mt-10 grid gap-px border border-white/18 bg-white/18">
+                        <div className="mt-10 grid gap-px border border-[#d8d0c7] bg-[#e5dfd8]">
                             <motion.button
-                                whileHover={{ x: 5 }}
-                                whileTap={{ scale: 0.99 }}
+
+
                                 onClick={() => navigate('/login/customer')}
-                                className="group bg-[#080808] p-5 text-left transition-colors duration-300 hover:bg-white hover:text-[#080808] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#080808] sm:p-6"
+                                className="group bg-[var(--store-paper)] p-5 text-left transition-colors duration-300 hover:bg-[#eee5dc] hover:text-[#631e26] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#080808] sm:p-6"
                             >
                                 <div className="flex items-center justify-between gap-6">
                                     <div className="flex items-center gap-4">
-                                        <span className="flex h-11 w-11 items-center justify-center border border-current text-current">
+                                        <span className="flex h-9 w-9 items-center justify-center border border-current text-current">
                                             <User className="h-5 w-5 stroke-[1.5]" />
                                         </span>
                                         <div>
-                                            <p className="font-serif text-xl font-medium leading-none tracking-[-0.03em] sm:text-2xl">
+                                            <p className="font-serif text-lg font-normal leading-tight">
                                                 {t('signIn.customerTitle')}
                                             </p>
                                         </div>
@@ -46,18 +46,18 @@ export default function RoleSelection() {
                             </motion.button>
 
                             <motion.button
-                                whileHover={{ x: 5 }}
-                                whileTap={{ scale: 0.99 }}
+
+
                                 onClick={() => navigate('/login/tailor')}
-                                className="group bg-[#080808] p-5 text-left transition-colors duration-300 hover:bg-white hover:text-[#080808] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#080808] sm:p-6"
+                                className="group bg-[var(--store-paper)] p-5 text-left transition-colors duration-300 hover:bg-[#eee5dc] hover:text-[#631e26] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#080808] sm:p-6"
                             >
                                 <div className="flex items-center justify-between gap-6">
                                     <div className="flex items-center gap-4">
-                                        <span className="flex h-11 w-11 items-center justify-center border border-current text-current">
+                                        <span className="flex h-9 w-9 items-center justify-center border border-current text-current">
                                             <Scissors className="h-5 w-5 stroke-[1.5]" />
                                         </span>
                                         <div>
-                                            <p className="font-serif text-xl font-medium leading-none tracking-[-0.03em] sm:text-2xl">
+                                            <p className="font-serif text-lg font-normal leading-tight">
                                                 {t('signIn.tailorTitle')}
                                             </p>
                                         </div>
@@ -68,26 +68,25 @@ export default function RoleSelection() {
                         </div>
                     </motion.div>
 
-                    <p className="max-w-[520px] border-t border-white/15 pt-5 text-[11px] leading-5 text-white/52">
+                    <p className="max-w-[520px] border-t border-[#d8d0c7] pt-5 text-[11px] leading-5 text-[#2a1418]">
                         {t('signIn.agreePrefix')}{' '}
-                        <Link to="/terms-of-service" className="font-semibold text-white underline-offset-4 hover:underline">
+                        <Link to="/terms" className="font-semibold text-[#2a1418] underline-offset-4 hover:underline">
                             {t('signIn.termsOfService')}
                         </Link>{' '}
                         {t('signIn.and')}{' '}
-                        <Link to="/privacy-policy" className="font-semibold text-white underline-offset-4 hover:underline">
+                        <Link to="/privacy" className="font-semibold text-[#2a1418] underline-offset-4 hover:underline">
                             {t('signIn.privacyPolicy')}
                         </Link>.
                     </p>
                 </section>
 
-                <section className="relative hidden min-h-screen overflow-hidden bg-[#111111] lg:block">
+                <section className="relative hidden min-h-screen overflow-hidden bg-[var(--store-paper)] lg:block">
                     <img
                         src="/assets/auth/signin-side.png"
                         alt=""
                         aria-hidden="true"
                         className="h-full w-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-[#080808]/20" />
                 </section>
             </main>
         </div>

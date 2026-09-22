@@ -1,3 +1,4 @@
+import { BrandStorySection } from '../components/landing/BrandStorySection';
 import { Helmet } from 'react-helmet-async';
 import { Navigation } from '../components/landing/Navigation';
 import { HeroSection } from '../components/landing/HeroSection';
@@ -9,8 +10,6 @@ import { GuaranteeSection } from '../components/landing/GuaranteeSection';
 import { CTASection } from '../components/landing/CTASection';
 import { FAQSection } from '../components/landing/FAQSection';
 import { Footer } from '../components/landing/Footer';
-import { NewsletterPopup } from '../components/landing/NewsletterPopup';
-import { JoinSection } from '../components/landing/JoinSection';
 
 export default function Landing() {
     return (
@@ -23,7 +22,7 @@ export default function Landing() {
                     "@type": "LocalBusiness",
                     "name": "Kere",
                     "description": "Custom clothing marketplace connecting customers with local Georgian tailors.",
-                    "url": "https://kere.ge",
+                    "url": "https://kereforyou.com",
                     "address": {
                         "@type": "PostalAddress",
                         "addressLocality": "Tbilisi",
@@ -33,17 +32,16 @@ export default function Landing() {
                     "priceRange": "₾₾"
                 })}</script>
             </Helmet>
-            <NewsletterPopup />
             <Navigation />
             <HeroSection />
             <MarketplaceCarousel />
+            <BrandStorySection />
             <FeaturesSection />
             <HowItWorksSection />
             <SizeFitSection />
             <GuaranteeSection />
             <CTASection />
             <FAQSection />
-            <JoinSection />
             <Footer />
         </div>
     );

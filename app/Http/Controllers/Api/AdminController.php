@@ -128,6 +128,11 @@ class AdminController extends Controller
             'role' => $u->role,
             'is_suspended' => (bool) $u->is_suspended,
             'approval_status' => $u->approval_status,
+            // A sixteen- or seventeen-year-old whose guardian has not confirmed.
+            // The account cannot order until they do, and nothing else would
+            // show that it is waiting — the guardian's own details stay out of
+            // this list, which is a queue to act on, not a place to read them.
+            'guardian_consent_pending' => $u->needsGuardianConsent() && $u->guardian_consent_at === null,
             'created_at' => $u->created_at?->toDateString(),
         ]);
 

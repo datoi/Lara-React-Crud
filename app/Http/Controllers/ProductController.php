@@ -23,6 +23,10 @@ class ProductController extends Controller
             $query->whereHas('category', fn($q) => $q->where('slug', $request->category));
         }
 
+        if ($request->boolean('customizable')) {
+            $query->where('is_customizable', true);
+        }
+
         $sizes = array_filter((array) $request->input('size', []));
         if ($sizes) {
             $query->where(function ($q) use ($sizes) {
@@ -59,6 +63,7 @@ class ProductController extends Controller
             $term = '%' . $request->search . '%';
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', $term)
+                  ->orWhereHas('category', fn($cq) => $cq->where('name', 'like', $term)->orWhere('slug', 'like', $term))
                   ->orWhereHas('tailor', fn($tq) => $tq->where('name', 'like', $term)
                       ->orWhere('first_name', 'like', $term)
                       ->orWhere('last_name', 'like', $term));

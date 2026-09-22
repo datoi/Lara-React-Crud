@@ -13,6 +13,7 @@ import { NotificationBell } from '../components/NotificationBell';
 import { ReviewModal } from '../components/ReviewModal';
 import { OrderChat } from '../components/OrderChat';
 import { OrderCardSkeleton } from '../components/skeletons/OrderCardSkeleton';
+import { translateServerMessage } from '../lib/serverMessage';
 
 interface OrderItem {
     id: number;
@@ -60,6 +61,11 @@ interface CustomerOrder {
     id: number;
     order_type: 'marketplace' | 'custom' | 'remodel';
     status: string;
+    /**
+     * Absent on orders placed before card payment existed. 'expired' is written
+     * when an unpaid order is cancelled, which closes it to payment.
+     */
+    payment_status?: 'unpaid' | 'paid' | 'expired' | 'not_required';
     total: number;
     expected_price?: number | null;
     tailor_id: number | null;
@@ -98,6 +104,13 @@ const STATUS_CONFIG: Record<string, { labelKey: string; color: string; icon: typ
     delivered:  { labelKey: 'customerDashboard.statusDelivered',  color: 'bg-slate-900 text-white',      icon: CheckCircle },
     cancelled:  { labelKey: 'customerDashboard.statusCancelled',  color: 'bg-slate-200 text-slate-600',  icon: X },
 };
+
+/**
+ * Orders that still have work ahead of them, and so may be paid for. Mirrors
+ * PaymentController::PAYABLE_STATUSES — the server is the one that enforces it,
+ * this only keeps the button from appearing where the server would refuse.
+ */
+const PAYABLE_STATUSES = new Set(['pending', 'pending_assignment', 'processing']);
 
 function StatusBadge({ status }: { status: string }) {
     const { t } = useTranslation();
@@ -151,7 +164,7 @@ function TailorOffers({ orderId, onChosen }: { orderId: number; onChosen: (tailo
     };
 
     return (
-        <div className="bg-slate-50 rounded-xl p-4">
+        <div className="bg-slate-50 rounded-none p-4">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.offersTitle')}</p>
 
             {loading ? (
@@ -163,7 +176,7 @@ function TailorOffers({ orderId, onChosen }: { orderId: number; onChosen: (tailo
             ) : (
                 <div className="space-y-3">
                     {offers.map(offer => (
-                        <div key={offer.id} className="bg-white rounded-xl border border-slate-200 p-4">
+                        <div key={offer.id} className="bg-white rounded-none border border-slate-200 p-4">
                             <div className="flex items-start gap-3">
                                 <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 flex items-center justify-center shrink-0">
                                     {offer.tailor.profile_image ? (
@@ -251,7 +264,7 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 16 }}
                 transition={{ duration: 0.5 }}
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+                className="kere-modal bg-white rounded-none shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
@@ -318,20 +331,20 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                 {(design.remodel_images?.length ?? 0) > 0 && (
                                     <div className="grid grid-cols-3 gap-2">
                                         {design.remodel_images!.map((src, i) => (
-                                            <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="block aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                            <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="block aspect-square overflow-hidden rounded-none border border-slate-200 bg-slate-50">
                                                 <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
                                             </a>
                                         ))}
                                     </div>
                                 )}
                                 {design.change_request && (
-                                    <div className="bg-slate-50 rounded-xl p-4">
+                                    <div className="bg-slate-50 rounded-none p-4">
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('customerDashboard.remodelChangeLabel')}</p>
                                         <p className="text-sm text-slate-700 whitespace-pre-line">{design.change_request}</p>
                                     </div>
                                 )}
                                 {order.expected_price != null && (
-                                    <div className="bg-slate-50 rounded-xl p-4 flex items-center justify-between">
+                                    <div className="bg-slate-50 rounded-none p-4 flex items-center justify-between">
                                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('customerDashboard.remodelExpectedPrice')}</span>
                                         <span className="text-sm font-semibold text-slate-900">₾{order.expected_price}</span>
                                     </div>
@@ -343,11 +356,11 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                     <img
                                         src={design.design_file_url}
                                         alt={t('customerDashboard.customDesignLabel')}
-                                        className="w-full max-h-48 object-contain rounded-xl border border-slate-200 bg-slate-50"
+                                        className="w-full max-h-48 object-contain rounded-none border border-slate-200 bg-slate-50"
                                         loading="lazy"
                                     />
                                 )}
-                                <div className="bg-slate-50 rounded-xl p-4">
+                                <div className="bg-slate-50 rounded-none p-4">
                                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.customDesignLabel')}</p>
                                     <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
                                         {(design.garmentType ?? design.garment_type ?? design.clothingType) && (
@@ -366,7 +379,7 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                 </div>
 
                                 {(design.baseColor || design.accentColor || design.lighterShade) && (
-                                    <div className="bg-slate-50 rounded-xl p-4">
+                                    <div className="bg-slate-50 rounded-none p-4">
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.colorPalette')}</p>
                                         <div className="flex gap-2">
                                             {[
@@ -385,7 +398,7 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                 )}
 
                                 {design.measurements && Object.keys(design.measurements).length > 0 && (
-                                    <div className="bg-slate-50 rounded-xl p-4">
+                                    <div className="bg-slate-50 rounded-none p-4">
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.measurementsLabel')}</p>
                                         <div className="flex flex-wrap gap-1.5">
                                             {Object.entries(design.measurements).map(([k, v]) => (
@@ -398,14 +411,14 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                 )}
 
                                 {design.customization_request && (
-                                    <div className="bg-slate-50 rounded-xl p-4">
+                                    <div className="bg-slate-50 rounded-none p-4">
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('customerDashboard.customizationRequestLabel')}</p>
                                         <p className="text-sm text-slate-600">{design.customization_request}</p>
                                     </div>
                                 )}
 
                                 {(design.notes ?? design.tailor_notes ?? design.designElements?.customNotes) && (
-                                    <div className="bg-slate-50 rounded-xl p-4">
+                                    <div className="bg-slate-50 rounded-none p-4">
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('customerDashboard.tailorNotes')}</p>
                                         <p className="text-sm text-slate-600">{design.notes ?? design.tailor_notes ?? design.designElements?.customNotes}</p>
                                     </div>
@@ -414,7 +427,7 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                         ) : (
                             <div className="space-y-3">
                                 {order.items.map(item => (
-                                    <div key={item.id} className="flex gap-3 bg-slate-50 rounded-xl p-3">
+                                    <div key={item.id} className="flex gap-3 bg-slate-50 rounded-none p-3">
                                         <div className="w-14 h-16 rounded-lg overflow-hidden bg-slate-200 flex-shrink-0">
                                             {item.image ? (
                                                 <img src={item.image} alt={item.product_name} className="w-full h-full object-cover" loading="lazy" />
@@ -487,7 +500,89 @@ export default function CustomerDashboard() {
     const [selectedOrder, setSelected]  = useState<CustomerOrder | null>(null);
     const [openTab, setOpenTab]         = useState<'details' | 'messages'>('details');
     const [reviewOrder, setReviewOrder] = useState<CustomerOrder | null>(null);
+    const [payingOrderId, setPayingOrderId] = useState<number | null>(null);
+    const [payError, setPayError]       = useState<string | null>(null);
+    /** Set while a 16–17 year old is waiting on a parent or guardian. */
+    const [consentPending, setConsentPending] = useState<{ email: string | null } | null>(null);
+    const [resending, setResending]     = useState(false);
+    const [resent, setResent]           = useState(false);
     const [msgCounts, setMsgCounts]     = useState<Record<number, number>>({});
+
+    /**
+     * Hand the customer to the gateway to pay an order they have already placed.
+     *
+     * The checkout URL is built server-side, so this only follows where it is
+     * sent. Navigation away is the success path — the flag is cleared only when
+     * something goes wrong, since on success this page is gone.
+     */
+    const startPayment = async (orderId: number) => {
+        setPayingOrderId(orderId);
+        setPayError(null);
+
+        try {
+            const res = await fetch(`/api/orders/${orderId}/pay`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+            });
+            const data = await res.json();
+
+            if (!res.ok || !data.checkout_url) {
+                // Never data.message: it is English, and this page is not.
+                setPayError(translateServerMessage(data, t, 'customerDashboard.payFailed'));
+                setPayingOrderId(null);
+
+                // The order moved under us — settled or cancelled in another tab
+                // — so the list is stale and the Pay button should not still be
+                // sitting there inviting a second attempt.
+                if (res.status === 409) {
+                    setRetryKey((k) => k + 1);
+                }
+
+                return;
+            }
+
+            window.location.href = data.checkout_url;
+        } catch {
+            setPayError(t('customerDashboard.payFailed'));
+            setPayingOrderId(null);
+        }
+    };
+
+    /**
+     * Ask the server whether this account is waiting on a guardian.
+     *
+     * Read from /api/me rather than the stored auth user, because consent can
+     * be given from another device entirely — the adult's — and the copy in
+     * sessionStorage would never learn about it.
+     */
+    useEffect(() => {
+        if (!token) return;
+
+        fetch('/api/me', { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } })
+            .then(r => (r.ok ? r.json() : null))
+            .then(data => {
+                const me = data?.user;
+                setConsentPending(me?.guardian_consent_pending ? { email: me.guardian_email ?? null } : null);
+            })
+            .catch(() => { /* the banner is a courtesy; the server is the gate */ });
+    }, [token, retryKey]);
+
+    const resendConsent = async () => {
+        setResending(true);
+
+        try {
+            const res = await fetch('/api/register/guardian-consent/resend', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+            });
+
+            setResent(res.ok);
+        } catch {
+            setResent(false);
+        } finally {
+            setResending(false);
+        }
+    };
 
     useEffect(() => {
         if (!token) { navigate('/login/customer'); return; }
@@ -538,7 +633,7 @@ export default function CustomerDashboard() {
     };
 
     return (
-        <div className="kere-workflow-page min-h-screen bg-slate-50">
+        <div className="kere-workflow-page kere-refined-page min-h-screen bg-slate-50">
             <Helmet>
                 <title>{t('customerDashboard.pageTitle')}</title>
                 <meta name="robots" content="noindex" />
@@ -546,7 +641,7 @@ export default function CustomerDashboard() {
             {/* Navbar */}
             <nav className="sticky top-0 z-40 bg-white border-b border-slate-100">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-                    <Link to="/" className="text-xl font-bold text-slate-900 hover:text-slate-700 transition-colors">
+                    <Link to="/" className="kere-nav-logo text-slate-900">
                         Kere
                     </Link>
                     <div className="flex items-center gap-2">
@@ -585,6 +680,37 @@ export default function CustomerDashboard() {
                     </div>
                 </div>
 
+                {/* Waiting on an adult. Placed above everything because it is the
+                    reason ordering does not work, and the customer has no other
+                    way to find that out. */}
+                {consentPending && (
+                    <div className="mb-8 rounded-none border border-brand/20 bg-brand/5 px-4 py-4 sm:px-5">
+                        <p className="text-sm font-medium text-slate-900">
+                            {t('customerDashboard.guardianPendingTitle')}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-600">
+                            {consentPending.email
+                                ? t('customerDashboard.guardianPendingBody', { email: consentPending.email })
+                                : t('customerDashboard.guardianPendingBodyNoEmail')}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={resending || resent}
+                                onClick={() => void resendConsent()}
+                            >
+                                {resending
+                                    ? t('customerDashboard.guardianResending')
+                                    : resent
+                                        ? t('customerDashboard.guardianResent')
+                                        : t('customerDashboard.guardianResend')}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Stats */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-8">
                     {[
@@ -595,7 +721,7 @@ export default function CustomerDashboard() {
                     ].map(stat => {
                         const Icon = stat.icon;
                         return (
-                            <div key={stat.label} className="bg-white rounded-2xl border border-slate-100 p-4">
+                            <div key={stat.label} className="bg-white rounded-none border border-slate-100 p-4">
                                 <div className="flex items-center gap-2 mb-2">
                                     <Icon className="w-4 h-4 text-slate-400" />
                                     <span className="text-xs text-slate-500">{stat.label}</span>
@@ -607,7 +733,7 @@ export default function CustomerDashboard() {
                 </div>
 
                 {/* Orders list */}
-                <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+                <div className="bg-white rounded-none border border-slate-100 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-50">
                         <h2 className="font-semibold text-slate-900">{t('customerDashboard.myOrders')}</h2>
                     </div>
@@ -621,7 +747,7 @@ export default function CustomerDashboard() {
                             <p className="text-slate-500 font-medium mb-2">{t('customerDashboard.failedToLoad')}</p>
                             <button
                                 onClick={() => setRetryKey(k => k + 1)}
-                                className="text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
+                                className="text-sm bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors"
                             >
                                 {t('customerDashboard.retry')}
                             </button>
@@ -633,7 +759,7 @@ export default function CustomerDashboard() {
                             <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2">
                                 <Link
                                     to="/marketplace"
-                                    className="inline-flex items-center gap-1.5 text-sm bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
+                                    className="inline-flex items-center gap-1.5 text-sm bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors"
                                 >
                                     {t('customerDashboard.browseMarketplace')}
                                     <ChevronRight className="w-4 h-4" />
@@ -649,6 +775,11 @@ export default function CustomerDashboard() {
                         </div>
                     ) : (
                         <div className="divide-y divide-slate-50">
+                            {payError && (
+                                <p role="alert" className="px-3 sm:px-5 py-3 text-sm text-destructive bg-destructive/5">
+                                    {payError}
+                                </p>
+                            )}
                             {orders.map((order, i) => (
                                 <motion.div
                                     key={order.id}
@@ -659,7 +790,7 @@ export default function CustomerDashboard() {
                                     onClick={() => { setOpenTab('details'); setSelected(order); }}
                                 >
                                     {/* Icon */}
-                                    <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <div className="w-9 h-9 bg-slate-100 rounded-none flex items-center justify-center flex-shrink-0">
                                         {order.order_type === 'custom' || order.order_type === 'remodel'
                                             ? <Scissors className="w-4 h-4 text-slate-600" />
                                             : <Package className="w-4 h-4 text-slate-600" />
@@ -695,6 +826,23 @@ export default function CustomerDashboard() {
                                         </p>
                                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                             <StatusBadge status={order.status} />
+                                            {order.order_type === 'marketplace' && order.payment_status === 'unpaid' && PAYABLE_STATUSES.has(order.status) && (
+                                                <>
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-brand bg-brand/10 rounded-full px-2 py-0.5">
+                                                        {t('customerDashboard.awaitingPayment')}
+                                                    </span>
+                                                    <Button
+                                                        size="sm"
+                                                        disabled={payingOrderId === order.id}
+                                                        onClick={e => { e.stopPropagation(); void startPayment(order.id); }}
+                                                        className="h-7 px-3 text-xs"
+                                                    >
+                                                        {payingOrderId === order.id
+                                                            ? t('customerDashboard.payStarting')
+                                                            : t('customerDashboard.payNow')}
+                                                    </Button>
+                                                </>
+                                            )}
                                             {order.status === 'pending_assignment' && order.tailor_requests_count > 0 && (
                                                 <span className="inline-flex items-center gap-1 text-[10px] font-medium text-white bg-slate-900 rounded-full px-2 py-0.5">
                                                     <Users className="w-3 h-3" />
@@ -723,7 +871,7 @@ export default function CustomerDashboard() {
                                             title={t('customerDashboard.messageBtn')}
                                             className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-colors cursor-pointer ${
                                                 hasUnread(order.id)
-                                                    ? 'bg-slate-900 text-white border-slate-900'
+                                                    ? 'bg-brand text-white border-brand'
                                                     : 'bg-white text-slate-400 border-slate-200 hover:text-slate-700 hover:bg-slate-50'
                                             }`}
                                         >
@@ -744,9 +892,9 @@ export default function CustomerDashboard() {
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Link
                         to="/marketplace"
-                        className="flex items-center gap-3 bg-white border border-slate-100 rounded-2xl p-4 hover:bg-slate-50 hover:border-slate-200 transition-colors group"
+                        className="flex items-center gap-3 bg-white border border-slate-100 rounded-none p-4 hover:bg-slate-50 hover:border-slate-200 transition-colors group"
                     >
-                        <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center group-hover:bg-slate-900 transition-colors">
+                        <div className="w-10 h-10 bg-slate-100 rounded-none flex items-center justify-center group-hover:bg-slate-900 transition-colors">
                             <ShoppingBag className="w-5 h-5 text-slate-600 group-hover:text-white transition-colors" />
                         </div>
                         <div>
@@ -757,9 +905,9 @@ export default function CustomerDashboard() {
                     </Link>
                     <Link
                         to="/design"
-                        className="flex items-center gap-3 bg-white border border-slate-100 rounded-2xl p-4 hover:bg-slate-50 hover:border-slate-200 transition-colors group"
+                        className="flex items-center gap-3 bg-white border border-slate-100 rounded-none p-4 hover:bg-slate-50 hover:border-slate-200 transition-colors group"
                     >
-                        <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center group-hover:bg-slate-900 transition-colors">
+                        <div className="w-10 h-10 bg-slate-100 rounded-none flex items-center justify-center group-hover:bg-slate-900 transition-colors">
                             <Scissors className="w-5 h-5 text-slate-600 group-hover:text-white transition-colors" />
                         </div>
                         <div>

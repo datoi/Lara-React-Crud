@@ -1,3 +1,4 @@
+import * as Dialog from '@radix-ui/react-dialog';
 import { useState, useEffect, useRef } from 'react';
 import { CheckCircle, Loader2, UserCircle, Camera, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -117,11 +118,11 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
     };
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <Dialog.Root open={expanded} onOpenChange={onExpandedChange}>
             {/* Header row */}
+            <Dialog.Trigger asChild>
             <button
                 type="button"
-                onClick={() => onExpandedChange(!expanded)}
                 className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-slate-50 transition-colors"
             >
                 <div className="flex items-center gap-3">
@@ -131,11 +132,17 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                         <p className="text-xs text-slate-400">{t('tailorComponents.editProfileSubtitle')}</p>
                     </div>
                 </div>
-                <span className="text-slate-400 text-xs">{expanded ? '▲' : '▼'}</span>
+                <span className="text-slate-400 text-xs" aria-hidden="true">↗</span>
             </button>
-
-            {expanded && (
-                <form onSubmit={handleSave} className="px-6 pb-6 space-y-4 border-t border-slate-100 pt-5">
+            </Dialog.Trigger>
+            <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 z-[150] bg-[#2a1418]/30" />
+                <Dialog.Content className="kere-modal tailor-profile-modal fixed left-1/2 top-1/2 z-[151] w-[calc(100%-24px)] max-w-xl -translate-x-1/2 -translate-y-1/2 max-h-[90dvh] overflow-y-auto" aria-describedby={undefined}>
+                    <div className="flex items-center justify-between gap-4 border-b border-[#e5dfd8] px-5 py-4">
+                        <Dialog.Title className="text-base">{t('tailorComponents.editProfileTitle')}</Dialog.Title>
+                        <Dialog.Close className="shrink-0 p-2" aria-label={t('newsletterPopup.close')}><X size={18} /></Dialog.Close>
+                    </div>
+                <form onSubmit={handleSave} className="px-4 sm:px-6 pb-6 space-y-4 pt-5">
                     {/* Profile photo upload */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -239,7 +246,7 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3 pt-1">
+                    <div className="flex flex-wrap items-center gap-3 pt-1">
                         <Button
                             variant="default"
                             size="default"
@@ -260,7 +267,8 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                         )}
                     </div>
                 </form>
-            )}
-        </div>
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
     );
 }

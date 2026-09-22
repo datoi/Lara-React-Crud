@@ -60,7 +60,7 @@ function SupportModal({ onClose }: { onClose: () => void }) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.6 }}
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+                className="kere-modal bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
@@ -140,7 +140,7 @@ function SupportModal({ onClose }: { onClose: () => void }) {
                             </Button>
                             <Button
                                 variant="default"
-                                className="flex-1 bg-slate-900 hover:bg-slate-700"
+                                className="flex-1 bg-brand hover:bg-brand-dark"
                                 onClick={handleSend}
                                 disabled={sending}
                             >
@@ -183,7 +183,7 @@ export function FAQSection() {
         <section id="faq" className="overflow-hidden bg-[#f7f6f3] px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
             <div className="mx-auto max-w-[1280px]">
                 <div className="border-b border-black/20 pb-5 sm:pb-6">
-                    <h2 className="font-serif text-[clamp(1.65rem,2.7vw,2.5rem)] font-normal uppercase leading-[1] tracking-normal text-black">
+                    <h2 className="font-serif text-[clamp(1.2rem,2vw,1.75rem)] font-normal uppercase leading-[1] tracking-normal text-black">
                         {t('faq.sectionTitle')}
                     </h2>
                 </div>
@@ -204,7 +204,7 @@ export function FAQSection() {
                                     aria-controls={panelId}
                                     className="group grid w-full grid-cols-[minmax(0,1fr)_36px] items-center gap-3 py-4 text-left sm:grid-cols-[minmax(0,1fr)_42px] sm:py-5 lg:py-5"
                                 >
-                                    <h3 className="justify-self-start text-sm font-normal leading-5 tracking-normal text-black sm:text-base">
+                                    <h3 className="justify-self-start text-xs font-normal leading-[1.6] tracking-normal text-black sm:text-sm">
                                         {faq.q}
                                     </h3>
 
@@ -229,7 +229,7 @@ export function FAQSection() {
                                 >
                                     <div className="overflow-hidden">
                                         <div className="grid grid-cols-[minmax(0,1fr)_36px] gap-3 pb-5 sm:grid-cols-[minmax(0,1fr)_42px] sm:pb-6">
-                                            <p className="max-w-2xl text-xs leading-5 text-black sm:text-sm">
+                                            <p className="max-w-2xl text-[11px] leading-[1.7] text-black sm:text-xs">
                                                 {faq.a}
                                             </p>
 
@@ -244,7 +244,7 @@ export function FAQSection() {
 
                 <div className="mx-auto flex max-w-5xl flex-col gap-5 pt-7 sm:flex-row sm:items-end sm:justify-between sm:pt-8">
                     <div>
-                        <p className="max-w-lg font-serif text-lg font-medium leading-tight tracking-normal text-black sm:text-xl">
+                        <p className="max-w-lg font-serif text-sm font-medium leading-snug tracking-normal text-black sm:text-base">
                             {t('faq.stillHaveQuestions')}
                         </p>
                     </div>
@@ -252,7 +252,7 @@ export function FAQSection() {
                     <button
                         type="button"
                         onClick={handleEmailSupport}
-                        className="inline-flex min-h-11 w-fit items-center justify-center gap-3 border border-black/30 px-6 text-[11px] font-bold uppercase tracking-[0.14em] text-black transition-colors duration-200 hover:bg-black hover:text-white"
+                        className="inline-flex min-h-11 w-fit items-center justify-center gap-3 border border-black/30 px-5 text-[10px] font-semibold uppercase tracking-[0.08em] text-black transition-colors duration-200 hover:bg-brand-dark hover:text-white"
                     >
                         {t('faq.emailSupport')}
                     </button>

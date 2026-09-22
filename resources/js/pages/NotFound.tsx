@@ -21,7 +21,7 @@ export default function NotFound() {
                     <p className="mx-auto mb-8 max-w-sm text-slate-500">{t('notFound.desc')}</p>
                     <Link
                         to="/"
-                        className="inline-flex items-center gap-2 bg-slate-900 px-6 py-3 font-medium text-white transition-colors hover:bg-slate-700"
+                        className="inline-flex items-center gap-2 bg-brand px-6 py-3 font-medium text-white transition-colors hover:bg-brand-dark"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         {t('notFound.backHome')}

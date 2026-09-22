@@ -54,7 +54,7 @@ export default function StagePanel({
     // customer has started from named against it.
     if (awaitingGarment) {
         return (
-            <div className="order-3 relative flex min-h-[260px] flex-col justify-center overflow-hidden border border-black/15 bg-[var(--kd-stage)] p-[clamp(14px,2vw,28px)] min-[900px]:order-none min-[900px]:sticky min-[900px]:top-6 min-[900px]:min-h-[calc(100vh-152px)]">
+            <div className="order-3 relative flex min-h-[260px] flex-col justify-center overflow-hidden border border-[var(--kd-hairline)] bg-[var(--kd-stage)] p-[clamp(14px,2vw,28px)] min-[900px]:order-none min-[900px]:sticky min-[900px]:top-6 min-[900px]:min-h-[calc(100vh-152px)]">
                 <PatternPaper className="pointer-events-none absolute inset-0 h-full w-full text-black/10" />
 
             </div>
@@ -62,7 +62,7 @@ export default function StagePanel({
     }
 
     return (
-        <div className="order-1 sticky top-[61px] z-10 flex max-h-[34vh] flex-col overflow-hidden border border-black/15 bg-[var(--kd-stage)] p-2 shadow-[0_8px_24px_rgba(17,17,17,0.08)] min-[900px]:order-none min-[900px]:top-6 min-[900px]:z-auto min-[900px]:max-h-none min-[900px]:min-h-[calc(100vh-152px)] min-[900px]:p-[clamp(18px,2vw,28px)] min-[900px]:shadow-none">
+        <div className="designer-preview order-1 sticky top-[61px] z-10 flex max-h-[34vh] flex-col overflow-hidden border border-[var(--kd-hairline)] bg-[var(--kd-stage)] p-2 shadow-[0_8px_24px_rgba(17,17,17,0.08)] min-[900px]:order-none min-[900px]:top-6 min-[900px]:z-auto min-[900px]:max-h-none min-[900px]:min-h-[calc(100vh-152px)] min-[900px]:p-[clamp(18px,2vw,28px)] min-[900px]:shadow-none">
             <div className="relative flex min-h-[145px] flex-1 items-center justify-center overflow-hidden min-[900px]:min-h-[340px]">
                 <div
                     className="absolute inset-0"
@@ -93,7 +93,7 @@ export default function StagePanel({
                             bare
                         />
                     ) : (
-                        <div className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-3 border border-dashed border-black/30 px-6 text-center">
+                        <div className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-3 border border-dashed border-[var(--kd-hairline)] px-6 text-center">
                             <span className="flex h-11 w-11 items-center justify-center border border-[var(--kd-hairline)] text-[var(--kd-muted)]">
                                 <ImageOff className="h-5 w-5 stroke-[1.4]" />
                             </span>

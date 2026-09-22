@@ -201,7 +201,7 @@ export function MeasurementGuideModal({ open, onClose, initialStep = 'chest' }: 
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
                         transition={{ duration: 0.5 }}
-                        className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
+                        className="kere-modal bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
                         onClick={e => e.stopPropagation()}
                     >
                         {/* Header */}

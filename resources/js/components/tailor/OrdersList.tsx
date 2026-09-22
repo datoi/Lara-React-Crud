@@ -158,7 +158,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.96, y: 16 }}
                 transition={{ duration: 0.2 }}
-                className="relative z-10 bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto"
+                className="kere-modal relative z-10 bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto"
             >
                 {/* Header */}
                 <div className="flex items-start justify-between gap-4 p-6 border-b border-slate-100">
@@ -511,10 +511,7 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                 </div>
 
                 {orders.length === 0 ? (
-                    <div className="px-6 py-14 flex flex-col items-center text-center">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-4 text-2xl">
-                            📦
-                        </div>
+                    <div className="px-6 py-8 flex flex-col items-center text-center">
                         <p className="font-semibold text-slate-900 text-sm mb-1">{t('tailorComponents.noOrdersYet')}</p>
                     </div>
                 ) : (
@@ -567,7 +564,7 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                                                 onClick={() => { setOpenTab('messages'); setViewing(order); }}
                                                 className={`relative flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors flex-shrink-0 ${
                                                     hasUnread(order.id)
-                                                        ? 'bg-slate-900 text-white border-slate-900'
+                                                        ? 'bg-brand text-white border-brand'
                                                         : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
                                                 }`}
                                             >
@@ -637,7 +634,7 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                                                         onClick={() => { setOpenTab('messages'); setViewing(order); }}
                                                         className={`relative flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors flex-shrink-0 ${
                                                             hasUnread(order.id)
-                                                                ? 'bg-slate-900 text-white border-slate-900'
+                                                                ? 'bg-brand text-white border-brand'
                                                                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
                                                         }`}
                                                     >

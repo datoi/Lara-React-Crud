@@ -56,7 +56,7 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                                 title={opt.hint}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
                                     active
-                                        ? 'bg-slate-900 text-white border-slate-900'
+                                        ? 'bg-brand text-white border-brand'
                                         : 'border-slate-200 text-slate-600 hover:border-slate-400'
                                 }`}
                             >
@@ -147,7 +147,7 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                                         onClick={() => toggleDetail(detail.value)}
                                         className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm border transition-all text-left cursor-pointer ${
                                             active
-                                                ? 'bg-slate-900 text-white border-slate-900'
+                                                ? 'bg-brand text-white border-brand'
                                                 : 'border-slate-200 text-slate-600 hover:border-slate-400'
                                         }`}
                                     >
@@ -185,7 +185,7 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                                         onClick={() => setConfig({ ...config, sizeStandard: s })}
                                         className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer ${
                                             config.sizeStandard === s
-                                                ? 'bg-slate-900 text-white border-slate-900'
+                                                ? 'bg-brand text-white border-brand'
                                                 : 'border-slate-200 text-slate-600 hover:border-slate-400'
                                         }`}
                                     >
@@ -232,7 +232,7 @@ export function DesignCanvas({ config, setConfig, onContinue, onBack }: DesignCa
                                                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">cm</span>
                                             </div>
                                             {warning && (
-                                                <p className="text-[10px] text-slate-600 mt-1 leading-tight">{warning}</p>
+                                                <p className="text-[10px] text-slate-600 mt-1 leading-tight">{t(warning)}</p>
                                             )}
                                         </div>
                                     );

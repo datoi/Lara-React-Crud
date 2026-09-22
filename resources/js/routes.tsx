@@ -25,6 +25,8 @@ import TailorProfile from './pages/TailorProfile';
 import BecomePartner from './pages/BecomePartner';
 import AdminDashboard from './pages/AdminDashboard';
 import CustomizePage from './pages/CustomizePage';
+import PaymentComplete from './pages/PaymentComplete';
+import GuardianConsent from './pages/GuardianConsent';
 import MyDesignsPage from './pages/MyDesignsPage';
 import CustomizerAdminPage from './pages/CustomizerAdminPage';
 import AdminLogin from './pages/AdminLogin';
@@ -75,6 +77,8 @@ export const router = createBrowserRouter([
     { path: '/admin-dashboard',     element: guard(<AdminDashboard />, 'admin') },
     // ── Customizer ───────────────────────────────────────────────────────────
     { path: '/customize/:slug',     element: wrap(<CustomizePage />) },
+    { path: '/checkout/complete',   element: wrap(<PaymentComplete />) },
+    { path: '/guardian-consent/:token', element: wrap(<GuardianConsent />) },
     { path: '/my-designs',          element: guard(<MyDesignsPage />) },
     { path: '/admin/login',         element: wrap(<AdminLogin />) },
     { path: '/admin/customizer',    element: guard(<CustomizerAdminPage />, 'admin') },

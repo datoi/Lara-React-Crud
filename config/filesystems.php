@@ -57,7 +57,68 @@ return [
             'throw' => false,
         ],
 
+        /*
+         * Object storage for anything a user uploads.
+         *
+         * The container this runs in is replaced on every deploy, so a file
+         * written to its own disk is gone by the next one — which is survivable
+         * for a product photo and not survivable for the identity document a
+         * tailor is verified against.
+         *
+         * Two disks over one bucket, because the two kinds of file want
+         * opposite things: product photos are meant to be fetched by anyone
+         * with the link, identity documents are meant to be fetched by nobody
+         * without a signed one. Same credentials, different visibility, and a
+         * prefix that keeps them from ever sharing a directory.
+         *
+         * Cloudflare R2 speaks S3, so the driver is 's3'; any S3-compatible
+         * provider works by pointing R2_ENDPOINT elsewhere.
+         */
+        'uploads' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_REGION', 'auto'),
+            'bucket' => env('R2_BUCKET'),
+            // The public hostname the bucket is served on. Without it the app
+            // would hand out signed, expiring links for ordinary product photos.
+            'url' => env('R2_PUBLIC_URL'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
+        'documents' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_REGION', 'auto'),
+            'bucket' => env('R2_BUCKET'),
+            'root' => 'private',
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'visibility' => 'private',
+            'throw' => false,
+        ],
+
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Where uploads actually go
+    |--------------------------------------------------------------------------
+    |
+    | Object storage when it is configured, the local disks when it is not, so
+    | a machine with no bucket — a laptop, a test run — behaves exactly as it
+    | did before. Code asks for these names rather than naming a disk, so the
+    | choice is made once, here.
+    |
+    */
+
+    'uploads_disk' => env('R2_BUCKET') ? 'uploads' : 'public',
+
+    'documents_disk' => env('R2_BUCKET') ? 'documents' : 'local',
 
     /*
     |--------------------------------------------------------------------------

@@ -609,6 +609,302 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-18] Uploads survive a deploy
+
+**Uploads move to object storage, because the container does not keep them.** Railway replaces the container on every release, so a file written to its own disk is gone by the next deploy. That was survivable while it only cost product photos; it is not survivable for the identity document a tailor is verified against, which could be uploaded on Monday and gone on Tuesday without anyone noticing it had been.
+
+- **Two disks over one bucket**, because the two kinds of file want opposite things. `uploads` is public and answers with the bucket's own hostname, so product photos come off a CDN instead of through PHP. `documents` is private, lives under a `private/` prefix, and hands out no URL at all.
+- **Nothing in the code names a disk.** `filesystems.uploads_disk` and `filesystems.documents_disk` resolve to object storage when `R2_BUCKET` is set and to the local disks when it is not, so a laptop and a test run behave exactly as they did before and production behaves as it should. URLs are asked of the disk rather than assembled from `APP_URL`, which is what lets the same call return `/storage/...` locally and a CDN URL deployed.
+- **Cloudflare R2** by default — S3-compatible, so the driver is `s3` and any other provider works by pointing `R2_ENDPOINT` elsewhere. R2 charges nothing for egress, which matters for a site that mostly serves images. `league/flysystem-aws-s3-v3` added, pinned to `^3.0`.
+- **Old files are not migrated.** Anything already uploaded keeps the URL it has; on a deployed container most of those files are gone already, which is the problem being fixed rather than one being introduced.
+
+**Verified:** with no bucket configured the disks resolve to `public`/`local` and a product URL still reads `http://127.0.0.1:8000/storage/products/x.png` — byte-identical to the previous behaviour. With a bucket configured they resolve to `uploads`/`documents` and the same URL reads `https://cdn.example.com/products/x.png`, with documents private under `private/`. Seven tests cover both sides of that switch, the private document answering with no URL, a re-upload replacing rather than duplicating identity papers, and the S3 adapter actually being installed — which otherwise fails at runtime rather than at deploy. Suite 82 green.
+
+**Still to do:** set the five `R2_*` variables in Railway. Until they are set the app runs exactly as it does now, losing uploads on each deploy — the fallback is deliberate, so a missing bucket degrades rather than breaks, but it is not a state to leave production in.
+
+
+---
+
+### [2026-09-17] Customer registration asks how old you are, and means it
+
+**What was done:** Customer sign-up follows the four screens the spec lays out — account, verify, age, terms — and the two new ones do something rather than collect a claim. Someone under sixteen is refused. Someone sixteen or seventeen registers, but cannot order until a parent or legal guardian confirms by following a link sent to their own email.
+
+- **Age is asked as a date, not a checkbox**, per the spec: three day/month/year fields, validated as a real date — the 31st of a thirty-day month is refused rather than rolled forward — and the guardian block appears only once the date says it should.
+- **The guardian section is required exactly when the age calls for it, and dropped otherwise.** An adult who posts guardian details anyway has them dropped: there is no reason to hold a third party's contact details against a grown customer's account.
+- **Consent is a link, and the link is a secret.** The token is generated once, emailed to the guardian, and stored only as a SHA-256 hash — a database dump cannot be used to consent on a child's behalf. Confirming spends it: a consent link that still works after use is a consent link that replays. The route is public, because a guardian has no account here and should not need one to answer a question about their own child, and a guessed token is answered exactly like a spent one.
+- **The restriction is derived, not stored.** `User::mayPlaceOrders()` reads the answers — terms accepted, and consent recorded where the age requires it — rather than a flag that could drift out of step with them. `approval_status` was deliberately left alone: it means "an admin vetted this tailor", and borrowing it would have put every customer into the tailor approval queue.
+- **One gate, at the only door.** The check sits in `OrderController::store` before it branches to marketplace, custom or remodel, so a fourth kind of order cannot quietly miss it.
+- **Passwords now need a digit** as well as eight characters — on the client and in `Password::min(8)->numbers()`, since the form is not the only thing that can post. This applies to tailors too: one policy on a shared endpoint beats two.
+
+**A regression this nearly shipped with.** The order gate reads `terms_accepted_at`, and every customer who registered before this existed had none — all four of them would have been locked out of ordering the moment it deployed. Caught by the existing payment tests failing, which is what they are for. A migration backfills their acceptance: they did agree to the terms of the day, the old form simply never recorded when. Their date of birth stays null rather than invented — an unknown age reads as "no guardian needed", which is the same answer the old flow gave them, and a made-up birthday is a worse record than an absent one.
+
+**Verified against the running server, not only in tests:** a real account was registered through `initiate` → `verify-email` → `profile`, and refused an order at each stage it should be — `registration_incomplete` before the profile step, `guardian_consent_pending` after it as a seventeen-year-old. **In a real browser** (headless Edge over CDP, Georgian) the guardian page reads `ეთანხმებით, რომ Nino Minor გამოიყენებს Kere-ს?`, confirming turns it to `გმადლობთ — დადასტურებულია`, the restriction lifts, the token is cleared, and the link then answers 404. No console errors. Twenty-five tests cover the rules themselves — the age floor, the guardian requirement, the hash-only token, the spent link, and the gate at both stages. Suite 75 green, typecheck clean, locales in sync at 1512 identical key paths.
+
+**Also fixed here:** customer registration had the same English-leak as the tailor form — Laravel's validation prose rendered straight into a Georgian page. It goes through the same code mapping now.
+
+**A guardian who never got the email no longer strands the account.** The consent link was sent once and, if it failed or the address was mistyped, there was no way back — the account simply stayed restricted with nobody able to do anything about it.
+
+- **`POST /api/register/guardian-consent/resend`** sends it again, and takes a corrected `guardian_email` while it is at it, because a typo is the likeliest reason the first one went nowhere. Own throttle bucket at three per ten minutes, since every call sends mail.
+- **Asking again retires the previous link.** Minting is one method now, and it overwrites the stored hash, so there are never two live links to one child's account. A test holds that: the first link 404s as soon as the second exists.
+- **The customer is told why ordering does not work.** A banner on their dashboard names the address the link went to and offers the resend. It reads `may_place_orders` and friends from `/api/me` rather than the stored auth user, because consent is given on the adult's device and the copy in sessionStorage would never hear about it.
+- **The admin user list marks who is waiting.** Nothing else in that row would show it — the account is not suspended, and `approval_status` belongs to tailors. The guardian's own details stay out of the list: it is a queue to act on, not a place to read a child's family's contact details.
+
+**Verified:** 21 tests on this flow, 71 across the suite, typecheck clean, locales in sync at 1511 identical key paths.
+
+**QA round — a throttle keyed on the wrong thing, and a consent gate a minor could walk around.**
+
+- **Every authenticated rate limit was per-IP, not per-user.** `BearerTokenAuth` set the user resolver but did not implement `AuthenticatesRequests`, so Laravel's middleware priority never sorted it ahead of `ThrottleRequests` — the throttle ran first, found nobody signed in, and keyed its bucket on the client address. Confirmed from the live cache: the key was `sha1('|127.0.0.1')`, not the user id. On any shared address — an office, a café, carrier NAT, which is ordinary in Georgia — customers spent each other's allowance, and the worst bucket was consent-resend at three per ten minutes: three sixteen-year-olds registering from one school network would block each other out of the only step that unlocks their account. The fix is the interface, which declares no methods and exists for exactly this ordering. The key is now `sha1(user id)`.
+- **A sixteen-year-old could name their own email as the guardian's.** Nothing compared the two, so the consent link arrived in the child's own inbox and the control became a minor ticking their own box. Email consent is never airtight, but a link sent to the account asking for it is not consent at all. Both the address and the phone are now refused if they match the account's own, on the first submission and on the resend — which had to be closed too, or correcting the address becomes the way around the check.
+- **Age is counted in Georgia, not UTC.** `APP_TIMEZONE` is UTC and Tbilisi is four hours ahead, so between midnight and 04:00 the server's date is still yesterday: on the morning of an eighteenth birthday the form would hide the guardian fields and the server would demand them. `User::AGE_TIMEZONE` fixes where the counting happens, and the client now sends a rejected field back to the screen that asked it instead of showing "registration failed" about a question the customer never saw — which closes that dead end for every validation failure, not only this one.
+- **The tailor form now checks for a digit** as the shared endpoint does. Without it a digitless password passed the form, walked the tailor through all three pages, and bounced back with "check this field" and no clue what was wrong. Both placeholders say "8 characters, 1 number" now.
+- **`CustomerProfileSteps` uses `<Button>`.** Four raw buttons in a new file had no "matches its surroundings" defence. They keep the white-on-dark palette through `className`, because the theme's own primary and outline both vanish on that overlay — the component is there for the focus ring, the disabled handling, and having one place to change a button, and it still gives all three.
+
+**Verified:** the throttle key before and after, from the cache table; self-consent refused live at 422 `guardian_contact_is_own`; age boundaries exact at 15/16/17/18 counted in Tbilisi. Twenty-five tests on this flow, 75 across the suite, typecheck clean, locales in sync at 1512 identical key paths.
+
+**Still to do:** an admin can see who is waiting but cannot resend on the customer's behalf, and consent links do not expire.
+
+---
+
+### [2026-09-17] Tailor registration asks what a tailor actually has to answer
+
+**What was done:** The tailor sign-up form carried six fields — name, email, phone, password — and the partnership spec asks for twelve. The missing questions are in, and the form is a three-page wizard rather than a wall: *your details*, *your work*, *verification*, then the OTP step it already had.
+
+- **New questions:** how they work (independent / atelier / small workshop / designer-tailor), workspace address, years sewing, legal status (natural person / individual entrepreneur / LLC / other), identification number, and the three mandatory consents — partnership terms, data processing, and that the information is true.
+- **Experience gets no column.** The form asks it as a band because nobody answers "7" to *how many years*, but `years_experience` has been an integer on the profile since long before this form, shown publicly and editable by the tailor. Each band stores the lower bound of its range — 0, 1, 3, 5, 10 — which reads correctly, maps back to the band it came from, and leaves one field a tailor can make exact later instead of two that drift.
+- **Both verification paths now build the user in one place.** Email and phone each had their own `User::create` with the same nine keys; a tenth applied to one and forgotten on the other is exactly the bug that shape invites, so `attributesFor()` is what both call.
+- **A customer is asked none of it,** and that took a specific rule. `accepted` rejects a null rather than skipping it, so guarding the consents with `required_if` + `nullable` broke customer registration outright — reproduced against the running server before it was fixed. `exclude_unless:role,tailor` takes them out of validation entirely instead of validating an absence.
+
+**Two of these are not for showing.** `national_id` and `id_document_path` are in the model's `$hidden`, and the tailor endpoints build explicit allowlists, so neither leaks by having been added — two tests hold that in place, one on the serialized model and one on the public profile response.
+
+**The identity document is uploaded after the account exists,** not with the form, and deliberately: the form is submitted before the OTP is checked, so accepting a file there would mean taking identity documents from anyone who can reach the endpoint, with no verified phone behind them and an orphan on disk every time a registration is abandoned. `POST /api/tailor/id-document` is authenticated, writes to the `local` disk — not served over HTTP — returns no URL because there is nothing anyone should be able to fetch, and deletes the previous document when one is replaced.
+
+**The bank account the spec asks for is deliberately absent.** The document says itself that it belongs at the verification stage rather than the first screen, and there is nothing to pay out to before a tailor is approved.
+
+**Verified in a real browser** (headless Edge over CDP, Georgian): all three pages advance in order — `ნაბიჯი 1 / 3 — თქვენი მონაცემები` through `3 / 3 — ვერიფიკაცია` — an empty page refuses to advance, page 2 carries its three fields and page 3 its two plus three consent boxes, and submitting with a box unticked stays on page 3 and shows `გასაგრძელებლად დაეთანხმეთ სამივე პირობას`. At 390px nothing overflows (scrollWidth 390 = clientWidth). No console errors. Against the running server: a tailor missing the trade questions is rejected field by field, each consent is required on its own, invalid enum values are refused rather than trusted, and a customer registers untouched. Eight tests, suite 47 green, typecheck clean, locales in sync at 1459 identical key paths.
+
+**QA round — the English leak into a Georgian interface.** Laravel answers in English and the interface is Georgian by default, so a server message rendered as prose put one English sentence in the middle of an otherwise translated page. Reachable without tampering, because the failing checks are ones only the server can make: registering with a phone somebody already used showed "The phone has already been taken." under the field, and paying an order settled in another tab showed "This order is already paid." as the only English on the page.
+
+- **The server sends a code now, not a sentence.** Every refusal in `PaymentController` carries one alongside its message, and the two registration failures a careful person still hits — a taken phone, a taken email — answer `phone_taken` / `email_taken` through Laravel's custom-message hook.
+- **The client never renders a server string.** `lib/serverMessage.ts` maps codes to keys, and anything unrecognised falls back to the caller's own translated message rather than printing what the API said. That is the part that matters: an unmapped code degrades to a generic Georgian sentence, not to English.
+- **A 409 now refreshes the list.** If payment is refused because the order moved — settled or cancelled elsewhere — the dashboard was still showing a Pay button inviting a second attempt. It reloads instead.
+
+**Verified in a real browser** (headless Edge over CDP, Georgian): completing all three registration pages with an already-registered phone shows `ეს ნომერი უკვე რეგისტრირებულია.` under the phone field, rewound to page 1 where that field lives, with no English anywhere on the page. Four tests pin the codes — two on registration, one covering all four payment refusals. Suite 50 green, typecheck clean, locales in sync at 1466 identical key paths.
+
+**Left alone, with reasons.** The new "back" button on the registration wizard is a hand-styled `<button>` where §25 asks for `<Button>`. Converting it alone would look worse, not better: `--primary` is the brand wine and `--input`/`--background` are the neutral theme tokens, while this page is hand-rolled in `#181818` on `#F3F2EF` — a `variant="outline"` button would render white-on-grey directly above the near-black submit button it sits with. The whole file wants one sweep (three raw buttons at HEAD, and a `duration: 0.45` that predates this work), which is a change to make deliberately rather than as a side effect. Also still open from the previous round: colour labels breaking mid-word in the designer, and the `useScroll` warning on the landing page.
+
+**Still to do:** nobody can view a submitted document yet — an admin review screen, and a decision on how long identity documents are kept, are the follow-ups.
+
+---
+
+### [2026-09-14] Flitt payment rails restored to the backend, wired but not yet switched on
+
+**What was done:** The Flitt (flitt.com, ex-Fondy) card gateway is back in the backend — service, controller, routes, config and migration — behind an explicit go-live switch. Nothing in the customer-facing order flow changed: the merchant is still pending live approval, so this is the plumbing arriving ahead of the approval, not payments turning on.
+
+**It was not written from scratch.** A complete implementation already existed on the `flitt-payments` branch (`738fe71`, 2026-08-11) and had never been merged — it branched off before the Mariam design merge and was left behind, not reverted. The backend is that work, restored and adapted, because it was good: ownership-checked token minting, an idempotent finalise, and an amount-and-currency check before an order is ever credited.
+
+**A missing migration was the reason to look.** `orders` carries `payment_status`, `payment_id` and `paid_at` on this machine, but no migration created them: `2026_08_07_000003_add_payment_fields_to_orders_table` is recorded in the `migrations` table with **no file in the tree**. A fresh deploy or `migrate:fresh` would have produced an `orders` table without them, and the first payment would have failed on a missing column. The file is restored under its original name, so this database correctly skips it as already-run while a fresh one gets the columns.
+
+**What is wired:**
+
+- **`App\Services\FlittService`** — mints a checkout token (`POST /api/checkout/token`), reads order status (`POST /api/status/order_id`), and builds/verifies the signature: `sha1(secret | non-empty params sorted by key, joined with '|')`, excluding `signature` and `response_signature_string`. Amounts go out in tetri, currency GEL.
+- **`App\Http\Controllers\Api\PaymentController`** — `pay` (token for an unpaid marketplace order the caller owns), `verify` (client-driven re-check, authoritative on its own so checkout settles where a webhook cannot reach), and the public `callback` webhook. `markPaid` is idempotent, refuses to credit an order that is no longer `unpaid` (a late payment on an expired order is logged for a human, not silently resurrected), and checks the paid amount and currency against our own record before the order moves.
+- **Routes** — `POST /api/orders/{id}/pay` and `/verify-payment` behind `auth.bearer` in their own `api-payments` bucket (40/min, because `verify` is polled every few seconds while the card form is open and would otherwise starve against the 10/min write limit); `POST /api/payments/flitt/callback` public on `api-flitt` (120/min).
+- **Config** — `services.flitt.*`, env-driven. **Credentials have no defaults**, which is the one deliberate departure from the restored version: it fell back to Flitt's shared public sandbox merchant, and that is convenient right up to the deploy where `FLITT_SECRET_KEY` is absent and live checkout quietly signs with a sandbox key instead of failing. `isConfigured()` now refuses instead.
+- **Tests** — `tests/Feature/FlittSignatureTest.php`, 10 cases pinning the signature: key ordering, empty values dropped, `signature` never signing itself, `response_signature_string` excluded, a forged amount rejected, a foreign secret rejected, nothing verifying while unconfigured, and tetri conversion free of float drift.
+
+**What is deliberately not wired, and why.** The original commit *moved* the tailor notification out of order creation and into `markPaid`, so no tailor hears about an unpaid order. That move is correct and is not ported yet: while the merchant is pending, nobody can pay, so making payment the gate would simply stop tailors being notified at all. The same reasoning keeps `orders:expire-unpaid` out — scheduling a job that cancels unpaid orders when every existing marketplace order is `unpaid` and unpayable would cancel the lot. The frontend (`FlittCheckout`, `PaymentModal`, `PaymentComplete`) is still on the branch.
+
+**The gateway id is not the order number, and that was a bug worth catching early.** Flitt refuses a second checkout token for an `order_id` it already holds — `1013 Duplicate order` — so sending `order_number` meant an order could be tokenised once and never again. A customer who opened checkout, closed the tab and came back would get a 502 from `pay` and could never pay that order: exactly the "resume payment" path the original branch advertised. Each attempt now takes its own `<order_number>_<random>` reference (`beginAttempt`), the latest is stored on `orders.payment_reference` because a status query has to name one, and the callback resolves by the reference the gateway quotes rather than the one we last stored — so a payment finished in a stale tab after a retry still lands on the right order instead of being dropped. Order numbers are `<PREFIX>-<8 uppercase alphanumerics>` and contain no underscore, which is what makes the separator safe. Verified against the live sandbox: the order that had returned 1013 tokenised three times in a row, with a distinct reference each time.
+
+**Test mode now works from the website, not just from a console.** The customer side of payment is wired: unpaid marketplace orders carry an "awaiting payment" chip and a Pay button on the customer dashboard, which asks `/api/orders/{id}/pay` for a checkout URL and follows it; `/checkout/complete` is where the gateway returns them.
+
+- **Hosted redirect, not the embedded form.** The original branch mounted Flitt's card fields inside the page, which forces an HTTPS origin and therefore a tunnel for any local testing. Sending the customer to Flitt's own hosted page instead drops that requirement entirely — the gateway is on its own HTTPS domain — so test mode runs on plain `127.0.0.1` with no cloudflared. The embedded form remains the nicer end state; it is not the thing to be blocked on now.
+- **The checkout URL is built server-side** (`FlittService::checkoutUrl`) and returned by `pay`, so the gateway's address has one home and the client only follows where it is sent.
+- **The completion page does not believe itself.** The order is paid because the gateway says so, not because a redirect landed, so the page calls `verify-payment`, which asks Flitt directly. That answer can lag the redirect, so a `pending` reply is retried five times at two-second intervals before the page settles on it — telling a customer their payment did not go through when it did is the one outcome worth spending ten seconds to avoid. Unauthenticated it says the status is unavailable and to sign in, rather than implying failure.
+- **`payment_status` is now exposed** on `/api/customer/orders`; it is optional in the client type, because orders placed before card payment existed do not carry one.
+- **`APP_URL` was pointing at a dead tunnel**, so the gateway was redirecting customers to `DNS_PROBE_FINISHED_NXDOMAIN` after a successful payment. Now `http://127.0.0.1:8000` for local work; production must set its own.
+
+**Verified in a real browser** (headless Edge over CDP, Georgian locale): the dashboard renders five awaiting-payment chips and five Pay buttons across the five unpaid marketplace orders and none on the paid ones; clicking Pay lands on `https://pay.flitt.com/api/checkout?token=…`; the completion page for the paid order reads "გადახდა მიღებულია" with its order number. At 390px the page does not overflow (scrollWidth 390 = clientWidth). No console errors from our code — the only warning is the pre-existing `useScroll` one on the landing page. A full test payment was taken end to end on the sandbox merchant: ₾60, `payment_id` 1014680713, card 444455XXXXXX1111, and the order moved to `paid`; verifying twice left `paid_at` unchanged, paying an already-paid order answers 409, and an anonymous call answers 401.
+
+**Review round — two blockers and four highs, all closed.** Both blockers were on the HTTP surface rather than in the signing, which is exactly where there were no tests.
+
+- **A cancelled order could still be charged.** `pay` guarded `order_type` and `payment_status` but never `status`, and cancelling writes `status` alone — so a cancelled order kept `payment_status: unpaid` and minted a live checkout token. Reproduced: 200 with a working checkout URL. Now guarded at both ends (`PAYABLE_STATUSES`, mirrored in the dashboard so the button only appears where the server will accept it), and cancelling an unpaid order writes `payment_status: expired`.
+- **The public callback 500ed on a non-scalar field.** An `order_id` of `["a"]` reached the string cast in `signature()` and came back as an `ErrorException` with a stack trace — unauthenticated, at 120 req/min, on the one route whose stated contract is to always answer 200. `verifyCallbackSignature` now rejects anything non-scalar before it signs.
+- **`expired` existed in the data and in no type.** Five rows were already `marketplace | cancelled | expired` while the migration comment and the TypeScript union both said `unpaid | paid | not_required`. Both corrected.
+- **`not_required` was documented but never written.** Custom and remodel orders took the `unpaid` column default — seven rows — which the planned `orders:expire-unpaid` job would have read as "owes money" and cancelled wholesale. Written at creation now, with a backfill migration for the rows that already exist.
+- **The callback did not check `order_type`.** `pay` refuses custom orders, so the gateway should never hold a reference to one, but the guard sat on one path and not the other. It sits on both now.
+- **`markPaid` was read-then-write.** Harmless while the callback and the poll converge on the same state, but go-live step 4 moves the tailor notification into it and the race would then send two. It is a conditional update keyed on `payment_status = unpaid`, so exactly one caller wins.
+
+Also closed: the reference is no longer stored before the gateway accepts it — a rejected token used to leave the order pointing at an attempt Flitt never saw, and every later status query then asked about an unknown order; a missing `currency` no longer passes the check that exists to catch it; the pay error renders in `text-destructive` rather than brand wine, which reads as informational; the result sits in an `aria-live` region; "Check again" cannot start overlapping retry loops; and a signed-out arrival — which a mobile 3-D Secure return into a new tab produces, since the token lives in `sessionStorage` — is offered sign-in instead of a dashboard link that bounces off the route guard.
+
+**Fifteen controller tests added** (`PaymentControllerTest`), covering the surface that had none: ownership, each 409, both blockers, the amount and currency guards, order type on the callback, refusing to revive an expired order, and crediting twice leaving the first payment untouched. The suite is 34 green.
+
+**Still open, by agreement rather than oversight:** a gateway outage and a decline are indistinguishable to the completion page, since `verify` answers `unpaid` for both; refunds and reversals have no path back and no state to hold one; and `payment_status` is spelled out in three places — migration comment, PHP guards, TS union — where one shared definition would be better.
+
+**Payment moved into checkout, where it belongs.** Placing a marketplace order used to show "Order placed!" and redirect to the dashboard after three seconds, never mentioning money — the customer was told the order succeeded and had to discover for themselves that it was unpaid. Placing an order now goes straight to the gateway: `/api/orders` returns the new order's `id`, the client asks `pay` for a checkout URL and follows it.
+
+- **The order survives a payment that will not start.** `openPayment` never throws and returns false instead; the order is already placed by then, and losing it to a gateway hiccup would be worse than an unpaid order. The customer lands on the same success screen, is told the payment page could not be opened and that the order is saved, and finds it on the dashboard with its Pay button — which is now the resume path rather than the only path.
+- **`payment_status` is stated at creation** for marketplace orders rather than left to the column default, so the creation response carries it instead of `null`.
+
+**Verified:** `POST /api/orders` returns `id` and `payment_status: unpaid`; `POST /api/orders/{id}/pay` on that fresh order returns a live `checkout_url`. The test order was removed afterwards and its reserved stock returned — 19 orders and 12 items, exactly as before. Typecheck clean, 34 tests green, locales in sync at 1427 identical key paths.
+
+**The tailor now hears about an order when it is paid for, not when it is placed.** This was already wrong — the notification fired at creation, before any money — but moving payment into checkout made it acute: every customer who now reaches the card form and changes their mind leaves behind an order a tailor has already been told to start.
+
+- **All three announcements moved**, not just the tailor's in-app one: the customer's `OrderConfirmation` email and the tailor's SMS-and-email `Notifier->dual` went too. Confirming an order the customer has not paid for tells them the wrong thing exactly as surely as it tells the tailor.
+- **It hangs off the conditional update**, so the callback and the client poll racing each other cannot produce two "new order" alerts — the loser updates no rows and announces nothing.
+- **Nothing in the announcement may throw.** The money is taken and the order credited by the time it runs; a mail server being down is not a reason to leave a payment unrecorded, so each channel logs its own failure and the others continue.
+- **Custom and remodel are untouched.** They are `not_required`, settle offline, and have no payment to wait for — their notifications still fire at creation, as do the status-change and tailor-request ones.
+
+**Five tests** (`PaymentNotificationTest`) pin the timing against a real order placed through the API: placing one produces no tailor alert; the signed callback that credits it produces exactly one; a callback arriving twice still produces one and leaves the first `payment_id` standing; and a payment that fails the amount check announces nothing. Suite is 39 green.
+
+**Flitt go-live — the order these have to happen in:**
+
+1. Live approval clears in portal.flitt.com; regenerate the Payment key and Credit private key, since the test pair has been on screen.
+2. Put `FLITT_MERCHANT_ID` and `FLITT_SECRET_KEY` in the production environment. There is no fallback — a missing key fails the payment rather than mis-signing it.
+3. Port the frontend from `flitt-payments` and re-point it at the current designer, which has been rewritten as a five-step wizard since that branch.
+4. Move the tailor notification from `OrderController::storeMarketplaceOrder` into `PaymentController::markPaid`, so a tailor is alerted once, on payment.
+5. Port `orders:expire-unpaid` and schedule it — only after step 4, and after deciding what happens to the marketplace orders that are already `unpaid`.
+
+**The card form needs HTTPS.** Flitt's card-field iframe rejects `http://` origins, so the embedded form cannot be exercised against `127.0.0.1` — local testing needs a tunnel (`cloudflared`/`ngrok`) with `APP_URL` pointed at it. The stale `APP_URL=https://…trycloudflare.com` sitting in `.env` is a leftover of exactly that.
+
+**Verified:** all three routes register; `pay` and `verify-payment` answer 401 unauthenticated; the callback answers `{"status":"ignored"}` with **200** to both an unsigned and a forged-signature payload — 200 because a non-2xx puts Flitt into a retry loop over something retrying will never fix. `FlittService` returns null rather than signing while unconfigured. 10/10 signature tests pass, `php -l` clean on every touched file. **Not verified:** a real token round-trip against the gateway, which needs the Payment key pasted into `.env`, and the embedded card form, which needs the HTTPS tunnel.
+
+**The ledger had a second hole, now closed too.** `2026_08_24_000001_retire_style_and_sleeve_fit_layers` was recorded as run with no file for the same reason. Restored from `4f6355c`. Its cleanup is now redundant — the seeder retires unseeded attributes on every run — but a migration is a ledger entry before it is a script: with the file absent, `migrate:status` listed a phantom and any `migrate:rollback --step` reaching batch 28 would have thrown on a missing class. Both directions are now consistent, nothing pending.
+
+**Proved rather than argued:** migrating a throwaway database from empty produces `orders` with `payment_status`, `payment_id` and `paid_at`, and the restored layer migration runs clean (it no-ops on an empty schema, by design). Before this, that same run produced an `orders` table with none of the three.
+
+---
+
+### [2026-09-13] The Fitted drop: Sleeveless and Puff completed to 23 colourways and four angles
+
+**What was done:** The 343-file "01. Fitted" studio drop was imported into the women's T-shirt customiser. Sleeveless goes from 11 colourways to 23 and gains a left view it never had; Puff goes from 13 to 23. Every photographed sleeve now carries all four angles for every one of its colourways — 540 photo references, none broken — which had not been true before.
+
+**The drop was the full version of a sample already in the tree.** The 2026-09-10 `drive-download` import turned out to be a subset of this same shoot: its sleeveless frames are pixel-identical to the new ones (mean absolute difference 0.00 over a 64×64 signature, against 1.94 for two genuinely different sleeves). Nothing about that import was wrong — it was 22 of the 115 frames the shoot actually contains.
+
+- **New `scripts/import-studio-drop.mjs`.** The drop arrives as a nested tree spelling each axis out in prose (`01. Fitted/01. Above the waist/01. Crew Neck/01. Sleeveless/01. Plain Closed Back/12. Blush Pink/…`), which `prepare-tshirt-photos.mjs` cannot read — it wants the flat `<fit>_<length>_<neckline>_<back-design>_<sleeve>_<colour>_<view>.png` masters. This script is the step between. It takes the sleeves to import as arguments, so Cap could be left alone, and throws on any folder name not in its maps rather than guessing — a silently mislabelled frame is a garment photographed as one option and sold as another.
+- **View comes from the numbered file prefix, not the suffix.** The suffix is not dependable in this drop: Front appears as `Front`/`Fron`/`Fr`/`F`, Back as `Back`/`Ba`/`Bk`/`B`/`ba`, one three-quarter is `3,4`, one file puts the colour last (`…_Front_Off-White.png`), and four Turquoise frames carry no view at all. The prefix agreed with the suffix on every one of the 343 files wherever the suffix could be read at all, so it is the key. Three `…(1).png` frames were checked before being dropped — all byte-identical to their pair (diff 0.00), unlike the 2026-08 puff/black duplicate, which was a second *left* view.
+- **Cap was deliberately not imported.** This drop ships 22 cap colourways against the 23 already in the tree, and its cut is the closest match to what is already there of any pair measured (normalised difference 1.25, where cap-vs-puff within one shoot is 3.63). Importing it would have cost Blush Pink and bought nothing.
+- **Hexes are sampled, not picked.** `prepare-tshirt-photos.mjs --hexes` reads the derived set back and prints them, which is what the seeder docblock already claimed happened. The sample is the modal colour of the garment's core — middle 40% across, 45–80% down — because the neckline, hem and sleeve edges carry shading and the white sweep. On the two sleeves it generated it is exact by construction — every one of the 46 seeded hexes re-samples at Δ=0. Held against the 23 untouched Cap hexes, which were sampled before it existed, it agrees to a median of 2 per channel and 18 of 23 within 3, `brown` exactly, with five between 4 and 6 (`olive` worst at 6). Dropped Shoulder's older set diverges further still — `blue` by 17 — so the retro-agreement measures how close the earlier sampling was, not the accuracy of this one.
+- **Seeder:** `TSHIRT_SLEEVES` sleeveless 11 → 23 and puff 13 → 23. `TSHIRT_PALETTE` was not touched — display_order is a property of the palette, so the new colourways slot in without renumbering. The stale docblock claims were rewritten against re-measured numbers rather than edited to fit.
+- **Raw masters off the public web root.** The extracted drop (494 MB) and its zip (493 MB) and the earlier `drive-download` folder (54 MB) moved to a new gitignored `/garment-masters/`. All three were sitting in `public/` unignored and would have gone into the next commit.
+
+**One invariant this weakened, deliberately and with the trade accepted.** The seeder documented that the shoots "differ in the sleeve alone" — one body, the sleeve the only variable. That still holds for Cap, Wide, Dropped Shoulder and Oversized, whose fronts measure 516–563px scaled to a common garment height, one garment within 4%. The Fitted drop is a trimmer garment: puff now measures 415–454px and sleeveless 297–403px. **Switching between those two groups now changes the body, not only the sleeve.** Puff previously sat with the studio four at ~547px, so this import is what moved it. The 65 superseded puff masters are kept at `garment-masters/superseded/puff-previous-shoot/`, so reverting Puff is a copy and a re-derive; the price of reverting is 23 colourways back to 13 and the loss of its left view. A Wide/Dropped/Oversized re-shoot in the Fitted vocabulary is what settles it properly.
+
+**And one the drop brought with it.** Sleeveless frames spread 297–403px — 35.7% — against 0.5–1.6% inside each studio sleeve, because its neutrals were shot on a longer tank than its brights. The split is clean: off-white, beige, camel, charcoal and light-gray are exactly the five narrowest at 297–330, the other eighteen 345–403, no overlap. Stated plainly rather than as a measurement, because the customer meets it as one: Off-White and White are neighbouring swatches, so clicking between them shows the garment 36% wider at the same height — a slimmer long tank against a wide crop top, which reads as two garments rather than one in two colours. Accepted rather than corrected, on the same reasoning the 11-colourway import used — rescaling one group would misrepresent what was photographed — but re-shooting the five neutrals is what fixes it, and it is a sharper argument for doing so than the 10.6% spread the sample showed.
+
+**Verified in a real browser** (headless Edge over CDP, `/design?gender=women&cat=tops&garment=womens-t-shirt`): Details → Sleeveless renders `sleeveless-burgundy-{front,back,left,right}` — four angles where the 11-colourway import gave burgundy two. On the Colour step, Olive, Green and Sky — each front-only before this import — now return all four angles, as do the new Off-White and White. Emerald, the one palette colour Sleeveless does not carry, still withholds the photo and restores it on the way back to Navy. No console errors at any step, no broken images. Backend: all 540 seeded paths resolve on disk, the live API reports 23/23 colourways with four angles for Sleeveless, Cap, Wide, Oversized and Puff and 20/20 for Dropped, and four newly derived files were fetched over HTTP at 200. `tsc --noEmit` and `php -l` clean.
+
+---
+
+### [2026-09-08] QA round: seven fixes, three rule reverts, and the i18n gap closed
+
+**What was done:** Two review passes came back on the uncommitted redesign work. No functional defect was found in what the redesigns claimed to do — every stated measurement reproduced — but seven real problems surfaced around the edges. All seven are fixed, the three §8 departures the landing import brought in are reverted to spec, and the i18n gap both reports flagged from different angles is closed in one pass.
+
+**Fixed:**
+
+- **Two measurement thresholds contradicted each other on one screen.** The sanity banner ran a flat `n > 150 || n < 30` while each field ran the per-garment ranges in `measurementSanity.ts` (chest 55–175, length 25–155…), and they disagreed in both directions: a 160cm chest raised the banner with nothing flagged, a 50cm chest reddened the field and the banner stayed silent. The flat rule was pre-existing, but this redesign hoisted it out of the JSX into a named constant sitting directly beside the util it contradicts. Both now read `measurementWarning()`. Verified across chest 50 / 160 / 180 / 90: field and banner agree at every value, where the old pair disagreed at two of them.
+- **The banner outlived its own fields.** It was not gated on `customize`, but the inputs are. Enter 200cm on `/customize`, get bounced to sign-in, come back to plain `/product/:id`, and the pending-order thaw restored the measurement and raised a banner on a page with no measurement inputs. Now gated. Verified: after the thaw the plain page has one number input (quantity) and no banner.
+- **A failed `/api/products/:id` was presented as "product not found".** Every failure — 500, offline, timeout — fell into the same branch as a genuine 404, with no retry. The `catch` was pre-existing, but the marketplace got a proper error state and retry in the same redesign, so the two surfaces answered the same failure differently. There is now a distinct error branch with `ErrorFallback` and a working retry. Verified by blocking the endpoint: shows the error, not "not found", and retry recovers the real product.
+- **A failed `/api/categories` was silent.** `.catch(() => {})` used to be survivable when categories lived in a popover; with the rail it leaves the CATEGORY block as a heading over nothing, which reads as broken rather than as something a customer can retry. The facet now takes an optional `onRetry` and renders it in place of the empty grid. Verified by blocking the endpoint: the retry appears, the other facets and all six products still render, and the retry repopulates the six categories.
+- **The rating strip asserted "no reviews yet" on a failed request.** `avgRating` defaulted to `null`, which the strip read as "this product has no reviews" — a claim, not an absence. Rating is now one nullable object: `null` means unknown and renders nothing; a loaded value with `average: null` still says no reviews.
+- **Cormorant Garamond has no ₾ glyph.** Measured: a digit advances 11.26px in Cormorant while ₾ advances 21.25px — identical to the generic serif fallback it drops through to, so display prices were setting two faces mid-string and the lari sign came out nearly twice a digit's width. A `Lari` component sets the sign in the UI face at 0.66em. Confirmed in the page: sign is Instrument Sans 18.48px, number Cormorant 28px. **Still outstanding:** the designer's footer total goes through `money()` and has the same problem — out of scope here.
+- **Three accessibility fixes.** The quantity stepper announced itself as "−" and "+"; it now uses `cart.decrease` / `cart.increase`. The colour swatch announced a bare `#1E293B`; it now announces the colour label with it. And the 3-second post-order redirect timer is cleared on unmount.
+- **`ProductCardSkeleton` moved** from `components/skeletons/` to `components/marketplace/`. It paints in `--kd-*` tokens that only exist under the three warm surfaces, so a generically-named, generically-filed component would have rendered invisible on invisible anywhere else. Its only caller is the marketplace.
+
+**Three §8 departures reverted.** All three came in with the `mariam-changes` landing import and were verified against HEAD as introduced by it, not inherited. Ruled back to spec:
+
+1. `GuaranteeSection.tsx` `duration: 0.75` → `0.6` (§8 allows 0.5 and 0.6 only).
+2. `CTASection.tsx`'s `<h2>` `font-sans` → `font-serif`. `FAQSection` directly beneath it never stopped being serif, so the two headings were disagreeing on one screen; both now resolve to Newsreader.
+3. `FeaturesSection.tsx` stagger `delay: index * 0.04` → `index * 0.1` (§8 specifies 0.1 or 0.2 increments).
+
+The three fade-ups keep `ease: [0.22, 1, 0.36, 1]`, which §8 names neither way — the only piece of the import's animation language still outside the rules as written.
+
+**The i18n gap is closed.** All three sources that were rendering English inside the Georgian UI now go through `t()`, with 27 new key pairs added to both locales (they stay key-for-key in sync at 1408 each):
+
+- `measurementWarning()` returned hardcoded English sentences. It now returns an i18n *key* — `measurementSanity.tooSmall` / `.tooLarge` — so the util stays pure and translation happens at the render layer. Both call sites updated (`ProductCustomization`, `DesignCanvas`).
+- `COLOUR_OPTIONS` and `FABRIC_OPTIONS` carried English labels. Each entry is now `{ key, value }`: the **value** is untouched, so the API contract is identical (`colour[]=#1B1B1B`, `fabric[]=Cotton`), and only the label resolves through `marketplace.colours.*` / `.fabrics.*`.
+- Category names arrive from `/api/categories` in English. They now resolve by slug through `marketplace.categories.*` with `defaultValue` falling back to whatever the API said, so a category the locales have not caught up with degrades to its English name instead of a raw key. Applied on the marketplace rail and the product page's category eyebrow.
+
+Measured before and after: the Georgian rail's 40 controls included 34 English labels; it is now zero, with the eight size codes correctly left as they are. English still reads English on all 32 non-size controls.
+
+**Deleted:** `size-campaign-background.mp4` (676 kB), `size-campaign-wide.png` (1.6 MB) and `measurements-3d-reference.png` (1.85 MB) — 4.1 MB with no references left anywhere in `resources/`, `public/`, `app/` or `database/`. Recoverable from history. `hero/kere-look-2.jpeg` was checked and kept: `HeroSection` and `MarketplaceCarousel` still use it.
+
+**Still flagged, not fixed:** the designer's footer total goes through `money()` and hits the same missing-₾-glyph problem the product page just fixed.
+
+**Verified:** `npx tsc --noEmit`, `eslint` and `vite build` clean; both locales parse and stay key-for-key in sync; all nine routes re-checked for header tone with only the three warm surfaces changed; the Georgian marketplace rail carries no untranslated label and no raw i18n key leaks in either locale; CTA and FAQ headings both resolve to Newsreader; zero page errors and zero failed requests across every case above.
+
+---
+### [2026-09-07] The product page on the warm palette, and a button hierarchy that picks a side
+
+**What was done:** `/product/:id` and `/product/:id/customize` move onto the art-directed palette the designer and marketplace already run, with three structural changes rather than a re-skin. Every fetch, param and price rule is untouched: same `/api/products/:id`, same `related` and `shipping_cost` override, same pending-order thaw, same `POST /api/orders` body, same success-then-redirect.
+
+- **The image stops being a wall.** The full-bleed `lg:h-[calc(100vh-3rem)]` panel becomes a framed 4:5 card on the image bed, with the maker and rating on a strip directly beneath it. The rating used to sit in its own bar below the image, reading as a separate component rather than as this product's provenance. The 👗 emoji fallback becomes `ImageOff`, as on the marketplace card.
+- **The order summary picks a primary.** `placeOrder` was a black button *under* an outlined `addToCart`, so the outlined one read as the main action by position and the black one by weight — they cancelled out. Now `placeOrder` is the burgundy primary at `flex: 1 1 220px` and `addToCart` the outlined secondary beside it, both 52px.
+- **The name gets display type.** Small uppercase sans becomes Cormorant at `clamp(34px,5vw,52px)` in burgundy, with the price in Cormorant beneath, and the whole detail column reorganised into ruled 22px blocks.
+- **Reviews came off the page** at the client's request; the rating summary stays on the gallery strip, so `/api/products/:id/reviews` is still fetched — but only its count and average are kept in state now, not the review objects. **Correcting the handoff on this:** it says the write-review CTA was "the only entry point to reviewing". It was not an entry point at all — it linked to `/customer-dashboard` (or `/signin`), and reviewing actually happens there, on a *delivered* order, through `ReviewModal` → `POST /api/reviews`, which requires an `order_id`. Nothing about writing a review is lost. What is lost is reading review text, which now appears nowhere on the site.
+- **Also cleaned up in passing:** the colour swatches carried a hand-rolled `onKeyDown` for Space/Enter, which a native `<button>` already does; the `slate-*` ring and `boxShadow` double-ring went with the redesign. The quantity field used to *ignore* any typed value outside 1–1000, so typing 2000 silently did nothing; it now clamps to the ceiling. The separate `User`-avatar tailor block is gone — the maker moved to the gallery strip, which is where the design puts it.
+- **Kept, though the prototype does not draw them:** the `Footer`, and the login-required modal that carries the whole unauthenticated order path (`savePendingOrder` → `saveReturnTo` → sign-in). Both restyled to square edges and the warm palette rather than reproduced as the rounded white card.
+- **Label keys** ship with trailing colons (`"ფერი:"`). The rail sets them as uppercase eyebrows where a colon reads as a typo, so a `stripColon` helper trims it in-component — no new keys, per the handoff.
+
+**Header scope.** `/product/*` joins `/marketplace` on the burgundy bar, so `Navigation`'s `isMarketplace` became `isWarmSurface`. Still deliberately not site-wide: the landing page pins its own header in `.kere-landing` CSS and the dashboards were built light. The `--kd-*` palette block now covers `.kere-designer, .kere-market, .kere-product` — one definition, three surfaces.
+
+**One deviation considered and rejected.** The gallery is `lg:sticky top-74px`, and on this product it barely pins — the detail column is only ~66px taller than the gallery, which is the whole travel a sticky element gets. Capping the card's height to guarantee it fits the viewport was tried and reverted: `aspect-ratio` with a binding `max-height` shrinks the *width* too, so the card pulled 195px off the column edge on a 760px-tall viewport in exchange for a few more pixels of pinning. The card now fills the column at exactly 4:5 as drawn. Sticky earns its keep where the column is actually taller — on `/customize`, with a 476px range, it pins at 74px through most of the scroll.
+
+**Verified in a browser** (headless Edge over CDP, 1440×950, 1440×760, 390×844, Georgian): palette resolves to spec and the gallery measures 4:5 exactly at every width; `placeOrder` renders burgundy/cream at 52px *before* the outlined `addToCart`, in that DOM order; swatches 44×44 with one pressed, sizes 56×48, stepper 48/54/48 with minus disabled at 1; add-to-cart put `Cashmere Scarf / M / #1E293B` in the bag; ordering while logged out opens the restyled modal and freezes `{color:#7F1D1D, size:L, quantity:3}` with `returnTo: /product/23`; ₾180 + ₾15 = ₾195 checks out; the `/customize` variant shows the note counter, four measurement fields with guide triggers, hides the customize CTA, and a 200cm entry turns the field border burgundy and raises the sanity banner; no `$`, no horizontal overflow, no page errors, no failed requests. All nine routes re-checked for header tone — only the two product routes changed. `npm run typecheck`, `eslint` and `vite build` clean.
+
+**Noted, not changed:** `measurementWarning()` in `utils/measurementSanity.ts` returns hardcoded English ("That seems a bit large! …") and renders inside the Georgian UI on this page. Pre-existing, and the util is shared with `DesignCanvas`, so fixing it means two locale keys plus both call sites — out of scope here, but it is a real i18n gap. Four keys are now orphaned by the reviews removal (`customerReviews`, `verifiedPurchase`, `noReviewsWriteOne`, `writeReview`); left in both locales rather than deleted, since the decision to drop reviews may be revisited.
+
+---
+### [2026-09-07] Home page pass from `mariam-changes`, taken on its own
+
+**What was done:** Mariam's landing work was pulled across from `origin/mariam-changes` and nothing else from that branch was. `origin/mariami` now points at this branch's own HEAD (`7abc030`) and carries nothing new; the branch with her recent work is `origin/mariam-changes`, two commits ahead.
+
+**Five components and three assets:**
+
+- **`SizeFitSection`** drops the autoplaying `<video>` (`size-campaign-background.mp4` + its poster) for a still, `garment-rack-motion.jpg`, at 54 kB and `loading="lazy"`. The scrim is darkened to compensate (`from-black/60 via-black/30` against the old `from-black/45 via-black/10`), since a still has none of a video's incidental dark frames to sit the white copy against.
+- **`FeaturesSection`** swaps its sticky editorial image for `kere-look-5.webp`, gives the header and each guarantee article a fade-up on scroll, adds a hairline rule between articles (`border-b … last:border-b-0`), and drops the `min-h-[42vh]` floor below `lg` so a short article no longer holds half a phone screen open.
+- **`HowItWorksSection`** swaps step 2's art for `measurement-mannequin.jpg`.
+- **`GuaranteeSection`** deepens its entrance (y 24 → 48) and triggers it earlier (`amount: 0.18`).
+- **`CTASection`** takes its heading from serif uppercase to sans sentence case at a smaller size, and trims the two buttons from 50px to 46px.
+
+**What was deliberately left on the branch.** The two commits also carry a whole wishlist feature (`WishlistController`, a migration, `WishlistPage`, routes, `Product`/`User` relations, 9 i18n keys per locale), a marketplace revision, a `BecomePartner` change, an `AnalyticsConsent` rewrite, and designer/customizer work. None of it is the home page. Two of those would have done real damage if they had come along:
+
+- **`app.css`** on that branch rewrites the `--kd-*` block from the warm burgundy palette to ink-and-ivory (`--kd-burgundy: #111111`, `--kd-cream: #e4e0d7`). That block is now shared by the designer *and* the marketplace, so taking it would have silently repainted the marketplace redesign in the entry above.
+- **`AnalyticsConsent`** replaces `<Button variant size>` with hand-styled raw `<button>` elements and drops the privacy-policy link out of the banner. It renders on every page, so it is not a home-page change either way.
+
+**Two rules the pulled design breaks** — imported as authored rather than quietly corrected, because they are design decisions, not defects:
+
+1. `GuaranteeSection` runs its entrance at `duration: 0.75`. §8 allows 0.5 and 0.6 only.
+2. `CTASection`'s `<h2>` is now `font-sans`. §8 says every landing `h2` is `font-serif` — and the FAQ heading immediately below it is still serif, so the two now disagree on the same screen.
+
+All three new fade-ups also carry `ease: [0.22, 1, 0.36, 1]`, a custom curve the rules do not name either way.
+
+**Verified in a browser** (headless Edge over CDP, 1440 and 390, Georgian): all three new assets load and no local image 404s; zero `<video>` elements remain; every section reaches full opacity after a scroll pass; no horizontal overflow at either width; no page errors and no failed requests. `npx tsc --noEmit`, `eslint` and `vite build` clean. The marketplace `--kd-*` block was confirmed untouched afterwards.
+
+**Now unreferenced** by anything in `resources/` or `public/`: `size-fit/size-campaign-background.mp4`, `size-fit/size-campaign-wide.png`, `size-fit/measurements-3d-reference.png`. Left on disk rather than deleted. `hero/kere-look-2.jpeg` is *not* orphaned — `HeroSection` and `MarketplaceCarousel` still use it.
+
+---
+### [2026-09-07] The marketplace as a filter rail, on the designer's warm palette
+
+**What was done:** The catalogue's five dropdown menus become a persistent left rail with every facet visible, and the page moves onto the art-directed palette the guided designer already runs. Nothing about the data, the query params or the `/api/products` contract changed — the same `gender / category / colour[] / size[] / fabric[] / search / max_price / sort / page` go out, with the same reset-to-page-1 and the same `AbortController`.
+
+- **The palette stopped being the designer's alone.** `app.css` carried a `--kd-*` block scoped to `.kere-designer`, with a comment saying the marketplace kept the palette it was built in. It no longer does, so the block is now shared by `.kere-designer, .kere-market` rather than copied, and gained two rules the marketplace needed named (`--kd-rule` 0.16, `--kd-rule-soft` 0.12) instead of leaving them as raw rgba scattered through the JSX. The dashboards and landing page are untouched.
+- **Burgundy header, marketplace only.** `Navigation.tsx` already branches per route for tone, so `/marketplace` joins `isLanding` / `isCustomizer` with a `#6F1D24` bar and `#F6ECE6` text. Rolling it out site-wide was considered and declined — the landing page's header is pinned by its own `.kere-landing` CSS and the dashboards were built light. Three things had to follow the tone or they would have gone invisible on burgundy: the cart count badge (`bg-brand` is burgundy on burgundy), the notification badge (`NotificationBell` gained an optional `onDark`, default off, so its three other call sites are unchanged), and the sign-in CTA, which drops the `kere-sign-in-link` class on this route — that class exists only to force `!important` white onto the black button, and the marketplace uses the design's outlined treatment instead. `LanguageToggle` now takes a tone class rather than an `isOverDark` boolean; the EN toggle stays, contrary to the prototype, because it is a real control.
+- **`MarketplaceFilterRail.tsx`** replaces `renderFilterContent`, `checkboxRow`, both `AnimatePresence` popovers, the mobile filter sheet, the sort dropdown, the `LayoutGrid` glyph and the click-outside overlay. Category is still single-select — the API takes one `category` and the page mirrors it to `?category=` — so re-picking the open one clears it, which is what "nothing selected means all" comes to here. The chips above the grid are derived from the same facet array the rail draws from, so a selection cannot be shown in one place and missing from the other.
+- **Cards are real links now.** The old card was a `div` with an `onClick`, with `stopPropagation` on everything inside it. It is now a stretched link on the product name (`before:absolute before:inset-0`), which makes the whole card clickable, gives it an accessible name, and keeps the tailor link and the size strip as siblings at `z-2` rather than anchors nested inside an anchor. Verified: zero nested anchors, card centre resolves to `/product/{id}`, tailor name to `/tailor/{id}`.
+- **Add-to-cart survived the redesign.** The design dropped the hover size-strip and the mobile "quick buy". The strip is the only genuine add-to-cart on the card, so it stays, restyled, and now reveals on `focus-within` as well as hover so it is reachable by keyboard. Quick-buy and "check product" only called `navigate('/product/{id}')`, which the card itself now does, so they went.
+- **Fixed while in here:** `clearFilters()` called `setSearchParams({})`, which dropped `?gender=` and made the section effect immediately put it back. It now deletes only `category` and `sort`.
+
+**Three deviations from the handoff, all for legibility:**
+1. **Colour facet is one column at the rail width**, not two. Measured in the browser: the label box is 59px and "Burgundy" needs 64px, and it is a 22px outlier over every other colour, so tightening the row buys one pixel. Two columns again below the breakpoint, where the rail runs the page width.
+2. **Size rows are centred chips with no checkbox.** Four columns of a 252px rail is a 48px cell; a 16px box plus its gap leaves nothing to write "XXS" in. Colour rows lead with their swatch for the same reason. The burgundy fill is what states selection in every case, so nothing is lost.
+3. **The rail collapses below 1024px** behind its own heading, and caps at `calc(100vh-98px)` with internal scroll above it. Unrolled, the full facet set is 1221px — most of a phone screen before the first product, and taller than a short desktop viewport, which would strand the price slider out of reach of a sticky block. The single 1024px breakpoint the handoff asked for is preserved: the rail unsticks and goes full-width at the same width it stops being a column.
+
+**Verified in a browser** (headless Edge over CDP, 1440 / 900 / 390, both locales): palette resolves to spec (`#6F1D24` header, `#FAF5EF` page, `#2A1418` ink, Cormorant on the H1 at 60px); no facet label wraps or clips at any of the three widths; filters reach the API as `colour[]=#FFFFFF&size[]=XL&gender=women&page=1`; sort syncs to `?sort=popular` and clear-all keeps `?gender=women`; the men's tab drops `dresses`/`skirts` and clears a selected women-only category; adding from the hover strip put `Cashmere Scarf / S / ₾60` in the cart without navigating; sticky pins at exactly 74px, clearing the 50px fixed header; blocking `/api/products` renders the error state with a retry and suppresses the count rather than showing "0"; no page errors, no failed requests, no horizontal overflow, no raw i18n keys in either locale. `npm run typecheck` and `eslint` clean.
+
+**Noted, not changed:** `COLOUR_OPTIONS` and `FABRIC_OPTIONS` labels are hardcoded English and render untranslated inside the Georgian UI ("Black", "Cotton" among Georgian copy). Pre-existing — the old popovers had it too — and out of scope for a redesign the handoff scoped to existing keys, but it is a real i18n gap. The mobile grid is now one column rather than two, which follows the handoff's `minmax(min(100%,240px),1fr)` track; worth a look if scanning density matters more than card size.
+
+---
 ### [2026-09-06] Typecheck actually runs now — and a correction to what earlier entries claimed
 
 **What was done:** `npx tsc --noEmit` has been failing repo-wide on the config before checking a single file, which three separate entries below flagged as pre-existing and none fixed. It is fixed, and it is now wired as a gate anyone can run.
@@ -2465,5 +2761,77 @@ as it was shot. 4/4/4/6/16 are the line-wide list prices in `ATTRIBUTES`, and th
 apply wherever the sleeve is **not** photographed — `womens-blouse` carries Wide 4,
 Dropped 4, Oversized 6, Puff 16. Those blouse rows also disprove "the seeder edits
 have not been run": the three new sleeves exist only because of that change.
+
+### 2026-09-10 — The sleeveless T-shirt shoot: a sixth sleeve, 11 colourways
+
+The studio delivered a sleeveless cut of the same cropped crew tee. It enters the
+catalogue exactly as the other five did — as an option of the Sleeves attribute
+that carries photographs — so no schema, no frontend and no seeder structure
+changed to accept it.
+
+**The import.** 30 masters arrived as `drive-download-20260910T174001Z-1-001/`
+named in the shoot's vocabulary
+(`01. T-shirt_Fit_Above_Crew_Sleeveless_PlainClosed_Blue_Front.png`). Renamed into
+the customizer's own slugs and moved to the git-ignored
+`public/assets/garments/New Tshirts/` beside the other masters —
+`body-fitting_cropped_crew_normal_sleeveless_<colour>_<view>.png` — so
+`prepare-tshirt-photos.mjs` needed no new translation and stayed a pure resize.
+`Fit`→body-fitting, `Above`→cropped, `PlainClosed`→normal, `3.4`→three-quarter.
+One file, `Blue_Right(1).png`, was a byte-identical Drive duplicate (same md5 as
+`Blue_Right.png`) and was dropped rather than kept as a second angle.
+
+That the shoot really is the same garment was checked, not assumed: the file name
+says `Fit` where the earlier masters say `BodyFit`, and the frames are shot at a
+different zoom (garment height 1136-1170px against the sleeved set's 904±6), which
+made the raw bounding box look like a longer garment. Held to a common height the
+crop, the crew neck and the body are the tee that was already in the catalogue.
+
+**What it covers.** 11 colours front, 8 back, 3 right, no left; the seven
+three-quarter frames are dropped at derive time as before. 22 files land in
+`WomanTshirtStudio/`, and the existing 407 re-derived byte-identically. Nothing
+new was needed to handle the gaps — `photoPath()` already returns null for an
+angle the shoot did not deliver and the switcher already offers only the views
+every rendered layer has, so Sleeveless shows two tiles in most colours and three
+in Blush, Blue and Lavender. Every colour word was already in the palette, so the
+picker still holds 24.
+
+**The palette had to stop numbering itself from the shoots.** `garmentColors`
+orders the picker by the lowest `display_order` a colour holds in any shoot, which
+reads a colour's place off its index within a shoot — sound only while every shoot
+covers the palette densely enough for those indices to agree. Puff already broke it
+mildly: skipping Navy and Red pulled Burgundy one place ahead of Red. Sleeveless
+carries 11 of 24 and, being the first sleeve, would have renumbered most of the
+palette from its own compressed indices — Navy to 0, ahead of Black. Order is a
+property of the palette, not of whichever shoot happened to include a colour, so
+`TSHIRT_PALETTE` now states it once and every shoot writes the same number for the
+same colour. `paletteOrder()` throws on a colour the palette has not placed rather
+than sorting it silently to the end. The picker is unchanged at 24 colours except
+that Red is back ahead of Burgundy.
+
+**A defect in the photography, accepted and recorded.** The sleeveless frames are
+not one consistent shoot. Scaled to the sleeved set's garment height its hem
+measures 649-727px against their 584-628, and its own frames split into two groups
+10.6% apart in width: Blush, Red and Burgundy on a narrower body, the other eight
+on a wider one — each group internally consistent to under 1%, where the sleeved
+fronts hold 0.3-0.8% across every colour. So changing colour within Sleeveless can
+read as a slightly different cut, and because Burgundy is the cover colour the tile
+and the opening view are the narrow one. Left as photographed: rescaling one group
+to match the other would show the customer a garment that was never shot. A
+re-shoot of the eight settles it. This is the front-view equivalent of the side-view
+inconsistency already documented above, and it is the one thing in this import worth
+sending back to the studio.
+
+Hexes are sampled as before — the modal garment colour of the master. The method
+reproduces the existing values to within two levels per channel (Sky matches
+exactly), which is below what the eye resolves on a 20px chip.
+
+Verified in the browser (headless Edge, 1440px and 375px, both locales): the
+designer opens unchanged on cap/burgundy; Sleeveless is free and leaves the total
+at ₾45; the stage paints `sleeveless-<colour>-front` for all 11; the switcher
+drops to Front/Back, and to Front/Back/Right for Blush, Blue and Lavender;
+Black and Emerald withhold the photograph and keep the colour on the sheet;
+the review sheet reads Sleeveless + the chosen colour with fit, length, neckline
+and back pinned by `depicts`; the other five sleeves are untouched; no horizontal
+scroll at 375px and no console errors. Typecheck clean.
 
 *End of README. Update the Evolution Log every time a feature is added or a significant bug is fixed.*

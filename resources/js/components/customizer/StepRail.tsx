@@ -28,7 +28,7 @@ export default function StepRail({ steps, step, onStep, onExit }: StepRailProps)
     const { t } = useTranslation();
 
     return (
-        <div className="sticky top-0 z-20 flex shrink-0 flex-row items-center gap-1 border-b border-white/15 bg-black px-3 py-2 min-[900px]:h-screen min-[900px]:w-[118px] min-[900px]:flex-col min-[900px]:items-stretch min-[900px]:gap-1 min-[900px]:overflow-visible min-[900px]:border-b-0 min-[900px]:border-r min-[900px]:px-0 min-[900px]:py-0">
+        <div className="designer-rail sticky top-0 z-20 flex shrink-0 flex-row items-center gap-1 border-b border-white/15 bg-brand px-3 py-2 min-[900px]:h-screen min-[900px]:w-[118px] min-[900px]:flex-col min-[900px]:items-stretch min-[900px]:gap-1 min-[900px]:overflow-visible min-[900px]:border-b-0 min-[900px]:border-r min-[900px]:px-0 min-[900px]:py-0">
             <Link
                 to="/"
                 aria-label="Kere home"
@@ -62,7 +62,7 @@ export default function StepRail({ steps, step, onStep, onExit }: StepRailProps)
                                 railStep.reachable ? 'cursor-pointer hover:text-[var(--kd-rail-text)]' : 'cursor-not-allowed',
                             ].join(' ')}
                         >
-                            <span className={`h-px min-w-0 flex-1 transition-colors duration-300 min-[900px]:relative min-[900px]:z-10 min-[900px]:h-3 min-[900px]:w-3 min-[900px]:flex-none min-[900px]:rounded-full min-[900px]:ring-2 min-[900px]:ring-black ${i <= step ? 'bg-white min-[900px]:ring-white' : 'bg-white/25 min-[900px]:ring-white/30'}`} />
+                            <span className={`h-px min-w-0 flex-1 transition-colors duration-300 min-[900px]:relative min-[900px]:z-10 min-[900px]:h-3 min-[900px]:w-3 min-[900px]:flex-none min-[900px]:rounded-full min-[900px]:ring-2 min-[900px]:ring-brand ${i <= step ? 'bg-white min-[900px]:ring-white' : 'bg-white/25 min-[900px]:ring-white/30'}`} />
                             <span className={`hidden min-w-0 text-[9px] leading-tight tracking-[0.01em] [overflow-wrap:anywhere] min-[900px]:inline ${isActive ? 'text-white' : ''}`}>{t(railStep.tKey)}</span>
                         </button>
                     );

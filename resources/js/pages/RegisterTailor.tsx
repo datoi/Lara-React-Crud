@@ -15,6 +15,7 @@ import { PhoneInput } from '../components/PhoneInput';
 import { OtpStep } from '../components/OtpStep';
 import { saveAuth, type AuthUser } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
+import { serverMessageKey } from '../lib/serverMessage';
 
 interface FormState {
     first_name: string;
@@ -23,6 +24,11 @@ interface FormState {
     phone: string;
     password: string;
     password_confirmation: string;
+    business_type: string;
+    workspace_address: string;
+    experience_band: string;
+    legal_status: string;
+    national_id: string;
 }
 
 const EMPTY: FormState = {
@@ -32,7 +38,39 @@ const EMPTY: FormState = {
     phone: '',
     password: '',
     password_confirmation: '',
+    business_type: '',
+    workspace_address: '',
+    experience_band: '',
+    legal_status: '',
+    national_id: '',
 };
+
+/** All three are mandatory; the server records the set, not each box. */
+interface ConsentState {
+    accept_partnership_terms: boolean;
+    accept_data_processing: boolean;
+    confirm_information_correct: boolean;
+}
+
+const NO_CONSENT: ConsentState = {
+    accept_partnership_terms: false,
+    accept_data_processing: false,
+    confirm_information_correct: false,
+};
+
+/** Values mirror AuthController's validation — the server is what enforces them. */
+const BUSINESS_TYPES = ['independent', 'atelier', 'workshop', 'designer'] as const;
+const EXPERIENCE_BANDS = ['under_1', '1_3', '3_5', '5_10', 'over_10'] as const;
+const LEGAL_STATUSES = ['individual', 'sole_trader', 'llc', 'other'] as const;
+
+/** Which questions live on which page of the form. */
+const PAGE_FIELDS: Record<number, (keyof FormState)[]> = {
+    1: ['first_name', 'last_name', 'email', 'phone', 'password', 'password_confirmation'],
+    2: ['business_type', 'workspace_address', 'experience_band'],
+    3: ['legal_status', 'national_id'],
+};
+
+const LAST_PAGE = 3;
 
 type Step = 'form' | 'email-otp' | 'phone-otp';
 
@@ -41,7 +79,11 @@ export default function RegisterTailor() {
     const { t } = useTranslation();
 
     const [step, setStep] = useState<Step>('form');
+    const [page, setPage] = useState(1);
     const [form, setForm] = useState<FormState>(EMPTY);
+    const [consent, setConsent] = useState<ConsentState>(NO_CONSENT);
+    const [consentError, setConsentError] = useState('');
+    const [checkingContact, setCheckingContact] = useState(false);
     const [errors, setErrors] = useState<
         Partial<FormState & { general: string }>
     >({});
@@ -67,6 +109,55 @@ export default function RegisterTailor() {
                 general: undefined,
             }));
         };
+
+    const setChoice = (field: keyof FormState, value: string) => {
+        setForm((current) => ({ ...current, [field]: value }));
+        setErrors((current) => ({ ...current, [field]: undefined, general: undefined }));
+    };
+
+    const setConsentBox = (field: keyof ConsentState, value: boolean) => {
+        setConsent((current) => ({ ...current, [field]: value }));
+        setConsentError('');
+    };
+
+    /**
+     * Validate one page of the form.
+     *
+     * Only the page in front of the tailor is checked, so pressing Next cannot
+     * surface an error about a question they have not reached yet. The server
+     * re-validates all of it regardless; this is only about where the cursor
+     * goes.
+     */
+    function validatePage(target: number): boolean {
+        const nextErrors: Partial<FormState & { general: string }> = {};
+
+        if (target === 2) {
+            if (!form.business_type) nextErrors.business_type = t('register.errorRequired');
+            if (!form.workspace_address.trim()) nextErrors.workspace_address = t('register.errorRequired');
+            if (!form.experience_band) nextErrors.experience_band = t('register.errorRequired');
+
+            setErrors(nextErrors);
+
+            return Object.keys(nextErrors).length === 0;
+        }
+
+        if (target === 3) {
+            if (!form.legal_status) nextErrors.legal_status = t('register.errorRequired');
+            if (!form.national_id.trim()) nextErrors.national_id = t('register.errorRequired');
+
+            const allConsented =
+                consent.accept_partnership_terms &&
+                consent.accept_data_processing &&
+                consent.confirm_information_correct;
+
+            setConsentError(allConsented ? '' : t('register.errorConsentRequired'));
+            setErrors(nextErrors);
+
+            return Object.keys(nextErrors).length === 0 && allConsented;
+        }
+
+        return validate();
+    }
 
     function validate(): boolean {
         const nextErrors: Partial<
@@ -96,6 +187,12 @@ export default function RegisterTailor() {
             nextErrors.password = t('register.errorRequired');
         } else if (form.password.length < 8) {
             nextErrors.password = t('register.errorMinPassword');
+        } else if (!/\d/.test(form.password)) {
+            // The endpoint is shared and requires a digit. Without this the form
+            // accepts a digitless password, walks the tailor through all three
+            // pages, and bounces them back with "check this field" and no hint
+            // of what is wrong — so the next attempt is another digitless one.
+            nextErrors.password = t('register.errorPasswordNeedsNumber');
         }
 
         if (form.password !== form.password_confirmation) {
@@ -109,12 +206,70 @@ export default function RegisterTailor() {
         return Object.keys(nextErrors).length === 0;
     }
 
+    /**
+     * Ask whether the email and phone are already registered, and mark them here
+     * if they are. Returns false when the page should not be left.
+     *
+     * A failure to reach the server is not treated as taken — the final submit
+     * checks again and is the real gate, so a flaky moment must not block
+     * someone whose details are perfectly fine.
+     */
+    async function contactIsFree(): Promise<boolean> {
+        setCheckingContact(true);
+
+        try {
+            const response = await fetch('/api/register/availability', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({
+                    email: form.email.trim() || null,
+                    phone: form.phone.trim() || null,
+                }),
+            });
+
+            if (!response.ok) return true;
+
+            const data = await response.json();
+            const taken: Partial<FormState> = {};
+
+            if (data.email_taken) taken.email = t('register.errorEmailTaken');
+            if (data.phone_taken) taken.phone = t('register.errorPhoneTaken');
+
+            if (Object.keys(taken).length > 0) {
+                setErrors(taken);
+
+                return false;
+            }
+
+            return true;
+        } catch {
+            return true;
+        } finally {
+            setCheckingContact(false);
+        }
+    }
+
     async function handleSubmit(
         event: FormEvent<HTMLFormElement>,
     ) {
         event.preventDefault();
 
-        if (!validate()) {
+        if (!validatePage(page)) {
+            return;
+        }
+
+        // Leaving the page that asked for them is the moment to find out whether
+        // the email and phone are free. Only the server knows, and if it is left
+        // to the final submit the tailor fills in two more pages before being
+        // sent back here to be told.
+        if (page === 1 && !(await contactIsFree())) {
+            return;
+        }
+
+        // Next, until there is no next — the form submits only from the last page.
+        if (page < LAST_PAGE) {
+            setPage(page + 1);
+
             return;
         }
 
@@ -129,6 +284,7 @@ export default function RegisterTailor() {
                 },
                 body: JSON.stringify({
                     ...form,
+                    ...consent,
                     email: form.email.trim() || null,
                     role: 'tailor',
                 }),
@@ -143,19 +299,42 @@ export default function RegisterTailor() {
                     for (const [key, value] of Object.entries(
                         data.errors,
                     )) {
-                        (
-                            mapped as Record<string, string>
-                        )[key] = (value as string[])[0];
+                        // The server answers with a code for the failures a real
+                        // person hits — a phone already registered, say — because
+                        // its own wording is English and this form is not.
+                        // Anything else falls back to a translated generic rather
+                        // than printing Laravel's sentence into a Georgian page.
+                        const code = (value as string[])[0];
+
+                        (mapped as Record<string, string>)[key] = t(
+                            serverMessageKey(code) ?? 'register.errorFieldInvalid',
+                        );
                     }
 
                     setErrors(mapped);
+
+                    // A rejected field may belong to a page the tailor has left
+                    // — a phone taken since they typed it, say. Showing the
+                    // error on a page that does not contain the field would
+                    // look like nothing happened, so go back to the first page
+                    // that owns one.
+                    const rejected = Object.keys(mapped);
+                    const target = Object.keys(PAGE_FIELDS)
+                        .map(Number)
+                        .sort()
+                        .find((p) =>
+                            PAGE_FIELDS[p].some((field) => rejected.includes(field)),
+                        );
+
+                    if (target) {
+                        setPage(target);
+                    }
                 } else {
                     setErrors({
-                        general:
-                            data.message ??
-                            t(
+                        general: t(
+                            serverMessageKey(data.code) ??
                                 'register.errorRegistrationFailed',
-                            ),
+                        ),
                     });
                 }
 
@@ -226,7 +405,7 @@ export default function RegisterTailor() {
 
                     <Link
                         to="/"
-                        className="mt-8 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#181818] px-6 text-sm font-medium text-white transition hover:bg-black/80"
+                        className="mt-8 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-brand px-6 text-sm font-medium text-white transition hover:bg-brand-dark"
                     >
                         {t('register.tailorPendingBack')}
                         <ArrowRight className="h-4 w-4" />
@@ -237,7 +416,7 @@ export default function RegisterTailor() {
     }
 
     return (
-        <div className="kere-workflow-page min-h-screen bg-[#F3F2EF] px-4 py-6 text-[#181818] sm:px-6 md:py-10">
+        <div className="tailor-registration-page kere-workflow-page min-h-screen bg-[#F3F2EF] px-3 py-3 text-[#181818] sm:px-6 md:py-10">
             <motion.main
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -245,12 +424,12 @@ export default function RegisterTailor() {
                 className="mx-auto grid min-h-[calc(100vh-80px)] w-full max-w-[1280px] overflow-hidden bg-white lg:grid-cols-[0.92fr_1.08fr]"
             >
                 {/* Left: registration form */}
-                <section className="flex min-h-[720px] flex-col px-6 py-6 sm:px-10 sm:py-8 lg:px-14 xl:px-20">
+                <section className="flex min-w-0 flex-col px-4 py-5 lg:min-h-[720px] sm:px-10 sm:py-8 lg:px-14 xl:px-20">
                     <header className="flex items-center justify-between">
                         <Link
                             to="/partners"
                             aria-label="Back"
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 transition hover:bg-black hover:text-white"
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 transition hover:bg-brand-dark hover:text-white"
                         >
                             <ArrowLeft className="h-4 w-4" />
                         </Link>
@@ -270,7 +449,7 @@ export default function RegisterTailor() {
                         </Link>
                     </header>
 
-                    <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center py-12">
+                    <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center py-6 sm:py-12">
                         <AnimatePresence mode="wait">
                         {step === 'form' && (
                         <motion.div
@@ -281,7 +460,7 @@ export default function RegisterTailor() {
                             transition={{ duration: 0.5 }}
                         >
                             <div className="mb-8 text-center">
-                                <h1 className="font-serif text-[clamp(2.4rem,4vw,3.7rem)] font-medium leading-[0.96] tracking-[-0.05em]">
+                                <h1 className="font-serif text-[clamp(1.6rem,4vw,3.7rem)] font-medium leading-[1.15] tracking-[-0.05em]">
                                     {t('register.tailorTitle')}
                                 </h1>
 
@@ -301,6 +480,28 @@ export default function RegisterTailor() {
                                 noValidate
                                 className="space-y-4"
                             >
+                                {/* Which of the three pages this is. Reads as progress
+                                    rather than navigation: the pages are gated, so a dot
+                                    is not a link. */}
+                                <div className="mb-5 flex items-center gap-2" aria-hidden="true">
+                                    {[1, 2, 3].map((n) => (
+                                        <span
+                                            key={n}
+                                            className={`h-1 flex-1 rounded-full transition-colors duration-150 ${
+                                                n <= page ? 'bg-[#6F1D24]' : 'bg-black/10'
+                                            }`}
+                                        />
+                                    ))}
+                                </div>
+
+                                <p className="mb-4 text-xs text-black/45">
+                                    {t('register.stepCounter', { current: page, total: LAST_PAGE })}
+                                    {' — '}
+                                    {t(`register.stepTitle${page}`)}
+                                </p>
+
+                                {page === 1 && (
+                                <>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div>
                                         <label
@@ -544,10 +745,168 @@ export default function RegisterTailor() {
                                     )}
                                 </div>
 
+                                </>
+                                )}
+
+                                {page === 2 && (
+                                <>
+                                    <div>
+                                        <label htmlFor="tailor-business-type" className="mb-1.5 block text-xs font-medium">
+                                            {t('register.businessType')}
+                                        </label>
+                                        <select
+                                            id="tailor-business-type"
+                                            value={form.business_type}
+                                            onChange={(e) => setChoice('business_type', e.target.value)}
+                                            className={inputClass(Boolean(errors.business_type))}
+                                        >
+                                            <option value="">{t('register.choosePlaceholder')}</option>
+                                            {BUSINESS_TYPES.map((value) => (
+                                                <option key={value} value={value}>
+                                                    {t(`register.business_type_${value}`)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.business_type && (
+                                            <p className="mt-1.5 text-xs text-[#6F1D24]">{errors.business_type}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="tailor-workspace" className="mb-1.5 block text-xs font-medium">
+                                            {t('register.workspaceAddress')}
+                                        </label>
+                                        <input
+                                            id="tailor-workspace"
+                                            type="text"
+                                            value={form.workspace_address}
+                                            onChange={set('workspace_address')}
+                                            placeholder={t('register.workspaceAddressPlaceholder')}
+                                            className={inputClass(Boolean(errors.workspace_address))}
+                                        />
+                                        {errors.workspace_address && (
+                                            <p className="mt-1.5 text-xs text-[#6F1D24]">{errors.workspace_address}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="tailor-experience" className="mb-1.5 block text-xs font-medium">
+                                            {t('register.experienceBand')}
+                                        </label>
+                                        <select
+                                            id="tailor-experience"
+                                            value={form.experience_band}
+                                            onChange={(e) => setChoice('experience_band', e.target.value)}
+                                            className={inputClass(Boolean(errors.experience_band))}
+                                        >
+                                            <option value="">{t('register.choosePlaceholder')}</option>
+                                            {EXPERIENCE_BANDS.map((value) => (
+                                                <option key={value} value={value}>
+                                                    {t(`register.experience_band_${value}`)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.experience_band && (
+                                            <p className="mt-1.5 text-xs text-[#6F1D24]">{errors.experience_band}</p>
+                                        )}
+                                    </div>
+                                </>
+                                )}
+
+                                {page === 3 && (
+                                <>
+                                    <div>
+                                        <label htmlFor="tailor-legal-status" className="mb-1.5 block text-xs font-medium">
+                                            {t('register.legalStatus')}
+                                        </label>
+                                        <select
+                                            id="tailor-legal-status"
+                                            value={form.legal_status}
+                                            onChange={(e) => setChoice('legal_status', e.target.value)}
+                                            className={inputClass(Boolean(errors.legal_status))}
+                                        >
+                                            <option value="">{t('register.choosePlaceholder')}</option>
+                                            {LEGAL_STATUSES.map((value) => (
+                                                <option key={value} value={value}>
+                                                    {t(`register.legal_status_${value}`)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.legal_status && (
+                                            <p className="mt-1.5 text-xs text-[#6F1D24]">{errors.legal_status}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="tailor-national-id" className="mb-1.5 block text-xs font-medium">
+                                            {t('register.nationalId')}
+                                        </label>
+                                        <input
+                                            id="tailor-national-id"
+                                            type="text"
+                                            value={form.national_id}
+                                            onChange={set('national_id')}
+                                            placeholder={t('register.nationalIdPlaceholder')}
+                                            className={inputClass(Boolean(errors.national_id))}
+                                        />
+                                        {errors.national_id && (
+                                            <p className="mt-1.5 text-xs text-[#6F1D24]">{errors.national_id}</p>
+                                        )}
+                                    </div>
+                                    <p className="-mt-2 text-xs text-black/45">
+                                        {t('register.nationalIdHint')}
+                                    </p>
+
+                                    <div className="space-y-2.5 rounded-md border border-black/10 p-3.5">
+                                        <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed">
+                                            <input
+                                                type="checkbox"
+                                                checked={consent.accept_partnership_terms}
+                                                onChange={(e) => setConsentBox('accept_partnership_terms', e.target.checked)}
+                                                className="mt-0.5 h-4 w-4 shrink-0 accent-[#6F1D24]"
+                                            />
+                                            <span>{t('register.consentPartnership')}</span>
+                                        </label>
+                                        <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed">
+                                            <input
+                                                type="checkbox"
+                                                checked={consent.accept_data_processing}
+                                                onChange={(e) => setConsentBox('accept_data_processing', e.target.checked)}
+                                                className="mt-0.5 h-4 w-4 shrink-0 accent-[#6F1D24]"
+                                            />
+                                            <span>{t('register.consentData')}</span>
+                                        </label>
+                                        <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed">
+                                            <input
+                                                type="checkbox"
+                                                checked={consent.confirm_information_correct}
+                                                onChange={(e) => setConsentBox('confirm_information_correct', e.target.checked)}
+                                                className="mt-0.5 h-4 w-4 shrink-0 accent-[#6F1D24]"
+                                            />
+                                            <span>{t('register.consentAccurate')}</span>
+                                        </label>
+                                        {consentError && (
+                                            <p className="text-xs text-[#6F1D24]">{consentError}</p>
+                                        )}
+                                    </div>
+                                </>
+                                )}
+
+                                {page > 1 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setPage(page - 1)}
+                                        className="inline-flex min-h-11 h-auto w-full items-center justify-center gap-2 whitespace-normal rounded-none py-3 border border-black/15 px-6 text-sm font-medium transition hover:bg-black/[0.03]"
+                                    >
+                                        <ArrowLeft className="h-4 w-4" />
+                                        {t('register.back')}
+                                    </button>
+                                )}
+
                                 <button
                                     type="submit"
-                                    disabled={loading}
-                                    className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#181818] px-6 text-sm font-medium text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
+                                    disabled={loading || checkingContact}
+                                    className="mt-2 inline-flex min-h-11 h-auto w-full items-center justify-center gap-2 whitespace-normal rounded-none py-3 bg-brand px-6 text-sm font-medium text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     {loading ? (
                                         <>
@@ -557,7 +916,14 @@ export default function RegisterTailor() {
                                             )}
                                         </>
                                     ) : (
-                                        t('register.joinAsTailor')
+                                        page < LAST_PAGE ? (
+                                            <>
+                                                {t('register.next')}
+                                                <ArrowRight className="h-4 w-4" />
+                                            </>
+                                        ) : (
+                                            t('register.joinAsTailor')
+                                        )
                                     )}
                                 </button>
                             </form>

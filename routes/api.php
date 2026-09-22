@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CustomerOnboardingController;
 use App\Http\Controllers\Api\CustomerOrderController;
 use App\Http\Controllers\Api\CustomizerAdminController;
 use App\Http\Controllers\Api\CustomizerProductController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SavedDesignController;
@@ -23,6 +25,14 @@ Route::post('/register/initiate', [AuthController::class, 'registerInitiate'])->
 Route::post('/register/verify-email', [AuthController::class, 'registerVerifyEmail'])->middleware('throttle:20,1');
 Route::post('/register/verify-phone', [AuthController::class, 'registerVerifyPhone'])->middleware('throttle:20,1');
 Route::post('/register/resend', [AuthController::class, 'registerResend'])->middleware('throttle:10,1');
+// Lets a multi-page form tell someone their phone is taken on the page that
+// asked for it, rather than after they have filled in the rest.
+Route::post('/register/availability', [AuthController::class, 'availability'])->middleware('throttle:30,1');
+// A guardian has no account here and should not need one to answer a question
+// about their own child, so consent is public and gated by the token alone.
+Route::get('/guardian-consent/{token}', [CustomerOnboardingController::class, 'showConsent'])->middleware('throttle:20,1');
+Route::post('/guardian-consent/{token}', [CustomerOnboardingController::class, 'recordConsent'])->middleware('throttle:10,1');
+
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('/admin/auth', [AuthController::class, 'adminLogin'])->middleware('throttle:admin-login');
 
@@ -35,6 +45,10 @@ Route::get('/tailors', [TailorController::class, 'index']);
 Route::get('/tailors/{id}', [TailorController::class, 'show']);
 Route::get('/reviews/landing', [ReviewController::class, 'landing']);
 Route::get('/platform/stats', [ProductController::class, 'platformStats']);
+
+// Flitt server-to-server callback. Public because the gateway carries no bearer
+// token — the request signature is the trust boundary (PaymentController::callback).
+Route::post('/payments/flitt/callback', [PaymentController::class, 'callback'])->middleware('throttle:120,1,api-flitt');
 
 // ─── Authenticated reads (60 req/min) ─────────────────────────────────────────
 // NOTE: each group needs its own bucket prefix — inline throttles without one
@@ -67,8 +81,22 @@ Route::middleware(['auth.bearer', 'throttle:60,1,api-reads'])->group(function ()
     Route::get('/wishlist', [WishlistController::class, 'index']);
 });
 
+// ─── Payments ─────────────────────────────────────────────────────────────────
+// Own bucket: verify-payment is polled every few seconds while the card form is
+// open, and sharing the 10/min write bucket would starve the rest of checkout.
+Route::middleware(['auth.bearer', 'throttle:40,1,api-payments'])->group(function () {
+    Route::post('/orders/{id}/pay', [PaymentController::class, 'pay']);
+    Route::post('/orders/{id}/verify-payment', [PaymentController::class, 'verify']);
+});
+
 // ─── Authenticated writes (10 req/min) ────────────────────────────────────────
 Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function () {
+    // Finishing registration — date of birth, guardian, terms.
+    Route::post('/register/profile', [CustomerOnboardingController::class, 'completeProfile']);
+    // Own tight bucket: it sends an email each time it is called.
+    Route::post('/register/guardian-consent/resend', [CustomerOnboardingController::class, 'resendConsent'])
+        ->middleware('throttle:3,10,api-consent-resend');
+
     // Orders
     Route::post('/orders', [OrderController::class, 'store']);
     Route::patch('/tailor/orders/{id}/status', [OrderController::class, 'updateStatus']);
@@ -91,6 +119,8 @@ Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function (
     // Upload
     Route::post('/upload/image', [UploadController::class, 'image']);
     Route::post('/upload/profile-image', [UploadController::class, 'profileImage']);
+    // Private: stored off the web root, never served back. See the controller.
+    Route::post('/tailor/id-document', [UploadController::class, 'tailorIdDocument']);
     Route::post('/uploads', [UploadController::class, 'design']);
 
     // Chat writes

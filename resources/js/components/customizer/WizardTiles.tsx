@@ -28,7 +28,7 @@ export function OptionTile({ label, modifier = 0, figure, selected, onClick }: O
                 'flex min-h-11 cursor-pointer items-center gap-2 px-2.5 py-2 text-left transition-colors duration-150 min-[900px]:min-h-[54px] min-[900px]:gap-2.5 min-[900px]:px-3 min-[900px]:py-2.5',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--kd-burgundy)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--kd-cream)]',
                 selected
-                    ? 'border border-[var(--kd-burgundy)] bg-[var(--kd-burgundy)] text-[var(--kd-rail-text)]'
+                    ? 'border border-brand bg-brand text-[var(--kd-rail-text)]'
                     : 'border border-[var(--kd-hairline)] bg-[var(--kd-tile)] text-[var(--kd-ink)] hover:border-[var(--kd-burgundy)]',
             ].join(' ')}
         >
@@ -72,8 +72,8 @@ export function TileGroup({ label, value, dense = false, hideHeader = false, chi
             <div
                 className={
                     dense
-                        ? 'grid grid-cols-2 gap-2 min-[900px]:gap-2.5 min-[900px]:[grid-template-columns:repeat(auto-fit,minmax(min(100%,132px),1fr))]'
-                        : 'grid grid-cols-2 gap-2 min-[900px]:gap-2.5 min-[900px]:[grid-template-columns:repeat(auto-fit,minmax(min(100%,208px),1fr))]'
+                        ? 'designer-tile-options grid grid-cols-2 gap-2 min-[900px]:gap-2.5 min-[900px]:[grid-template-columns:repeat(auto-fit,minmax(min(100%,132px),1fr))]'
+                        : 'designer-tile-options grid grid-cols-2 gap-2 min-[900px]:gap-2.5 min-[900px]:[grid-template-columns:repeat(auto-fit,minmax(min(100%,208px),1fr))]'
                 }
             >
                 {children}

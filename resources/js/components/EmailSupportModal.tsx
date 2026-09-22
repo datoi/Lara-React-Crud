@@ -28,7 +28,7 @@ export function EmailSupportModal({ open, onClose }: Props) {
     if (!user || !token) {
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-                <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-xl">
+                <div className="kere-modal bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-xl">
                     <p className="text-slate-700 mb-4">{t('emailSupport.signInPrompt')}</p>
                     <div className="flex gap-3 justify-center">
                         <Button
@@ -90,7 +90,7 @@ export function EmailSupportModal({ open, onClose }: Props) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-            <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl">
+            <div className="kere-modal bg-white rounded-2xl w-full max-w-lg shadow-xl">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100">
                     <h2 className="text-lg font-bold text-slate-900">{t('emailSupport.title')}</h2>
