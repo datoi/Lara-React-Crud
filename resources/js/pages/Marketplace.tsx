@@ -664,7 +664,7 @@ export default function Marketplace() {
                                     initial={isNew ? { opacity: 0, y: 16 } : false}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: isNew ? 0.4 : 0, delay: isNew ? newBatchIndex * 0.04 : 0 }}
-                                    className="group cursor-pointer overflow-hidden border-0 bg-transparent transition-transform duration-300 sm:border sm:border-[#111111]/18 sm:hover:-translate-y-1 sm:hover:shadow-[0_24px_60px_rgba(17,17,17,0.14)]"
+                                    className="group cursor-pointer overflow-hidden border-0 bg-transparent sm:border sm:border-[#111111]/18"
                                     onClick={() => navigate(`/product/${product.id}`)}
                                 >
                                     <div className="relative aspect-[4/5] overflow-hidden bg-[#EEEAE0]">
@@ -672,7 +672,7 @@ export default function Marketplace() {
                                             <ProductImage
                                                 src={product.images[0]}
                                                 alt={product.name}
-                                                className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-105 sm:p-5"
+                                                className="h-full w-full object-contain p-2 sm:p-5"
                                             />
                                         ) : (
                                             <div className="flex h-full w-full items-center justify-center text-[#6c625b]/28">

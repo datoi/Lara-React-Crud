@@ -19,22 +19,22 @@ export default function RefundPolicy() {
     ];
 
     return (
-        <div className="kere-info-page min-h-screen bg-white">
+        <div className="kere-info-page kere-refined-page min-h-screen bg-white">
             <Navigation />
 
-            <section className="pt-24 pb-16 md:pt-28 md:pb-24 bg-slate-900 text-white">
+            <section className="kere-page-intro pt-24 pb-8 md:pt-28 md:pb-12 border-b border-[#e5dfd8]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                        <h1 className="text-4xl md:text-5xl font-black mb-4">{t('refund.title')}</h1>
+                        <h1 className="text-2xl md:text-4xl font-normal mb-4">{t('refund.title')}</h1>
                         <p className="text-slate-400 text-sm">{t('refund.lastUpdated')}</p>
                     </motion.div>
                 </div>
             </section>
 
-            <section className="py-16 md:py-24">
+            <section className="py-10 md:py-14">
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-                        <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 mb-12">
+                        <div className="bg-slate-50 rounded-none border border-slate-200 p-6 mb-12">
                             <div className="flex gap-3">
                                 <AlertCircle className="w-5 h-5 text-slate-600 flex-shrink-0 mt-0.5" />
                                 <p className="text-sm text-slate-600 leading-relaxed">{t('refund.introBanner')}</p>
@@ -74,7 +74,7 @@ export default function RefundPolicy() {
                         </div>
 
                         {/* Cancellation */}
-                        <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 mb-12">
+                        <div className="bg-slate-50 rounded-none border border-slate-200 p-6 mb-12">
                             <h2 className="font-bold text-slate-900 mb-3">{t('refund.cancellationTitle')}</h2>
                             <p className="text-sm text-slate-600 leading-relaxed">{t('refund.cancellationDesc')}</p>
                         </div>
@@ -89,8 +89,8 @@ export default function RefundPolicy() {
                         <h2 className="text-2xl font-black text-slate-900 mb-8">{t('refund.processTitle')}</h2>
                         <div className="space-y-4">
                             {steps.map((step) => (
-                                <div key={step.number} className="flex gap-5 p-5 bg-white rounded-2xl border border-slate-200">
-                                    <div className="flex-shrink-0 w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center text-xs font-bold">
+                                <div key={step.number} className="flex gap-5 p-5 bg-white rounded-none border border-slate-200">
+                                    <div className="flex-shrink-0 w-10 h-10 bg-slate-900 text-white rounded-none flex items-center justify-center text-xs font-bold">
                                         {step.number}
                                     </div>
                                     <div>

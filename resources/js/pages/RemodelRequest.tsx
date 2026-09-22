@@ -237,10 +237,10 @@ export default function RemodelRequest() {
                                     id="change"
                                     value={changeRequest}
                                     onChange={(e) => setChangeRequest(e.target.value)}
-                                    rows={2}
+                                    rows={4}
                                     maxLength={2000}
                                     placeholder={t('remodel.changePlaceholder')}
-                                    className={`${inputClass} max-w-[900px] resize-none`}
+                                    className={`${inputClass} max-w-[900px] min-h-[112px] resize-y`}
                                 />
                             </section>
 

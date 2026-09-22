@@ -4,7 +4,7 @@ import { Link, useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { Navigation } from '../components/landing/Navigation';
 import { Footer } from '../components/landing/Footer';
-import { Star, Briefcase, BadgeCheck, Loader2, ArrowLeft, Package, ShieldCheck } from 'lucide-react';
+import { Star, Briefcase, BadgeCheck, Loader2, ArrowLeft, Package, ShieldCheck, ImageOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface TailorData {
@@ -89,9 +89,9 @@ export default function TailorProfile() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="grid gap-8 border-y border-[#631E26]/20 py-10 md:grid-cols-[280px_minmax(0,1fr)] md:gap-12 md:py-14"
+                    className="grid gap-8 border-y border-[#631E26]/20 py-10 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)] md:gap-12 md:py-14"
                 >
-                    <div className="relative aspect-[4/5] w-full max-w-[280px] overflow-hidden border border-[#631E26]/20 bg-[#E9DCC4] md:max-w-none">
+                    <div className="relative aspect-[4/5] w-full max-w-[480px] overflow-hidden border border-[#631E26]/20 bg-[#E9DCC4] md:max-w-none">
                         {tailor.profile_image ? (
                             <img src={tailor.profile_image} alt={tailor.name} className="w-full h-full object-cover" />
                         ) : (
@@ -103,7 +103,7 @@ export default function TailorProfile() {
 
                     <div className="flex-1">
                         <div className="mb-5 flex flex-wrap items-center gap-3">
-                            <h1 className="font-serif text-[clamp(2.4rem,5vw,5rem)] font-medium leading-[0.95] tracking-normal text-[#111111]">{tailor.name}</h1>
+                            <h1 className="font-serif text-[clamp(1.6rem,3vw,2.5rem)] font-medium leading-tight tracking-normal text-[#111111]">{tailor.name}</h1>
                             {(tailor.reviews_count > 0 || (tailor.years_experience ?? 0) >= 2) && (
                                 <span className="inline-flex items-center gap-1 border border-[#631E26]/25 bg-[#631E26] px-3 py-1.5 text-xs font-semibold text-[#F4EBD4]">
                                     <BadgeCheck className="w-3.5 h-3.5" />
@@ -153,7 +153,7 @@ export default function TailorProfile() {
                 </motion.div>
 
                 <section className="py-10 md:py-14">
-                    <h2 className="mb-8 font-serif text-[clamp(1.6rem,3vw,2.8rem)] font-medium leading-tight text-[#111111]">
+                    <h2 className="mb-8 font-serif text-[clamp(1.3rem,2vw,1.8rem)] font-medium leading-tight text-[#111111]">
                         {t('tailorProfile.designsBy', { name: tailor.name })}
                     </h2>
 
@@ -168,13 +168,16 @@ export default function TailorProfile() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.4, delay: idx * 0.05 }}
                                     onClick={() => navigate(`/product/${product.id}`)}
-                                    className="group cursor-pointer overflow-hidden border border-[#631E26]/18 bg-[var(--store-paper)]/80 transition-all duration-300 hover:-translate-y-1 hover:border-[#631E26]/35 hover:shadow-[0_24px_70px_rgba(99,30,38,0.14)]"
+                                    role="link"
+                                    tabIndex={0}
+                                    onKeyDown={event => { if (event.key === 'Enter') navigate(`/product/${product.id}`); }}
+                                    className="group cursor-pointer overflow-hidden border border-[#631E26]/18 bg-[var(--store-paper)]/80"
                                 >
                                     <div className="aspect-[3/4] overflow-hidden bg-[#E9DCC4]">
                                         {product.images?.[0] ? (
-                                            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-slate-300 text-4xl">👗</div>
+                                            <div className="w-full h-full flex items-center justify-center text-slate-300 text-4xl"><ImageOff className="h-6 w-6" aria-hidden="true" /></div>
                                         )}
                                     </div>
                                     <div className="p-4">

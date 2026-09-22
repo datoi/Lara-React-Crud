@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { Button } from './ui/button';
+import { X } from 'lucide-react';
 import {
     getConsent,
     setConsent,
@@ -17,6 +18,8 @@ import {
 export function AnalyticsConsent() {
     const { t } = useTranslation();
     const [visible, setVisible] = useState(false);
+    const [preferencesOpen, setPreferencesOpen] = useState(false);
+    const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
     const bannerRef = useRef<HTMLDivElement>(null);
 
     /**
@@ -49,7 +52,7 @@ export function AnalyticsConsent() {
             window.removeEventListener('resize', publish);
             document.documentElement.style.removeProperty('--kere-consent-h');
         };
-    }, [visible]);
+    }, [visible, preferencesOpen]);
 
     useEffect(() => {
         if (!isAnalyticsConfigured()) return;
@@ -86,25 +89,28 @@ export function AnalyticsConsent() {
                     aria-label={t('consent.title')}
                     ref={bannerRef}
                     data-testid="analytics-consent"
-                    className="fixed inset-x-0 bottom-0 z-[200] p-3 sm:p-6"
+                    className="cookie-banner fixed inset-x-0 bottom-0 z-[200]"
                 >
-                    <div className="mx-auto flex max-w-3xl flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5">
-                        <p className="text-xs leading-relaxed text-slate-600 sm:text-sm">
+                    <button type="button" className="cookie-close" onClick={() => setVisible(false)} aria-label={t('consent.close')}><X size={17} /></button>
+                    <h2>{t('consent.title')}</h2>
+                    <div className="cookie-banner-row">
+                        <p>
                             {t('consent.message')}{' '}
-                            <a href="/privacy" className="font-medium text-brand underline underline-offset-2 hover:opacity-80">
-                                {t('consent.learnMore')}
-                            </a>
+                            <a href="/privacy" className="underline underline-offset-2">{t('consent.learnMore')}</a>
                         </p>
-
-                        <div className="flex shrink-0 gap-2">
-                            <Button variant="outline" size="sm" onClick={decline}>
-                                {t('consent.decline')}
-                            </Button>
-                            <Button variant="default" size="sm" onClick={accept}>
-                                {t('consent.accept')}
-                            </Button>
+                        <div className="cookie-actions">
+                            <Button onClick={accept}>{t('consent.accept')}</Button>
+                            <Button onClick={decline}>{t('consent.decline')}</Button>
+                            <Button variant="outline" onClick={() => setPreferencesOpen(value => !value)} aria-expanded={preferencesOpen} aria-controls="cookie-preferences">{t('consent.preferences')}</Button>
                         </div>
                     </div>
+                    {preferencesOpen && (
+                        <div id="cookie-preferences" className="cookie-preferences">
+                            <p>{t('consent.essential')}</p>
+                            <label className="flex items-center gap-3"><input type="checkbox" checked={analyticsEnabled} onChange={event => setAnalyticsEnabled(event.target.checked)} />{t('consent.analytics')}</label>
+                            <Button onClick={() => analyticsEnabled ? accept() : decline()}>{t('consent.savePreferences')}</Button>
+                        </div>
+                    )}
                 </motion.div>
             )}
         </AnimatePresence>

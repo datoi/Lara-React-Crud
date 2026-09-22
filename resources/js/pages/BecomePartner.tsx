@@ -41,6 +41,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
     return (
         <div className="border-b border-slate-200 last:border-0">
             <button
+                aria-expanded={open}
                 onClick={() => setOpen(p => !p)}
                 className="w-full flex items-center justify-between py-5 text-left gap-4"
             >
@@ -488,7 +489,7 @@ export default function BecomePartner() {
             </section>
 
             {/* ── 5. Featured tailors ── */}
-            <section className="py-20 md:py-28 bg-[var(--store-paper)]">
+            <section className="partners-tailors-section py-12 md:py-16 bg-[var(--store-paper)]">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
@@ -505,7 +506,7 @@ export default function BecomePartner() {
                     <div className="grid md:grid-cols-3 gap-6">
                         {featuredTailors.length === 0
                             ? Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="bg-slate-50 rounded-2xl p-6 border border-slate-100 animate-pulse">
+                                <div key={i} className="partners-tailor-card p-5 border border-[#e5dfd8] animate-pulse">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className="w-14 h-14 rounded-full bg-slate-200 shrink-0" />
                                         <div className="flex-1 space-y-2">
@@ -527,7 +528,7 @@ export default function BecomePartner() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.45, delay: i * 0.08 }}
-                                className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex flex-col gap-4"
+                                className="partners-tailor-card p-5 border border-[#e5dfd8] flex flex-col gap-4"
                             >
                                 <div className="flex items-center gap-3">
                                     {tailor.profile_image ? (
@@ -608,7 +609,7 @@ export default function BecomePartner() {
             </section>
 
             {/* ── 6. FAQ ── */}
-            <section id="faq" className="scroll-mt-20 py-20 md:py-28 bg-[var(--store-paper)]">
+            <section id="faq" className="scroll-mt-20 py-12 md:py-16 bg-[var(--store-paper)]">
                 <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
@@ -627,7 +628,7 @@ export default function BecomePartner() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.45 }}
-                        className="bg-white rounded-2xl border border-slate-200 px-6 md:px-8"
+                        className="partners-faq-list border-y border-[#e5dfd8]"
                     >
                         {FAQS.map(faq => (
                             <FaqItem key={faq.q} q={faq.q} a={faq.a} />

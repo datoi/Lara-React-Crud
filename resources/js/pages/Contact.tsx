@@ -23,7 +23,7 @@ export default function Contact() {
     };
 
     return (
-        <div className="kere-info-page min-h-screen bg-white">
+        <div className="kere-info-page kere-refined-page min-h-screen bg-white">
             <EmailSupportModal open={supportOpen} onClose={() => setSupportOpen(false)} />
             <Navigation />
             <div className="h-16" />
@@ -34,7 +34,7 @@ export default function Contact() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">{t('contact.title')}</h1>
+                    <h1 className="text-2xl md:text-4xl font-normal text-slate-900 mb-4">{t('contact.title')}</h1>
                 </motion.div>
 
                 <div className="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-16">
@@ -94,13 +94,13 @@ export default function Contact() {
                         transition={{ duration: 0.5, delay: 0.2 }}
                     >
                         {sent ? (
-                            <div className="flex flex-col items-center justify-center h-full text-center py-12 border border-slate-200 rounded-2xl">
+                            <div className="flex flex-col items-center justify-center h-full text-center py-12 border border-slate-200 rounded-none">
                                 <CheckCircle className="w-12 h-12 text-slate-700 mb-4" />
                                 <h3 className="text-xl font-bold text-slate-900 mb-2">{t('contact.sentTitle')}</h3>
                                 <p className="text-slate-500">{t('contact.sentDesc')}</p>
                             </div>
                         ) : (
-                            <form onSubmit={handleSubmit} className="space-y-5 border border-slate-200 rounded-2xl p-8">
+                            <form onSubmit={handleSubmit} className="space-y-5 border border-slate-200 rounded-none p-8">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('contact.nameLabel')}</label>
                                     <input

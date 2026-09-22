@@ -194,7 +194,7 @@ export function MarketplaceCarousel() {
                           alt={`${product.name} ${imageIndex + 1}`}
                           draggable={false}
                           loading="lazy"
-                          className="h-full w-full object-contain p-5 transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+                          className="h-full w-full object-contain p-5"
                         />
                       </Link>
                     ) : (

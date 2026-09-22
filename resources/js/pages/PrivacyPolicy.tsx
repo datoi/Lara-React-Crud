@@ -9,19 +9,19 @@ export default function PrivacyPolicy() {
     const doc = privacyPolicy[i18n.language === 'ka' ? 'ka' : 'en'];
 
     return (
-        <div className="kere-info-page min-h-screen bg-white">
+        <div className="kere-info-page kere-refined-page min-h-screen bg-white">
             <Navigation />
 
-            <section className="pt-24 pb-16 md:pt-28 md:pb-24 bg-slate-900 text-white">
+            <section className="kere-page-intro pt-24 pb-8 md:pt-28 md:pb-12 border-b border-[#e5dfd8]">
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                        <h1 className="text-4xl md:text-5xl font-black mb-4">{doc.title}</h1>
+                        <h1 className="text-2xl md:text-4xl font-normal mb-4">{doc.title}</h1>
                         <p className="text-slate-400 text-sm">{doc.version}</p>
                     </motion.div>
                 </div>
             </section>
 
-            <section className="py-16 md:py-24">
+            <section className="py-10 md:py-14">
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="space-y-10">
                         {doc.sections.map((section, i) => (

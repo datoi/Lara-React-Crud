@@ -1,4 +1,20 @@
 {
+    "productDetails": {
+        "findSize": "Find your size",
+        "sizeGuide": "Size guide",
+        "selectSize": "Select your size",
+        "reviews": "Reviews",
+        "description": "Description",
+        "shipping": "Shipping estimate",
+        "returns": "Delivery & returns",
+        "returnPolicy": "Delivery & return policy",
+        "features": "Product features",
+        "care": "Composition & care",
+        "askTailor": "Ask the tailor for fabric and care details.",
+        "fit": "Fit & sizing",
+        "buildOutfit": "Build your outfit",
+        "writeReview": "Review your purchases"
+},
     "nav": {
         "howItWorks": "How it works",
         "categories": "Categories",
@@ -908,7 +924,7 @@
         "shopToday": "Here's what's happening with your shop today.",
         "motivationNudge": "Customers are actively searching for custom clothing — keep building your shop.",
         "completeProfile": "Complete your profile",
-        "completeProfileHint": "tailors with a bio and specialty get significantly more visibility in search results.",
+        "completeProfileHint": "add your bio, specialty and photo so customers can get to know your work.",
         "tailorFallback": "Tailor",
         "pendingTitle": "Application Under Review",
         "pendingDesc": "Your application has been submitted. Our team will review it within 1–2 business days and you'll receive an email notification with the result.",
@@ -1073,6 +1089,11 @@
         "errorInvalidCredentials": "Incorrect login or password."
     },
     "consent": {
+        "preferences": "Preferences",
+        "close": "Close cookie notice",
+        "essential": "Essential cookies are always enabled.",
+        "analytics": "Allow analytics cookies",
+        "savePreferences": "Save preferences",
         "title": "Cookie preferences",
         "message": "We use analytics cookies to understand how visitors use Kere and improve the experience.",
         "accept": "Accept",
@@ -1273,6 +1294,7 @@
         "awaitingGuardian": "Awaiting guardian"
     },
     "tailorComponents": {
+        "emptyProductsHint": "Add a photo, product details and price to create your first listing.",
         "genderLabel": "Section",
         "genderBoth": "Both",
         "genderHint": "Choose which section this product appears in. \"Both\" shows it to everyone.",

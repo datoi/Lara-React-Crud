@@ -99,20 +99,20 @@ export function CartDrawer() {
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
                         transition={{ type: 'tween', duration: 0.28, ease: 'easeOut' }}
-                        className="fixed top-0 right-0 z-[120] flex h-dvh w-full max-w-[620px] flex-col border-l border-[#111111]/20 bg-[#F4F1E7] text-[#111111] shadow-[-20px_0_60px_rgba(17,17,17,0.18)]"
+                        className="kere-cart-drawer fixed top-0 right-0 z-[120] flex h-dvh w-full max-w-[460px] flex-col border-l border-[#e5dfd8] bg-[var(--store-paper)] text-[#111111] shadow-[-8px_0_32px_rgba(17,17,17,0.08)]"
                     >
-                        <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#111111]/15 px-5 sm:px-7">
+                        <div className="flex h-14 shrink-0 items-center justify-between border-b border-[#e5dfd8] px-4 sm:px-6">
                             <div className="flex items-center gap-3">
                                 <ShoppingBag className="h-5 w-5" />
-                                <h2 className="text-lg font-bold uppercase">{t('cart.title')}</h2>
+                                <h2 className="text-base font-medium">{t('cart.title')}</h2>
                                 <span className="text-sm text-[#6c625b]">({items.reduce((sum, i) => sum + i.quantity, 0)})</span>
                             </div>
                             <button type="button" onClick={closeCart} aria-label={t('cart.close')} className="p-2 hover:opacity-50">
-                                <X className="h-6 w-6" />
+                                <X className="h-4 w-4" />
                             </button>
                         </div>
 
-                        <div className="min-h-0 flex-1 overflow-y-auto px-5 sm:px-7">
+                        <div className="min-h-0 flex-1 overflow-y-auto px-4 sm:px-6">
                             {items.length === 0 ? (
                                 <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-[#6c625b]">
                                     <ShoppingBag className="h-10 w-10 stroke-1" />
@@ -133,9 +133,9 @@ export function CartDrawer() {
                                     {items.map((item) => (
                                         <div
                                             key={lineKey(item)}
-                                            className="grid grid-cols-[105px_1fr] gap-4 border-b border-[#111111]/15 py-5 sm:grid-cols-[145px_1fr] sm:gap-6"
+                                            className="grid grid-cols-[88px_minmax(0,1fr)] gap-3 border-b border-[#e5dfd8] py-4 sm:grid-cols-[108px_minmax(0,1fr)] sm:gap-4"
                                         >
-                                            <button type="button" onClick={() => openProduct(item)} className="aspect-[3/4] overflow-hidden bg-[#E4E0D7]">
+                                            <button type="button" onClick={() => openProduct(item)} className="aspect-[3/4] overflow-hidden bg-[#eeeae3]">
                                                 {item.image ? (
                                                     <img src={item.image} alt={item.name} className="h-full w-full object-contain p-2" />
                                                 ) : (
@@ -145,10 +145,10 @@ export function CartDrawer() {
                                                 )}
                                             </button>
                                             <div className="flex min-w-0 flex-col">
-                                                <h3 className="pr-8 text-base font-bold uppercase">{item.name}</h3>
-                                                {item.size && <p className="mt-2 text-sm text-[#514843]">{t('cart.sizeLabel')}: {item.size}</p>}
+                                                <h3 className="text-xs font-medium leading-relaxed">{item.name}</h3>
+                                                {item.size && <p className="mt-2 text-[11px] text-[#756a61]">{t('cart.sizeLabel')}: {item.size}</p>}
                                                 {item.color && (
-                                                    <p className="mt-1 flex items-center gap-1.5 text-sm text-[#514843]">
+                                                    <p className="mt-1 flex items-center gap-1.5 text-[11px] text-[#756a61]">
                                                         <span>{t('cart.colorLabel')}:</span>
                                                         {isHex(item.color) ? (
                                                             <span
@@ -160,23 +160,23 @@ export function CartDrawer() {
                                                         )}
                                                     </p>
                                                 )}
-                                                <p className="mt-3 font-semibold">₾{item.price}</p>
-                                                <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-5">
-                                                    <div className="flex h-10 items-center bg-[#E9E6DC]">
+                                                <p className="mt-2 text-xs font-medium">₾{item.price}</p>
+                                                <div className="mt-auto flex flex-wrap items-end justify-between gap-2 pt-3">
+                                                    <div className="flex h-8 items-center border border-[#ded7cf]">
                                                         <button
                                                             type="button"
                                                             aria-label={t('cart.decrease')}
                                                             onClick={() => updateCartQuantity(item, -1)}
-                                                            className="flex h-10 w-10 items-center justify-center hover:bg-[#111111]/8"
+                                                            className="flex h-8 w-8 items-center justify-center hover:bg-[#111111]/8"
                                                         >
                                                             <Minus className="h-4 w-4" />
                                                         </button>
-                                                        <span className="w-8 text-center text-sm font-semibold">{item.quantity}</span>
+                                                        <span className="w-6 text-center text-[11px]">{item.quantity}</span>
                                                         <button
                                                             type="button"
                                                             aria-label={t('cart.increase')}
                                                             onClick={() => updateCartQuantity(item, 1)}
-                                                            className="flex h-10 w-10 items-center justify-center hover:bg-[#111111]/8"
+                                                            className="flex h-8 w-8 items-center justify-center hover:bg-[#111111]/8"
                                                         >
                                                             <Plus className="h-4 w-4" />
                                                         </button>
@@ -184,7 +184,7 @@ export function CartDrawer() {
                                                     <button
                                                         type="button"
                                                         onClick={() => removeCartItem(item)}
-                                                        className="text-xs font-semibold underline underline-offset-4 hover:opacity-50"
+                                                        className="text-[11px] font-normal underline underline-offset-4 hover:opacity-50"
                                                     >
                                                         {t('cart.remove')}
                                                     </button>
@@ -194,8 +194,8 @@ export function CartDrawer() {
                                     ))}
 
                                     {suggestions.length > 0 && (
-                                        <section className="border-b border-[#111111]/15 py-7">
-                                            <h3 className="mb-5 text-xl font-bold uppercase sm:text-2xl">{t('cart.youMayAlsoLike')}</h3>
+                                        <section className="border-b border-[#e5dfd8] py-7">
+                                            <h3 className="mb-4 text-sm font-medium">{t('cart.youMayAlsoLike')}</h3>
                                             <div className="flex snap-x gap-3 overflow-x-auto pb-3 sm:gap-4">
                                                 {suggestions.map((product) => (
                                                     <button
@@ -205,14 +205,14 @@ export function CartDrawer() {
                                                             closeCart();
                                                             navigate(`/product/${product.id}`);
                                                         }}
-                                                        className="group/recommendation w-[46%] min-w-[150px] shrink-0 snap-start text-left sm:w-[42%] sm:min-w-[205px]"
+                                                        className="group/recommendation w-[46%] min-w-[125px] shrink-0 snap-start text-left sm:w-[42%] sm:min-w-[150px]"
                                                     >
-                                                        <div className="aspect-[3/4] overflow-hidden bg-[#E4E0D7]">
+                                                        <div className="aspect-[3/4] overflow-hidden bg-[#eeeae3]">
                                                             {product.images?.[0] ? (
                                                                 <img
                                                                     src={product.images[0]}
                                                                     alt={product.name}
-                                                                    className="h-full w-full object-contain p-3 transition-transform duration-300 group-hover/recommendation:scale-105"
+                                                                    className="h-full w-full object-contain p-3"
                                                                 />
                                                             ) : (
                                                                 <div className="flex h-full items-center justify-center">
@@ -220,9 +220,8 @@ export function CartDrawer() {
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <h4 className="mt-3 truncate text-sm font-bold uppercase">{product.name}</h4>
-                                                        <p className="mt-1 line-clamp-2 min-h-9 text-xs leading-4 text-[#514843]">{product.description}</p>
-                                                        <p className="mt-2 text-sm font-semibold">₾{product.price}</p>
+                                                        <h4 className="mt-2 text-[11px] font-medium leading-relaxed">{product.name}</h4>
+                                                        <p className="mt-2 text-xs font-medium">₾{product.price}</p>
                                                     </button>
                                                 ))}
                                             </div>
@@ -233,15 +232,15 @@ export function CartDrawer() {
                         </div>
 
                         {items.length > 0 && (
-                            <div className="shrink-0 border-t border-[#111111]/15 bg-[#F4F1E7] px-5 py-5 sm:px-7">
-                                <div className="mb-5 flex items-center justify-between text-base font-bold uppercase">
+                            <div className="shrink-0 border-t border-[#e5dfd8] bg-[var(--store-paper)] px-4 py-4 sm:px-6">
+                                <div className="mb-4 flex items-center justify-between text-sm font-medium">
                                     <span>{t('cart.subtotal')}</span>
                                     <span>₾{subtotal.toFixed(2)}</span>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={goToCart}
-                                    className="w-full bg-brand px-5 py-4 text-sm font-bold text-white uppercase transition-colors hover:bg-brand-dark"
+                                    className="cart-checkout bg-brand px-5 py-3 text-xs font-medium text-white transition-colors hover:bg-brand-dark"
                                 >
                                     {t('cart.checkout')}
                                 </button>

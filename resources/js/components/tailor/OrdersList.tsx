@@ -511,10 +511,7 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                 </div>
 
                 {orders.length === 0 ? (
-                    <div className="px-6 py-14 flex flex-col items-center text-center">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-4 text-2xl">
-                            📦
-                        </div>
+                    <div className="px-6 py-8 flex flex-col items-center text-center">
                         <p className="font-semibold text-slate-900 text-sm mb-1">{t('tailorComponents.noOrdersYet')}</p>
                     </div>
                 ) : (

@@ -1,4 +1,4 @@
-import { Check, HelpCircle, ImageOff, Info, Loader2, Minus, Palette, Plus, ShoppingBag, Star } from 'lucide-react';
+import { Check, HelpCircle, ImageOff, Info, Loader2, Minus, Palette, Plus, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -29,6 +29,8 @@ interface ApiProduct {
     colors: string[];
     sizes: string[];
     is_customizable: boolean;
+    fabric?: string;
+    texture?: string;
     category: { id: number; name: string; slug: string };
     tailor_id: number | null;
     tailor_name: string | null;
@@ -63,7 +65,7 @@ export default function ProductCustomization({ customize = false }: { customize?
     const [relatedProducts, setRelatedProducts] = useState<ApiProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedColor, setSelectedColor] = useState('');
-    const [selectedSize, setSelectedSize] = useState('M');
+    const [selectedSize, setSelectedSize] = useState('');
     const [measurements, setMeasurements] = useState({ chest: '', waist: '', hips: '', length: '' });
     const [customizationNote, setCustomizationNote] = useState('');
     const [quantity, setQuantity] = useState(1);
@@ -81,6 +83,7 @@ export default function ProductCustomization({ customize = false }: { customize?
     // gallery strip shows is still needed. null means the call has not landed
     // (or failed) — distinct from a product that genuinely has no reviews, which
     // would otherwise be asserted on the strength of a failed request.
+    const [reviews, setReviews] = useState<{ id: number; reviewer: string; rating: number; comment: string }[]>([]);
     const [rating, setRating] = useState<{ average: number | null; count: number } | null>(null);
     const [fetchError, setFetchError] = useState(false);
     const [retryKey, setRetryKey] = useState(0);
@@ -100,7 +103,8 @@ export default function ProductCustomization({ customize = false }: { customize?
         fetch(`/api/products/${id}/reviews`)
             .then((r) => r.json())
             .then((d) => {
-                setRating({ average: d.average_rating ?? null, count: (d.reviews ?? []).length });
+                setRating({ average: d.average_rating ?? null, count: d.total ?? (d.reviews ?? []).length });
+                setReviews(d.reviews ?? []);
             })
             .catch(() => {});
     }, [id]);
@@ -131,7 +135,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                 const pending = getPendingOrder();
                 if (pending?.type === 'marketplace' && pending.productId === p.id) {
                     setSelectedColor(pending.color || (p.colors?.[0] ?? ''));
-                    setSelectedSize(pending.size || 'M');
+                    setSelectedSize(pending.size || '');
                     setQuantity(pending.quantity || 1);
                     setMeasurements({
                         chest: pending.measurements?.chest ?? '',
@@ -204,6 +208,11 @@ export default function ProductCustomization({ customize = false }: { customize?
 
     const handleAddToCart = () => {
         if (!product) return;
+        if (showSizePicker && !product.sizes.includes(selectedSize)) {
+            setOrderError(t('productDetails.selectSize'));
+            return;
+        }
+        setOrderError('');
         addToCart(
             {
                 productId: product.id,
@@ -345,7 +354,7 @@ export default function ProductCustomization({ customize = false }: { customize?
     const showMeasurementBanner = customize && Object.entries(measurements).some(([key, value]) => measurementWarning(key, value) !== '');
 
     return (
-        <div className="kere-product min-h-screen pt-[46px] sm:pt-[50px]">
+        <div className="product-detail-page kere-product min-h-screen pt-[46px] sm:pt-[50px]">
             <Helmet>
                 <title>
                     {product.name} — Custom {product.category?.name ?? 'Garment'} | Kere
@@ -411,7 +420,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                         </Link>
                     </div>
 
-                    <div className="mx-auto grid w-full max-w-[1440px] items-start gap-[clamp(24px,4vw,56px)] px-[clamp(16px,3vw,40px)] pt-[18px] pb-[clamp(40px,6vw,72px)] lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+                    <div className="mx-auto grid w-full max-w-[1440px] items-start gap-[clamp(24px,4vw,56px)] px-[clamp(16px,3vw,40px)] pt-[18px] pb-[clamp(40px,6vw,72px)] lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
                         {/* Gallery */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -424,7 +433,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                                     <img
                                         src={product.images[0]}
                                         alt={product.name}
-                                        className="h-full w-full object-contain p-[clamp(16px,3vw,46px)]"
+                                        className="h-full w-full object-contain p-2"
                                     />
                                 ) : (
                                     <div className="flex h-full w-full items-center justify-center text-[var(--kd-muted)]/40">
@@ -439,40 +448,6 @@ export default function ProductCustomization({ customize = false }: { customize?
                                 )}
                             </div>
 
-                            <div className="flex flex-wrap items-center justify-between gap-x-[18px] gap-y-2.5 px-0.5 pt-3.5">
-                                <span className="flex items-center gap-[7px] text-[13px] text-[var(--kd-body)]">
-                                    <span className="text-[var(--kd-muted)]">{t('productCustomization.madeby')}</span>
-                                    {product.tailor_id ? (
-                                        <Link
-                                            to={`/tailor/${product.tailor_id}`}
-                                            className="border-b border-[rgba(111,29,36,0.3)] pb-px transition-colors duration-150 hover:text-[var(--kd-burgundy)]"
-                                        >
-                                            {product.tailor_name}
-                                        </Link>
-                                    ) : (
-                                        <span>{product.tailor_name}</span>
-                                    )}
-                                </span>
-
-                                {rating && (
-                                    <span className="flex items-center gap-1.5 text-[13px] text-[var(--kd-body)]">
-                                        {rating.average !== null ? (
-                                            <>
-                                                <Star className="h-3.5 w-3.5 fill-[var(--kd-burgundy)] text-[var(--kd-burgundy)]" />
-                                                <span className="tabular-nums">
-                                                    {rating.average.toFixed(1)} ({rating.count}{' '}
-                                                    {rating.count === 1
-                                                        ? t('productCustomization.reviewCount_one')
-                                                        : t('productCustomization.reviewCount_other')}
-                                                    )
-                                                </span>
-                                            </>
-                                        ) : (
-                                            <span className="text-[var(--kd-muted)]">{t('productCustomization.noReviewsYet')}</span>
-                                        )}
-                                    </span>
-                                )}
-                            </div>
                         </motion.div>
 
                         {/* Detail */}
@@ -480,24 +455,17 @@ export default function ProductCustomization({ customize = false }: { customize?
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: 0.1 }}
-                            className="min-w-0"
+                            className="product-detail-controls min-w-0"
                         >
                             <div className="border-b border-[var(--kd-rule)] pb-[22px]">
-                                <div className="text-[11px] tracking-[0.18em] text-[var(--kd-muted)] uppercase">
-                                    {product.category ? t(`marketplace.categories.${product.category.slug}`, { defaultValue: product.category.name }) : ''}
-                                </div>
-                                <h1 className="kd-display mt-1.5 text-[clamp(34px,5vw,52px)] leading-[1.02] tracking-[-0.02em] text-[var(--kd-burgundy)] [text-wrap:pretty]">
+                                <h1 className="kd-display mt-1.5 text-[clamp(24px,3vw,36px)] leading-[1.02] tracking-[-0.02em] text-[var(--kd-burgundy)] [text-wrap:pretty]">
                                     {product.name}
                                 </h1>
                                 <div className="kd-display mt-3 text-[28px] text-[var(--kd-ink)] tabular-nums">
                                     <Lari />
                                     {product.price}
                                 </div>
-                                {product.description && (
-                                    <p className="mt-3.5 max-w-[44ch] text-[15px] leading-[1.55] text-[var(--kd-body)] [text-wrap:pretty]">
-                                        {product.description}
-                                    </p>
-                                )}
+
                             </div>
 
                             {/* Colour */}
@@ -550,22 +518,11 @@ export default function ProductCustomization({ customize = false }: { customize?
                                         <span className={EYEBROW}>{stripColon(t('productCustomization.sizeLabel'))}</span>
                                         <span className="text-[13px] text-[var(--kd-body)]">{selectedSize}</span>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {product.sizes.map((s) => (
-                                            <button
-                                                key={s}
-                                                type="button"
-                                                onClick={() => setSelectedSize(s)}
-                                                aria-pressed={selectedSize === s}
-                                                className={`inline-flex h-12 min-w-14 items-center justify-center border px-3 text-[14px] transition-colors duration-150 ${
-                                                    selectedSize === s
-                                                        ? 'border-brand bg-brand text-[var(--kd-rail-text)]'
-                                                        : 'border-[var(--kd-hairline)] bg-[var(--kd-tile)] text-[var(--kd-ink)] hover:border-[var(--kd-burgundy)]'
-                                                }`}
-                                            >
-                                                {s}
-                                            </button>
-                                        ))}
+                                    <div className="mb-4 flex justify-between gap-4 text-xs underline underline-offset-4">
+                                        <button onClick={() => setGuideStep('chart')}>{t('productDetails.sizeGuide')}</button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2" role="group" aria-label={t('productDetails.selectSize')}>
+                                        {product.sizes.map(size => <button key={size} type="button" aria-pressed={selectedSize === size} onClick={() => setSelectedSize(size)} className={`min-h-8 min-w-8 border px-2 text-[10px] ${selectedSize === size ? 'border-brand bg-brand text-white' : 'border-[var(--kd-rule)] bg-transparent'}`}>{size}</button>)}
                                     </div>
                                 </div>
                             )}
@@ -651,7 +608,6 @@ export default function ProductCustomization({ customize = false }: { customize?
 
                             {/* Quantity */}
                             <div className={BLOCK}>
-                                <div className={`${EYEBROW} pb-3`}>{t('productCustomization.quantity')}</div>
                                 <div className="flex w-max border border-[var(--kd-hairline)] bg-[var(--kd-tile)]">
                                     <button
                                         type="button"
@@ -689,14 +645,6 @@ export default function ProductCustomization({ customize = false }: { customize?
                                 </div>
                             </div>
 
-                            {/* Tailor review notice */}
-                            <div className="flex items-start gap-[11px] border-b border-[var(--kd-rule)] py-[18px]">
-                                <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--kd-muted)]" />
-                                <p className="max-w-[48ch] text-[14px] leading-[1.5] text-[var(--kd-body)] [text-wrap:pretty]">
-                                    {t('productCustomization.tailorReviewNotice')}
-                                </p>
-                            </div>
-
                             {/* Measurement sanity banner */}
                             {showMeasurementBanner && (
                                 <div className="flex items-start gap-[11px] border-b border-[var(--kd-rule)] py-[18px]">
@@ -708,7 +656,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                             )}
 
                             {/* Order summary */}
-                            <div className="mt-[22px] border border-[var(--kd-hairline)] bg-[var(--kd-tile)] p-5">
+                            {customize ? <div className="mt-[22px] border border-[var(--kd-hairline)] bg-[var(--kd-tile)] p-5">
                                 <div className="flex flex-col gap-2">
                                     <div className="flex justify-between text-[14px] text-[var(--kd-body)]">
                                         <span>{t('productCustomization.subtotal')}</span>
@@ -749,9 +697,34 @@ export default function ProductCustomization({ customize = false }: { customize?
                                 </div>
 
                                 <p className="mt-3.5 text-[12px] text-[var(--kd-muted)]">{t('productCustomization.noPaymentNow')}</p>
+                            </div> : (
+                                <div className="mt-6">
+                                    {orderError && <p role="alert" className="mb-3 text-xs text-brand">{orderError}</p>}
+                                    <Button onClick={handleAddToCart} className="h-11 w-full rounded-none bg-brand text-xs text-white hover:bg-brand-dark">{t('cart.addToCart')}</Button>
+                                </div>
+                            )}
+                            <a href="#product-reviews" className="mt-4 block text-right text-xs">{t('productDetails.reviews')} ({rating?.count ?? '—'})</a>
+                            <div className="product-detail-accordions mt-10">
+                                <details open><summary>{t('productDetails.description')}</summary><p>{product.description || product.name}</p></details>
+                                <details><summary>{t('productDetails.shipping')}</summary><p>{t('productCustomization.delivery')}: ₾{shipping}</p></details>
+                                <details><summary>{t('productDetails.returns')}</summary><Link to="/refund-policy">{t('productDetails.returnPolicy')} ↗</Link></details>
+                                <details><summary>{t('productDetails.features')}</summary><p>{product.category?.name}{product.texture ? ` · ${product.texture}` : ''}</p></details>
+                                <details><summary>{t('productDetails.care')}</summary><p>{product.fabric || t('productDetails.askTailor')}</p></details>
+                                <details><summary>{t('productDetails.fit')}</summary><button onClick={() => setGuideStep('chart')} className="text-xs underline">{t('productDetails.sizeGuide')}</button></details>
+                            </div>
+                            <div className="mt-8 border-t border-[var(--kd-rule)] pt-5">
+                                <Link to="/marketplace" className="text-xs underline underline-offset-4">{t('productDetails.buildOutfit')} ↗</Link>
                             </div>
                         </motion.div>
                     </div>
+                    <section id="product-reviews" className="mx-auto w-full max-w-[1200px] border-t border-[var(--kd-rule)] px-5 py-12 text-center">
+                        <h2 className="text-sm uppercase">{t('productDetails.reviews')}</h2>
+                        <p className="my-6 text-xs">{rating?.count ? `${rating.average?.toFixed(1)} / 5 · ${rating.count} ${t('productDetails.reviews')}` : t('productCustomization.noReviewsYet')}</p>
+                        <div className="mx-auto max-w-2xl text-left">
+                            {reviews.map(review => <article key={review.id} className="mb-5 border-b border-[var(--kd-rule)] pb-5 text-xs"><p>{review.reviewer} · {review.rating}/5</p><p className="mt-2 leading-6">{review.comment}</p></article>)}
+                        </div>
+                        <Link to="/customer-dashboard" className="inline-flex min-h-10 items-center border border-[var(--kd-rule)] px-5 text-xs">{t('productDetails.writeReview')}</Link>
+                    </section>
                 </>
             )}
 
@@ -759,7 +732,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                 <section className="border-t border-[var(--kd-rule)] bg-[var(--kd-stage)]">
                     <div className="mx-auto w-full max-w-[1440px] px-[clamp(16px,3vw,40px)] py-[clamp(32px,5vw,60px)]">
                         <div className="text-[11px] tracking-[0.18em] text-[var(--kd-muted)] uppercase">
-                            {t('productCustomization.customersAlsoViewed')}
+                            YOU MAY ALSO LIKE
                         </div>
                         <div className="mt-5 grid gap-[clamp(14px,2vw,22px)] grid-cols-[repeat(auto-fill,minmax(min(100%,230px),1fr))]">
                             {relatedProducts.map((related) => (

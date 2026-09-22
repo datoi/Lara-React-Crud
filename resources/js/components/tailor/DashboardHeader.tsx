@@ -21,21 +21,21 @@ export function DashboardHeader({ earnings }: DashboardHeaderProps) {
     }
 
     return (
-        <header className="sticky top-0 z-50 bg-white border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">
-                    Kere
+        <header className="tailor-studio-header sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-between">
+                <Link to="/" className="store-logo text-[var(--store-ink)]" aria-label="Kere">
+                    <span className="kere-nav-logo" aria-hidden="true" />
                 </Link>
 
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2">
+                    <div className="flex items-center gap-2 px-1 py-1">
                         <span className="text-xs text-slate-500 hidden sm:inline">{t('tailorComponents.totalEarnings')}</span>
-                        <span className="font-bold text-slate-900 text-sm">₾{earnings.toLocaleString()}</span>
+                        <span className="font-medium text-slate-900 text-xs">₾{earnings.toLocaleString()}</span>
                     </div>
 
                     <NotificationBell />
 
-                    <div className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    <div className="flex items-center gap-2 text-[var(--store-ink)] px-1 py-2 text-xs font-normal">
                         <User className="w-4 h-4" />
                         <span className="hidden sm:inline">{displayName}</span>
                     </div>

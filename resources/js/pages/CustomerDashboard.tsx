@@ -164,7 +164,7 @@ function TailorOffers({ orderId, onChosen }: { orderId: number; onChosen: (tailo
     };
 
     return (
-        <div className="bg-slate-50 rounded-xl p-4">
+        <div className="bg-slate-50 rounded-none p-4">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.offersTitle')}</p>
 
             {loading ? (
@@ -176,7 +176,7 @@ function TailorOffers({ orderId, onChosen }: { orderId: number; onChosen: (tailo
             ) : (
                 <div className="space-y-3">
                     {offers.map(offer => (
-                        <div key={offer.id} className="bg-white rounded-xl border border-slate-200 p-4">
+                        <div key={offer.id} className="bg-white rounded-none border border-slate-200 p-4">
                             <div className="flex items-start gap-3">
                                 <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 flex items-center justify-center shrink-0">
                                     {offer.tailor.profile_image ? (
@@ -264,7 +264,7 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 16 }}
                 transition={{ duration: 0.5 }}
-                className="kere-modal bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+                className="kere-modal bg-white rounded-none shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
@@ -331,20 +331,20 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                 {(design.remodel_images?.length ?? 0) > 0 && (
                                     <div className="grid grid-cols-3 gap-2">
                                         {design.remodel_images!.map((src, i) => (
-                                            <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="block aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                            <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="block aspect-square overflow-hidden rounded-none border border-slate-200 bg-slate-50">
                                                 <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
                                             </a>
                                         ))}
                                     </div>
                                 )}
                                 {design.change_request && (
-                                    <div className="bg-slate-50 rounded-xl p-4">
+                                    <div className="bg-slate-50 rounded-none p-4">
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('customerDashboard.remodelChangeLabel')}</p>
                                         <p className="text-sm text-slate-700 whitespace-pre-line">{design.change_request}</p>
                                     </div>
                                 )}
                                 {order.expected_price != null && (
-                                    <div className="bg-slate-50 rounded-xl p-4 flex items-center justify-between">
+                                    <div className="bg-slate-50 rounded-none p-4 flex items-center justify-between">
                                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('customerDashboard.remodelExpectedPrice')}</span>
                                         <span className="text-sm font-semibold text-slate-900">₾{order.expected_price}</span>
                                     </div>
@@ -356,11 +356,11 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                     <img
                                         src={design.design_file_url}
                                         alt={t('customerDashboard.customDesignLabel')}
-                                        className="w-full max-h-48 object-contain rounded-xl border border-slate-200 bg-slate-50"
+                                        className="w-full max-h-48 object-contain rounded-none border border-slate-200 bg-slate-50"
                                         loading="lazy"
                                     />
                                 )}
-                                <div className="bg-slate-50 rounded-xl p-4">
+                                <div className="bg-slate-50 rounded-none p-4">
                                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.customDesignLabel')}</p>
                                     <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
                                         {(design.garmentType ?? design.garment_type ?? design.clothingType) && (
@@ -379,7 +379,7 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                 </div>
 
                                 {(design.baseColor || design.accentColor || design.lighterShade) && (
-                                    <div className="bg-slate-50 rounded-xl p-4">
+                                    <div className="bg-slate-50 rounded-none p-4">
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.colorPalette')}</p>
                                         <div className="flex gap-2">
                                             {[
@@ -398,7 +398,7 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                 )}
 
                                 {design.measurements && Object.keys(design.measurements).length > 0 && (
-                                    <div className="bg-slate-50 rounded-xl p-4">
+                                    <div className="bg-slate-50 rounded-none p-4">
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.measurementsLabel')}</p>
                                         <div className="flex flex-wrap gap-1.5">
                                             {Object.entries(design.measurements).map(([k, v]) => (
@@ -411,14 +411,14 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                 )}
 
                                 {design.customization_request && (
-                                    <div className="bg-slate-50 rounded-xl p-4">
+                                    <div className="bg-slate-50 rounded-none p-4">
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('customerDashboard.customizationRequestLabel')}</p>
                                         <p className="text-sm text-slate-600">{design.customization_request}</p>
                                     </div>
                                 )}
 
                                 {(design.notes ?? design.tailor_notes ?? design.designElements?.customNotes) && (
-                                    <div className="bg-slate-50 rounded-xl p-4">
+                                    <div className="bg-slate-50 rounded-none p-4">
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{t('customerDashboard.tailorNotes')}</p>
                                         <p className="text-sm text-slate-600">{design.notes ?? design.tailor_notes ?? design.designElements?.customNotes}</p>
                                     </div>
@@ -427,7 +427,7 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                         ) : (
                             <div className="space-y-3">
                                 {order.items.map(item => (
-                                    <div key={item.id} className="flex gap-3 bg-slate-50 rounded-xl p-3">
+                                    <div key={item.id} className="flex gap-3 bg-slate-50 rounded-none p-3">
                                         <div className="w-14 h-16 rounded-lg overflow-hidden bg-slate-200 flex-shrink-0">
                                             {item.image ? (
                                                 <img src={item.image} alt={item.product_name} className="w-full h-full object-cover" loading="lazy" />
@@ -633,7 +633,7 @@ export default function CustomerDashboard() {
     };
 
     return (
-        <div className="kere-workflow-page min-h-screen bg-slate-50">
+        <div className="kere-workflow-page kere-refined-page min-h-screen bg-slate-50">
             <Helmet>
                 <title>{t('customerDashboard.pageTitle')}</title>
                 <meta name="robots" content="noindex" />
@@ -641,7 +641,7 @@ export default function CustomerDashboard() {
             {/* Navbar */}
             <nav className="sticky top-0 z-40 bg-white border-b border-slate-100">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-                    <Link to="/" className="text-xl font-bold text-slate-900 hover:text-slate-700 transition-colors">
+                    <Link to="/" className="kere-nav-logo text-slate-900">
                         Kere
                     </Link>
                     <div className="flex items-center gap-2">
@@ -684,7 +684,7 @@ export default function CustomerDashboard() {
                     reason ordering does not work, and the customer has no other
                     way to find that out. */}
                 {consentPending && (
-                    <div className="mb-8 rounded-xl border border-brand/20 bg-brand/5 px-4 py-4 sm:px-5">
+                    <div className="mb-8 rounded-none border border-brand/20 bg-brand/5 px-4 py-4 sm:px-5">
                         <p className="text-sm font-medium text-slate-900">
                             {t('customerDashboard.guardianPendingTitle')}
                         </p>
@@ -721,7 +721,7 @@ export default function CustomerDashboard() {
                     ].map(stat => {
                         const Icon = stat.icon;
                         return (
-                            <div key={stat.label} className="bg-white rounded-2xl border border-slate-100 p-4">
+                            <div key={stat.label} className="bg-white rounded-none border border-slate-100 p-4">
                                 <div className="flex items-center gap-2 mb-2">
                                     <Icon className="w-4 h-4 text-slate-400" />
                                     <span className="text-xs text-slate-500">{stat.label}</span>
@@ -733,7 +733,7 @@ export default function CustomerDashboard() {
                 </div>
 
                 {/* Orders list */}
-                <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+                <div className="bg-white rounded-none border border-slate-100 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-50">
                         <h2 className="font-semibold text-slate-900">{t('customerDashboard.myOrders')}</h2>
                     </div>
@@ -790,7 +790,7 @@ export default function CustomerDashboard() {
                                     onClick={() => { setOpenTab('details'); setSelected(order); }}
                                 >
                                     {/* Icon */}
-                                    <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <div className="w-9 h-9 bg-slate-100 rounded-none flex items-center justify-center flex-shrink-0">
                                         {order.order_type === 'custom' || order.order_type === 'remodel'
                                             ? <Scissors className="w-4 h-4 text-slate-600" />
                                             : <Package className="w-4 h-4 text-slate-600" />
@@ -892,9 +892,9 @@ export default function CustomerDashboard() {
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Link
                         to="/marketplace"
-                        className="flex items-center gap-3 bg-white border border-slate-100 rounded-2xl p-4 hover:bg-slate-50 hover:border-slate-200 transition-colors group"
+                        className="flex items-center gap-3 bg-white border border-slate-100 rounded-none p-4 hover:bg-slate-50 hover:border-slate-200 transition-colors group"
                     >
-                        <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center group-hover:bg-slate-900 transition-colors">
+                        <div className="w-10 h-10 bg-slate-100 rounded-none flex items-center justify-center group-hover:bg-slate-900 transition-colors">
                             <ShoppingBag className="w-5 h-5 text-slate-600 group-hover:text-white transition-colors" />
                         </div>
                         <div>
@@ -905,9 +905,9 @@ export default function CustomerDashboard() {
                     </Link>
                     <Link
                         to="/design"
-                        className="flex items-center gap-3 bg-white border border-slate-100 rounded-2xl p-4 hover:bg-slate-50 hover:border-slate-200 transition-colors group"
+                        className="flex items-center gap-3 bg-white border border-slate-100 rounded-none p-4 hover:bg-slate-50 hover:border-slate-200 transition-colors group"
                     >
-                        <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center group-hover:bg-slate-900 transition-colors">
+                        <div className="w-10 h-10 bg-slate-100 rounded-none flex items-center justify-center group-hover:bg-slate-900 transition-colors">
                             <Scissors className="w-5 h-5 text-slate-600 group-hover:text-white transition-colors" />
                         </div>
                         <div>

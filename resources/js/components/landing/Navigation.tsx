@@ -80,6 +80,7 @@ export function Navigation() {
         { to: '/design', label: t('nav.startDesigning') },
         { to: '/remodel', label: t('nav.remodel') },
         { to: '/about', label: t('footer.aboutUs') },
+        { to: '/partners', label: t('nav.forTailors') },
     ];
     useEffect(() => {
         if (!searchOpen || !query.trim()) {
@@ -154,7 +155,7 @@ export function Navigation() {
                                             <Link key={link.to} to={link.to} onClick={() => setMobileOpen(false)}>{link.label}</Link>
                                         ))}
                                     </details>
-                                    {[...links.slice(1), { to: account, label: t('nav.signIn') }, { to: '/partners', label: t('nav.forTailors') }].map(
+                                    {[...links.slice(1), { to: account, label: t('nav.signIn') }].map(
                                         (link) => (
                                             <Link
                                                 key={link.to}
@@ -186,7 +187,7 @@ export function Navigation() {
                                 onPointerDown={() => { marketOpenedByHover.current = false; }}
                                 onKeyDown={() => { marketOpenedByHover.current = false; }}
                             >
-                                {t('marketplace.title')} <ChevronDown size={14} />
+                                {t('marketplace.title')}
                             </Dialog.Trigger>
                             <Dialog.Portal>
                                 <Dialog.Overlay className="store-mega-overlay" />

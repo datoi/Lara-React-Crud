@@ -20,8 +20,8 @@ type Tailor = {
 
 function TailorSkeleton() {
     return (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden animate-pulse">
-            <div className="bg-slate-100 h-44" />
+        <div className="bg-transparent overflow-hidden animate-pulse">
+            <div className="bg-slate-100 aspect-[4/5]" />
             <div className="p-6 space-y-3">
                 <div className="h-4 bg-slate-200 rounded w-2/3" />
                 <div className="h-3 bg-slate-200 rounded w-1/2" />
@@ -50,18 +50,18 @@ export default function OurTailors() {
     }, []);
 
     return (
-        <div className="kere-info-page min-h-screen bg-white">
+        <div className="kere-info-page kere-refined-page min-h-screen bg-white">
             <Navigation />
 
-            <section className="pt-24 pb-16 md:pt-28 md:pb-24 bg-slate-900 text-white">
+            <section className="kere-page-intro pt-24 pb-8 md:pt-28 md:pb-12 border-b border-[#e5dfd8]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                        <h1 className="text-4xl md:text-6xl font-black mb-6">{t('ourTailors.heroTitle')}</h1>
+                        <h1 className="text-2xl md:text-4xl font-normal mb-6">{t('ourTailors.heroTitle')}</h1>
                     </motion.div>
                 </div>
             </section>
 
-            <section className="py-16 md:py-24">
+            <section className="py-10 md:py-14">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {!loading && tailors.length === 0 ? (
                         <p className="text-center text-slate-400 py-16">{t('ourTailors.noTailors')}</p>
@@ -75,19 +75,19 @@ export default function OurTailors() {
                                         initial={{ opacity: 0, y: 24 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.4, delay: Math.min(i * 0.07, 0.4) }}
-                                        className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
+                                        className="bg-transparent overflow-hidden transition-colors flex flex-col"
                                     >
-                                        <div className="bg-slate-100 h-44 flex items-center justify-center shrink-0">
+                                        <div className="bg-slate-100 aspect-[4/5] flex items-center justify-center shrink-0">
                                             {tailor.profile_image ? (
                                                 <img src={tailor.profile_image} alt={tailor.name} className="w-full h-full object-cover" />
                                             ) : (
-                                                <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center">
+                                                <div className="w-20 h-20 bg-transparent flex items-center justify-center">
                                                     <span className="text-3xl font-bold text-slate-500">{tailor.name.charAt(0)}</span>
                                                 </div>
                                             )}
                                         </div>
 
-                                        <div className="p-6 flex flex-col flex-1">
+                                        <div className="py-5 flex flex-col flex-1">
                                             <div className="flex items-start justify-between mb-1">
                                                 <div className="min-w-0">
                                                     <h3 className="font-bold text-slate-900 text-lg truncate">{tailor.name}</h3>
@@ -126,7 +126,7 @@ export default function OurTailors() {
 
                                             <Link
                                                 to={`/tailor/${tailor.id}`}
-                                                className="mt-4 text-center text-sm font-semibold text-slate-700 border border-slate-200 rounded-xl py-2 hover:bg-slate-50 transition-colors"
+                                                className="mt-4 text-center text-sm font-semibold text-slate-700 border border-slate-200 rounded-none py-2 hover:bg-slate-50 transition-colors"
                                             >
                                                 {t('ourTailors.viewProfile')}
                                             </Link>
@@ -139,10 +139,10 @@ export default function OurTailors() {
                 </div>
             </section>
 
-            <section className="py-16 md:py-24 bg-slate-50">
+            <section className="py-10 md:py-14 bg-slate-50">
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-                        <h2 className="text-3xl font-black text-slate-900 mb-4">{t('ourTailors.ctaTitle')}</h2>
+                        <h2 className="text-2xl font-normal text-slate-900 mb-4">{t('ourTailors.ctaTitle')}</h2>
                         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
                             <Link to="/register/tailor" className="bg-brand text-white font-semibold px-8 py-3 rounded-full hover:bg-brand-dark transition-colors">
                                 {t('ourTailors.applyAsTailor')}
