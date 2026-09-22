@@ -306,6 +306,47 @@ class WomensTopsSeeder extends Seeder
             ['slug' => 'lavender',        'name' => 'Lavender',     'hex' => '#b79cde'],
             ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#7c50ad'],
         ],
+        'bell' => [
+            ['slug' => 'black',           'name' => 'Black',        'hex' => '#212121'],
+            ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#59585a'],
+            ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#563e33'],
+            ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#a17754'],
+            ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#d6ccc3'],
+            ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#eadfce'],
+            ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#dcd7d0'],
+            ['slug' => 'white',           'name' => 'White',        'hex' => '#dddde2'],
+            ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#c1c1c3'],
+            ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#d3a0a3'],
+            ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#de8897'],
+            ['slug' => 'red',             'name' => 'Red',          'hex' => '#c10a11'],
+            ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#6d1120'],
+            ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#fa6925'],
+        ],
+        'balloon' => [
+            ['slug' => 'black',           'name' => 'Black',        'hex' => '#222121'],
+            ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#585859'],
+            ['slug' => 'navy',            'name' => 'Navy',         'hex' => '#1f3461'],
+            ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#56382d'],
+            ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#bf8f64'],
+            ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#d6bb9e'],
+            ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#eddfcc'],
+            ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#e0dbd3'],
+            ['slug' => 'white',           'name' => 'White',        'hex' => '#e2e2e7'],
+            ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#a2a1a4'],
+            ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#d29396'],
+            ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#da758a'],
+            ['slug' => 'red',             'name' => 'Red',          'hex' => '#c21324'],
+            ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#64151f'],
+            ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#f36d22'],
+            ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#f5ca28'],
+            ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#6d6c32'],
+            ['slug' => 'green',           'name' => 'Green',        'hex' => '#2b7433'],
+            ['slug' => 'turquoise',       'name' => 'Turquoise',    'hex' => '#0c99a2'],
+            ['slug' => 'sky',             'name' => 'Sky',          'hex' => '#61a4d8'],
+            ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#3270c4'],
+            ['slug' => 'lavender',        'name' => 'Lavender',     'hex' => '#dacff1'],
+            ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#674499'],
+        ],
     ];
 
     /**
@@ -341,7 +382,7 @@ class WomensTopsSeeder extends Seeder
                 'sleeves'  => ['one-sleeve'],
             ],
             'photos' => [
-                // Sleeves is the attribute the shoot varies — six constructions
+                // Sleeves is the attribute the shoot varies — eight constructions
                 // of one tee — so its options carry the photographs and the
                 // colourways, and it is the layer the canvas paints.
                 'attribute' => 'sleeves',

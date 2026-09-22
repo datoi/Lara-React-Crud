@@ -37,7 +37,19 @@ const VIEWS = { '01': 'front', '02': 'back', '03': 'three-quarter', '04': 'left'
 const FIT       = { 'Fitted': 'body-fitting' };
 const LENGTH    = { 'Above the waist': 'cropped' };
 const NECKLINE  = { 'Crew Neck': 'crew' };
-const BACK      = { 'Plain Closed Back': 'normal', 'Classsic Straight': 'normal', 'Puff Sleeve': 'normal' };
+/**
+ * The sleeve-shape folder doubles as the back design, because every shoot so far
+ * has a plain closed back — the sleeve is what varies. A new shape has to be
+ * named here before it will import, which is the point: an unlisted one throws
+ * rather than being filed under a back it was never shot in.
+ */
+const BACK = {
+    'Plain Closed Back': 'normal',
+    'Classsic Straight': 'normal',
+    'Puff Sleeve':       'normal',
+    'Balloon':           'normal',
+    'Bell':              'normal',
+};
 
 /**
  * Sleeve is the one axis the tree splits across two levels: the drop files Puff
@@ -49,6 +61,8 @@ const SLEEVES = {
     'Sleeveless/Plain Closed Back': 'sleeveless',
     'Cap Sleeve/Classsic Straight': 'cap',
     'Cap Sleeve/Puff Sleeve':       'puff',
+    'Cap Sleeve/Balloon':           'balloon',
+    'Cap Sleeve/Bell':              'bell',
 };
 
 const COLOURS = {
@@ -63,10 +77,21 @@ const COLOURS = {
 /** Strips the ordering prefix the drop puts on every folder: '12. Blush Pink'. */
 const label = name => name.replace(/^\d+\.\s*/, '').trim();
 
+/**
+ * Case-folded lookup, because the drop's capitalisation is not dependable — the
+ * Bell shoot files Camel as 'camel' where every other shoot capitalises it, and
+ * a colour that fails to match is a colour silently missing from the garment.
+ * The map's own spelling is what gets used, whatever the folder said.
+ */
 function lookup(map, name, level) {
     const key = label(name);
-    if (!(key in map)) throw new Error(`unmapped ${level}: "${key}"`);
-    return map[key];
+
+    if (key in map) return map[key];
+
+    const folded = Object.keys(map).find(k => k.toLowerCase() === key.toLowerCase());
+    if (folded) return map[folded];
+
+    throw new Error(`unmapped ${level}: "${key}"`);
 }
 
 const args = process.argv.slice(2);

@@ -611,6 +611,16 @@ All features and fixes are logged here in reverse chronological order.
 
 ### [2026-09-22] The designer offers only what it can show
 
+**Bell and Balloon join the T-shirt.** Two more sleeve constructions arrived in the Fitted drop — Balloon in 23 colourways, Bell in 14 — taking the tee from six sleeves to eight and the derived set from 540 photographs to 688, every colourway of every sleeve carrying all four angles.
+
+- **The designer picked them up without a code change.** Availability is read off the photography, so the two new sleeves appeared in the customiser the moment they were seeded — which is the whole point of deriving it rather than listing it by hand.
+- **The importer's strictness earned itself twice.** It refuses any folder name it has not been told about, and refused twice here: once for the two new sleeve shapes, once for the back design they file under. Both are one line, and the alternative is a garment quietly filed as something it was never shot in.
+- **Colour folders are matched case-insensitively now.** The Bell shoot files Camel as `camel` where every other shoot capitalises it; under the old exact match that colour would have thrown, and under a looser rule it would have gone missing from the garment without a word.
+- Two frames carry typos in their view suffix — `Rigth`, `Lefy` — and land correctly regardless, because the view is read from the numbered prefix. A stray `Brown` folder nested inside `Black` holds one frame byte-identical to the one already filed correctly, so nothing is lost by the importer skipping it.
+
+**Verified:** 688 seeded photo references, none broken, 4.0 views per colourway across all eight sleeves. In a real browser the Details step offers Sleeveless, Cap, Wide, Dropped Shoulder, Oversized, Puff, Bell and Balloon, with Short, Elbow, Three-quarter, Long and Bishop still absent, and no console errors. 82 tests green.
+
+
 **What was done:** The customiser listed everything the catalogue could describe, not everything it could make. A customer browsing women's tops chose between 25 garments, 23 of which had never been photographed, and a T-shirt offered 38 options of which 6 existed — so finding the few real ones meant discovering the rest by elimination. Both are now filtered to what the photography actually covers.
 
 **Availability is read off the photographs, not maintained by hand.** A photographed option is available by definition. Every other attribute takes its values from what those photographs *depict* — each shot records the rest of the cut it captured, so a tee shot body-fitting and cropped says so, and the fits and lengths it was never shot in are not offered. Nothing needs updating as the shoots grow: a garment reappears the day it has a photograph.
