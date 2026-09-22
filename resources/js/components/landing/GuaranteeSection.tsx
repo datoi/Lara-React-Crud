@@ -162,7 +162,7 @@ export function GuaranteeSection() {
                                     size="icon"
                                     onClick={prev}
                                     aria-label={t('guarantee.previousReview')}
-                                    className="h-9 w-9 rounded-full border border-black/30 !text-[#111111] transition-colors hover:bg-black hover:!text-white"
+                                    className="h-9 w-9 rounded-full border border-black/30 !text-[#111111] transition-colors hover:bg-brand-dark hover:!text-white"
                                 >
                                     <ArrowLeft className="h-3.5 w-3.5 stroke-[1.5]" />
                                 </Button>
@@ -173,7 +173,7 @@ export function GuaranteeSection() {
                                     size="icon"
                                     onClick={next}
                                     aria-label={t('guarantee.nextReview')}
-                                    className="h-9 w-9 rounded-full border border-black/30 !text-[#111111] transition-colors hover:bg-black hover:!text-white"
+                                    className="h-9 w-9 rounded-full border border-black/30 !text-[#111111] transition-colors hover:bg-brand-dark hover:!text-white"
                                 >
                                     <ArrowRight className="h-3.5 w-3.5 stroke-[1.5]" />
                                 </Button>
@@ -199,7 +199,7 @@ export function GuaranteeSection() {
                                     className={[
                                         'h-1.5 rounded-full p-0 transition-all duration-200',
                                         isActive
-                                            ? 'w-10 bg-[#111111] hover:bg-[#111111]'
+                                            ? 'w-10 bg-brand hover:bg-brand-dark'
                                             : 'w-4 bg-black/15 hover:bg-black/35',
                                     ].join(' ')}
                                 />

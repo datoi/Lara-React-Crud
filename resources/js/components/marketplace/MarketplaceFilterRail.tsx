@@ -119,7 +119,7 @@ export default function MarketplaceFilterRail({ facets, priceMax, onPriceChange,
                                             'focus-visible:ring-2 focus-visible:ring-[var(--kd-burgundy)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--kd-tile)] focus-visible:outline-none',
                                             variant === 'chip' ? 'justify-center px-1.5 text-[13px]' : 'px-[9px] text-left text-[14px]',
                                             selected
-                                                ? 'border-[var(--kd-burgundy)] bg-[var(--kd-burgundy)] text-[var(--kd-rail-text)]'
+                                                ? 'border-brand bg-brand text-[var(--kd-rail-text)]'
                                                 : 'border-[var(--kd-rule)] text-[var(--kd-ink)] hover:border-[var(--kd-burgundy)]',
                                         ].join(' ')}
                                     >

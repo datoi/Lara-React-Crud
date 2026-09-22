@@ -16,7 +16,6 @@ interface Product {
   };
   average_rating: number | null;
   reviews_count: number;
-  isFallback?: boolean;
 }
 
 export function MarketplaceCarousel() {
@@ -24,6 +23,7 @@ export function MarketplaceCarousel() {
   // null = not decided yet; keeps the strip hidden until then so the fallback
   // products never flash-swap to real ones on load.
   const [products, setProducts] = useState<Product[] | null>(null);
+  const [fetchError, setFetchError] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
   const [imageIndexes, setImageIndexes] = useState<Record<number, number>>({});
@@ -47,7 +47,7 @@ export function MarketplaceCarousel() {
         setProducts(list.slice(0, 12));
       })
       .catch(() => {
-        if (active) setProducts([]);
+        if (active) { setProducts([]); setFetchError(true); }
       });
 
     return () => {
@@ -55,71 +55,8 @@ export function MarketplaceCarousel() {
     };
   }, []);
 
-  const fallbackProducts: Product[] = [
-    {
-      id: -1,
-      name: t('carousel.productPinkDress'),
-      price: 210,
-      images: ['/assets/hero/kere-look-1.jpeg'],
-      sizes: ['XS', 'S', 'M', 'L', 'XL'],
-      tailor_name: 'Kere',
-      category: {
-        name: 'Dresses',
-        slug: 'dresses',
-      },
-      average_rating: null,
-      reviews_count: 0,
-      isFallback: true,
-    },
-    {
-      id: -2,
-      name: t('carousel.productBlueDress'),
-      price: 280,
-      images: ['/assets/hero/kere-look-2.jpeg'],
-      sizes: ['XS', 'S', 'M', 'L'],
-      tailor_name: 'Kere',
-      category: {
-        name: 'Dresses',
-        slug: 'dresses',
-      },
-      average_rating: null,
-      reviews_count: 0,
-      isFallback: true,
-    },
-    {
-      id: -3,
-      name: t('carousel.productBlueSuit'),
-      price: 320,
-      images: ['/assets/hero/kere-look-3.jpeg'],
-      sizes: ['S', 'M', 'L', 'XL'],
-      tailor_name: 'Kere',
-      category: {
-        name: 'Suits',
-        slug: 'suits',
-      },
-      average_rating: null,
-      reviews_count: 0,
-      isFallback: true,
-    },
-    {
-      id: -4,
-      name: t('carousel.productGreenDress'),
-      price: 260,
-      images: ['/assets/hero/kere-look-4.jpeg'],
-      sizes: ['XS', 'S', 'M', 'L', 'XL'],
-      tailor_name: 'Kere',
-      category: {
-        name: 'Dresses',
-        slug: 'dresses',
-      },
-      average_rating: null,
-      reviews_count: 0,
-      isFallback: true,
-    },
-  ];
-
   const ready = products !== null;
-  const displayedProducts = products && products.length > 0 ? products.slice(0, 8) : fallbackProducts;
+  const displayedProducts = products?.slice(0, 8) ?? [];
   const categories = Array.from(
     new Map(displayedProducts.map((product) => [product.category.slug, product.category])).values(),
   );
@@ -205,6 +142,7 @@ export function MarketplaceCarousel() {
           ))}
         </nav>
 
+        {ready && displayedProducts.length === 0 && <p role="status" className="py-12 text-center text-sm text-[#514843]">{t(fetchError ? 'marketplace.errorLoad' : 'marketplace.noProducts')}</p>}
         <div className="relative">
           <div
             ref={stripRef}
@@ -234,7 +172,7 @@ export function MarketplaceCarousel() {
             {filteredProducts.map((product) => {
               const imageIndex = imageIndexes[product.id] ?? 0;
               const image = product.images?.[imageIndex];
-              const productPath = product.isFallback ? '/marketplace' : `/product/${product.id}`;
+              const productPath = `/product/${product.id}`;
 
               return (
                 <article
@@ -256,7 +194,7 @@ export function MarketplaceCarousel() {
                           alt={`${product.name} ${imageIndex + 1}`}
                           draggable={false}
                           loading="lazy"
-                          className="h-full w-full object-contain p-5 transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+                          className="h-full w-full object-contain p-5"
                         />
                       </Link>
                     ) : (
@@ -271,7 +209,7 @@ export function MarketplaceCarousel() {
                       onClick={() => changeProductImage(product, -1)}
                       aria-label={t('carousel.previous')}
                       disabled={product.images.length < 2}
-                      className="absolute left-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-white/90 text-black opacity-0 shadow-sm transition-all hover:bg-black hover:text-white group-hover:opacity-100 group-focus-within:opacity-100 disabled:hidden"
+                      className="absolute left-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-white/90 text-black opacity-0 shadow-sm transition-all hover:bg-brand-dark hover:text-white group-hover:opacity-100 group-focus-within:opacity-100 disabled:hidden"
                     >
                       <ChevronLeft className="h-5 w-5 stroke-[1.4]" />
                     </button>
@@ -281,13 +219,13 @@ export function MarketplaceCarousel() {
                       onClick={() => changeProductImage(product, 1)}
                       aria-label={t('carousel.next')}
                       disabled={product.images.length < 2}
-                      className="absolute right-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-white/90 text-black opacity-0 shadow-sm transition-all hover:bg-black hover:text-white group-hover:opacity-100 group-focus-within:opacity-100 disabled:hidden"
+                      className="absolute right-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center bg-white/90 text-black opacity-0 shadow-sm transition-all hover:bg-brand-dark hover:text-white group-hover:opacity-100 group-focus-within:opacity-100 disabled:hidden"
                     >
                       <ChevronRight className="h-5 w-5 stroke-[1.4]" />
                     </button>
 
                     <div className="marketplace-scrollbar-none absolute inset-x-0 bottom-0 z-10 flex min-h-11 translate-y-full items-center gap-5 overflow-x-auto border-t border-black/20 bg-white/95 px-4 text-[11px] font-normal uppercase text-black opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 sm:justify-center">
-                      {(product.sizes?.length ? product.sizes : ['XS', 'S', 'M', 'L', 'XL']).map((size) => (
+                      {(product.sizes ?? []).map((size) => (
                         <span key={size} className="shrink-0">{size}</span>
                       ))}
                     </div>
@@ -332,7 +270,7 @@ export function MarketplaceCarousel() {
         <div className="mt-12 flex justify-center">
           <Link
             to="/marketplace"
-            className="inline-flex min-h-[50px] items-center justify-center border border-black/30 bg-transparent px-8 text-xs font-bold uppercase tracking-[0.12em] text-[#111111] transition-all duration-200 hover:bg-[#111111] hover:text-white"
+            className="inline-flex min-h-[50px] items-center justify-center border border-black/30 bg-transparent px-8 text-xs font-bold uppercase tracking-[0.12em] text-[#111111] transition-all duration-200 hover:bg-brand-dark hover:text-white"
           >
             {t('carousel.viewAll')}
           </Link>

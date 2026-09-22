@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -188,5 +189,10 @@ class User extends Authenticatable
     public function getFullName(): string
     {
         return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? '')) ?: ($this->name ?? '');
+    }
+
+    public function wishlistProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'wishlist_items')->withTimestamps();
     }
 }

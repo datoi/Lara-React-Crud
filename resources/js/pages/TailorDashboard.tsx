@@ -117,7 +117,7 @@ export default function TailorDashboard() {
 
     const scrollToProfile = () => {
         setProfileEditorOpen(true);
-        setTimeout(() => document.getElementById('profile-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+
     };
 
     const greeting = user ? user.first_name : t('tailorDashboard.tailorFallback');
@@ -158,7 +158,7 @@ export default function TailorDashboard() {
     // ─── Approval gate ────────────────────────────────────────────────────────
     if (user?.approval_status === 'pending') {
         return (
-            <div className="tailor-dashboard-page min-h-screen bg-[#F4EBD4] flex flex-col">
+            <div className="tailor-dashboard-page min-h-screen bg-[var(--store-paper)] flex flex-col">
                 <nav className="bg-white border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                         <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
@@ -183,7 +183,7 @@ export default function TailorDashboard() {
 
     if (user?.approval_status === 'rejected') {
         return (
-            <div className="tailor-dashboard-page min-h-screen bg-[#F4EBD4] flex flex-col">
+            <div className="tailor-dashboard-page min-h-screen bg-[var(--store-paper)] flex flex-col">
                 <nav className="bg-white border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                         <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
@@ -199,7 +199,7 @@ export default function TailorDashboard() {
                         </div>
                         <h1 className="text-2xl font-bold text-slate-900 mb-3">{t('tailorDashboard.rejectedTitle')}</h1>
                         <p className="text-slate-500 leading-relaxed mb-8">{t('tailorDashboard.rejectedDesc')}</p>
-                        <Link to="/" className="inline-flex items-center justify-center bg-slate-900 hover:bg-slate-700 text-white text-sm font-medium px-6 py-3 rounded-lg transition-colors">
+                        <Link to="/" className="inline-flex items-center justify-center bg-brand hover:bg-brand-dark text-white text-sm font-medium px-6 py-3 rounded-lg transition-colors">
                             {t('register.tailorPendingBack')}
                         </Link>
                     </motion.div>
@@ -209,7 +209,7 @@ export default function TailorDashboard() {
     }
 
     return (
-        <div className="tailor-dashboard-page min-h-screen bg-[#F4EBD4] text-[#631E26]">
+        <div className="tailor-dashboard-page min-h-screen bg-[var(--store-paper)] text-[#631E26]">
             <DashboardHeader earnings={stats.revenue} />
 
             {/* ── Post-add success toast ── */}
@@ -238,14 +238,14 @@ export default function TailorDashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                 >
-                    <h1 className="font-serif text-[clamp(2rem,4vw,3.5rem)] font-medium leading-[1.02] tracking-normal text-[#111111]">
+                    <h1 className="font-serif text-[clamp(1.5rem,2.5vw,2.25rem)] font-medium leading-[1.02] tracking-normal text-[#111111]">
                         {t('tailorDashboard.welcomeBack', { name: greeting })}
                     </h1>
                 </motion.div>
 
                 {/* ── Onboarding panel — 0 products ── */}
                 {showOnboarding && (
-                    <OnboardingPanel onAddProduct={() => setOpenAddModal(true)} />
+                    <OnboardingPanel onAddProduct={() => setOpenAddModal(true)} onEditProfile={scrollToProfile} />
                 )}
 
                 {/* ── Stats + checklist side-by-side once there's data ── */}
@@ -322,7 +322,6 @@ export default function TailorDashboard() {
                         <>
                             {!profileComplete && (
                                 <div className="mb-3 flex items-center gap-2 text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
-                                    <span className="text-base">💡</span>
                                     <span>
                                         <strong>{t('tailorDashboard.completeProfile')}</strong> — {t('tailorDashboard.completeProfileHint')}
                                     </span>

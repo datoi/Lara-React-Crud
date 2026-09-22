@@ -1,6 +1,6 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router';
-import { ArrowRight, ChevronDown, CreditCard } from 'lucide-react';
+import { ChevronDown, CreditCard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
 import { EmailSupportModal } from '../EmailSupportModal';
@@ -19,18 +19,7 @@ interface FooterColumnProps {
 export function Footer() {
     const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
     const [emailSupportOpen, setEmailSupportOpen] = useState(false);
-    const [email, setEmail] = useState('');
-    const [submitted, setSubmitted] = useState(false);
     const { t, i18n } = useTranslation();
-
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
-        if (!email.trim()) return;
-
-        setSubmitted(true);
-        setEmail('');
-    };
 
     const handleModalOpen = (modal: 'size-guide' | 'email-support') => {
         if (modal === 'size-guide') setSizeGuideOpen(true);
@@ -85,37 +74,8 @@ export function Footer() {
                 <div className="mx-auto max-w-[1600px] px-5 pb-8 pt-14 sm:px-8 sm:pb-10 sm:pt-16 lg:px-10 lg:pt-20">
                     <div className="grid gap-14 border-b border-black/15 pb-16 md:grid-cols-2 lg:grid-cols-[1.55fr_0.8fr_0.9fr_0.7fr] lg:gap-16 lg:pb-20">
                         <div>
-                            <h2 className="text-xl font-medium uppercase tracking-normal text-[#111111] sm:text-2xl">
-                                {t('footer.stayUpdated')}
-                            </h2>
-
-                            <form onSubmit={handleSubmit} className="mt-7 max-w-md">
-                                <div className="grid grid-cols-[1fr_auto] items-center border-b border-black/35">
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(event) => setEmail(event.target.value)}
-                                        placeholder={t('footer.emailPlaceholder')}
-                                        aria-label={t('footer.emailPlaceholder')}
-                                        required
-                                        className="min-w-0 bg-transparent py-3 text-sm text-[#111111] outline-none placeholder:text-black/35"
-                                    />
-
-                                    <button
-                                        type="submit"
-                                        aria-label={t('footer.subscribe')}
-                                        className="inline-flex h-10 w-10 items-center justify-center transition-transform hover:translate-x-1"
-                                    >
-                                        <ArrowRight className="h-5 w-5 stroke-[1.4]" />
-                                    </button>
-                                </div>
-
-                                {submitted && (
-                                    <p className="mt-3 max-w-sm text-[9px] leading-4 text-black/45">
-                                        {t('footer.newsletterSuccess')}
-                                    </p>
-                                )}
-                            </form>
+                            <h2 className="text-xl font-medium uppercase tracking-normal text-[#111111] sm:text-2xl">{t('footer.contactUs')}</h2>
+                            <Link to="/contact" className="store-text-link mt-7">{t('footer.emailSupport')} ↗</Link>
                         </div>
 
                         {footerColumns.map((column) => (

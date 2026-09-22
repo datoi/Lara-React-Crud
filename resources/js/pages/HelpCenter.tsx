@@ -66,24 +66,24 @@ export default function HelpCenter() {
     ];
 
     return (
-        <div className="kere-info-page min-h-screen bg-white">
+        <div className="kere-info-page kere-refined-page min-h-screen bg-white">
             <Navigation />
 
             {/* Hero */}
-            <section className="pt-24 pb-16 md:pt-28 md:pb-24 bg-slate-900 text-white text-center">
+            <section className="kere-page-intro pt-24 pb-8 md:pt-28 md:pb-12 border-b border-[#e5dfd8] text-center">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <h1 className="text-4xl md:text-6xl font-black mb-6">{t('helpCenter.heroTitle')}</h1>
+                        <h1 className="text-2xl md:text-4xl font-normal mb-6">{t('helpCenter.heroTitle')}</h1>
                     </motion.div>
                 </div>
             </section>
 
             {/* Topics */}
-            <section className="py-16 md:py-24">
+            <section className="py-10 md:py-14">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
                     {topics.map((topic, ti) => (
                         <motion.div
@@ -100,7 +100,7 @@ export default function HelpCenter() {
                             </div>
                             <div className="space-y-3">
                                 {topic.articles.map((a) => (
-                                    <div key={a.qKey} className="bg-slate-50 rounded-xl border border-slate-200 p-5">
+                                    <div key={a.qKey} className="bg-slate-50 rounded-none border border-slate-200 p-5">
                                         <p className="font-semibold text-slate-900 mb-1.5">{t(a.qKey)}</p>
                                         <p className="text-sm text-slate-500 leading-relaxed">{t(a.aKey)}</p>
                                     </div>
@@ -122,7 +122,7 @@ export default function HelpCenter() {
                     <h2 className="text-2xl font-black text-slate-900 mb-3">{t('helpCenter.stillNeedHelp')}</h2>
                     <Link
                         to="/"
-                        className="inline-block bg-slate-900 text-white font-semibold px-8 py-3 rounded-full hover:bg-slate-700 transition-colors"
+                        className="inline-block bg-brand text-white font-semibold px-8 py-3 rounded-full hover:bg-brand-dark transition-colors"
                     >
                         {t('helpCenter.emailSupport')}
                     </Link>

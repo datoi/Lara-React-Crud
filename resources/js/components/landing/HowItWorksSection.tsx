@@ -42,7 +42,7 @@ export function HowItWorksSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.35 }}
             transition={{ duration: 0.6 }}
-            className="max-w-[560px] font-serif text-[clamp(1.85rem,3.2vw,3.35rem)] font-medium leading-[0.95] tracking-[-0.035em] text-[#111111]"
+            className="max-w-[560px] font-serif text-[clamp(1.25rem,2.2vw,2rem)] font-medium leading-[1.2] tracking-[-0.035em] text-[#111111]"
           >
             {t('howItWorks.heroTitle')}
           </motion.h2>
@@ -56,7 +56,7 @@ export function HowItWorksSection() {
           >
             <Link
               to="/help"
-              className="inline-flex min-h-[42px] items-center justify-center gap-2 border border-[#111111] bg-transparent px-5 text-xs font-semibold uppercase tracking-[0.12em] text-[#111111] transition-all duration-500 hover:-translate-y-0.5 hover:bg-[#111111] hover:text-white"
+              className="inline-flex min-h-[42px] items-center justify-center gap-2 border border-brand bg-transparent px-5 text-xs font-semibold uppercase tracking-[0.12em] text-[#111111] transition-all duration-500 hover:-translate-y-0.5 hover:bg-brand-dark hover:text-white"
             >
               {t('howItWorks.seeMore')}
               <ArrowRight className="h-3.5 w-3.5" />
@@ -97,7 +97,7 @@ export function HowItWorksSection() {
                   index % 2 === 0 ? 'md:pr-14 md:text-right' : 'md:pl-14',
                 ].join(' ')}
               >
-                <h3 className="font-serif text-[clamp(1.45rem,2.6vw,2.75rem)] font-medium leading-[0.98] tracking-[-0.03em] text-[#111111]">
+                <h3 className="font-serif text-[clamp(1rem,1.7vw,1.65rem)] font-medium leading-[1.3] tracking-[-0.03em] text-[#111111]">
                   {step.title}
                 </h3>
               </motion.div>

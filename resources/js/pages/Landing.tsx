@@ -1,3 +1,4 @@
+import { BrandStorySection } from '../components/landing/BrandStorySection';
 import { Helmet } from 'react-helmet-async';
 import { Navigation } from '../components/landing/Navigation';
 import { HeroSection } from '../components/landing/HeroSection';
@@ -23,7 +24,7 @@ export default function Landing() {
                     "@type": "LocalBusiness",
                     "name": "Kere",
                     "description": "Custom clothing marketplace connecting customers with local Georgian tailors.",
-                    "url": "https://kere.ge",
+                    "url": "https://kereforyou.com",
                     "address": {
                         "@type": "PostalAddress",
                         "addressLocality": "Tbilisi",
@@ -37,6 +38,7 @@ export default function Landing() {
             <Navigation />
             <HeroSection />
             <MarketplaceCarousel />
+            <BrandStorySection />
             <FeaturesSection />
             <HowItWorksSection />
             <SizeFitSection />

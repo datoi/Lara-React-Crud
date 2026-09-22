@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Eye, Edit2, Trash2 } from 'lucide-react';
+import { ImageOff, Plus, Eye, Edit2, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { AddProductModal, type TailorProductFull } from './AddProductModal';
@@ -92,31 +92,30 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
     return (
         <>
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div className="px-4 py-4 sm:px-6 border-b border-slate-100 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <h2 className="font-bold text-slate-900">{t('tailorComponents.myProducts')}</h2>
-                    <Button
+                    {products.length > 0 && <Button
                         variant="default"
                         size="sm"
                         onClick={() => setShowModal(true)}
-                        className="flex items-center gap-1.5"
+                        className="flex h-auto min-h-10 max-w-full items-center gap-1.5 whitespace-normal py-2 text-left"
                     >
                         <Plus className="w-4 h-4" />
                         {t('tailorComponents.addProductBtn')}
-                    </Button>
+                    </Button>}
                 </div>
 
                 {products.length === 0 ? (
-                    <div className="px-6 py-14 flex flex-col items-center text-center">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-4 text-2xl">
-                            🧵
-                        </div>
+                    <div className="px-4 py-8 sm:px-6 sm:py-12 flex flex-col items-center gap-2 text-center">
                         <p className="font-semibold text-slate-900 text-sm mb-1">{t('tailorComponents.noProductsYet')}</p>
+                        <p className="mb-3 max-w-sm text-xs leading-6 text-[var(--store-muted)]">{t('tailorComponents.emptyProductsHint')}</p>
                         <Button
                             variant="default"
                             size="default"
+                            className="h-auto min-h-10 w-full sm:w-auto max-w-sm whitespace-normal px-3 py-2 text-xs leading-5"
                             onClick={() => setShowModal(true)}
                         >
-                            {t('tailorComponents.addFirstProductCta')}
+                            {t('tailorComponents.addProductBtn')}
                         </Button>
                     </div>
                 ) : (
@@ -138,7 +137,7 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                                             className="w-full h-full object-cover"
                                         />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-lg">👗</div>
+                                        <div className="w-full h-full flex items-center justify-center text-lg"><ImageOff className="h-4 w-4 text-slate-400" aria-hidden="true" /></div>
                                     )}
                                 </div>
 

@@ -32,21 +32,14 @@ interface Props {
 }
 
 const field =
-    'mt-2 w-full border-0 border-b bg-transparent px-0 pb-2 text-xs font-medium text-white placeholder:text-white/48 focus:outline-none focus:ring-0';
+    'mt-2 w-full border-0 border-b bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0';
 const fieldTone = (hasError: boolean) =>
-    hasError ? 'border-white/80' : 'border-white/42 focus:border-white/85';
-const label = 'block text-[10px] font-medium uppercase tracking-[0.18em] text-white/72';
+    hasError ? 'border-[#d8d0c7]' : 'border-[#d8d0c7] focus:border-[#d8d0c7]';
+const label = 'block text-[10px] font-medium uppercase tracking-[0.18em] text-[#2a1418]';
 
-/**
- * The shared Button, dressed for this screen.
- *
- * These sit on a dark overlay where the theme's own primary (brand wine) and
- * outline (white on grey) both disappear, so the palette is overridden while
- * the component keeps what it is there for — focus ring, disabled handling,
- * sizing, and one place to change a button.
- */
-const onDark =
-    'mt-7 h-11 w-full bg-white px-6 text-xs font-semibold uppercase tracking-[0.18em] text-[#111111] hover:bg-white/90';
+/** Compact primary action matching the storefront. */
+const primaryAction =
+    'mt-7 h-11 w-full kere-auth-submit bg-[#631e26] px-6 text-xs font-medium text-white hover:bg-[#c3a69a] hover:text-[#631e26]';
 
 /** The age on a given day, or null when the three parts are not yet a real date. */
 function ageFrom(day: string, month: string, year: string): number | null {
@@ -211,12 +204,12 @@ export function CustomerProfileSteps({ onDone }: Props) {
                 transition={{ duration: 0.5 }}
                 className="text-center"
             >
-                <MailCheck className="mx-auto mb-5 h-10 w-10 text-white" strokeWidth={1.4} />
-                <h2 className="font-serif text-[24px] font-medium text-white">{t('register.guardianSentTitle')}</h2>
-                <p className="mx-auto mt-3 max-w-[340px] text-xs leading-5 text-white/72">
+                <MailCheck className="mx-auto mb-5 h-10 w-10 text-[#2a1418]" strokeWidth={1.4} />
+                <h2 className="font-serif text-[24px] font-medium text-[#2a1418]">{t('register.guardianSentTitle')}</h2>
+                <p className="mx-auto mt-3 max-w-[340px] text-xs leading-5 text-[#2a1418]">
                     {t('register.guardianSentBody', { email: guardian.guardian_email })}
                 </p>
-                <Button type="button" onClick={onDone} className={onDark}>
+                <Button type="button" onClick={onDone} className={primaryAction}>
                     {t('register.guardianSentContinue')}
                 </Button>
             </motion.div>
@@ -231,7 +224,7 @@ export function CustomerProfileSteps({ onDone }: Props) {
             text: string,
             required: boolean,
         ) => (
-            <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-white/86">
+            <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-[#2a1418]">
                 <input
                     type="checkbox"
                     checked={consent[key]}
@@ -244,7 +237,7 @@ export function CustomerProfileSteps({ onDone }: Props) {
                 <span>
                     {text}
                     {!required && (
-                        <span className="ml-1 text-white/52">{t('register.optionalSuffix')}</span>
+                        <span className="ml-1 text-[#2a1418]">{t('register.optionalSuffix')}</span>
                     )}
                 </span>
             </label>
@@ -252,8 +245,8 @@ export function CustomerProfileSteps({ onDone }: Props) {
 
         return (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                <h2 className="font-serif text-[24px] font-medium text-white">{t('register.termsTitle')}</h2>
-                <p className="mt-2 text-xs leading-5 text-white/72">{t('register.termsSubtitle')}</p>
+                <h2 className="font-serif text-[24px] font-medium text-[#2a1418]">{t('register.termsTitle')}</h2>
+                <p className="mt-2 text-xs leading-5 text-[#2a1418]">{t('register.termsSubtitle')}</p>
 
                 <div className="mt-6 space-y-3.5">
                     {box('terms', t('register.consentTerms'), true)}
@@ -261,9 +254,9 @@ export function CustomerProfileSteps({ onDone }: Props) {
                     {box('marketing', t('register.consentMarketing'), false)}
                 </div>
 
-                {general && <p className="mt-4 text-xs text-white">{general}</p>}
+                {general && <p className="mt-4 text-xs text-[#2a1418]">{general}</p>}
 
-                <Button type="button" onClick={() => void submit()} disabled={loading} className={onDark}>
+                <Button type="button" onClick={() => void submit()} disabled={loading} className={primaryAction}>
                     {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                     {t('register.createAccount')}
                 </Button>
@@ -272,7 +265,7 @@ export function CustomerProfileSteps({ onDone }: Props) {
                     type="button"
                     variant="link"
                     onClick={() => setScreen('age')}
-                    className="mt-3 h-auto w-full text-[11px] text-white/62 hover:text-white"
+                    className="mt-3 h-auto w-full text-[11px] text-[#2a1418] hover:text-[#2a1418]"
                 >
                     {t('register.back')}
                 </Button>
@@ -284,8 +277,8 @@ export function CustomerProfileSteps({ onDone }: Props) {
 
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <h2 className="font-serif text-[24px] font-medium text-white">{t('register.ageTitle')}</h2>
-            <p className="mt-2 text-xs leading-5 text-white/72">{t('register.ageSubtitle')}</p>
+            <h2 className="font-serif text-[24px] font-medium text-[#2a1418]">{t('register.ageTitle')}</h2>
+            <p className="mt-2 text-xs leading-5 text-[#2a1418]">{t('register.ageSubtitle')}</p>
 
             <div className="mt-6 grid grid-cols-3 gap-3">
                 {([
@@ -308,11 +301,11 @@ export function CustomerProfileSteps({ onDone }: Props) {
                 ))}
             </div>
 
-            {errors.date_of_birth && <p className="mt-2 text-xs text-white">{errors.date_of_birth}</p>}
+            {errors.date_of_birth && <p className="mt-2 text-xs text-[#2a1418]">{errors.date_of_birth}</p>}
 
             {needsGuardian && (
-                <div className="mt-7 border-t border-white/20 pt-6">
-                    <p className="text-xs leading-5 text-white/86">{t('register.guardianIntro')}</p>
+                <div className="mt-7 border-t border-[#d8d0c7] pt-6">
+                    <p className="text-xs leading-5 text-[#2a1418]">{t('register.guardianIntro')}</p>
 
                     <div className="mt-5 space-y-5">
                         {([
@@ -330,7 +323,7 @@ export function CustomerProfileSteps({ onDone }: Props) {
                                     placeholder={name === 'guardian_phone' ? '+995555123456' : ''}
                                     className={`${field} ${fieldTone(Boolean(errors[name]))}`}
                                 />
-                                {errors[name] && <p className="mt-1.5 text-xs text-white">{errors[name]}</p>}
+                                {errors[name] && <p className="mt-1.5 text-xs text-[#2a1418]">{errors[name]}</p>}
                             </div>
                         ))}
 
@@ -349,7 +342,7 @@ export function CustomerProfileSteps({ onDone }: Props) {
                                 <option value="legal_guardian">{t('register.relationshipLegalGuardian')}</option>
                             </select>
                             {errors.guardian_relationship && (
-                                <p className="mt-1.5 text-xs text-white">{errors.guardian_relationship}</p>
+                                <p className="mt-1.5 text-xs text-[#2a1418]">{errors.guardian_relationship}</p>
                             )}
                         </div>
                     </div>
@@ -359,7 +352,7 @@ export function CustomerProfileSteps({ onDone }: Props) {
             <Button
                 type="button"
                 onClick={() => { if (validateAge()) setScreen('terms'); }}
-                className={onDark}
+                className={primaryAction}
             >
                 {t('register.continue')}
             </Button>

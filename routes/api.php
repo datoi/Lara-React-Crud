@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\SavedDesignController;
 use App\Http\Controllers\Api\SupportEmailController;
 use App\Http\Controllers\Api\TailorController;
 use App\Http\Controllers\Api\UploadController;
+use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
@@ -77,6 +78,7 @@ Route::middleware(['auth.bearer', 'throttle:60,1,api-reads'])->group(function ()
     // Chat reads
     Route::get('/orders/{orderId}/messages', [MessageController::class, 'index']);
     Route::get('/messages/counts', [MessageController::class, 'counts']);
+    Route::get('/wishlist', [WishlistController::class, 'index']);
 });
 
 // ─── Payments ─────────────────────────────────────────────────────────────────
@@ -123,6 +125,8 @@ Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function (
 
     // Chat writes
     Route::post('/orders/{orderId}/messages', [MessageController::class, 'store']);
+    Route::post('/wishlist/{product}', [WishlistController::class, 'store']);
+    Route::delete('/wishlist/{product}', [WishlistController::class, 'destroy']);
 });
 
 // ─── Customizer — Public ──────────────────────────────────────────────────────

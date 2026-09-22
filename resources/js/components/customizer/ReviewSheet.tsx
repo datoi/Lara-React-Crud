@@ -20,7 +20,7 @@ export default function ReviewSheet({ rows }: { rows: ReviewRow[] }) {
             {rows.map(row => (
                 <div
                     key={row.label}
-                    className="flex items-baseline justify-between gap-4 border-b border-[rgba(111,29,36,0.14)] px-0.5 py-[13px]"
+                    className="flex items-baseline justify-between gap-4 border-b border-black/15 px-0.5 py-3"
                 >
                     <span className="w-[9ch] flex-none text-[11px] uppercase tracking-[0.12em] text-[var(--kd-muted)]">
                         {row.label}
