@@ -19,7 +19,7 @@ import ReviewSheet, { type ReviewRow } from './ReviewSheet';
 import SaveDesignModal from './SaveDesignModal';
 import StagePanel from './StagePanel';
 import StepRail from './StepRail';
-import { ColorFigure, OptionTile, SpecList, TileGroup } from './WizardTiles';
+import { ColorFigure, OptionTile, TileGroup } from './WizardTiles';
 import { GarmentMark } from './GarmentIcons';
 import { depictsSelection } from './depicts';
 import { garmentColors } from './garmentColors';
@@ -277,21 +277,20 @@ export default function DesignerWizard({
     // ── Left column ─────────────────────────────────────────────────────────
 
     /**
-     * Attributes with something to decide become tiles; attributes the garment
-     * has exactly one of become facts.
+     * One row of tiles per attribute, including the ones the garment has only
+     * one of.
      *
      * The catalogue offers only what the photography can show, so an attribute
      * can arrive already settled — this tee is cropped and crew-necked in every
-     * frame that exists of it. Rendering that as a row containing one tile asks
-     * a question with one answer and reads like a half-loaded list, so it is
-     * stated underneath instead.
+     * frame that exists of it. It is still offered as a tile rather than stated
+     * as a fact, so every step reads the same way down and the cut the customer
+     * is on is the one they clicked. An attribute filtered down to nothing is
+     * dropped rather than left as a heading over an empty row.
      */
-    const attributeGroups = (attributes: LayerCategory[]) => {
-        const choices = attributes.filter(attribute => attribute.options.length > 1);
-        const settled = attributes.filter(attribute => attribute.options.length === 1);
-
-        return [
-            ...choices.map(attribute => (
+    const attributeGroups = (attributes: LayerCategory[]) =>
+        attributes
+            .filter(attribute => attribute.options.length > 0)
+            .map(attribute => (
                 <TileGroup key={attribute.id} label={attribute.name} value={optionName(attribute)}>
                     {attribute.options.map(option => (
                         <OptionTile
@@ -303,18 +302,7 @@ export default function DesignerWizard({
                         />
                     ))}
                 </TileGroup>
-            )),
-            <SpecList
-                key="settled"
-                label={t('designer.groupThisGarment')}
-                items={settled.map(attribute => ({
-                    id: attribute.id,
-                    name: attribute.name,
-                    value: attribute.options[0].name,
-                }))}
-            />,
-        ];
-    };
+            ));
 
     const stepContent = () => {
         // A garment named in the URL that will not load leaves every step after

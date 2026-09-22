@@ -609,6 +609,19 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-22] A settled attribute is offered, not stated
+
+**Every attribute is a row of tiles again, including the ones with a single option.** Filtering the catalogue to the photography collapses Fit, Length, Neckline and Back Design to one value each on the T-shirt, and those four were being stated as facts under "this garment" instead of offered. On the page that read as a step whose choices had failed to load, and it left the customer no way to confirm the cut by clicking it. They are tiles again — already selected, still clickable — so a step reads the same way the whole way down.
+
+- **Nothing unavailable came back.** The catalogue is still filtered to what the photographs cover; this changes how a settled attribute is drawn, not what is in it.
+- **A lone tile sits at one track width** rather than stretching the column: `auto-fill` in place of `auto-fit`, so it is the size of every other tile instead of a bar of its own kind. At phone width the track is the full column, as it is for every tile.
+- `SpecList` and `designer.groupThisGarment` are gone from the component and from both locales. A component kept for a case that no longer exists is the next person's puzzle.
+- An attribute filtered down to no options at all is dropped rather than drawn as a heading over an empty row.
+
+**Verified in a real browser** (headless Edge over CDP, Georgian, 1440px and 390px): Shape offers Fit → Body-Fitting and Length → Cropped as selected tiles that take a click, Details offers Neckline, Back Design and all eight sleeves, and no `<dl>` remains anywhere in the flow. The colour step is unchanged at 23 swatches in four columns. No horizontal scroll at 390px, no console errors, typecheck clean, locales in sync at 1512 keys.
+
+---
+
 ### [2026-09-22] The designer offers only what it can show
 
 **Bell and Balloon join the T-shirt.** Two more sleeve constructions arrived in the Fitted drop — Balloon in 23 colourways, Bell in 14 — taking the tee from six sleeves to eight and the derived set from 540 photographs to 688, every colourway of every sleeve carrying all four angles.
