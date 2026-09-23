@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,7 +13,7 @@ class WishlistController extends Controller
     public function index(Request $request): JsonResponse
     {
         $products = $request->user()->wishlistProducts()
-            ->with(['category', 'tailor'])
+            ->with(['category', 'tailor' => fn ($q) => $q->select(User::PUBLIC_TAILOR_COLUMNS)])
             ->withCount('reviews')
             ->withAvg('reviews', 'rating')
             ->orderByDesc('wishlist_items.created_at')

@@ -92,6 +92,33 @@ class User extends Authenticatable
     ];
 
     /**
+     * The only columns of a tailor a shopper is ever shown.
+     *
+     * A product carries its tailor, and the catalogue is public, so eager-loading
+     * the whole row publishes whatever the account happens to hold — which since
+     * the registration work is a phone number, a workspace address, a date of
+     * birth, and for a minor, a guardian's name and contact details. `$hidden`
+     * cannot help: these are fields the owner's own screens legitimately read.
+     *
+     * Selecting instead of hiding also means a column added to `users` later is
+     * private by default rather than public by accident.
+     *
+     * `first_name`/`last_name` are here because `getFullName()` reads them.
+     */
+    public const PUBLIC_TAILOR_COLUMNS = [
+        'id',
+        'name',
+        'first_name',
+        'last_name',
+        'bio',
+        'specialty',
+        'years_experience',
+        'profile_image',
+        'is_available',
+        'turnaround_days',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

@@ -1945,10 +1945,13 @@ select:focus,
   .partners-page #faq .mb-12 { margin-bottom: 28px; }
 }
 
-/* Actions size to their labels; form fields and disclosure rows retain their layout. */
+/* Actions size to their labels; form fields and disclosure rows retain their layout.
+   Matched on the button contract — `data-kere-button`, `.kere-button`, a submit —
+   never on brand colour. `bg-brand` is a fill, and selected tabs, filter chips and
+   designer tiles all wear it: keying CTA sizing off it collapsed whichever sibling
+   happened to be selected. */
 [data-kere-button]:not([data-size="icon"]),
 button[type="submit"],
-:is(button, a)[class~="bg-brand"],
 :is(button, a)[class~="bg-[#631e26]"],
 :is(button, a)[class~="bg-[#6F1D24]"],
 .kere-button,

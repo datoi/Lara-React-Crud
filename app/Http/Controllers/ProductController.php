@@ -15,7 +15,7 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'tailor'])
+        $query = Product::with(['category', 'tailor' => fn ($q) => $q->select(User::PUBLIC_TAILOR_COLUMNS)])
             ->withCount('reviews')
             ->withAvg('reviews', 'rating');
 
@@ -108,13 +108,13 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         $product->loadCount('reviews')->loadAvg('reviews', 'rating');
-        $product->load(['category', 'tailor']);
+        $product->load(['category', 'tailor' => fn ($q) => $q->select(User::PUBLIC_TAILOR_COLUMNS)]);
         $product->tailor_name    = $product->tailor?->getFullName();
         $product->reviews_count  = (int) $product->reviews_count;
         $product->average_rating = $product->reviews_avg_rating ? round((float) $product->reviews_avg_rating, 1) : null;
         unset($product->reviews_avg_rating);
 
-        $related = Product::with('tailor')
+        $related = Product::with(['tailor' => fn ($q) => $q->select(User::PUBLIC_TAILOR_COLUMNS)])
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->take(4)

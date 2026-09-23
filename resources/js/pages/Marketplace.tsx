@@ -537,7 +537,7 @@ export default function Marketplace() {
                                     initial={{ opacity: 0, y: 6, scale: 0.97 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 6, scale: 0.97 }}
-                                    transition={{ duration: 0.15 }}
+                                    transition={{ duration: 0.2 }}
                                     className="absolute top-full left-0 z-20 mt-2 max-h-[calc(100vh-130px)] w-[min(12rem,calc(100vw-1.5rem))] overflow-y-auto border border-[#111111]/15 bg-[#EEEAE0] p-2 shadow-lg"
                                 >
                                     {sortOptions.map((opt) => (
@@ -581,7 +581,7 @@ export default function Marketplace() {
                                                 initial={{ opacity: 0, y: 6 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: 6 }}
-                                                transition={{ duration: 0.15 }}
+                                                transition={{ duration: 0.2 }}
                                                 className="absolute top-full left-0 z-20 mt-2 max-h-[calc(100vh-130px)] w-[min(380px,calc(100vw-1.5rem))] overflow-y-auto border border-[#111111]/15 bg-[var(--store-paper)] px-6 py-6 shadow-[0_18px_48px_rgba(17,17,17,0.16)]"
                                             >
                                                 <h3 className="border-b border-[#111111]/15 pb-5 text-xl font-medium text-[#6c625b]">
