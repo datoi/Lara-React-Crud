@@ -609,6 +609,23 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-24] Merchant identity published, for Flitt's go-live review
+
+**What was done:** Flitt's support thread lists five things the site must carry before merchant 4057819 can be switched from test to real payments. Three of them were about who the merchant is, and the site did not say. It does now.
+
+- **`resources/js/data/company.ts`** holds the identification code, phone and email. They are facts rather than copy — the same digits in both locales — and a number that drifted between the footer and the terms would be worse than one that was missing. The legal name and the address genuinely differ by language and stay in `en.json` / `ka.json` as `company.legalName` and `company.address`. The email had been hardcoded in three places (`Footer`, `Contact`, and inside the `terms.s10b1` translation string); all three now read the constant, and `s10b1` takes `{{email}}`/`{{phone}}` by interpolation.
+- **A merchant details block on `/terms`** — registered name, identification code `406562376`, registered address, phone and email, as a labelled definition list above the numbered sections. This is what a card scheme actually asks for: a shopper has to be able to identify and reach the seller without going through their bank.
+- **Delivery terms where a reviewer will look.** They existed only in Help and the FAQ. Section 5 is now "Orders, Payments and Delivery" and carries three more clauses: that Flitt processes cards and Kere never receives them, the 7–14 business day build with 21 for complex work and delivery across Georgia, and that cost and timing are confirmed before production while refunds fall to the Refund Policy. Extending section 5 rather than inserting a new one avoids renumbering 6–10 in both locales.
+- **Contact and footer carry the details.** `/contact` gains a phone row beside the email, and its location row now shows the registered address rather than `contact.locationValue`, which was "Tbilisi, Georgia" — a city, not an address. That key is now unused and is deleted from both locales. The footer carries name, code, address, phone and email, so the answer to "who did I just pay" does not require opening a legal page.
+
+**Still Flitt's to give, not ours:** the VISA/MC marks are still the words `VISA` and `MC` in 10px text beside a generic card icon. Deliberately left that way — `main` auto-deploys to kereforyou.com, so committing `<img>` tags against files that do not exist yet would put broken images straight onto the site a reviewer is about to visit. The markup changes when the approved asset pack arrives.
+
+**Verified:** `tsc` clean, `eslint` 0 errors, `vite build` clean, locales in sync at 1562 keys each with no orphans, and every new string confirmed present in the built bundle in both languages. No hardcoded email or phone number remains anywhere in `resources/js` outside `data/company.ts`. **Not verified:** no browser pass — the merchant block's layout at 390px in particular wants an eye.
+
+**Noticed while editing the locale files:** `quickBuy` and `applyFilters` were each declared twice under `marketplace` in both `en.json` and `ka.json`. JSON parsing keeps the last, so the earlier pair had never rendered — in `ka.json` they held different text, so the dead one was visibly wrong copy. Both duplicates are gone and the rendered value is unchanged. A stray `},` at column 0 closing `productDetails` is also indented properly now.
+
+---
+
 ### [2026-09-23] A step with nothing to choose is not a step
 
 **What was done:** The wizard now shows only the steps a garment actually asks. `ad316aa` derived availability from photography, which left the women's T-shirt with one fit and one length — so step 02 was a page the customer could only agree with, and the five-step flow was wearing steps it no longer had questions for. A step is dropped when nothing on it can be chosen.

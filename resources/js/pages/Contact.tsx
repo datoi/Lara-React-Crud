@@ -3,8 +3,9 @@ import { motion } from 'motion/react';
 import { Navigation } from '../components/landing/Navigation';
 import { Footer } from '../components/landing/Footer';
 import { EmailSupportModal } from '../components/EmailSupportModal';
-import { MapPin, Mail, Clock, Send, CheckCircle } from 'lucide-react';
+import { MapPin, Mail, Phone, Clock, Send, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { COMPANY_EMAIL, COMPANY_PHONE, COMPANY_PHONE_HREF } from '../data/company';
 
 export default function Contact() {
     const { t } = useTranslation();
@@ -54,8 +55,8 @@ export default function Contact() {
                                     </div>
                                     <div>
                                         <p className="font-medium text-slate-900">{t('contact.emailLabel')}</p>
-                                        <a href="mailto:kereforyou@gmail.com" className="text-slate-500 hover:text-slate-700 transition-colors text-sm">
-                                            kereforyou@gmail.com
+                                        <a href={`mailto:${COMPANY_EMAIL}`} className="text-slate-500 hover:text-slate-700 transition-colors text-sm">
+                                            {COMPANY_EMAIL}
                                         </a>
                                         <button
                                             onClick={() => setSupportOpen(true)}
@@ -71,7 +72,18 @@ export default function Contact() {
                                     </div>
                                     <div>
                                         <p className="font-medium text-slate-900">{t('contact.locationLabel')}</p>
-                                        <p className="text-slate-500 text-sm">{t('contact.locationValue')}</p>
+                                        <p className="text-slate-500 text-sm">{t('company.address')}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-4">
+                                    <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <Phone className="w-5 h-5 text-slate-700" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-slate-900">{t('company.phoneLabel')}</p>
+                                        <a href={`tel:${COMPANY_PHONE_HREF}`} className="text-slate-500 hover:text-slate-700 transition-colors text-sm">
+                                            {COMPANY_PHONE}
+                                        </a>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">

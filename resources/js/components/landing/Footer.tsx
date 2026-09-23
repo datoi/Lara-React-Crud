@@ -4,6 +4,7 @@ import { ChevronDown, CreditCard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
 import { EmailSupportModal } from '../EmailSupportModal';
+import { COMPANY_EMAIL, COMPANY_ID_CODE, COMPANY_PHONE, COMPANY_PHONE_HREF } from '../../data/company';
 
 type FooterLink =
     | { label: string; type: 'router'; to: string }
@@ -89,10 +90,19 @@ export function Footer() {
                                 {t('footer.tagline')}
                             </p>
 
+                            {/* The registered name, code and address are here as
+                                well as in the terms: a shopper looking for who
+                                they actually paid should not have to open a
+                                legal page to find out. */}
                             <div className="mt-5 flex flex-col gap-2 text-xs uppercase tracking-[0.02em] text-black/55">
-                                <span>{t('footer.location')}</span>
-                                <a href="mailto:kereforyou@gmail.com" className="w-fit transition-opacity hover:opacity-45">
-                                    kereforyou@gmail.com
+                                <span>{t('company.legalName')}</span>
+                                <span>{t('company.idCodeLabel')} {COMPANY_ID_CODE}</span>
+                                <span className="normal-case">{t('company.address')}</span>
+                                <a href={`tel:${COMPANY_PHONE_HREF}`} className="w-fit transition-opacity hover:opacity-45">
+                                    {COMPANY_PHONE}
+                                </a>
+                                <a href={`mailto:${COMPANY_EMAIL}`} className="w-fit normal-case transition-opacity hover:opacity-45">
+                                    {COMPANY_EMAIL}
                                 </a>
                             </div>
                         </div>

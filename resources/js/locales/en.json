@@ -14,7 +14,7 @@
         "fit": "Fit & sizing",
         "buildOutfit": "Build your outfit",
         "writeReview": "Review your purchases"
-},
+    },
     "nav": {
         "howItWorks": "How it works",
         "categories": "Categories",
@@ -423,7 +423,6 @@
         "emailLabel": "Email",
         "openEmailSupport": "Open Email Support",
         "locationLabel": "Location",
-        "locationValue": "Tbilisi, Georgia",
         "responseTimeLabel": "Response Time",
         "responseTimeValue": "We reply within 24 hours on business days.",
         "nameLabel": "Name",
@@ -664,7 +663,6 @@
         "availableColours": "Available colours",
         "title": "Marketplace",
         "allClothing": "All Clothing",
-        "quickBuy": "Quick buy",
         "subtitle": "Browse designs from local Georgian tailors",
         "createCustomDesign": "Create Custom Design",
         "uploadBannerTitle": "Have your own design? Upload it",
@@ -689,7 +687,6 @@
         "maxPrice": "Max Price:",
         "maxPriceAny": "Any",
         "clearFilters": "Clear",
-        "applyFilters": "Apply",
         "clearAll": "Clear all",
         "showingOne": "Showing 1 design",
         "showingMany": "Showing {{n}} designs",
@@ -1131,7 +1128,7 @@
         "s4b1": "Tailors must complete orders to the specifications agreed with the customer.",
         "s4b2": "Tailors must keep their availability status accurate on the platform.",
         "s4b3": "Tailors are responsible for the quality and timely delivery of their work.",
-        "s5Title": "5. Orders and Payments",
+        "s5Title": "5. Orders, Payments and Delivery",
         "s5b1": "Orders are binding once confirmed by both the customer and the assigned tailor.",
         "s5b2": "Pricing is set by individual tailors and displayed clearly before order confirmation.",
         "s5b3": "Kere reserves the right to hold or refund payments in the event of a dispute.",
@@ -1149,7 +1146,10 @@
         "s9b1": "These terms are governed by the laws of Georgia.",
         "s9b2": "Disputes shall be resolved in the courts of Tbilisi, Georgia.",
         "s10Title": "10. Contact",
-        "s10b1": "For questions about these terms, contact: kereforyou@gmail.com"
+        "s10b1": "For questions about these terms, contact us at {{email}} or {{phone}}.",
+        "s5b4": "Card payments are processed by Flitt (flitt.com). Kere does not receive or store your card details.",
+        "s5b5": "Garments are made to measure and delivered across Georgia. Most orders are completed within 7–14 business days; more complex work may take up to 21.",
+        "s5b6": "Delivery cost and timing are confirmed with you before production begins. Returns and refunds are governed by our Refund Policy."
     },
     "privacy": {
         "eyebrow": "Legal",
@@ -1671,5 +1671,16 @@
         "menu": "Navigation",
         "skip": "Skip to content",
         "imageUnavailable": "Image unavailable"
+    },
+    "company": {
+        "merchantTitle": "Merchant details",
+        "merchantIntro": "kereforyou.com is operated by the company named below. These details are published so you can identify and contact us directly about any order or payment.",
+        "legalNameLabel": "Registered name",
+        "legalName": "KereForYou LLC",
+        "idCodeLabel": "Identification code",
+        "addressLabel": "Registered address",
+        "address": "Nakaduli Street, 2nd Lane 92, Tbilisi, Georgia",
+        "phoneLabel": "Phone",
+        "emailLabel": "Email"
     }
 }
