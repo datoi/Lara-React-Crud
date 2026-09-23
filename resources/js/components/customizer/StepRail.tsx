@@ -3,6 +3,14 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
 export interface RailStep {
+    /**
+     * The step's number in the wizard.
+     *
+     * Carried explicitly because the rail is given only the steps this garment
+     * actually asks — a garment the catalogue has no shape options for skips 02
+     * — so a step's position in this list is not its position in the flow.
+     */
+    index: number;
     /** i18n key for the step's short name */
     tKey: string;
     /** True once the customer may jump here — earlier steps, and the one they are on */
@@ -26,6 +34,9 @@ interface StepRailProps {
  */
 export default function StepRail({ steps, step, onStep, onExit }: StepRailProps) {
     const { t } = useTranslation();
+    // How far down the rail the customer is, counted in the steps they are being
+    // shown rather than in the wizard's own numbering.
+    const position = Math.max(steps.findIndex(railStep => railStep.index === step), 0);
 
     return (
         <div className="designer-rail sticky top-0 z-20 flex shrink-0 flex-row items-center gap-1 border-b border-white/15 bg-brand px-3 py-2 min-[900px]:h-screen min-[900px]:w-[118px] min-[900px]:flex-col min-[900px]:items-stretch min-[900px]:gap-1 min-[900px]:overflow-visible min-[900px]:border-b-0 min-[900px]:border-r min-[900px]:px-0 min-[900px]:py-0">
@@ -40,18 +51,18 @@ export default function StepRail({ steps, step, onStep, onExit }: StepRailProps)
             <div className="pointer-events-none absolute bottom-[88px] left-[28px] top-[112px] hidden w-px bg-white/30 min-[900px]:block">
                 <span
                     className="absolute left-0 top-0 w-px bg-white transition-[height] duration-500"
-                    style={{ height: `${(step / Math.max(steps.length - 1, 1)) * 100}%` }}
+                    style={{ height: `${(position / Math.max(steps.length - 1, 1)) * 100}%` }}
                 />
             </div>
 
             <div className="flex min-w-0 flex-1 flex-row gap-1 overflow-hidden px-1 min-[900px]:mt-10 min-[900px]:flex-col min-[900px]:justify-between min-[900px]:gap-0 min-[900px]:overflow-visible min-[900px]:px-0 min-[900px]:pb-[76px]">
                 {steps.map((railStep, i) => {
-                    const isActive = i === step;
+                    const isActive = railStep.index === step;
                     return (
                         <button
                             key={railStep.tKey}
                             type="button"
-                            onClick={() => onStep(i)}
+                            onClick={() => onStep(railStep.index)}
                             disabled={!railStep.reachable}
                             aria-current={isActive ? 'step' : undefined}
                             className={[
@@ -62,7 +73,7 @@ export default function StepRail({ steps, step, onStep, onExit }: StepRailProps)
                                 railStep.reachable ? 'cursor-pointer hover:text-[var(--kd-rail-text)]' : 'cursor-not-allowed',
                             ].join(' ')}
                         >
-                            <span className={`h-px min-w-0 flex-1 transition-colors duration-300 min-[900px]:relative min-[900px]:z-10 min-[900px]:h-3 min-[900px]:w-3 min-[900px]:flex-none min-[900px]:rounded-full min-[900px]:ring-2 min-[900px]:ring-brand ${i <= step ? 'bg-white min-[900px]:ring-white' : 'bg-white/25 min-[900px]:ring-white/30'}`} />
+                            <span className={`h-px min-w-0 flex-1 transition-colors duration-300 min-[900px]:relative min-[900px]:z-10 min-[900px]:h-3 min-[900px]:w-3 min-[900px]:flex-none min-[900px]:rounded-full min-[900px]:ring-2 min-[900px]:ring-brand ${i <= position ? 'bg-white min-[900px]:ring-white' : 'bg-white/25 min-[900px]:ring-white/30'}`} />
                             <span className={`hidden min-w-0 text-[9px] leading-tight tracking-[0.01em] [overflow-wrap:anywhere] min-[900px]:inline ${isActive ? 'text-white' : ''}`}>{t(railStep.tKey)}</span>
                         </button>
                     );

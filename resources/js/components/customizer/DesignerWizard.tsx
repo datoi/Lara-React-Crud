@@ -69,6 +69,41 @@ const STEP_REVIEW  = 4;
  */
 const SHAPE_SLUGS = new Set(['fit', 'length', 'silhouette', 'rise', 'waist']);
 
+/**
+ * Which of the five steps this garment still asks the customer something.
+ *
+ * The catalogue offers only what the photography can show, so a garment can
+ * reach a step where every attribute has already come down to one answer — this
+ * tee is cropped and crew-necked in every frame that exists of it. One tile is
+ * not a choice, and a step of them is a page the customer can only agree with,
+ * so the step is dropped and the flow runs as long as the garment is actually
+ * complicated. A T-shirt loses 02; a men's tee that comes in one cut loses 02
+ * and 03 and is honestly three steps long.
+ *
+ * A settled attribute is not lost by this. `useCustomizer` defaults every
+ * attribute to its `is_default` option, so the configuration is complete whether
+ * or not the step was shown, and the review names every attribute before the
+ * customer orders. What `1f773ea` settled is untouched: a lone attribute sitting
+ * beside a real question is still offered as a tile rather than stated as a
+ * fact. It is only when nothing on a step can be chosen that the step goes.
+ *
+ * The garment and the review always ask something, so both always stand.
+ */
+function liveStepsFor(layerCategories: LayerCategory[], colorCount: number, fabricCount: number): number[] {
+    const offersChoice = (attributes: LayerCategory[]) => attributes.some(a => a.options.length > 1);
+    const shape  = layerCategories.filter(c => SHAPE_SLUGS.has(c.slug));
+    const detail = layerCategories.filter(c => !SHAPE_SLUGS.has(c.slug) && c.slug !== 'collar');
+
+    return STEP_KEYS.map((_, i) => i).filter(i => {
+        if (i === STEP_SHAPE)   return offersChoice(shape);
+        if (i === STEP_DETAILS) return offersChoice(detail);
+        // Colours take the step whenever there are any, so it is the list that
+        // actually renders which has to hold more than one tile.
+        if (i === STEP_FABRIC)  return (colorCount > 0 ? colorCount : fabricCount) > 1;
+        return true;
+    });
+}
+
 interface DesignerWizardProps {
     section: Section;
     /** The heading being browsed, once the customer has picked one */
@@ -255,20 +290,47 @@ export default function DesignerWizard({
 
     // ── Step plumbing ───────────────────────────────────────────────────────
 
-    const railSteps = STEP_KEYS.map((tKey, i) => ({
-        tKey,
+    // Until a garment is loaded there is no catalogue to judge the later steps
+    // by, so the rail shows the whole flow rather than briefly hiding steps the
+    // garment is about to turn out to have.
+    const liveSteps = useMemo(
+        () => product === null
+            ? STEP_KEYS.map((_, i) => i)
+            : liveStepsFor(layerCategories, colors.length, fabrics.length),
+        [product, layerCategories, colors.length, fabrics.length],
+    );
+
+    const railSteps = liveSteps.map(index => ({
+        index,
+        tKey: STEP_KEYS[index],
         // The garment gates everything after it: there is nothing to shape or
         // detail until the customer has said what they are making.
-        reachable: i === STEP_GARMENT || product !== null,
+        reachable: index === STEP_GARMENT || product !== null,
     }));
+
+    const continueTo = liveSteps.find(index => index > step) ?? null;
+    const backTo = [...liveSteps].reverse().find(index => index < step) ?? null;
+
+    // A garment named in the URL lands the customer on 02, and swapping garments
+    // can settle the step they are already standing on. Either way, walk them to
+    // the next real question rather than leaving them on a column with nothing
+    // in it.
+    useEffect(() => {
+        if (liveSteps.includes(step)) return;
+        const target = liveSteps.find(index => index > step)
+            ?? [...liveSteps].reverse().find(index => index < step);
+        if (target !== undefined) onStep(target);
+    }, [liveSteps, step, onStep]);
 
     // Nothing downstream works without a loaded garment — a Continue that walks
     // to an empty review and an inert CTA is worse than a disabled button.
     const canAdvance = product !== null;
 
+    // Nothing after this step means this is the review, and Continue becomes the
+    // order rather than a walk to a step that is not there.
     const advance = () => {
-        if (step === STEP_REVIEW) { onOrder(getConfiguration(), totalPrice); return; }
-        onStep(step + 1);
+        if (continueTo === null) { onOrder(getConfiguration(), totalPrice); return; }
+        onStep(continueTo);
     };
 
     const stageEyebrow = step === STEP_GARMENT
@@ -604,11 +666,11 @@ export default function DesignerWizard({
                     </span>
                 )}
 
-                {step > STEP_GARMENT && (
+                {backTo !== null && (
                     <Button
                         variant="outline"
                         size="default"
-                        onClick={() => onStep(step - 1)}
+                        onClick={() => onStep(backTo)}
                         className="h-10 rounded-none border-[var(--kd-hairline)] bg-transparent px-4 text-xs font-medium text-[var(--kd-ink)] hover:border-brand hover:bg-transparent min-[900px]:h-11 min-[900px]:px-5 min-[900px]:text-sm"
                     >
                         <ArrowLeft className="h-4 w-4" />
@@ -623,9 +685,9 @@ export default function DesignerWizard({
                     onClick={advance}
                     className="h-10 rounded-none bg-brand px-4 text-xs font-medium text-white hover:bg-brand-dark min-[900px]:h-11 min-[900px]:px-5 min-[900px]:text-sm"
                 >
-                    {step === STEP_REVIEW
+                    {continueTo === null
                         ? t('designer.chooseTailor')
-                        : t('designer.continueTo', { step: t(STEP_KEYS[step + 1]) })}
+                        : t('designer.continueTo', { step: t(STEP_KEYS[continueTo]) })}
                     <ArrowRight className="h-4 w-4" />
                 </Button>
             </div>

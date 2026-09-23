@@ -609,6 +609,20 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-23] A step with nothing to choose is not a step
+
+**What was done:** The wizard now shows only the steps a garment actually asks. `ad316aa` derived availability from photography, which left the women's T-shirt with one fit and one length — so step 02 was a page the customer could only agree with, and the five-step flow was wearing steps it no longer had questions for. A step is dropped when nothing on it can be chosen.
+
+- **"Nothing to choose" means no real choice, not no options.** `1f773ea` deliberately offers a settled attribute as a tile rather than stating it as a fact, and that stands: a lone attribute sitting beside a genuine question still renders as the tile the customer is on. The test is per *step* — `liveStepsFor()` keeps 02 and 03 only while some attribute there has more than one option, and keeps 04 only while the list it actually renders (colours when there are any, otherwise fabrics) holds more than one tile. 01 and 05 always ask something and always stand.
+- **Nothing is lost by skipping.** `useCustomizer` already defaults every attribute to its `is_default` option, so the configuration is complete whether or not the step was shown, and the review sheet names every attribute before the customer orders. A settled attribute is confirmed at review rather than asked about twice.
+- **`RailStep` carries its `index`.** The rail used a step's position in the array as its number in the flow, which stops being true the moment the array is sparse. It now carries the index explicitly; the progress line measures position within the steps being shown, so it still fills end to end.
+- **Navigation follows the skips.** Continue and Back move to the next and previous live step rather than `step ± 1`, and Continue names the step it will actually reach. An effect walks the customer off a step that has gone — which is a real case, not a defensive one: `DesignerApp` lands on 02 when a garment is named in the URL, and swapping garments can settle the step already underfoot.
+- **Derived, not duplicated.** `liveStepsFor()` is a module-level pure function over `(layerCategories, colorCount, fabricCount)`, memoised in the component, so render and the repositioning effect read the same answer and the effect's dependency list is honest — no `exhaustive-deps` suppression.
+
+**Verified against the live catalogue**, driving `/api/customizer/products/{slug}` for every garment and running the predicate over the real payloads: T-shirt `fit(1) length(1)` → 02 dropped, `neckline(1) back-design(1) sleeves(8)` → 03 kept with the two settled attributes still shown beside the sleeve choice, giving 4 steps. Men's Short-Sleeve Tee, Sleeveless Tank and all four trousers carry one style option and no shape attributes → 02 and 03 both dropped, giving an honest 3 steps of garment, colour, review. Every garment keeps a colour step (8–24 colours), so nothing collapses past three. `tsc` clean, `eslint` 0 errors, `vite build` clean, `php artisan test` 88/88. **Not verified:** the project has no frontend test runner and no browser automation here, so this is the logic exercised against real API data, not the rendered component — the rail's progress line and the repositioning still want an eyeball.
+
+---
+
 ### [2026-09-22] Mariami's storefront redesign, imported without its removals
 
 **What was done:** Took the design pass from `origin/mariam-changes` (79 files, ~4.4k lines of churn) onto `main` under one rule: import the design, keep every function it would have removed, accept the functions it adds. Her branch forked at `273ba0a`, three commits behind `main`, so a straight merge would also have reverted the newest customizer work.
