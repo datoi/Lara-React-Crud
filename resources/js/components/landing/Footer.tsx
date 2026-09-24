@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { ChevronDown, CreditCard } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
 import { EmailSupportModal } from '../EmailSupportModal';
@@ -159,11 +159,13 @@ export function Footer() {
 
                         <div className="text-left sm:text-right">
                             <p className="text-xl uppercase tracking-normal lg:text-2xl">#MADE FOR YOU</p>
-                            <div className="mt-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.08em] text-black/45 sm:justify-end">
+                            <div className="mt-2 flex items-center gap-2.5 text-[10px] uppercase tracking-[0.08em] text-black/45 sm:justify-end">
                                 <span>{t('footer.weAccept')}</span>
-                                <CreditCard className="h-3.5 w-3.5" />
-                                <span>VISA</span>
-                                <span>MC</span>
+                                {/* The marks are cut out against the footer's own
+                                    background, so they carry no plate of their own.
+                                    Served at 2x the rendered height to stay sharp. */}
+                                <img src="/assets/payment/visa.png" alt="Visa" width={198} height={64} loading="lazy" className="h-5 w-auto" />
+                                <img src="/assets/payment/mastercard.png" alt="Mastercard" width={106} height={64} loading="lazy" className="h-5 w-auto" />
                             </div>
                         </div>
                     </div>
