@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { Eye, EyeOff, Loader2, Mail, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Mail, Smartphone, CheckCircle2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { PhoneInput } from '../components/PhoneInput';
 import { OtpStep } from '../components/OtpStep';
@@ -20,9 +20,12 @@ interface FormState {
     phone: string;
     password: string;
     password_confirmation: string;
+    verify_via: VerifyChannel;
 }
 
-type Step = 'form' | 'email-otp' | 'profile';
+type VerifyChannel = 'email' | 'phone';
+
+type Step = 'form' | 'verify' | 'profile';
 
 const EMPTY: FormState = {
     first_name: '',
@@ -31,6 +34,7 @@ const EMPTY: FormState = {
     phone: '',
     password: '',
     password_confirmation: '',
+    verify_via: 'email',
 };
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -47,7 +51,9 @@ export default function RegisterCustomer() {
     const [submitting, setSubmitting]     = useState(false);
 
     const [verificationId, setVerificationId] = useState('');
-    const [emailHint, setEmailHint]           = useState('');
+    // Where the server says it sent the code, not what the form asked for, so
+    // the verify step can never describe a channel that was not used.
+    const [sentTo, setSentTo] = useState<{ channel: VerifyChannel; hint: string }>({ channel: 'email', hint: '' });
 
     const setField = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm(f => ({ ...f, [field]: e.target.value }));
@@ -101,8 +107,10 @@ export default function RegisterCustomer() {
             }
 
             setVerificationId(data.verification_id);
-            setEmailHint(data.email ?? form.email);
-            setStep('email-otp');
+            setSentTo(data.channel === 'phone'
+                ? { channel: 'phone', hint: data.phone }
+                : { channel: 'email', hint: data.email });
+            setStep('verify');
         } catch {
             setFormErrors({ general: t('register.errorNetwork') });
         } finally {
@@ -197,6 +205,33 @@ export default function RegisterCustomer() {
                                             {formErrors.phone && <p className="mt-2 text-[10px] font-medium text-[#2a1418]">{formErrors.phone}</p>}
                                         </div>
 
+                                        <fieldset>
+                                            <legend className="block text-[10px] font-semibold leading-none text-[#2a1418]">{t('register.verifyViaLabel')}</legend>
+                                            <div className="mt-3 grid grid-cols-2 gap-3">
+                                                {(['email', 'phone'] as const).map(channel => {
+                                                    const Icon = channel === 'email' ? Mail : Smartphone;
+                                                    return (
+                                                        <label
+                                                            key={channel}
+                                                            className="flex min-h-10 cursor-pointer items-center justify-center gap-2 border border-[#d8d0c7] px-3 text-xs font-medium text-[#2a1418] transition-colors hover:border-brand has-[:checked]:border-brand has-[:checked]:bg-brand has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand has-[:focus-visible]:ring-offset-2"
+                                                        >
+                                                            <input
+                                                                type="radio"
+                                                                name="verify_via"
+                                                                value={channel}
+                                                                checked={form.verify_via === channel}
+                                                                onChange={() => setForm(f => ({ ...f, verify_via: channel }))}
+                                                                className="sr-only"
+                                                            />
+                                                            <Icon className="h-3.5 w-3.5" />
+                                                            {t(channel === 'email' ? 'register.verifyViaEmail' : 'register.verifyViaPhone')}
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
+                                            <p className="mt-2 text-[10px] leading-4 text-[#8a8179]">{t('register.verifyViaNote')}</p>
+                                        </fieldset>
+
                                         <div>
                                             <label className="block text-[10px] font-semibold leading-none text-[#2a1418]">{t('register.password')}</label>
                                             <div className="relative">
@@ -250,9 +285,9 @@ export default function RegisterCustomer() {
                             </motion.div>
                         )}
 
-                        {step === 'email-otp' && (
+                        {step === 'verify' && (
                             <motion.div
-                                key="email-otp"
+                                key="verify"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -20 }}
@@ -261,12 +296,16 @@ export default function RegisterCustomer() {
                             >
                                 <StepProgress current={2} />
                                 <OtpStep
-                                    icon={<Mail className="h-6 w-6 text-[#2a1418]" />}
-                                    title={t('register.verifyEmailTitle')}
-                                    description={t('register.verifyEmailDesc', { email: emailHint })}
+                                    icon={sentTo.channel === 'phone'
+                                        ? <Smartphone className="h-6 w-6 text-[#2a1418]" />
+                                        : <Mail className="h-6 w-6 text-[#2a1418]" />}
+                                    title={t(sentTo.channel === 'phone' ? 'register.verifyPhoneTitle' : 'register.verifyEmailTitle')}
+                                    description={sentTo.channel === 'phone'
+                                        ? t('register.verifyPhoneDesc', { phone: sentTo.hint })
+                                        : t('register.verifyEmailDesc', { email: sentTo.hint })}
                                     verificationId={verificationId}
-                                    otpType="email"
-                                    endpoint="/api/register/verify-email"
+                                    otpType={sentTo.channel}
+                                    endpoint={sentTo.channel === 'phone' ? '/api/register/verify-phone' : '/api/register/verify-email'}
                                     onSuccess={(data) => {
                                         // The account exists now, but the spec asks for
                                         // age and the terms after verification — so sign in
@@ -306,7 +345,7 @@ function StepProgress({ current }: { current: 1 | 2 | 3 | 4 }) {
     const { t } = useTranslation();
     const steps = [
         { n: 1, label: t('register.stepDetails') },
-        { n: 2, label: t('register.stepEmail') },
+        { n: 2, label: t('register.stepVerify') },
         { n: 3, label: t('register.stepAge') },
         { n: 4, label: t('register.stepTerms') },
     ];

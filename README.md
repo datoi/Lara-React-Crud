@@ -609,6 +609,25 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-24] Customers choose how to verify: email or SMS
+
+**What was done:** A customer registering now picks where their verification code goes, email or SMS. Email is still mandatory either way, because it is the only channel a customer is reached on afterwards. The phone number is used for that one code and nothing else.
+
+- **API:** `POST /api/register/initiate` takes `verify_via: "email" | "phone"`. It is required for customers and excluded for tailors, who still always verify by SMS. The response's existing `channel` field says which one was used. Nothing else in the contract changed.
+- **The chosen channel is the only channel.** `register/resend` refuses a `type` whose code was never issued (422). Without that, a phone-verified registration could have been switched to email halfway through, or the other way round. No schema change: the channel is whichever of `otp_email` / `otp_phone` is set.
+- **"Everything else by email" already held.** Customer notifications go by email; the one SMS fallback, in `TailorRequestReceived`, fires only for a customer with no email, and that can no longer happen.
+- **UI:** an email / SMS radio group under the phone field, with a line saying the phone is used only for this code. It is a real radio group, not a pair of `<Button>`s: the site-wide button rules turn every `outline` Button into an underlined text link, so a selected option could not be told apart. It follows the filter-rail chips (hairline border, filled `bg-brand` when selected), and arrow keys work natively. The verify step shows the channel the server reports, not the one the form asked for. Step 2 of the progress bar is now "Verification", not "Email".
+
+**Fixed along the way: a tailor who filled in the optional email could not finish registering.** `verify-phone` and phone `resend` both rejected any registration with an email until that email was verified ("Email not yet verified." / "Verify your email first."). Those checks were left over from an email-then-SMS flow that no longer exists, and nothing sets `email_verified_at` any more. So the SMS arrived and the correct code was then refused. Both checks are gone, and phone `resend` now resets `phone_attempts` the way email resend already resets `email_attempts`.
+
+**Also:** `phpunit.xml` sets `SMSOFFICE_KEY` to empty. The suite had been inheriting the real key from `.env`, so every test that registered a tailor sent a real request to the SMS gateway.
+
+**Verified:** 7 new feature tests (both channels, the mandatory email, no channel switching on verify or resend, the tailor regression), full suite 95 passed. `tsc` clean, locales in sync. In headless Chrome against `artisan serve` (with SMS and mail sent to the log), the SMS path was run end to end: choose SMS, masked number shown, code read from the SMS log, entered, signed in and on the age step, no console errors. The radio group was checked at 390px and 1280px in both languages, with keyboard arrows switching the choice. The email path was covered by the tests but not clicked through in the browser.
+
+**Production note:** the SMSOffice.ge balance read `0` today. Until it is topped up, every SMS is rejected, which now includes customers who choose SMS. The rejection is logged but not shown to the user, who is told a code was sent.
+
+---
+
 ### [2026-09-24] Merchant identity published, for Flitt's go-live review
 
 **What was done:** Flitt's support thread lists five things the site must carry before merchant 4057819 can be switched from test to real payments. Three of them were about who the merchant is, and the site did not say. It does now.

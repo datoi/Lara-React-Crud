@@ -98,9 +98,11 @@ class AuthController extends Controller
     /**
      * POST /api/register/initiate
      * Validates form data, creates a verification record, sends an OTP.
-     * Customers verify by email; tailors may register without an email,
-     * in which case the OTP goes to their phone via SMS.
-     * Body: { first_name, last_name, email?, phone, password, password_confirmation, role }
+     * Tailors always verify by SMS. Customers give both an email and a phone
+     * and choose which one receives the code; either way, everything after
+     * registration reaches a customer by email, so the phone is only ever
+     * used for this one code.
+     * Body: { first_name, last_name, email?, phone, password, password_confirmation, role, verify_via? }
      * Tailors additionally send business_type, workspace_address, experience_band,
      * legal_status, national_id and the three consent boxes.
      */
@@ -115,6 +117,7 @@ class AuthController extends Controller
             // is not the only thing that can post to this endpoint.
             'password' => ['required', 'confirmed', Password::min(8)->numbers()],
             'role' => ['required', 'in:customer,tailor'],
+            'verify_via' => ['exclude_unless:role,customer', 'required', 'in:email,phone'],
 
             // Tailors answer for their trade as well as themselves. Every rule
             // is required_if so a customer signing up is unaffected, and the
@@ -148,8 +151,8 @@ class AuthController extends Controller
 
         $email = $data['email'] ?? null;
         // Tailors always verify by phone (their primary identity), even when they
-        // also provide an email; customers verify by email.
-        $viaSms = $email === null || $data['role'] === 'tailor';
+        // also provide an email; customers verify by whichever they chose.
+        $viaSms = $data['role'] === 'tailor' || $data['verify_via'] === 'phone';
 
         // Delete any previous incomplete verification for this email/phone
         if ($email) {
@@ -291,10 +294,6 @@ class AuthController extends Controller
             return response()->json(['message' => 'Session expired. Please start over.'], 410);
         }
 
-        if ($record->email && ! $record->email_verified_at) {
-            return response()->json(['message' => 'Email not yet verified.'], 422);
-        }
-
         if ($record->phone_attempts >= 5) {
             $record->delete();
 
@@ -353,8 +352,12 @@ class AuthController extends Controller
             return response()->json(['message' => 'Session expired. Please start over.'], 410);
         }
 
-        $countField = "otp_{$data['type']}_resend_count";
-        // Map to actual column names
+        // A code is only ever resent where the first one went — registration
+        // chose the channel, and resend must not be a way to switch it.
+        if ($record->{"otp_{$data['type']}"} === null) {
+            return response()->json(['message' => 'This registration is not verified that way.'], 422);
+        }
+
         $resendCountCol = $data['type'] === 'email' ? 'email_resend_count' : 'phone_resend_count';
 
         if ($record->$resendCountCol >= 3) {
@@ -366,9 +369,6 @@ class AuthController extends Controller
         $reg = $record->registration_data;
 
         if ($data['type'] === 'email') {
-            if (! $record->email) {
-                return response()->json(['message' => 'This registration has no email.'], 422);
-            }
             $record->update([
                 'otp_email' => $otp,
                 'email_attempts' => 0,
@@ -380,10 +380,11 @@ class AuthController extends Controller
                 Log::error('OTP resend email failed: '.$e->getMessage());
             }
         } else {
-            if ($record->email && ! $record->email_verified_at) {
-                return response()->json(['message' => 'Verify your email first.'], 422);
-            }
-            $record->update(['otp_phone' => $otp, 'phone_resend_count' => $record->phone_resend_count + 1]);
+            $record->update([
+                'otp_phone' => $otp,
+                'phone_attempts' => 0,
+                'phone_resend_count' => $record->phone_resend_count + 1,
+            ]);
             try {
                 $service->sendSms($record->phone, $otp);
             } catch (\Exception $e) {

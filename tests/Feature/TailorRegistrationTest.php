@@ -64,6 +64,7 @@ test('a customer is never asked any of it', function () {
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'role' => 'customer',
+        'verify_via' => 'email',
     ])->assertStatus(200);
 });
 
@@ -155,4 +156,26 @@ test('a taken email answers with a code too', function () {
         'email' => 'taken@example.com',
         'phone' => '+995555777888',
     ]))->assertStatus(422)->assertJsonPath('errors.email.0', 'email_taken');
+});
+
+test('a tailor who also gives an email can still verify by phone', function () {
+    // The regression this guards: verify-phone refused any registration with an
+    // email until that email was verified — left over from a two-step flow that
+    // no longer exists, so a tailor who filled the optional email was stuck.
+    $this->postJson('/api/register/initiate', tailorPayload(['email' => 'tailor@example.com']))
+        ->assertStatus(200)->assertJsonPath('channel', 'phone');
+
+    $record = Verification::where('phone', '+995555100200')->firstOrFail();
+
+    $this->postJson('/api/register/resend', [
+        'verification_id' => $record->id,
+        'type' => 'phone',
+    ])->assertStatus(200);
+
+    $this->postJson('/api/register/verify-phone', [
+        'verification_id' => $record->id,
+        'code' => $record->fresh()->otp_phone,
+    ])->assertStatus(201);
+
+    expect(User::where('email', 'tailor@example.com')->exists())->toBeTrue();
 });
