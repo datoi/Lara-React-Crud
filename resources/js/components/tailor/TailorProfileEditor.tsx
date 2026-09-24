@@ -9,6 +9,7 @@ interface Profile {
     specialty: string;
     years_experience: string;
     profile_image: string;
+    does_remodeling: boolean;
 }
 
 interface Props {
@@ -22,7 +23,7 @@ interface Props {
 export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChange, onSaved }: Props) {
     const { t } = useTranslation();
     const [profile, setProfile] = useState<Profile>({
-        bio: '', specialty: '', years_experience: '', profile_image: '',
+        bio: '', specialty: '', years_experience: '', profile_image: '', does_remodeling: false,
     });
     const [saving,        setSaving]        = useState(false);
     const [saved,         setSaved]         = useState(false);
@@ -41,6 +42,7 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                     specialty:        tailor.specialty        ?? '',
                     years_experience: tailor.years_experience != null ? String(tailor.years_experience) : '',
                     profile_image:    tailor.profile_image    ?? '',
+                    does_remodeling:  Boolean(tailor.does_remodeling),
                 });
             })
             .catch(() => {});
@@ -87,6 +89,7 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
             bio:           profile.bio       || null,
             specialty:     profile.specialty || null,
             profile_image: profile.profile_image || null,
+            does_remodeling: profile.does_remodeling,
             years_experience: profile.years_experience !== ''
                 ? Number(profile.years_experience)
                 : null,
@@ -245,6 +248,19 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                             />
                         </div>
                     </div>
+
+                    <label className="flex cursor-pointer items-start gap-2.5 text-sm text-slate-700">
+                        <input
+                            type="checkbox"
+                            checked={profile.does_remodeling}
+                            onChange={e => setProfile(p => ({ ...p, does_remodeling: e.target.checked }))}
+                            className="mt-0.5 h-4 w-4 shrink-0 accent-[#6F1D24]"
+                        />
+                        <span>
+                            <span className="block font-medium">{t('tailorComponents.doesRemodelingLabel')}</span>
+                            <span className="block text-xs text-slate-400">{t('tailorComponents.doesRemodelingHint')}</span>
+                        </span>
+                    </label>
 
                     <div className="flex flex-wrap items-center gap-3 pt-1">
                         <Button

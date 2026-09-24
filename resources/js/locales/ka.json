@@ -21,6 +21,7 @@
         "faq": "FAQ's",
         "forTailors": "მკერავებისთვის",
         "signIn": "შესვლა",
+        "myAccount": "ჩემი ანგარიში",
         "startDesigning": "დიზაინი",
         "remodel": "გადაკეთება"
     },
@@ -557,6 +558,10 @@
         "business_type_atelier": "ატელიე",
         "business_type_workshop": "მცირე სამკერვალო",
         "business_type_designer": "დიზაინერი-მკერავი",
+        "doesRemodeling": "ასრულებთ სამოსის გადაკეთებას — კლიენტის არსებული ტანსაცმლის შეცვლას?",
+        "doesRemodelingYes": "დიახ",
+        "doesRemodelingNo": "არა",
+        "doesRemodelingHint": "გადაკეთების მოთხოვნები მხოლოდ იმ მკერავებს ეგზავნებათ, ვინც ამას ასრულებს. პასუხის შეცვლა მოგვიანებით პროფილიდან შეგიძლიათ.",
         "workspaceAddress": "სამუშაო სივრცის მისამართი",
         "workspaceAddressPlaceholder": "ქუჩა, შენობა, ქალაქი",
         "experienceBand": "რამდენი წელია, რაც კერვით ხართ დაკავებული?",
@@ -942,7 +947,8 @@
         "pendingDesc": "შენი განაცხადი გაიგზავნა. ჩვენი გუნდი განიხილავს 1–2 სამუშაო დღის განმავლობაში და ელ-ფოსტით გაცნობებ შედეგს.",
         "pendingContact": "იმავდროულად, შეგიძლია დაგვიკავშირდე: kereforyou@gmail.com",
         "rejectedTitle": "განაცხადი არ დამტკიცდა",
-        "rejectedDesc": "სამწუხაროდ, შენი განაცხადი ამჯერად არ დამტკიცდა. კითხვების შემთხვევაში დაგვიკავშირდი: kereforyou@gmail.com"
+        "rejectedDesc": "სამწუხაროდ, შენი განაცხადი ამჯერად არ დამტკიცდა. კითხვების შემთხვევაში დაგვიკავშირდი: kereforyou@gmail.com",
+        "rejectedSignOutHome": "გასვლა და მთავარ გვერდზე დაბრუნება"
     },
     "productCustomization": {
         "customersAlsoViewed": "მომხმარებლებმა ასევე ნახეს",
@@ -1397,6 +1403,8 @@
         "offerSendBtn": "შემოთავაზების გაგზავნა",
         "offerSending": "იგზავნება…",
         "offerSentBadge": "შემოთავაზება გაგზავნილია — ველოდებით მომხმარებელს",
+        "offerSentShort": "შემოთავაზება გაგზავნილია",
+        "openDesignFile": "მიმაგრებული დიზაინის ფაილის გახსნა",
         "offerFailed": "შემოთავაზება ვერ გაიგზავნა. სცადე თავიდან.",
         "offerPriceLabel": "შენი ფასი (₾)",
         "offerPricePlaceholder": "მაგ. 90",
@@ -1440,6 +1448,8 @@
         "specialtyPlaceholder": "მაგ. ტრადიციული ქართული კაბა",
         "yearsExperience": "გამოცდილების წლები",
         "yearsExpPlaceholder": "მაგ. 8",
+        "doesRemodelingLabel": "ვასრულებ სამოსის გადაკეთებას",
+        "doesRemodelingHint": "გამორთეთ, თუ აღარ გსურთ გადაკეთების მოთხოვნების მიღება. უკვე გაგზავნილ შეთავაზებებზე ეს გავლენას არ ახდენს.",
         "saveProfileBtn": "პროფილის შენახვა",
         "savingProfile": "ინახება…",
         "savedProfile": "შენახულია!",

@@ -56,6 +56,7 @@ class AuthController extends Controller
             'approval_status' => $isTailor ? 'pending' : null,
         ], $isTailor ? [
             'business_type' => $reg['business_type'] ?? null,
+            'does_remodeling' => $reg['does_remodeling'] ?? null,
             'workspace_address' => $reg['workspace_address'] ?? null,
             'years_experience' => $reg['years_experience'] ?? null,
             'legal_status' => $reg['legal_status'] ?? null,
@@ -123,6 +124,8 @@ class AuthController extends Controller
             // is required_if so a customer signing up is unaffected, and the
             // values are constrained here rather than trusted from the form.
             'business_type' => ['required_if:role,tailor', 'nullable', 'in:independent,atelier,workshop,designer'],
+            // Decides whether remodel requests are offered to them at all.
+            'does_remodeling' => ['exclude_unless:role,tailor', 'required', 'boolean'],
             'workspace_address' => ['required_if:role,tailor', 'nullable', 'string', 'max:255'],
             // The band the form offers, stored as the lower bound of its range
             // in the years_experience column that already exists.
@@ -174,6 +177,7 @@ class AuthController extends Controller
                 'role' => $data['role'],
             ], $data['role'] === 'tailor' ? [
                 'business_type' => $data['business_type'],
+                'does_remodeling' => (bool) $data['does_remodeling'],
                 'workspace_address' => $data['workspace_address'],
                 'years_experience' => self::EXPERIENCE_YEARS[$data['experience_band']],
                 'legal_status' => $data['legal_status'],

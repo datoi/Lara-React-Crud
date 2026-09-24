@@ -1770,7 +1770,7 @@ select:focus,
   .tailor-registration-page main { min-height: 100dvh; width: 100%; }
   .tailor-registration-page main > section { padding: 16px; }
   .tailor-registration-page h1 { font-size: 21px; }
-  .tailor-registration-page label { font-size: 10px; line-height: 1.5; }
+  .tailor-registration-page :is(label, legend) { font-size: 10px; line-height: 1.5; }
   .tailor-registration-page p, .tailor-registration-page form button,
   .tailor-registration-page form ~ div { font-size: 11px; line-height: 1.6; }
   .tailor-registration-page input:not([type="checkbox"]), .tailor-registration-page select { font-size: 12px; padding-top: 10px; padding-bottom: 10px; }

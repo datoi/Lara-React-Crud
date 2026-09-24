@@ -31,6 +31,16 @@ class OrderController extends Controller
             ->first();
     }
 
+    /**
+     * The open-order types a tailor may see and offer on. Remodels only reach
+     * tailors who said they take that work; the feed and the offer share this,
+     * so one cannot show an order the other would refuse.
+     */
+    private function openOrderTypesFor(User $tailor): array
+    {
+        return $tailor->does_remodeling ? ['custom', 'remodel'] : ['custom'];
+    }
+
     private function notify(int $userId, string $type, string $title, string $body, int $orderId, array $extra = []): void
     {
         KereNotification::create([
@@ -468,8 +478,9 @@ class OrderController extends Controller
                 'country' => 'GE',
             ]);
 
-            // Open pool: every approved, non-suspended tailor is invited to offer
+            // Open pool: every approved, non-suspended tailor who takes remodel work is invited to offer
             User::where('role', 'tailor')
+                ->where('does_remodeling', true)
                 ->where(fn ($q) => $q->where('approval_status', 'approved')->orWhereNull('approval_status'))
                 ->where(fn ($q) => $q->where('is_suspended', false)->orWhereNull('is_suspended'))
                 ->pluck('id')
@@ -536,7 +547,7 @@ class OrderController extends Controller
 
         $orders = Order::with('user')
             ->withCount('tailorRequests')
-            ->whereIn('order_type', ['custom', 'remodel'])
+            ->whereIn('order_type', $this->openOrderTypesFor($user))
             ->where('status', 'pending_assignment')
             ->whereNull('tailor_id')
             ->latest()
@@ -575,7 +586,7 @@ class OrderController extends Controller
 
         $order = Order::with('user')
             ->where('id', $id)
-            ->whereIn('order_type', ['custom', 'remodel'])
+            ->whereIn('order_type', $this->openOrderTypesFor($user))
             ->where('status', 'pending_assignment')
             ->whereNull('tailor_id')
             ->first();

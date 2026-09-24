@@ -58,9 +58,12 @@ Route::middleware(['auth.bearer', 'throttle:60,1,api-reads'])->group(function ()
     Route::get('/me', [AuthController::class, 'me']);
 
     // Customer
-    Route::get('/customer/orders', [CustomerOrderController::class, 'index']);
-    Route::get('/customer/orders/{orderId}/review-status', [ReviewController::class, 'orderReviewStatus']);
-    Route::get('/customer/orders/{orderId}/requests', [CustomerOrderController::class, 'requests']);
+    Route::middleware('role:customer')->group(function () {
+        Route::get('/customer/orders', [CustomerOrderController::class, 'index']);
+        Route::get('/customer/orders/{orderId}/review-status', [ReviewController::class, 'orderReviewStatus']);
+        Route::get('/customer/orders/{orderId}/requests', [CustomerOrderController::class, 'requests']);
+        Route::get('/wishlist', [WishlistController::class, 'index']);
+    });
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
@@ -78,13 +81,12 @@ Route::middleware(['auth.bearer', 'throttle:60,1,api-reads'])->group(function ()
     // Chat reads
     Route::get('/orders/{orderId}/messages', [MessageController::class, 'index']);
     Route::get('/messages/counts', [MessageController::class, 'counts']);
-    Route::get('/wishlist', [WishlistController::class, 'index']);
 });
 
 // ─── Payments ─────────────────────────────────────────────────────────────────
 // Own bucket: verify-payment is polled every few seconds while the card form is
 // open, and sharing the 10/min write bucket would starve the rest of checkout.
-Route::middleware(['auth.bearer', 'throttle:40,1,api-payments'])->group(function () {
+Route::middleware(['auth.bearer', 'role:customer', 'throttle:40,1,api-payments'])->group(function () {
     Route::post('/orders/{id}/pay', [PaymentController::class, 'pay']);
     Route::post('/orders/{id}/verify-payment', [PaymentController::class, 'verify']);
 });
@@ -97,11 +99,19 @@ Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function (
     Route::post('/register/guardian-consent/resend', [CustomerOnboardingController::class, 'resendConsent'])
         ->middleware('throttle:3,10,api-consent-resend');
 
-    // Orders
-    Route::post('/orders', [OrderController::class, 'store']);
+    // Customer — buying, and everything that follows from having bought
+    Route::middleware('role:customer')->group(function () {
+        Route::post('/orders', [OrderController::class, 'store']);
+        Route::post('/customer/orders/{orderId}/choose-tailor', [CustomerOrderController::class, 'chooseTailor']);
+        Route::post('/reviews', [ReviewController::class, 'store']);
+        Route::post('/uploads', [UploadController::class, 'design']);
+        Route::post('/wishlist/{product}', [WishlistController::class, 'store']);
+        Route::delete('/wishlist/{product}', [WishlistController::class, 'destroy']);
+    });
+
+    // Orders — tailor side
     Route::patch('/tailor/orders/{id}/status', [OrderController::class, 'updateStatus']);
     Route::post('/tailor/orders/{id}/request', [OrderController::class, 'requestOrder']);
-    Route::post('/customer/orders/{orderId}/choose-tailor', [CustomerOrderController::class, 'chooseTailor']);
 
     // Tailor
     Route::patch('/tailor/profile', [TailorController::class, 'updateProfile']);
@@ -109,9 +119,6 @@ Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function (
     Route::patch('/tailor/products/{id}', [ProductController::class, 'update']);
     Route::patch('/tailor/products/{id}/status', [ProductController::class, 'updateStatus']);
     Route::delete('/tailor/products/{id}', [ProductController::class, 'destroy']);
-
-    // Reviews
-    Route::post('/reviews', [ReviewController::class, 'store']);
 
     // Support
     Route::post('/support-email', [SupportEmailController::class, 'store']);
@@ -121,12 +128,9 @@ Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function (
     Route::post('/upload/profile-image', [UploadController::class, 'profileImage']);
     // Private: stored off the web root, never served back. See the controller.
     Route::post('/tailor/id-document', [UploadController::class, 'tailorIdDocument']);
-    Route::post('/uploads', [UploadController::class, 'design']);
 
     // Chat writes
     Route::post('/orders/{orderId}/messages', [MessageController::class, 'store']);
-    Route::post('/wishlist/{product}', [WishlistController::class, 'store']);
-    Route::delete('/wishlist/{product}', [WishlistController::class, 'destroy']);
 });
 
 // ─── Customizer — Public ──────────────────────────────────────────────────────
@@ -137,7 +141,7 @@ Route::prefix('customizer')->group(function () {
 });
 
 // ─── Customizer — Auth-protected ──────────────────────────────────────────────
-Route::middleware(['auth.bearer', 'throttle:30,1,api-customizer'])->prefix('customizer')->group(function () {
+Route::middleware(['auth.bearer', 'role:customer', 'throttle:30,1,api-customizer'])->prefix('customizer')->group(function () {
     Route::get('/designs', [SavedDesignController::class, 'index']);
     Route::post('/designs', [SavedDesignController::class, 'store']);
     Route::get('/designs/{id}', [SavedDesignController::class, 'show']);

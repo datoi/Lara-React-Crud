@@ -24,6 +24,7 @@ class TailorController extends Controller
             'avg_rating'       => $avgRating,
             'is_available'     => (bool) ($tailor->is_available ?? true),
             'turnaround_days'  => $tailor->turnaround_days,
+            'does_remodeling'  => (bool) $tailor->does_remodeling,
             'starting_price'   => $startingPrice,
         ];
     }
@@ -153,6 +154,7 @@ class TailorController extends Controller
             'specialty'        => 'nullable|string|max:200',
             'years_experience' => "nullable|integer|min:0|max:{$maxExperience}",
             'profile_image'    => 'nullable|string|max:2000',
+            'does_remodeling'  => 'sometimes|boolean',
         ]);
 
         $user->update($data);

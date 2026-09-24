@@ -13,6 +13,8 @@ import { SetupChecklist } from '../components/tailor/SetupChecklist';
 import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
 import { getAuthUser, getAuthToken, clearAuth, updateAuthUser } from '../hooks/useAuth';
 import { Link, useNavigate } from 'react-router';
+import { Button } from '../components/ui/button';
+import { TAILOR_HOME } from '../lib/tailorAccess';
 
 export default function TailorDashboard() {
     const { t } = useTranslation();
@@ -161,7 +163,7 @@ export default function TailorDashboard() {
             <div className="tailor-dashboard-page min-h-screen bg-[var(--store-paper)] flex flex-col">
                 <nav className="bg-white border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                        <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
+                        <Link to={TAILOR_HOME} className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
                         <button onClick={() => { clearAuth(); navigate('/'); }} className="text-sm text-slate-500 hover:text-slate-900 transition-colors">
                             {t('tailorComponents.signOut')}
                         </button>
@@ -186,7 +188,7 @@ export default function TailorDashboard() {
             <div className="tailor-dashboard-page min-h-screen bg-[var(--store-paper)] flex flex-col">
                 <nav className="bg-white border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                        <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
+                        <Link to={TAILOR_HOME} className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
                         <button onClick={() => { clearAuth(); navigate('/'); }} className="text-sm text-slate-500 hover:text-slate-900 transition-colors">
                             {t('tailorComponents.signOut')}
                         </button>
@@ -199,9 +201,12 @@ export default function TailorDashboard() {
                         </div>
                         <h1 className="text-2xl font-bold text-slate-900 mb-3">{t('tailorDashboard.rejectedTitle')}</h1>
                         <p className="text-slate-500 leading-relaxed mb-8">{t('tailorDashboard.rejectedDesc')}</p>
-                        <Link to="/" className="inline-flex items-center justify-center bg-brand hover:bg-brand-dark text-white text-sm font-medium px-6 py-3 rounded-lg transition-colors">
-                            {t('register.tailorPendingBack')}
-                        </Link>
+                        {/* A rejected tailor can do nothing signed in, and every
+                            other page sends a tailor back here — so the way out is
+                            out of the account, not a link that lands on this page. */}
+                        <Button onClick={() => { clearAuth(); navigate('/'); }} className="mx-auto">
+                            {t('tailorDashboard.rejectedSignOutHome')}
+                        </Button>
                     </motion.div>
                 </div>
             </div>

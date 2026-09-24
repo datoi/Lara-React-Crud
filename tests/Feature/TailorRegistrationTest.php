@@ -11,26 +11,6 @@ use App\Models\Verification;
  * outright. They are excluded outside the tailor role instead, and that is what
  * the customer cases below hold in place.
  */
-function tailorPayload(array $override = []): array
-{
-    return array_merge([
-        'first_name' => 'Nino',
-        'last_name' => 'Beridze',
-        'phone' => '+995555100200',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
-        'role' => 'tailor',
-        'business_type' => 'atelier',
-        'workspace_address' => 'Rustaveli 12, Tbilisi',
-        'experience_band' => '3_5',
-        'legal_status' => 'sole_trader',
-        'national_id' => '01001012345',
-        'accept_partnership_terms' => true,
-        'accept_data_processing' => true,
-        'confirm_information_correct' => true,
-    ], $override);
-}
-
 test('a tailor must answer every trade question', function () {
     $this->postJson('/api/register/initiate', [
         'first_name' => 'Nino',
@@ -40,7 +20,7 @@ test('a tailor must answer every trade question', function () {
         'password_confirmation' => 'password123',
         'role' => 'tailor',
     ])->assertStatus(422)->assertJsonValidationErrors([
-        'business_type', 'workspace_address', 'experience_band',
+        'business_type', 'does_remodeling', 'workspace_address', 'experience_band',
         'legal_status', 'national_id',
     ]);
 });

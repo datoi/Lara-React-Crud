@@ -16,6 +16,7 @@ import { OtpStep } from '../components/OtpStep';
 import { saveAuth, type AuthUser } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { serverMessageKey } from '../lib/serverMessage';
+import { TAILOR_HOME } from '../lib/tailorAccess';
 
 interface FormState {
     first_name: string;
@@ -25,6 +26,7 @@ interface FormState {
     password: string;
     password_confirmation: string;
     business_type: string;
+    does_remodeling: '' | 'yes' | 'no';
     workspace_address: string;
     experience_band: string;
     legal_status: string;
@@ -39,6 +41,7 @@ const EMPTY: FormState = {
     password: '',
     password_confirmation: '',
     business_type: '',
+    does_remodeling: '',
     workspace_address: '',
     experience_band: '',
     legal_status: '',
@@ -66,9 +69,12 @@ const LEGAL_STATUSES = ['individual', 'sole_trader', 'llc', 'other'] as const;
 /** Which questions live on which page of the form. */
 const PAGE_FIELDS: Record<number, (keyof FormState)[]> = {
     1: ['first_name', 'last_name', 'email', 'phone', 'password', 'password_confirmation'],
-    2: ['business_type', 'workspace_address', 'experience_band'],
+    2: ['business_type', 'does_remodeling', 'workspace_address', 'experience_band'],
     3: ['legal_status', 'national_id'],
 };
+
+/** A message per field, not a value: errors are strings whatever the field holds. */
+type FormErrors = Partial<Record<keyof FormState | 'general', string>>;
 
 const LAST_PAGE = 3;
 
@@ -84,9 +90,7 @@ export default function RegisterTailor() {
     const [consent, setConsent] = useState<ConsentState>(NO_CONSENT);
     const [consentError, setConsentError] = useState('');
     const [checkingContact, setCheckingContact] = useState(false);
-    const [errors, setErrors] = useState<
-        Partial<FormState & { general: string }>
-    >({});
+    const [errors, setErrors] = useState<FormErrors>({});
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
@@ -129,10 +133,11 @@ export default function RegisterTailor() {
      * goes.
      */
     function validatePage(target: number): boolean {
-        const nextErrors: Partial<FormState & { general: string }> = {};
+        const nextErrors: FormErrors = {};
 
         if (target === 2) {
             if (!form.business_type) nextErrors.business_type = t('register.errorRequired');
+            if (!form.does_remodeling) nextErrors.does_remodeling = t('register.errorRequired');
             if (!form.workspace_address.trim()) nextErrors.workspace_address = t('register.errorRequired');
             if (!form.experience_band) nextErrors.experience_band = t('register.errorRequired');
 
@@ -160,9 +165,7 @@ export default function RegisterTailor() {
     }
 
     function validate(): boolean {
-        const nextErrors: Partial<
-            FormState & { general: string }
-        > = {};
+        const nextErrors: FormErrors = {};
 
         if (!form.first_name.trim()) {
             nextErrors.first_name = t('register.errorRequired');
@@ -230,7 +233,7 @@ export default function RegisterTailor() {
             if (!response.ok) return true;
 
             const data = await response.json();
-            const taken: Partial<FormState> = {};
+            const taken: FormErrors = {};
 
             if (data.email_taken) taken.email = t('register.errorEmailTaken');
             if (data.phone_taken) taken.phone = t('register.errorPhoneTaken');
@@ -286,6 +289,7 @@ export default function RegisterTailor() {
                     ...form,
                     ...consent,
                     email: form.email.trim() || null,
+                    does_remodeling: form.does_remodeling === 'yes',
                     role: 'tailor',
                 }),
             });
@@ -294,7 +298,7 @@ export default function RegisterTailor() {
 
             if (!response.ok) {
                 if (data.errors) {
-                    const mapped: Partial<FormState> = {};
+                    const mapped: FormErrors = {};
 
                     for (const [key, value] of Object.entries(
                         data.errors,
@@ -404,7 +408,7 @@ export default function RegisterTailor() {
                     </p>
 
                     <Link
-                        to="/"
+                        to={TAILOR_HOME}
                         className="mt-8 inline-flex h-11 items-center justify-center gap-2 rounded-md bg-brand px-6 text-sm font-medium text-white transition hover:bg-brand-dark"
                     >
                         {t('register.tailorPendingBack')}
@@ -771,6 +775,34 @@ export default function RegisterTailor() {
                                             <p className="mt-1.5 text-xs text-[#6F1D24]">{errors.business_type}</p>
                                         )}
                                     </div>
+
+                                    <fieldset>
+                                        <legend className="mb-1.5 block text-xs font-medium">
+                                            {t('register.doesRemodeling')}
+                                        </legend>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {(['yes', 'no'] as const).map((answer) => (
+                                                <label
+                                                    key={answer}
+                                                    className={`flex h-11 cursor-pointer items-center justify-center rounded-md border bg-[var(--kere-panel)] text-sm transition-colors hover:border-black has-[:checked]:border-[#6F1D24] has-[:checked]:bg-[#6F1D24] has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#6F1D24] has-[:focus-visible]:ring-offset-2 ${errors.does_remodeling ? 'border-[#6F1D24]' : 'border-black/15'}`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="does_remodeling"
+                                                        value={answer}
+                                                        checked={form.does_remodeling === answer}
+                                                        onChange={() => setChoice('does_remodeling', answer)}
+                                                        className="sr-only"
+                                                    />
+                                                    {t(answer === 'yes' ? 'register.doesRemodelingYes' : 'register.doesRemodelingNo')}
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <p className="mt-1.5 text-xs text-black/45">{t('register.doesRemodelingHint')}</p>
+                                        {errors.does_remodeling && (
+                                            <p className="mt-1.5 text-xs text-[#6F1D24]">{errors.does_remodeling}</p>
+                                        )}
+                                    </fieldset>
 
                                     <div>
                                         <label htmlFor="tailor-workspace" className="mb-1.5 block text-xs font-medium">

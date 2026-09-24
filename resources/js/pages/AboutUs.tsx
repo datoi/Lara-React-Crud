@@ -2,6 +2,8 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Navigation } from '../components/landing/Navigation';
 import { Footer } from '../components/landing/Footer';
+import { getAuthUser } from '../hooks/useAuth';
+import { isRestrictedTailor } from '../lib/tailorAccess';
 
 export default function AboutUs() {
     const { t } = useTranslation();
@@ -37,10 +39,14 @@ export default function AboutUs() {
                         <p>{t('aboutUs.ctaDesc')}</p>
                     </div>
                 </div>
-                <div className="kere-about-links">
-                    <Link to="/marketplace">{t('aboutUs.browseMarketplace')} <span aria-hidden="true">↗</span></Link>
-                    <Link to="/register/tailor">{t('aboutUs.joinAsTailor')} <span aria-hidden="true">↗</span></Link>
-                </div>
+                {/* Both lead somewhere a signed-in tailor cannot go: the shop,
+                    and a registration they have already completed. */}
+                {!isRestrictedTailor(getAuthUser()) && (
+                    <div className="kere-about-links">
+                        <Link to="/marketplace">{t('aboutUs.browseMarketplace')} <span aria-hidden="true">↗</span></Link>
+                        <Link to="/register/tailor">{t('aboutUs.joinAsTailor')} <span aria-hidden="true">↗</span></Link>
+                    </div>
+                )}
             </main>
             <Footer />
         </div>

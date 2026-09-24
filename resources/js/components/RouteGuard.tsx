@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
-import { Navigate } from 'react-router';
+import { Navigate, useLocation } from 'react-router';
 import { getAuthToken, getAuthUser } from '../hooks/useAuth';
+import { isRestrictedTailor, tailorMayVisit, TAILOR_HOME } from '../lib/tailorAccess';
 
 interface RouteGuardProps {
     children: ReactNode;
@@ -26,6 +27,21 @@ export function RouteGuard({ children, role }: RouteGuardProps) {
         if (user.role === 'customer') return <Navigate to="/customer-dashboard" replace />;
         if (user.role === 'admin')    return <Navigate to="/admin-dashboard"    replace />;
         return <Navigate to="/signin" replace />;
+    }
+
+    return <>{children}</>;
+}
+
+/**
+ * Keeps a signed-in tailor inside their own pages. Wraps every route, so a
+ * page added later is closed to tailors until it is added to the allowed list,
+ * rather than open until someone remembers to close it.
+ */
+export function TailorScope({ children }: { children: ReactNode }) {
+    const { pathname } = useLocation();
+
+    if (isRestrictedTailor(getAuthUser()) && !tailorMayVisit(pathname)) {
+        return <Navigate to={TAILOR_HOME} replace />;
     }
 
     return <>{children}</>;

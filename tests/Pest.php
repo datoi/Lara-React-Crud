@@ -45,3 +45,25 @@ function something()
 {
     // ..
 }
+
+/** A complete, valid tailor registration — override a field to test it. */
+function tailorPayload(array $override = []): array
+{
+    return array_merge([
+        'first_name' => 'Nino',
+        'last_name' => 'Beridze',
+        'phone' => '+995555100200',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'role' => 'tailor',
+        'business_type' => 'atelier',
+        'does_remodeling' => true,
+        'workspace_address' => 'Rustaveli 12, Tbilisi',
+        'experience_band' => '3_5',
+        'legal_status' => 'sole_trader',
+        'national_id' => '01001012345',
+        'accept_partnership_terms' => true,
+        'accept_data_processing' => true,
+        'confirm_information_correct' => true,
+    ], $override);
+}

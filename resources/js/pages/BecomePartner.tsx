@@ -9,6 +9,7 @@ import {
     Scissors, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { getAuthUser } from '../hooks/useAuth';
+import { isRestrictedTailor } from '../lib/tailorAccess';
 
 type PlatformStats = {
     customers_count: number;
@@ -233,6 +234,9 @@ function ProcessExperience({ title, steps }: ProcessExperienceProps) {
 
 export default function BecomePartner() {
     const { t } = useTranslation();
+    // A signed-in tailor cannot open the tailor showcase or the contact page,
+    // so the links to them are not offered.
+    const restricted = isRestrictedTailor(getAuthUser());
     const [platformStats,   setPlatformStats]   = useState<PlatformStats | null>(null);
     const [featuredTailors, setFeaturedTailors] = useState<FeaturedTailor[]>([]);
 
@@ -316,13 +320,15 @@ export default function BecomePartner() {
                                     className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-[#6F1D24] px-7 text-sm font-semibold text-white shadow-[0_12px_34px_rgba(111,29,36,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#57161C]"
                                 />
 
-                                <Link
-                                    to="/our-tailors"
-                                    className="partners-secondary-cta inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full border border-[#111111] bg-transparent px-7 text-sm font-semibold text-[#111111] no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-[#111111] hover:bg-transparent hover:text-[#111111]"
-                                >
-                                    {t('partners.seeTailors')}
-                                    <ArrowRight className="h-4 w-4" />
-                                </Link>
+                                {!restricted && (
+                                    <Link
+                                        to="/our-tailors"
+                                        className="partners-secondary-cta inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full border border-[#111111] bg-transparent px-7 text-sm font-semibold text-[#111111] no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-[#111111] hover:bg-transparent hover:text-[#111111]"
+                                    >
+                                        {t('partners.seeTailors')}
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Link>
+                                )}
                             </motion.div>
                         </motion.div>
 
@@ -598,12 +604,14 @@ export default function BecomePartner() {
                         transition={{ duration: 0.4, delay: 0.25 }}
                         className="text-center mt-10"
                     >
-                        <Link
-                            to="/our-tailors"
-                            className="text-sm text-slate-500 hover:text-slate-900 transition-colors inline-flex items-center gap-1.5"
-                        >
-                            {t('partners.meetAllTailors')} <ArrowRight className="w-4 h-4" />
-                        </Link>
+                        {!restricted && (
+                            <Link
+                                to="/our-tailors"
+                                className="text-sm text-slate-500 hover:text-slate-900 transition-colors inline-flex items-center gap-1.5"
+                            >
+                                {t('partners.meetAllTailors')} <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        )}
                     </motion.div>
                 </div>
             </section>
@@ -664,13 +672,15 @@ export default function BecomePartner() {
                                 label={t('partners.createProfile')}
                                 className="partners-final-primary-cta group inline-flex min-h-[50px] w-full items-center justify-center gap-3 rounded-full bg-brand px-8 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-dark sm:w-auto"
                             />
-                            <Link
-                                to="/contact"
-                                className="inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-full border border-[#111111] px-8 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-[#111111] hover:text-white sm:w-auto"
-                            >
-                                {t('partners.haveQuestion')}
-                                <ArrowRight className="h-4 w-4" />
-                            </Link>
+                            {!restricted && (
+                                <Link
+                                    to="/contact"
+                                    className="inline-flex min-h-[50px] w-full items-center justify-center gap-2 rounded-full border border-[#111111] px-8 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-[#111111] hover:text-white sm:w-auto"
+                                >
+                                    {t('partners.haveQuestion')}
+                                    <ArrowRight className="h-4 w-4" />
+                                </Link>
+                            )}
                         </div>
                     </motion.div>
                 </div>

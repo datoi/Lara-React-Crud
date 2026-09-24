@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
 import { EmailSupportModal } from '../EmailSupportModal';
 import { COMPANY_EMAIL, COMPANY_ID_CODE, COMPANY_PHONE, COMPANY_PHONE_HREF } from '../../data/company';
+import { getAuthUser } from '../../hooks/useAuth';
+import { isRestrictedTailor, tailorMayVisit } from '../../lib/tailorAccess';
 
 type FooterLink =
     | { label: string; type: 'router'; to: string }
@@ -31,7 +33,13 @@ export function Footer() {
         void i18n.changeLanguage(i18n.language === 'ka' ? 'en' : 'ka');
     };
 
-    const footerColumns: { title: string; links: FooterLink[] }[] = [
+    // A tailor is not offered a link the router would only send back to their
+    // dashboard; modals open in place, so they stay.
+    const restricted = isRestrictedTailor(getAuthUser());
+    const offered = (link: FooterLink) =>
+        !restricted || link.type === 'modal' || tailorMayVisit(link.type === 'router' ? link.to : link.href);
+
+    const allColumns: { title: string; links: FooterLink[] }[] = [
         {
             title: t('footer.product'),
             links: [
@@ -60,11 +68,16 @@ export function Footer() {
         },
     ];
 
-    const legalLinks: FooterLink[] = [
+    const footerColumns = allColumns
+        .map(column => ({ ...column, links: column.links.filter(offered) }))
+        .filter(column => column.links.length > 0);
+
+    const allLegalLinks: FooterLink[] = [
         { label: t('footer.privacyPolicy'), type: 'router', to: '/privacy' },
         { label: t('footer.termsOfService'), type: 'router', to: '/terms' },
         { label: t('footer.refundPolicy'), type: 'router', to: '/refund-policy' },
     ];
+    const legalLinks = allLegalLinks.filter(offered);
 
     return (
         <>
@@ -75,8 +88,12 @@ export function Footer() {
                 <div className="mx-auto max-w-[1600px] px-5 pb-8 pt-14 sm:px-8 sm:pb-10 sm:pt-16 lg:px-10 lg:pt-20">
                     <div className="grid gap-14 border-b border-black/15 pb-16 md:grid-cols-2 lg:grid-cols-[1.55fr_0.8fr_0.9fr_0.7fr] lg:gap-16 lg:pb-20">
                         <div>
-                            <h2 className="text-xl font-medium uppercase tracking-normal text-[#111111] sm:text-2xl">{t('footer.contactUs')}</h2>
-                            <Link to="/contact" className="store-text-link mt-7">{t('footer.emailSupport')} ↗</Link>
+                            {!restricted && (
+                                <>
+                                    <h2 className="text-xl font-medium uppercase tracking-normal text-[#111111] sm:text-2xl">{t('footer.contactUs')}</h2>
+                                    <Link to="/contact" className="store-text-link mt-7">{t('footer.emailSupport')} ↗</Link>
+                                </>
+                            )}
                         </div>
 
                         {footerColumns.map((column) => (
@@ -108,13 +125,17 @@ export function Footer() {
                         </div>
 
                         <div className="lg:col-span-2">
-                            <h3 className="text-sm font-medium uppercase tracking-normal">{t('footer.legal')}</h3>
+                            {legalLinks.length > 0 && (
+                                <>
+                                    <h3 className="text-sm font-medium uppercase tracking-normal">{t('footer.legal')}</h3>
 
-                            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-x-8">
-                                {legalLinks.map((item) => (
-                                    <FooterItem key={item.label} item={item} onModalOpen={handleModalOpen} />
-                                ))}
-                            </div>
+                                    <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-x-8">
+                                        {legalLinks.map((item) => (
+                                            <FooterItem key={item.label} item={item} onModalOpen={handleModalOpen} />
+                                        ))}
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         <div>

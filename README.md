@@ -609,6 +609,78 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-24] Open requests are pictures a tailor opens, not lists they read
+
+**What was done:** The tailor dashboard's "ხელმისაწვდომი დიზაინები" (Available designs) section listed every open request as a full text dump. Studio designs had no picture at all, just a sparkle icon over a table of every attribute. The section is now a grid of picture cards. Tapping a card opens a pop-up with the picture large, the details, and the offer form.
+
+- **Cards** (2 across on phones, 3 on wider screens): a square picture, the garment name, customer and date, and one status line. That line reads "Offer sent" once the tailor has offered; otherwise the customer's expected ₾ for a remodel, or the offer count. Remodels carry a badge on the picture.
+- **Pop-up** (`OpenDesignDialog`, Radix, `.kere-modal`, the same shell as the profile editor): the picture, extra remodel photos, a link for a non-image design file, the change request and expected price, the design specification, measurements, the customer's request and notes, then the offer form. The form logic is moved over unchanged; it is keyed per order, so a half-written offer never carries into another request. Focus returns to the card on close, because Radix cannot restore focus to a card it did not open itself.
+- **The picture:**
+  - a remodel shows the customer's photo;
+  - an uploaded image shows itself;
+  - a **studio design is photographed again from its stored choices**. `custom_design_data.customization` already carried the option ids, product slug and colour. The card loads that product once per slug and draws it with the designer's own `PreviewCanvas`.
+
+  It draws only when the photographs still show what was ordered: every stored option still offered, and the same test the designer applied when the customer saw it. Otherwise the placeholder shows, rather than a garment nobody ordered.
+- **One definition of "this design can be pictured".** The resolvers (sub-selected child over parent, colour variant) and the designer's inline `showPhoto` test moved into `components/customizer/designPhoto.ts`. `useCustomizer`, `DesignerWizard` and the tailor card all read it, so the designer and the tailor cannot disagree about what a design looks like.
+- **Uploads that outlived their files** (lost to deploys before storage moved to R2) now show `ProductImage`'s "image unavailable" mark instead of a broken image with alt text.
+- An offer that fails shows the translated "couldn't send" message. Before, it could print the server's English sentence into the Georgian page.
+- The cards are `<button>` tiles, the same pattern as the filter chips and designer tiles. They are selection surfaces, not actions, and the site-wide button rules would turn a `<Button>` into an underlined link.
+
+**Verified:** `tsc`, `eslint`, `vite build` and locale parity clean; 130 tests pass. In Chrome I seeded a studio T-shirt (choices taken from the product endpoint's own response), a remodel with a missing photo, and an existing uploaded-file request:
+- The T-shirt rendered on its card and in the pop-up, in the chosen Burgundy.
+- The remodel showed the "image unavailable" mark; the uploaded-file request showed its garment-name placeholder.
+- A remodel offer could not be sent without a price. Sending it returned 201; the pop-up and the card both switched to "Offer sent".
+- Esc closed the pop-up and returned focus to the card.
+- Checked at 1280px and 390px, in Georgian and English, with no console errors.
+- The designer at `/design?gender=women&garment=womens-t-shirt` still shows its photograph after the refactor.
+
+The seeded data was deleted afterwards.
+
+---
+
+### [2026-09-24] Tailors say whether they take remodel work, and remodels follow the answer
+
+**What was done:** Tailor registration now asks "Do you take remodeling work, altering garments customers already own?" (Yes / No, required) on page 2, "Your work", after the business type. Until now every remodel request went to every approved tailor. Now it reaches only tailors who said yes.
+
+- **Schema:** `users.does_remodeling`, a nullable boolean. It is `null` for anyone who is not a tailor. The migration sets every tailor who registered before the question to `true`: all of them were receiving remodels, and no one decided to shrink that pool. It runs on deploy (`start.sh` → `migrate --force`).
+- **Registration:** `does_remodeling` is required and boolean for tailors, excluded for customers, and carried through the verification record to the account like the other trade answers.
+- **Routing:** the answer governs all three ways a remodel reaches a tailor:
+  - the `open_order` notification sent when a remodel is created;
+  - the `GET /tailor/open-orders` feed;
+  - `POST /tailor/orders/{id}/request`, which refuses a remodel offer from a tailor who said no, answering 409 like any order not open to them.
+
+  The feed and the offer read the same `openOrderTypesFor()`, so the feed can never show an order the offer would refuse. Offers sent before a tailor switches off are untouched, and admins can still assign a remodel to anyone.
+- **Changing it later:** a checkbox, "I take remodeling work", in the dashboard's profile editor. `PATCH /tailor/profile` accepts `does_remodeling` as `sometimes|boolean`, so a save without it leaves it alone. The value is in the tailor payload (`GET /tailors/{id}`), which is where the editor loads from.
+- **Typing fix the new field exposed:** `RegisterTailor` typed its error map as `Partial<FormState>`, which claimed an error message had the same type as the field's value. That only held while every field was a string. Errors are now `FormErrors`, a string per field.
+- **Styling:** the answer is a radio group, like the customer verification choice. On this page `[class~="bg-white"]` is forced to the panel colour with `!important`, which hid the selected fill, so the tiles use `--kere-panel` directly. The page's mobile rule that shrinks `label` to 10px now covers `legend` too, so the question matches the questions around it.
+- **Tests:** `tailorPayload()` moved to `tests/Pest.php`, since two files now use it and each must run on its own.
+
+**Verified:** 6 new feature tests: the answer is saved either way; only yes-tailors are notified of a new remodel; the feed shows remodels only to them; a no-tailor's offer is refused while a yes-tailor's succeeds; the profile toggle changes the answer and a save without the field leaves it. Full suite: 130 passed. `tsc`, `eslint` and locale parity clean. In Chrome at 390px, pressing Next unanswered stays on page 2 with "required"; answering "No" and completing registration with the SMS code created a pending tailor with `does_remodeling = false`. Once approved, that tailor's profile editor showed the box unticked; ticking and saving persisted through a reload and in the database. Both widths were checked for the question's styling. No failed requests.
+
+---
+
+### [2026-09-24] A tailor signed in as a tailor cannot shop
+
+**What was done:** A tailor could do everything a customer could: order from the marketplace, design, request a remodel, pay, review, keep a wishlist and save designs. Nothing stopped them. `User::registrationComplete()` returns `true` for every non-customer, so `mayPlaceOrders()` let tailors through, and no customer endpoint checked role. A signed-in tailor may now open only their dashboard, About, and For Tailors (`/partners`, plus its alias `/become-a-tailor`).
+
+- **The API enforces it.** A new `role` middleware (`EnsureRole`, used as `role:customer`) guards every route that buys or follows from buying: `POST /orders`, `/customer/orders*` and choose-tailor, pay / verify-payment, `POST /reviews`, `POST /uploads`, the wishlist, and saved designs under `/customizer/designs`. A refused request gets 403 `{ code: "role_not_allowed" }`. Chat, notifications, `/me`, the tailor's own routes and `support-email` are unchanged. Hiding the storefront in the UI would not have stopped a direct API call; this does.
+- **One list decides what a tailor may open:** `resources/js/lib/tailorAccess.ts`. The router, header and footer all read it:
+  - **Router:** `TailorScope` wraps every route in `routes.tsx` and sends a tailor anywhere else to `/tailor-dashboard`. That includes the landing page, the legal and help pages, and unknown URLs. It wraps everything rather than the storefront routes one by one, so a page added later is closed to tailors until someone adds it to the list.
+  - **Header:** a tailor sees About and For Tailors, plus account, notifications and language. The marketplace menu, search, the bag and the cart drawer are not rendered for them.
+  - **Footer:** a tailor is shown only links they can follow. Columns and the legal row with nothing left are hidden; the email-support and size-guide modals stay.
+- **In-page links** that would only bounce to the dashboard are hidden for tailors: About's "browse the marketplace" / "join as a tailor", and For Tailors' "see our tailors" (×2) and "have a question".
+- **Also fixed:** the mobile menu's account link said "Sign in" to people who were already signed in. It now says "My account" (`nav.myAccount`) for anyone signed in. For a tailor it is the menu's only link to their dashboard.
+
+**Not changed:** admins and guests behave exactly as before. Orders, wishlists and saved designs that tailors created before this change stay in the database; the tailor just can no longer reach them.
+
+**Verified:** 29 new feature tests. All 14 customer routes refuse a tailor, the gate lets a customer through, and the tailor's own endpoints still answer. Full suite: 124 passed. `tsc` clean, `eslint` clean, locales in sync. In headless Chrome, a tailor signed in through the real login form was redirected to the dashboard from all 22 storefront, info, auth and unknown paths tried; About, both For Tailors URLs and the dashboard stayed open. Header, footer and mobile menu were checked at 1280px and 390px, and a direct `POST /api/orders` from the tailor's session returned 403. A signed-in customer and a guest were checked on the same pages with no change. A normal tailor session produced no failed requests.
+
+**Fixed after QA: a rejected tailor's only button went nowhere.** "Back to Home" linked to `/`, and `TailorScope` sent it straight back to the page it was on. A rejected tailor can do nothing while signed in, so the button now signs them out and goes to the homepage, and says so: "Sign out and go to the homepage" (`tailorDashboard.rejectedSignOutHome`). The wordmark on the pending and rejected screens, and the "Back to Home" on the post-registration pending screen, now link to `TAILOR_HOME` directly instead of relying on the redirect. Verified in Chrome at 390px: the rejected tailor lands on `/` as a guest with their user and token cleared, and the button is brand wine at rest.
+
+**Decided after QA:** the legal pages stay readable. `/terms`, `/privacy` and `/refund-policy` are in `TAILOR_PAGES`, because tailors agreed to these terms when they registered; the footer's Legal row comes back for them automatically. Help and Contact stay closed to tailors. Their home stays the dashboard, not `/partners`: QA had assumed the For Tailors page, but that page is written to recruit, not for a tailor who has already joined. Verified in Chrome: a tailor opens all three legal pages, is still redirected from `/help`, `/contact`, `/marketplace` and `/`, and the footer offers About, the dashboard and the three legal links.
+
+---
+
 ### [2026-09-24] Customers choose how to verify: email or SMS
 
 **What was done:** A customer registering now picks where their verification code goes, email or SMS. Email is still mandatory either way, because it is the only channel a customer is reached on afterwards. The phone number is used for that one code and nothing else.

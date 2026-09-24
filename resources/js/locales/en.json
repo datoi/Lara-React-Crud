@@ -21,6 +21,7 @@
         "faq": "FAQ",
         "forTailors": "For Tailors",
         "signIn": "Sign In",
+        "myAccount": "My account",
         "startDesigning": "Design",
         "remodel": "Remodel"
     },
@@ -557,6 +558,10 @@
         "business_type_atelier": "Atelier",
         "business_type_workshop": "Small sewing workshop",
         "business_type_designer": "Designer-tailor",
+        "doesRemodeling": "Do you take remodeling work — altering garments customers already own?",
+        "doesRemodelingYes": "Yes",
+        "doesRemodelingNo": "No",
+        "doesRemodelingHint": "Remodel requests are only sent to tailors who take them. You can change this later in your profile.",
         "workspaceAddress": "Workspace address",
         "workspaceAddressPlaceholder": "Street, building, city",
         "experienceBand": "How many years have you been sewing?",
@@ -942,7 +947,8 @@
         "pendingDesc": "Your application has been submitted. Our team will review it within 1–2 business days and you'll receive an email notification with the result.",
         "pendingContact": "In the meantime, feel free to reach us at kereforyou@gmail.com",
         "rejectedTitle": "Application Not Approved",
-        "rejectedDesc": "Unfortunately, your application was not approved at this time. Please contact us at kereforyou@gmail.com if you have any questions."
+        "rejectedDesc": "Unfortunately, your application was not approved at this time. Please contact us at kereforyou@gmail.com if you have any questions.",
+        "rejectedSignOutHome": "Sign out and go to the homepage"
     },
     "productCustomization": {
         "customersAlsoViewed": "Customers also viewed",
@@ -1397,6 +1403,8 @@
         "offerSendBtn": "Send offer",
         "offerSending": "Sending…",
         "offerSentBadge": "Offer sent — waiting for the customer",
+        "offerSentShort": "Offer sent",
+        "openDesignFile": "Open the attached design file",
         "offerFailed": "Couldn't send your offer. Please try again.",
         "offerPriceLabel": "Your price (₾)",
         "offerPricePlaceholder": "e.g. 90",
@@ -1440,6 +1448,8 @@
         "specialtyPlaceholder": "e.g. Traditional Georgian dress",
         "yearsExperience": "Years of Experience",
         "yearsExpPlaceholder": "e.g. 8",
+        "doesRemodelingLabel": "I take remodeling work",
+        "doesRemodelingHint": "Turn off to stop receiving remodel requests. Offers you have already sent are not affected.",
         "saveProfileBtn": "Save Profile",
         "savingProfile": "Saving…",
         "savedProfile": "Saved!",

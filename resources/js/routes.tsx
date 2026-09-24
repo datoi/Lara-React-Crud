@@ -1,7 +1,7 @@
 import { createBrowserRouter, useLocation } from 'react-router';
 import { useEffect, type ReactElement } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { RouteGuard } from './components/RouteGuard';
+import { RouteGuard, TailorScope } from './components/RouteGuard';
 import Landing from './pages/Landing';
 import DesignerApp from './pages/DesignerApp';
 import Marketplace from './pages/Marketplace';
@@ -49,7 +49,7 @@ function ScrollToTop({ children }: { children: ReactElement }) {
 }
 
 function wrap(el: ReactElement) {
-    return <ErrorBoundary><ScrollToTop>{el}</ScrollToTop></ErrorBoundary>;
+    return <ErrorBoundary><ScrollToTop><TailorScope>{el}</TailorScope></ScrollToTop></ErrorBoundary>;
 }
 
 function guard(el: ReactElement, role?: 'customer' | 'tailor' | 'admin') {

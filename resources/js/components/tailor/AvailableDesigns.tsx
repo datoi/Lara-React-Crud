@@ -1,256 +1,25 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Loader2, Check, FileText, ChevronDown, ChevronUp, Sparkles, Scissors } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion } from 'motion/react';
+import { Check, Loader2, Scissors } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { getAuthToken } from '../../hooks/useAuth';
-import DesignSpecList, { readProductName, readSpec } from '../DesignSpecList';
-
-interface OpenOrderDesign {
-    garment_type?: string;
-    clothingType?: string;
-    design_file_url?: string | null;
-    tailor_notes?: string;
-    customization_request?: string;
-    measurements?: Record<string, number | string>;
-    /** Studio configuration: raw ids plus a readable spec snapshot */
-    customization?: unknown;
-    change_request?: string;
-    remodel_images?: string[];
-}
-
-interface OpenOrder {
-    id: number;
-    order_number: string;
-    order_type?: string;
-    created_at: string;
-    custom_design_data: OpenOrderDesign | null;
-    expected_price?: number | null;
-    customer: { name: string };
-    requests_count: number;
-    my_request_status: 'pending' | 'accepted' | 'declined' | null;
-}
-
-const GARMENT_KEYS: Record<string, string> = {
-    'shirt':      'orderReview.garment_shirt',
-    'womens-top': 'orderReview.garment_womensTop',
-    'dress':      'orderReview.garment_dress',
-    'trousers':   'orderReview.garment_trousers',
-    'jacket':     'orderReview.garment_jacket',
-    'skirt':      'orderReview.garment_skirt',
-    'coat':       'orderReview.garment_coat',
-};
-
-function OpenOrderCard({ order, onRequested }: { order: OpenOrder; onRequested: (orderId: number) => void }) {
-    const { t, i18n } = useTranslation();
-    const token = getAuthToken();
-
-    const [expanded,   setExpanded]   = useState(false);
-    const [message,    setMessage]    = useState('');
-    const [price,      setPrice]      = useState('');
-    const [sending,    setSending]    = useState(false);
-    const [sendError,  setSendError]  = useState<string | null>(null);
-
-    const design      = order.custom_design_data;
-    const isRemodel   = order.order_type === 'remodel';
-    const garmentKey  = design?.garment_type ?? design?.clothingType ?? '';
-    const garmentName = GARMENT_KEYS[garmentKey] ? t(GARMENT_KEYS[garmentKey]) : garmentKey;
-    const fileUrl     = design?.design_file_url;
-    const isImage     = !!fileUrl?.match(/\.(jpg|jpeg|png|svg)$/i);
-    const remodelImages = design?.remodel_images ?? [];
-    const measurements = Object.entries(design?.measurements ?? {}).filter(([, v]) => v !== '' && v !== null);
-    const alreadyRequested = order.my_request_status === 'pending';
-    const dateLabel = new Date(order.created_at).toLocaleDateString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB');
-
-    const handleSend = async () => {
-        if (!token || sending) return;
-        setSending(true);
-        setSendError(null);
-        try {
-            const res = await fetch(`/api/tailor/orders/${order.id}/request`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
-                body: JSON.stringify({
-                    message: message.trim() || null,
-                    offered_price: price.trim() !== '' ? Number(price) : null,
-                }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error((data as { message?: string }).message ?? t('tailorComponents.offerFailed'));
-            onRequested(order.id);
-            setExpanded(false);
-        } catch (err: unknown) {
-            setSendError(err instanceof Error ? err.message : t('tailorComponents.offerFailed'));
-        } finally {
-            setSending(false);
-        }
-    };
-
-    return (
-        <div className="p-4 sm:p-5">
-            <div className="flex gap-4">
-                {/* Design preview */}
-                <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
-                    {isRemodel && remodelImages[0] ? (
-                        <img src={remodelImages[0]} alt={t('tailorComponents.remodelBadge')} className="w-full h-full object-cover" loading="lazy" />
-                    ) : isRemodel ? (
-                        <Scissors className="w-6 h-6 text-slate-400" />
-                    ) : fileUrl && isImage ? (
-                        <img src={fileUrl} alt={garmentName} className="w-full h-full object-cover" loading="lazy" />
-                    ) : fileUrl ? (
-                        <FileText className="w-6 h-6 text-slate-400" />
-                    ) : (
-                        <Sparkles className="w-6 h-6 text-slate-400" />
-                    )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 text-sm capitalize truncate flex items-center gap-1.5">
-                                {isRemodel && <Scissors className="w-3.5 h-3.5 text-[#6F1D24] shrink-0" />}
-                                {isRemodel ? t('tailorComponents.remodelBadge') : (garmentName || t('tailorComponents.customDesignBadge'))}
-                            </p>
-                            <p className="text-xs text-slate-400 mt-0.5 truncate">
-                                {order.customer.name} · {dateLabel} · <span className="font-mono">{order.order_number}</span>
-                            </p>
-                        </div>
-                        <span className="text-xs text-slate-400 shrink-0">
-                            {t('tailorComponents.offersSoFar', { count: order.requests_count })}
-                        </span>
-                    </div>
-
-                    {isRemodel && design?.change_request && (
-                        <p className="mt-2 text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
-                            <span className="font-semibold text-slate-500">{t('tailorComponents.remodelChangeLabel')}:</span> {design.change_request}
-                        </p>
-                    )}
-
-                    {isRemodel && remodelImages.length > 1 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                            {remodelImages.slice(1).map((src, idx) => (
-                                <a key={idx} href={src} target="_blank" rel="noopener noreferrer" className="block w-12 h-12 rounded-lg overflow-hidden border border-slate-200">
-                                    <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
-                                </a>
-                            ))}
-                        </div>
-                    )}
-
-                    {isRemodel && order.expected_price != null && (
-                        <p className="mt-2 text-xs text-slate-600">
-                            <span className="font-semibold text-slate-500">{t('tailorComponents.remodelExpectedPrice')}:</span> ₾{order.expected_price}
-                        </p>
-                    )}
-
-                    {readSpec(design?.customization).length > 0 && (
-                        <div className="mt-3">
-                            <DesignSpecList
-                                spec={readSpec(design?.customization)}
-                                garment={readProductName(design?.customization)}
-                                label={t('tailorComponents.studioSpec')}
-                            />
-                        </div>
-                    )}
-
-                    {measurements.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                            {measurements.map(([k, v]) => (
-                                <span key={k} className="text-xs bg-slate-50 border border-slate-200 text-slate-600 px-2 py-0.5 rounded">
-                                    <span className="capitalize">{t(`orderReview.size_${k}`, k)}</span>: {v} {t('tailorComponents.cmUnit')}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-
-                    {design?.customization_request && (
-                        <p className="mt-2 text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
-                            <span className="font-semibold text-slate-500">{t('tailorComponents.customizationRequest')}:</span> {design.customization_request}
-                        </p>
-                    )}
-
-                    {design?.tailor_notes && (
-                        <p className="mt-2 text-xs text-slate-500">
-                            <span className="font-semibold">{t('tailorComponents.customNotesSection')}:</span> {design.tailor_notes}
-                        </p>
-                    )}
-
-                    <div className="mt-3">
-                        {alreadyRequested ? (
-                            <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-full">
-                                <Check className="w-3 h-3" />
-                                {t('tailorComponents.offerSentBadge')}
-                            </span>
-                        ) : (
-                            <Button variant="outline" size="sm" onClick={() => setExpanded(v => !v)} className="text-xs">
-                                {t('tailorComponents.offerBtn')}
-                                {expanded ? <ChevronUp className="w-3.5 h-3.5 ml-1" /> : <ChevronDown className="w-3.5 h-3.5 ml-1" />}
-                            </Button>
-                        )}
-                    </div>
-
-                    <AnimatePresence>
-                        {expanded && !alreadyRequested && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.5 }}
-                                className="mt-3 space-y-2"
-                            >
-                                {isRemodel && (
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-600 mb-1">
-                                            {t('tailorComponents.offerPriceLabel')}
-                                        </label>
-                                        <div className="relative max-w-[180px]">
-                                            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">₾</span>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                inputMode="decimal"
-                                                value={price}
-                                                onChange={e => setPrice(e.target.value)}
-                                                placeholder={t('tailorComponents.offerPricePlaceholder')}
-                                                className="w-full border border-slate-200 rounded-lg py-2 pl-7 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-                                <label className="block text-xs font-medium text-slate-600">
-                                    {t('tailorComponents.offerMessageLabel')}
-                                </label>
-                                <textarea
-                                    value={message}
-                                    onChange={e => setMessage(e.target.value.slice(0, 500))}
-                                    placeholder={t('tailorComponents.offerMessagePlaceholder')}
-                                    rows={2}
-                                    maxLength={500}
-                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
-                                />
-                                {sendError && <p className="text-xs text-destructive">{sendError}</p>}
-                                {isRemodel && price.trim() === '' && (
-                                    <p className="text-xs text-slate-400">{t('tailorComponents.offerPriceRequired')}</p>
-                                )}
-                                <Button variant="default" size="sm" onClick={handleSend} disabled={sending || (isRemodel && price.trim() === '')} className="text-xs">
-                                    {sending
-                                        ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />{t('tailorComponents.offerSending')}</>
-                                        : t('tailorComponents.offerSendBtn')}
-                                </Button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-            </div>
-        </div>
-    );
-}
+import { readProductName } from '../DesignSpecList';
+import { OpenDesignDialog } from './OpenDesignDialog';
+import { OpenDesignPicture } from './OpenDesignPicture';
+import { GARMENT_KEYS, readStudioChoices, type OpenOrder, type StudioProduct } from './openOrders';
 
 export function AvailableDesigns() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const token = getAuthToken();
     const [orders,    setOrders]    = useState<OpenOrder[]>([]);
     const [loading,   setLoading]   = useState(true);
     const [loadError, setLoadError] = useState(false);
+    // Studio products by slug, fetched once each however many requests share
+    // one; null when a product can no longer be loaded, so it is not retried.
+    const [products,  setProducts]  = useState<Record<string, StudioProduct | null>>({});
+    const [openId,    setOpenId]    = useState<number | null>(null);
+    const openedFrom = useRef<HTMLButtonElement | null>(null);
 
     const fetchOpenOrders = useCallback(async () => {
         if (!token) { setLoading(false); return; }
@@ -271,6 +40,25 @@ export function AvailableDesigns() {
 
     useEffect(() => { fetchOpenOrders(); }, [fetchOpenOrders]);
 
+    useEffect(() => {
+        const missing = [...new Set(orders
+            .map(o => readStudioChoices(o.custom_design_data?.customization)?.product_slug)
+            .filter((slug): slug is string => !!slug && !(slug in products)))];
+        if (missing.length === 0) return;
+
+        const controller = new AbortController();
+        Promise.all(missing.map(slug =>
+            fetch(`/api/customizer/products/${encodeURIComponent(slug)}`, { signal: controller.signal })
+                .then(res => (res.ok ? res.json() : null))
+                .then(data => [slug, data ? { layer_categories: data.layer_categories ?? [], fabrics: data.fabrics ?? [] } as StudioProduct : null] as const)
+                .catch(() => [slug, null] as const),
+        )).then(entries => {
+            if (!controller.signal.aborted) setProducts(prev => ({ ...prev, ...Object.fromEntries(entries) }));
+        });
+
+        return () => controller.abort();
+    }, [orders, products]);
+
     const handleRequested = (orderId: number) => {
         setOrders(prev => prev.map(o => o.id === orderId
             ? { ...o, my_request_status: 'pending', requests_count: o.requests_count + 1 }
@@ -278,10 +66,27 @@ export function AvailableDesigns() {
         ));
     };
 
+    const titleOf = (order: OpenOrder) => {
+        if (order.order_type === 'remodel') return t('tailorComponents.remodelBadge');
+        const design = order.custom_design_data;
+        const garmentKey = design?.garment_type ?? design?.clothingType ?? '';
+        return readProductName(design?.customization)
+            ?? ((GARMENT_KEYS[garmentKey] ? t(GARMENT_KEYS[garmentKey]) : garmentKey) || t('tailorComponents.customDesignBadge'));
+    };
+    const dateOf = (order: OpenOrder) =>
+        new Date(order.created_at).toLocaleDateString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB');
+    const productOf = (order: OpenOrder) => {
+        const slug = readStudioChoices(order.custom_design_data?.customization)?.product_slug;
+        return slug ? products[slug] ?? null : null;
+    };
+
+    const openOrder = orders.find(o => o.id === openId) ?? null;
+
     return (
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100">
                 <h2 className="font-bold text-slate-900">{t('tailorComponents.availableDesignsTitle')}</h2>
+                <p className="mt-0.5 text-xs text-slate-500">{t('tailorComponents.availableDesignsDesc')}</p>
             </div>
 
             {loading ? (
@@ -300,19 +105,58 @@ export function AvailableDesigns() {
                     <p className="text-slate-400 text-sm">{t('tailorComponents.noOpenDesigns')}</p>
                 </div>
             ) : (
-                <div className="divide-y divide-slate-100">
-                    {orders.map((order, i) => (
-                        <motion.div
-                            key={order.id}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: i * 0.05 }}
-                        >
-                            <OpenOrderCard order={order} onRequested={handleRequested} />
-                        </motion.div>
-                    ))}
+                <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-3 sm:p-6">
+                    {orders.map((order, i) => {
+                        const title = titleOf(order);
+                        const sent = order.my_request_status === 'pending';
+                        return (
+                            <motion.button
+                                key={order.id}
+                                type="button"
+                                onClick={event => {
+                                    openedFrom.current = event.currentTarget;
+                                    setOpenId(order.id);
+                                }}
+                                aria-label={`${title} · ${t('tailorComponents.viewBtn')}`}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: Math.min(i, 5) * 0.1 }}
+                                className="group flex min-w-0 flex-col border border-slate-200 bg-white text-left transition-colors hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                            >
+                                <div className="relative aspect-square w-full overflow-hidden border-b border-slate-200">
+                                    <OpenDesignPicture order={order} product={productOf(order)} label={title} />
+                                    {order.order_type === 'remodel' && (
+                                        <span className="absolute left-2 top-2 inline-flex items-center gap-1 bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-brand">
+                                            <Scissors className="h-3 w-3" aria-hidden="true" /> {t('tailorComponents.remodelBadge')}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex flex-1 flex-col gap-1 p-3">
+                                    <p className="truncate text-sm font-semibold text-slate-900">{title}</p>
+                                    <p className="truncate text-xs text-slate-500">{order.customer.name} · {dateOf(order)}</p>
+                                    <p className="mt-auto pt-1 text-xs text-slate-500">
+                                        {sent
+                                            ? <span className="inline-flex items-center gap-1 font-medium text-slate-700"><Check className="h-3 w-3" aria-hidden="true" />{t('tailorComponents.offerSentShort')}</span>
+                                            : order.order_type === 'remodel' && order.expected_price != null
+                                                ? `₾${order.expected_price}`
+                                                : t('tailorComponents.offersSoFar', { count: order.requests_count })}
+                                    </p>
+                                </div>
+                            </motion.button>
+                        );
+                    })}
                 </div>
             )}
+
+            <OpenDesignDialog
+                order={openOrder}
+                product={openOrder ? productOf(openOrder) : null}
+                title={openOrder ? titleOf(openOrder) : ''}
+                dateLabel={openOrder ? dateOf(openOrder) : ''}
+                onClose={() => setOpenId(null)}
+                onRequested={handleRequested}
+                returnFocusTo={openedFrom.current}
+            />
         </div>
     );
 }

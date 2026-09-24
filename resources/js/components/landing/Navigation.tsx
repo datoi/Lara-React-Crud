@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router';
 import { getAuthToken, getAuthUser } from '../../hooks/useAuth';
+import { isRestrictedTailor, tailorMayVisit } from '../../lib/tailorAccess';
 import { getSection } from '../../hooks/useSection';
 import { cartCount, openCart, useCart } from '../../hooks/useCart';
 import { CartDrawer } from '../CartDrawer';
@@ -75,13 +76,15 @@ export function Navigation() {
               ? '/tailor-dashboard'
               : '/customer-dashboard'
         : '/signin';
+    // A tailor is offered only the pages they may open; the storefront — the
+    // marketplace menu, search and the bag — is not shown to them at all.
+    const shops = !isRestrictedTailor(user);
     const links = [
-        { to: '/marketplace', label: t('marketplace.title') },
         { to: '/design', label: t('nav.startDesigning') },
         { to: '/remodel', label: t('nav.remodel') },
         { to: '/about', label: t('footer.aboutUs') },
         { to: '/partners', label: t('nav.forTailors') },
-    ];
+    ].filter(link => shops || tailorMayVisit(link.to));
     useEffect(() => {
         if (!searchOpen || !query.trim()) {
             setResults([]);
@@ -208,13 +211,15 @@ export function Navigation() {
                                     <X size={22} />
                                 </Dialog.Close>
                                 <nav>
-                                    <details className="store-mobile-categories">
-                                        <summary>{t('marketplace.title')} <ChevronDown size={16} /></summary>
-                                        {categoryLinks.map((link) => (
-                                            <Link key={link.to} to={link.to} onClick={() => setMobileOpen(false)}>{link.label}</Link>
-                                        ))}
-                                    </details>
-                                    {[...links.slice(1), { to: account, label: t('nav.signIn') }].map(
+                                    {shops && (
+                                        <details className="store-mobile-categories">
+                                            <summary>{t('marketplace.title')} <ChevronDown size={16} /></summary>
+                                            {categoryLinks.map((link) => (
+                                                <Link key={link.to} to={link.to} onClick={() => setMobileOpen(false)}>{link.label}</Link>
+                                            ))}
+                                        </details>
+                                    )}
+                                    {[...links, { to: account, label: t(user ? 'nav.myAccount' : 'nav.signIn') }].map(
                                         (link) => (
                                             <Link
                                                 key={link.to}
@@ -234,7 +239,7 @@ export function Navigation() {
                         <span className="kere-nav-logo" aria-hidden="true" />
                     </Link>
                     <nav className="store-desktop-nav">
-                        <Dialog.Root modal={false} open={marketOpen} onOpenChange={setMarketOpen}>
+                        {shops && <Dialog.Root modal={false} open={marketOpen} onOpenChange={setMarketOpen}>
                             <Dialog.Trigger className="store-market-trigger"
                                 onPointerEnter={event => {
                                     if (event.pointerType !== 'mouse') return;
@@ -277,15 +282,15 @@ export function Navigation() {
                                     </div>
                                 </Dialog.Content>
                             </Dialog.Portal>
-                        </Dialog.Root>
-                        {links.slice(1).map((link) => (
+                        </Dialog.Root>}
+                        {links.map((link) => (
                             <Link key={link.to} to={link.to} aria-current={pathname === link.to ? 'page' : undefined}>
                                 {link.label}
                             </Link>
                         ))}
                     </nav>
                     <div className="store-header-actions">
-                        <Dialog.Root open={searchOpen} onOpenChange={setSearchOpen}>
+                        {shops && <Dialog.Root open={searchOpen} onOpenChange={setSearchOpen}>
                             <Dialog.Trigger className="store-icon" aria-label={t('store.search')}>
                                 <Search size={19} />
                             </Dialog.Trigger>
@@ -333,19 +338,21 @@ export function Navigation() {
                                     )}
                                 </Dialog.Content>
                             </Dialog.Portal>
-                        </Dialog.Root>
+                        </Dialog.Root>}
                         <Link to={account} className="store-icon" aria-label={user ? `${user.first_name} ${user.last_name}` : t('nav.signIn')}>
                             <User size={19} />
                         </Link>
                         {user && <NotificationBell />}
-                        <button
-                            className="store-icon store-bag"
-                            onClick={openCart}
-                            aria-label={count ? t('cart.openWithCount', { n: count }) : t('cart.open')}
-                        >
-                            <ShoppingBag size={19} />
-                            {count > 0 && <span>{count > 99 ? '99+' : count}</span>}
-                        </button>
+                        {shops && (
+                            <button
+                                className="store-icon store-bag"
+                                onClick={openCart}
+                                aria-label={count ? t('cart.openWithCount', { n: count }) : t('cart.open')}
+                            >
+                                <ShoppingBag size={19} />
+                                {count > 0 && <span>{count > 99 ? '99+' : count}</span>}
+                            </button>
+                        )}
                         <button
                             className="store-language"
                             onClick={toggleLanguage}
@@ -356,7 +363,7 @@ export function Navigation() {
                     </div>
                 </div>
             </header>
-            <CartDrawer />
+            {shops && <CartDrawer />}
         </>
     );
 }

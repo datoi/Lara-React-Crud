@@ -21,7 +21,7 @@ import StagePanel from './StagePanel';
 import StepRail from './StepRail';
 import { ColorFigure, OptionTile, TileGroup } from './WizardTiles';
 import { GarmentMark } from './GarmentIcons';
-import { depictsSelection } from './depicts';
+import { previewCategories, showsDesign } from './designPhoto';
 import { garmentColors } from './garmentColors';
 import { money } from './money';
 import { useCustomizer } from '../../hooks/useCustomizer';
@@ -230,28 +230,17 @@ export default function DesignerWizard({
         c.slug !== 'collar' && c.is_preview_layer !== false && c.options.some(o => o.image_url),
     );
 
-    const previewOptions = useMemo(() => layerCategories
-        .filter(c => c.slug !== 'collar' && c.is_preview_layer !== false)
-        .map(c => resolveOption(c)),
-        [layerCategories, resolveOption]);
-
     const shownOptions = useMemo(
-        () => previewOptions.filter((o): o is NonNullable<typeof o> => o !== null),
-        [previewOptions],
+        () => previewCategories(layerCategories)
+            .map(c => resolveOption(c))
+            .filter((o): o is NonNullable<typeof o> => o !== null),
+        [layerCategories, resolveOption],
     );
 
-    const showPhoto = previewOptions.length > 0 && previewOptions.every(option =>
-        option !== null
-        && (resolveColor(option)?.image_url ?? option.image_url) !== null
-        && depictsSelection(option, layerCategories, selections)
-        // The shoots do not all cover the same colours — the puff sleeve was
-        // photographed in thirteen, none of them green. Showing the option's
-        // own default instead would repaint the garment a colour the customer
-        // did not choose, so the photograph is withheld exactly as it is for a
-        // cut that was never shot. The colour itself still stands: it is made
-        // to order, and the review and the tailor both get the one they picked.
-        && (!option.colors?.length || resolveColor(option)?.name === colorName),
-    );
+    // A colour never photographed withholds the photo, but the colour itself
+    // still stands: it is made to order, and the review and the tailor both
+    // get the one they picked.
+    const showPhoto = showsDesign(layerCategories, selections, resolveOption, resolveColor, colorName);
 
     const renderedSources = useMemo(
         () => shownOptions.map(o => resolveColor(o) ?? o),

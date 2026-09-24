@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { resolveEffectiveOption, resolveOptionColor } from '../components/customizer/designPhoto';
 import type {
     LayerCategory,
     LayerOption,
@@ -281,32 +282,15 @@ export function useCustomizer({
      * If the selected parent option has children and one is sub-selected, returns that child.
      * Otherwise returns the selected parent option.
      */
-    const resolveOption = useCallback((category: LayerCategory): LayerOption | null => {
-        const selectedOptionId = selections[category.id];
-        const parentOption = category.options.find(o => o.id === selectedOptionId)
-            ?? category.options.find(o => o.is_default)
-            ?? category.options[0]
-            ?? null;
+    const resolveOption = useCallback(
+        (category: LayerCategory): LayerOption | null => resolveEffectiveOption(category, selections, subSelections),
+        [selections, subSelections],
+    );
 
-        if (!parentOption) return null;
-
-        if (parentOption.children && parentOption.children.length > 0) {
-            const childId = subSelections[parentOption.id];
-            const child = parentOption.children.find(c => c.id === childId)
-                ?? parentOption.children[0];
-            if (child) return child;
-        }
-
-        return parentOption;
-    }, [selections, subSelections]);
-
-    const resolveColor = useCallback((option: LayerOption): OptionColor | null => {
-        if (!option.colors || option.colors.length === 0) return null;
-
-        return option.colors.find(c => c.id === colorSelections[option.id])
-            ?? option.colors.find(c => c.is_default)
-            ?? option.colors[0];
-    }, [colorSelections]);
+    const resolveColor = useCallback(
+        (option: LayerOption): OptionColor | null => resolveOptionColor(option, colorSelections),
+        [colorSelections],
+    );
 
     /**
      * Readable snapshot of the current choices, taken at the moment the design
