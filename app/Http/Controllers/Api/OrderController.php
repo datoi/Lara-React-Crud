@@ -14,6 +14,7 @@ use App\Models\TailorRequest;
 use App\Models\User;
 use App\Services\Notifier;
 use App\Services\SmsService;
+use App\Support\Measurements;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,20 @@ class OrderController extends Controller
     private function openOrderTypesFor(User $tailor): array
     {
         return $tailor->does_remodeling ? ['custom', 'remodel'] : ['custom'];
+    }
+
+    /**
+     * The design as stored: its measurements normalised into the one shape every
+     * snapshot uses, or left out entirely when none were given. A copy — the
+     * customer's profile is never referenced, so editing it later cannot change
+     * an order already placed.
+     */
+    private function withMeasurementSnapshot(array $design): array
+    {
+        $measurements = Measurements::normalize($design['measurements'] ?? null);
+        unset($design['measurements']);
+
+        return $measurements === null ? $design : $design + ['measurements' => $measurements];
     }
 
     private function notify(int $userId, string $type, string $title, string $body, int $orderId, array $extra = []): void
@@ -122,11 +137,7 @@ class OrderController extends Controller
                 'color' => 'nullable|string|max:100',
                 'size' => 'nullable|string|max:50',
                 'quantity' => 'required|integer|min:1|max:1000',
-                'cm_measurements' => ['nullable', 'array'],
-                'cm_measurements.chest' => ['nullable', 'numeric', 'min:0'],
-                'cm_measurements.waist' => ['nullable', 'numeric', 'min:0'],
-                'cm_measurements.hips' => ['nullable', 'numeric', 'min:0'],
-                'cm_measurements.length' => ['nullable', 'numeric', 'min:0'],
+                ...Measurements::rules('cm_measurements'),
                 'customization_note' => ['nullable', 'string', 'max:1000'],
                 'tailor_id' => 'nullable|integer|exists:users,id',
             ]);
@@ -136,12 +147,28 @@ class OrderController extends Controller
                 'color' => $data['color'] ?? null,
                 'size' => $data['size'] ?? null,
                 'quantity' => (int) $data['quantity'],
-                'cm_measurements' => $data['cm_measurements'] ?? null,
+                'cm_measurements' => Measurements::normalize($data['cm_measurements'] ?? null),
                 'customization_note' => $data['customization_note'] ?? null,
             ]];
         }
 
         $products = Product::whereIn('id', array_column($lines, 'product_id'))->get()->keyBy('id');
+
+        // A product its tailor cannot make without measurements cannot be ordered
+        // without them. Cart lines carry none, so such a product is bought from
+        // its own page, where the measurements are asked for.
+        foreach ($lines as $line) {
+            $required = Measurements::known($products[$line['product_id']]->required_measurements ?? []);
+            $missing = array_values(array_diff($required, array_keys($line['cm_measurements'] ?? [])));
+
+            if ($missing !== []) {
+                return response()->json([
+                    'message' => 'This product needs your measurements.',
+                    'code' => 'measurements_required',
+                    'missing' => $missing,
+                ], 422);
+            }
+        }
 
         // Critical #7: prevent overselling. Totalled per product first, since the
         // same product can appear on several lines in different sizes.
@@ -318,8 +345,7 @@ class OrderController extends Controller
             'custom_design_data.embroidery' => 'nullable|string|max:200',
             'custom_design_data.pattern' => 'nullable|string|max:100',
             'custom_design_data.notes' => 'nullable|string|max:1000',
-            'custom_design_data.measurements' => 'nullable|array|max:20',
-            'custom_design_data.measurements.*' => 'nullable|numeric|min:0|max:999',
+            ...Measurements::rules('custom_design_data.measurements'),
             'custom_design_data.designElements' => 'nullable|array|max:20',
             'custom_design_data.designElements.*' => 'nullable|string|max:100',
             'custom_design_data.colorPalette' => 'nullable|array|max:10',
@@ -373,7 +399,7 @@ class OrderController extends Controller
                 'subtotal' => 0,
                 'shipping' => $shipping,
                 'total' => $shipping,
-                'custom_design_data' => $data['custom_design_data'],
+                'custom_design_data' => $this->withMeasurementSnapshot($data['custom_design_data']),
                 'first_name' => $user->first_name ?? $user->name,
                 'last_name' => $user->last_name ?? '',
                 'email' => $user->email,
@@ -453,6 +479,7 @@ class OrderController extends Controller
             'custom_design_data.change_request' => 'required|string|max:2000',
             'custom_design_data.remodel_images' => 'required|array|min:1|max:6',
             'custom_design_data.remodel_images.*' => 'required|url|max:2000',
+            ...Measurements::rules('custom_design_data.measurements'),
         ]);
 
         $shipping = (int) config('app.shipping_cost', 15);
@@ -471,7 +498,7 @@ class OrderController extends Controller
                 'shipping' => $shipping,
                 'total' => $shipping,
                 'expected_price' => $data['expected_price'] ?? null,
-                'custom_design_data' => $data['custom_design_data'],
+                'custom_design_data' => $this->withMeasurementSnapshot($data['custom_design_data']),
                 'first_name' => $data['first_name'],
                 'last_name' => $data['last_name'] ?? '',
                 'email' => $user->email,
@@ -561,17 +588,29 @@ class OrderController extends Controller
             ->whereIn('order_id', $orders->pluck('id'))
             ->pluck('status', 'order_id');
 
-        return response()->json(['orders' => $orders->map(fn ($o) => [
-            'id' => $o->id,
-            'order_number' => $o->order_number,
-            'order_type' => $o->order_type,
-            'created_at' => $o->created_at?->toISOString(),
-            'custom_design_data' => $o->custom_design_data,
-            'expected_price' => $o->expected_price,
-            'customer' => ['name' => $o->user->getFullName()],
-            'requests_count' => $o->tailor_requests_count,
-            'my_request_status' => $myRequests[$o->id] ?? null,
-        ])->values()]);
+        // Every approved tailor reads this feed, and the privacy policy promises
+        // the customer's name and measurements to the tailor they select — not to
+        // everyone who might bid. So the feed carries a first name, and only how
+        // many measurements were given, enough to price the job; the values
+        // reach the tailor once the order is theirs (formatOrder).
+        return response()->json(['orders' => $orders->map(function ($o) use ($myRequests) {
+            $design = $o->custom_design_data ?? [];
+            $measurementsCount = count($design['measurements'] ?? []);
+            unset($design['measurements']);
+
+            return [
+                'id' => $o->id,
+                'order_number' => $o->order_number,
+                'order_type' => $o->order_type,
+                'created_at' => $o->created_at?->toISOString(),
+                'custom_design_data' => $design,
+                'measurements_count' => $measurementsCount,
+                'expected_price' => $o->expected_price,
+                'customer' => ['name' => $o->user->first_name ?: $o->user->getFullName()],
+                'requests_count' => $o->tailor_requests_count,
+                'my_request_status' => $myRequests[$o->id] ?? null,
+            ];
+        })->values()]);
     }
 
     // ─── POST /api/tailor/orders/{id}/request ────────────────────────────────

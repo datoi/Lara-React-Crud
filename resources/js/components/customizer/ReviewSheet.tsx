@@ -9,8 +9,8 @@ export interface ReviewRow {
 
 /**
  * The last step: what the customer has specified, in the order they specified
- * it. No inputs — the decisions are all behind them, and measurements belong to
- * the tailor, so the only thing left to do is read it and go.
+ * it. No inputs — the decisions are all behind them, and measurements are asked
+ * for on the order review that follows, so the only thing left is to read it and go.
  */
 export default function ReviewSheet({ rows }: { rows: ReviewRow[] }) {
     const { t } = useTranslation();

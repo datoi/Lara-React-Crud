@@ -8,6 +8,9 @@ import { Footer } from '../components/landing/Footer';
 import { Navigation } from '../components/landing/Navigation';
 import { Button } from '../components/ui/button';
 import { getAuthToken, getAuthUser, saveReturnTo } from '../hooks/useAuth';
+import { OrderMeasurements } from '../components/measurements/OrderMeasurements';
+import { useOrderMeasurements } from '../hooks/useOrderMeasurements';
+import { PROFILE_KEYS } from '../lib/measurements';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -41,6 +44,9 @@ export default function RemodelRequest() {
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    // The garment already exists, so there is no garment length to ask — only
+    // the body it has to fit now.
+    const measurements = useOrderMeasurements(PROFILE_KEYS);
 
     const handleFiles = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
@@ -104,6 +110,7 @@ export default function RemodelRequest() {
         phone.trim().length > 0 &&
         address.trim().length > 0 &&
         city.trim().length > 0 &&
+        !measurements.invalid &&
         !uploading &&
         !submitting;
 
@@ -119,6 +126,14 @@ export default function RemodelRequest() {
         setSubmitting(true);
         setSubmitError(null);
 
+        try {
+            await measurements.commitToProfile();
+        } catch {
+            setSubmitError(t('measurements.saveProfileFailed'));
+            setSubmitting(false);
+            return;
+        }
+
         const body = {
             order_type: 'remodel',
             expected_price: expectedPrice.trim() !== '' ? Number(expectedPrice) : null,
@@ -131,6 +146,7 @@ export default function RemodelRequest() {
             custom_design_data: {
                 change_request: changeRequest.trim(),
                 remodel_images: images.map((i) => i.url),
+                ...(!measurements.isEmpty && { measurements: measurements.snapshot }),
             },
         };
 
@@ -243,6 +259,14 @@ export default function RemodelRequest() {
                                     className={`${inputClass} max-w-[900px] min-h-[112px] resize-y`}
                                 />
                             </section>
+
+                            <div className="mb-8 max-w-[900px] sm:mb-14">
+                                <OrderMeasurements
+                                    state={measurements}
+                                    idPrefix="remodel-measure"
+                                    titleClassName="text-lg font-semibold tracking-normal text-[#17130F]"
+                                />
+                            </div>
 
                             {/* Pickup / return address */}
                             <section className="mb-8 sm:mb-14">

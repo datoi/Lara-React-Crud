@@ -1,6 +1,6 @@
-import { Check, HelpCircle, ImageOff, Info, Loader2, Minus, Palette, Plus, ShoppingBag } from 'lucide-react';
+import { Check, ImageOff, Loader2, Minus, Palette, Plus, Ruler, ShoppingBag } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -18,7 +18,10 @@ import {
     type PendingMarketplaceOrder,
 } from '../hooks/useAuth';
 import { addToCart, openCart } from '../hooks/useCart';
-import { measurementWarning } from '../utils/measurementSanity';
+import { OrderMeasurements } from '../components/measurements/OrderMeasurements';
+import { useOrderMeasurements } from '../hooks/useOrderMeasurements';
+import { fieldsFor, knownKeys } from '../lib/measurements';
+import { serverMessageKey } from '../lib/serverMessage';
 
 interface ApiProduct {
     id: number;
@@ -32,6 +35,8 @@ interface ApiProduct {
     fabric?: string;
     texture?: string;
     category: { id: number; name: string; slug: string };
+    /** Fields the tailor cannot make this piece without */
+    required_measurements?: string[];
     tailor_id: number | null;
     tailor_name: string | null;
 }
@@ -66,7 +71,6 @@ export default function ProductCustomization({ customize = false }: { customize?
     const [loading, setLoading] = useState(true);
     const [selectedColor, setSelectedColor] = useState('');
     const [selectedSize, setSelectedSize] = useState('');
-    const [measurements, setMeasurements] = useState({ chest: '', waist: '', hips: '', length: '' });
     const [customizationNote, setCustomizationNote] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [shippingCost, setShippingCost] = useState(15);
@@ -79,6 +83,20 @@ export default function ProductCustomization({ customize = false }: { customize?
     const [paymentDeferred, setPaymentDeferred] = useState(false);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
     const [guideStep, setGuideStep] = useState<MeasurementKey | null>(null);
+    // A piece whose tailor marked measurements required is made to measure: it
+    // cannot go in the bag, whose lines carry none, and its fields must be filled.
+    const requiredMeasurements = useMemo(() => knownKeys(product?.required_measurements ?? []), [product]);
+    const madeToMeasure = requiredMeasurements.length > 0;
+    const measurementFields = useMemo(
+        () => fieldsFor(product?.category?.slug, product?.required_measurements),
+        [product],
+    );
+    // Measurements entered before a login redirect come back with the rest of the order.
+    const [pendingMeasurements] = useState(() => {
+        const pending = getPendingOrder();
+        return pending?.type === 'marketplace' && pending.productId === Number(id) ? pending.measurements : null;
+    });
+    const measurements = useOrderMeasurements(measurementFields, pendingMeasurements);
     // The review list came off the page with the redesign; only the summary the
     // gallery strip shows is still needed. null means the call has not landed
     // (or failed) — distinct from a product that genuinely has no reviews, which
@@ -92,11 +110,6 @@ export default function ProductCustomization({ customize = false }: { customize?
     useEffect(() => () => {
         if (redirectRef.current) clearTimeout(redirectRef.current);
     }, []);
-
-    const openGuide = (key: string) => {
-        const valid: MeasurementKey[] = ['chest', 'waist', 'hips', 'length'];
-        setGuideStep(valid.includes(key as MeasurementKey) ? (key as MeasurementKey) : 'chest');
-    };
 
     useEffect(() => {
         if (!id) return;
@@ -137,12 +150,6 @@ export default function ProductCustomization({ customize = false }: { customize?
                     setSelectedColor(pending.color || (p.colors?.[0] ?? ''));
                     setSelectedSize(pending.size || '');
                     setQuantity(pending.quantity || 1);
-                    setMeasurements({
-                        chest: pending.measurements?.chest ?? '',
-                        waist: pending.measurements?.waist ?? '',
-                        hips: pending.measurements?.hips ?? '',
-                        length: pending.measurements?.length ?? '',
-                    });
                     setCustomizationNote(pending.customizationNote ?? '');
                     // State restored — don't clear yet; clear only after order succeeds
                 } else if (!pending || pending.type !== 'marketplace') {
@@ -207,7 +214,7 @@ export default function ProductCustomization({ customize = false }: { customize?
     const showSizePicker = product.is_customizable && (product.sizes?.length ?? 0) > 0;
 
     const handleAddToCart = () => {
-        if (!product) return;
+        if (!product || madeToMeasure) return;
         if (showSizePicker && !product.sizes.includes(selectedSize)) {
             setOrderError(t('productDetails.selectSize'));
             return;
@@ -240,7 +247,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                     color: selectedColor,
                     size: selectedSize,
                     quantity,
-                    measurements,
+                    measurements: measurements.draft,
                     customizationNote,
                 } satisfies PendingMarketplaceOrder);
             }
@@ -248,8 +255,20 @@ export default function ProductCustomization({ customize = false }: { customize?
             setShowLoginPrompt(true);
             return;
         }
+        if (measurements.invalid) { setOrderError(t('measurements.invalidBeforeSubmit')); return; }
+        if (requiredMeasurements.some(key => measurements.snapshot[key] === undefined)) {
+            setOrderError(t('measurements.requiredMissing'));
+            return;
+        }
         setPlacing(true);
         setOrderError('');
+        try {
+            await measurements.commitToProfile();
+        } catch {
+            setOrderError(t('measurements.saveProfileFailed'));
+            setPlacing(false);
+            return;
+        }
         try {
             const res = await fetch('/api/orders', {
                 method: 'POST',
@@ -264,14 +283,15 @@ export default function ProductCustomization({ customize = false }: { customize?
                     color: selectedColor,
                     size: showSizePicker ? selectedSize : null,
                     quantity,
-                    cm_measurements: customize ? Object.fromEntries(Object.entries(measurements).filter(([, v]) => v !== '')) : {},
+                    cm_measurements: customize ? measurements.snapshot : {},
                     customization_note: customize ? customizationNote.trim() || null : null,
                     tailor_id: selectedTailorId,
                 }),
             });
             if (!res.ok) {
                 const err = await res.json();
-                setOrderError(err.message ?? t('productCustomization.errorSomethingWrong'));
+                const known = serverMessageKey(err.code);
+                setOrderError(known ? t(known) : err.message ?? t('productCustomization.errorSomethingWrong'));
                 return;
             }
             const data = await res.json();
@@ -342,21 +362,6 @@ export default function ProductCustomization({ customize = false }: { customize?
         const b = parseInt(clean.slice(4, 6), 16);
         return (r * 299 + g * 587 + b * 114) / 1000 > 180;
     };
-
-    const measurementFields = [
-        { key: 'chest', label: t('productCustomization.measureChest') },
-        { key: 'waist', label: t('productCustomization.measureWaist') },
-        { key: 'hips', label: t('productCustomization.measureHips') },
-        { key: 'length', label: t('productCustomization.measureLength') },
-    ];
-
-    // The banner used to run its own flat 30–150 rule while each field ran the
-    // per-garment ranges in measurementSanity, and the two disagreed in both
-    // directions: a 160cm chest raised the banner with no field flagged, a 50cm
-    // one flagged the field and said nothing. Both now read the same function.
-    // Gated on `customize` too — the inputs only exist there, and a thawed
-    // pending order used to raise the banner on a page with no fields on it.
-    const showMeasurementBanner = customize && Object.entries(measurements).some(([key, value]) => measurementWarning(key, value) !== '');
 
     return (
         <div className="product-detail-page kere-product min-h-screen pt-[46px] sm:pt-[50px]">
@@ -533,15 +538,15 @@ export default function ProductCustomization({ customize = false }: { customize?
                             )}
 
                             {/* Customize CTA — shown on the plain product view for customizable products */}
-                            {!customize && product.is_customizable && (
+                            {!customize && (product.is_customizable || madeToMeasure) && (
                                 <Button
                                     asChild
                                     variant="outline"
                                     className="mt-[22px] h-[54px] w-full rounded-none border-brand bg-[var(--kd-tile)] px-5 text-[14px] font-normal tracking-[0.02em] text-[var(--kd-burgundy)] hover:bg-brand-dark hover:text-[var(--kd-rail-text)]"
                                 >
                                     <Link to={`/product/${product.id}/customize`}>
-                                        <Palette className="h-[15px] w-[15px]" />
-                                        {t('productCustomization.customizeThis')}
+                                        {madeToMeasure ? <Ruler className="h-[15px] w-[15px]" /> : <Palette className="h-[15px] w-[15px]" />}
+                                        {madeToMeasure ? t('measurements.madeToMeasure') : t('productCustomization.customizeThis')}
                                     </Link>
                                 </Button>
                             )}
@@ -566,48 +571,12 @@ export default function ProductCustomization({ customize = false }: { customize?
                             {/* Measurements — only when customizing */}
                             {customize && (
                                 <div className={BLOCK}>
-                                    <div className={`${EYEBROW} pb-1.5`}>
-                                        {t('productCustomization.customMeasurements')}{' '}
-                                        <span className="normal-case">{t('productCustomization.measurementsOptional')}</span>
-                                    </div>
-                                    <p className="pb-4 text-[13px] text-[var(--kd-muted)]">{t('productCustomization.measurementsHint')}</p>
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                        {measurementFields.map(({ key, label }) => {
-                                            const val = measurements[key as keyof typeof measurements];
-                                            const warning = measurementWarning(key, val);
-                                            return (
-                                                <div key={key}>
-                                                    <div className="flex items-center gap-1.5 pb-1.5">
-                                                        <label htmlFor={`measure-${key}`} className="text-[11px] tracking-[0.14em] text-[var(--kd-muted)] uppercase">
-                                                            {label}
-                                                        </label>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => openGuide(key)}
-                                                            className="text-[var(--kd-muted)] transition-colors duration-150 hover:text-[var(--kd-burgundy)]"
-                                                            aria-label={t('productCustomization.helpFor', { label })}
-                                                        >
-                                                            <HelpCircle className="h-3.5 w-3.5" />
-                                                        </button>
-                                                    </div>
-                                                    <div className="relative">
-                                                        <input
-                                                            id={`measure-${key}`}
-                                                            type="number"
-                                                            placeholder="0"
-                                                            value={val}
-                                                            onChange={(e) => setMeasurements((m) => ({ ...m, [key]: e.target.value }))}
-                                                            className={`h-12 w-full border bg-[var(--kd-tile)] px-3 pr-9 text-[14px] text-[var(--kd-ink)] tabular-nums focus:border-[var(--kd-burgundy)] focus:ring-1 focus:ring-[var(--kd-burgundy)] focus:outline-none ${
-                                                                warning ? 'border-[var(--kd-burgundy)]' : 'border-[var(--kd-hairline)]'
-                                                            }`}
-                                                        />
-                                                        <span className="absolute top-1/2 right-3 -translate-y-1/2 text-[12px] text-[var(--kd-muted)]">cm</span>
-                                                    </div>
-                                                    {warning && <p className="pt-1 text-[11px] leading-tight text-[var(--kd-body)]">{t(warning)}</p>}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                                    <OrderMeasurements
+                                        state={measurements}
+                                        required={requiredMeasurements}
+                                        idPrefix="product-measure"
+                                        titleClassName={`${EYEBROW} pb-0.5`}
+                                    />
                                 </div>
                             )}
 
@@ -650,16 +619,6 @@ export default function ProductCustomization({ customize = false }: { customize?
                                 </div>
                             </div>
 
-                            {/* Measurement sanity banner */}
-                            {showMeasurementBanner && (
-                                <div className="flex items-start gap-[11px] border-b border-[var(--kd-rule)] py-[18px]">
-                                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--kd-burgundy)]" />
-                                    <p className="max-w-[48ch] text-[14px] leading-[1.5] text-[var(--kd-body)] [text-wrap:pretty]">
-                                        {t('productCustomization.measurementWarning')}
-                                    </p>
-                                </div>
-                            )}
-
                             {/* Order summary */}
                             {customize ? <div className="mt-[22px] border border-[var(--kd-hairline)] bg-[var(--kd-tile)] p-5">
                                 <div className="flex flex-col gap-2">
@@ -691,21 +650,23 @@ export default function ProductCustomization({ customize = false }: { customize?
                                         {placing && <Loader2 className="h-4 w-4 animate-spin" />}
                                         {placing ? t('productCustomization.placingOrder') : t('productCustomization.placeOrder')}
                                     </Button>
-                                    <Button
+                                    {!madeToMeasure && <Button
                                         onClick={handleAddToCart}
                                         variant="outline"
                                         className="h-auto min-h-[52px] rounded-none border-[rgba(111,29,36,0.28)] bg-transparent px-5 text-[14px] font-normal text-[var(--kd-ink)] hover:border-[var(--kd-burgundy)] hover:bg-transparent hover:text-[var(--kd-ink)]"
                                     >
                                         <ShoppingBag className="h-[15px] w-[15px]" />
                                         {t('cart.addToCart')}
-                                    </Button>
+                                    </Button>}
                                 </div>
 
                                 <p className="mt-3.5 text-[12px] text-[var(--kd-muted)]">{t('productCustomization.noPaymentNow')}</p>
                             </div> : (
                                 <div className="mt-6">
                                     {orderError && <p role="alert" className="mb-3 text-xs text-brand">{orderError}</p>}
-                                    <Button onClick={handleAddToCart} className="h-11 w-full rounded-none bg-brand text-xs text-white hover:bg-brand-dark">{t('cart.addToCart')}</Button>
+                                    {madeToMeasure
+                                        ? <p className="text-xs text-[var(--kd-muted)]">{t('measurements.orderFromPage')}</p>
+                                        : <Button onClick={handleAddToCart} className="h-11 w-full rounded-none bg-brand text-xs text-white hover:bg-brand-dark">{t('cart.addToCart')}</Button>}
                                 </div>
                             )}
                             <a href="#product-reviews" className="mt-4 block text-right text-xs">{t('productDetails.reviews')} ({rating?.count ?? '—'})</a>

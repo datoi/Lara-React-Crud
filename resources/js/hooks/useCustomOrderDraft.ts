@@ -7,7 +7,6 @@ export interface CustomOrderDraft {
     garment_type: string;
     customization: Record<string, unknown> | null; // null when upload path
     design_file_url: string | null;                // null when designer path
-    measurements: Record<string, string>;          // cm values keyed chest/waist/hips/length
     customization_request: string;                 // what the customer wants modified
     tailor_notes: string;
 
@@ -25,7 +24,6 @@ const DEFAULT_DRAFT: CustomOrderDraft = {
     garment_type:          '',
     customization:         null,
     design_file_url:       null,
-    measurements:          {},
     customization_request: '',
     tailor_notes:          '',
     tailor_id:        null,

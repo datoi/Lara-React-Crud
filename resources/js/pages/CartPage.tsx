@@ -9,6 +9,7 @@ import { Navigation } from '../components/landing/Navigation';
 import { PaymentMarks } from '../components/PaymentMarks';
 import { Button } from '../components/ui/button';
 import { getAuthToken, saveReturnTo } from '../hooks/useAuth';
+import { serverMessageKey } from '../lib/serverMessage';
 import {
     cartSubtotal,
     clearCart,
@@ -133,7 +134,9 @@ export default function CartPage() {
                 if (!res.ok) {
                     const body = await res.json().catch(() => ({}));
                     const reason =
-                        res.status === 429 ? t('cart.errorThrottled') : (body.message ?? t('cart.errorGeneric'));
+                        res.status === 429
+                            ? t('cart.errorThrottled')
+                            : serverMessageKey(body.code) ? t(serverMessageKey(body.code)!) : (body.message ?? t('cart.errorGeneric'));
                     // Groups already ordered were removed as they succeeded, so the
                     // cart now holds only what still needs buying — pressing Place
                     // order again retries exactly that and cannot double-order.

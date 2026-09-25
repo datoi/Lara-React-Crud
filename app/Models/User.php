@@ -38,6 +38,7 @@ class User extends Authenticatable
         'approval_status',
         'business_type',
         'does_remodeling',
+        'measurements',
         'workspace_address',
         'legal_status',
         'national_id',
@@ -90,6 +91,9 @@ class User extends Authenticatable
         // The raw token is emailed once and never read back; only its hash lives
         // here, and nothing has any reason to serialize even that.
         'guardian_consent_token',
+        // Body measurements are personal data. Only the customer's own endpoint
+        // reads them; an order carries its own snapshot for the tailor.
+        'measurements',
     ];
 
     /**
@@ -132,6 +136,7 @@ class User extends Authenticatable
             'is_suspended'    => 'boolean',
             'is_available'    => 'boolean',
             'does_remodeling' => 'boolean',
+            'measurements'    => 'array',
             'approval_status' => 'string',
             'date_of_birth'       => 'date',
             'marketing_opt_in'    => 'boolean',

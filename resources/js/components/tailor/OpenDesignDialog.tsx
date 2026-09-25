@@ -77,7 +77,6 @@ function OpenDesignDetails({ order, product, title, dateLabel, onRequested }: {
     const remodelImages = design?.remodel_images ?? [];
     const fileUrl = design?.design_file_url;
     const spec = readSpec(design?.customization);
-    const measurements = Object.entries(design?.measurements ?? {}).filter(([, v]) => v !== '' && v !== null);
     const alreadyRequested = order.my_request_status === 'pending';
     const priceMissing = isRemodel && price.trim() === '';
 
@@ -145,18 +144,11 @@ function OpenDesignDetails({ order, product, title, dateLabel, onRequested }: {
                     <DesignSpecList spec={spec} garment={readProductName(design?.customization)} label={t('tailorComponents.studioSpec')} />
                 )}
 
-                {measurements.length > 0 && (
-                    <div>
-                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('tailorComponents.measurementsCm')}</p>
-                        <div className="flex flex-wrap gap-1">
-                            {measurements.map(([k, v]) => (
-                                <span key={k} className="border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">
-                                    {t(`orderReview.size_${k}`, k)}: {v} {t('tailorComponents.cmUnit')}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                <DetailBlock label={t('measurements.providedTitle')}>
+                    {order.measurements_count > 0
+                        ? t('measurements.countForBidders', { count: order.measurements_count })
+                        : t('measurements.noneForBidders')}
+                </DetailBlock>
 
                 {design?.customization_request && (
                     <DetailBlock label={t('tailorComponents.customizationRequest')}>{design.customization_request}</DetailBlock>

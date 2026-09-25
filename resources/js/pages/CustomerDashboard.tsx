@@ -14,6 +14,8 @@ import { ReviewModal } from '../components/ReviewModal';
 import { OrderChat } from '../components/OrderChat';
 import { OrderCardSkeleton } from '../components/skeletons/OrderCardSkeleton';
 import { translateServerMessage } from '../lib/serverMessage';
+import { MyMeasurements } from '../components/measurements/MyMeasurements';
+import { MeasurementList } from '../components/measurements/MeasurementList';
 
 interface OrderItem {
     id: number;
@@ -400,13 +402,7 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                 {design.measurements && Object.keys(design.measurements).length > 0 && (
                                     <div className="bg-slate-50 rounded-none p-4">
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.measurementsLabel')}</p>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {Object.entries(design.measurements).map(([k, v]) => (
-                                                <span key={k} className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded">
-                                                    <span className="capitalize">{t(`orderReview.size_${k}`, k)}</span>: {v} {t('orderReview.cmUnit')}
-                                                </span>
-                                            ))}
-                                        </div>
+                                        <MeasurementList values={design.measurements} />
                                     </div>
                                 )}
 
@@ -446,12 +442,8 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                                 </p>
                                             )}
                                             {item.measurements && Object.keys(item.measurements).length > 0 && (
-                                                <div className="mt-1.5 flex flex-wrap gap-1">
-                                                    {Object.entries(item.measurements).map(([k, v]) => (
-                                                        <span key={k} className="text-xs bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded">
-                                                            <span className="capitalize">{t(`orderReview.size_${k}`, k)}</span>: {v} {t('orderReview.cmUnit')}
-                                                        </span>
-                                                    ))}
+                                                <div className="mt-1.5">
+                                                    <MeasurementList values={item.measurements} />
                                                 </div>
                                             )}
                                         </div>
@@ -735,6 +727,10 @@ export default function CustomerDashboard() {
                             </div>
                         );
                     })}
+                </div>
+
+                <div className="mb-8">
+                    <MyMeasurements />
                 </div>
 
                 {/* Orders list */}
