@@ -620,7 +620,7 @@ All features and fixes are logged here in reverse chronological order.
 
 **Verified against the real catalogue, not the local seed.** The 12 live products were pulled from `kereforyou.com/api/products` into a transaction that was always rolled back, and the actual command run against them: 11 enriched, 1 left alone — "ყვითელი კაბა" already had a real sentence and was correctly untouched — and a second `--apply` reported nothing to do. The local database was confirmed unchanged afterwards. `php -l` clean; the command registers under `catalogue`.
 
-**Not run on production.** This is a data change to live rows owned by three tailors, so it is deliberately left for a human to run — `php artisan catalogue:enrich-descriptions` to read the diff, then `--apply`.
+**Run on production, 2026-09-25**, from the app container's console — the dry run first to read the diff, then `--apply`. Confirmed afterwards against `kereforyou.com/api/products`: 12 products, 11 enriched, none left thin, none missing a price. `ყვითელი კაბა` was the one skipped and should have been; it already carried a real sentence. Flitt's first requirement is now met in substance rather than on a technicality.
 
 ---
 
