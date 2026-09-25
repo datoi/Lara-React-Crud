@@ -609,6 +609,21 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-25] Catalogue descriptions that read as descriptions
+
+**What was done:** `catalogue:enrich-descriptions`, a one-off command for the last of Flitt's five go-live requirements — every product must carry a description and a price in GEL. The prices were always right. The descriptions were mostly one or two words, and several were just the product's own name repeated: "Kaba" described as "Kaba", "ქვედაბოლო" as "ქვედაბოლო". Technically present, and not what the requirement is for.
+
+- **It appends rather than rewrites.** A tailor's own words about their own garment are the part worth keeping, so what they wrote stays at the front and the facts the catalogue already holds are added behind it: fabric, sizes, and that the piece is cut to measure in 7–14 business days. "ლამაზი შარვალი" becomes "ლამაზი შარვალი. მასალა — აბრეშუმი. ზომები — S, M, L. იკერება ინდივიდუალური ზომებით და მზადდება 7–14 სამუშაო დღეში."
+- **Nothing is invented.** Every clause comes from a column, which is why a product with neither fabric nor sizes is skipped and left for a human rather than padded with something agreeable. Fabrics translate through a small map and anything unlisted passes through as written rather than being guessed at; `Custom` is dropped from the size list because the closing clause already says the piece is made to measure.
+- **Georgian**, because `description` is one column rather than one per locale, the site's default is Georgian, and all but one existing description already is.
+- **Dry run by default.** `--apply` writes; `--threshold` sets what counts as thin (40 characters). Each write is its own transaction, and the closing phrase doubles as the idempotency marker, so a second run is a no-op rather than a second helping of the same sentence.
+
+**Verified against the real catalogue, not the local seed.** The 12 live products were pulled from `kereforyou.com/api/products` into a transaction that was always rolled back, and the actual command run against them: 11 enriched, 1 left alone — "ყვითელი კაბა" already had a real sentence and was correctly untouched — and a second `--apply` reported nothing to do. The local database was confirmed unchanged afterwards. `php -l` clean; the command registers under `catalogue`.
+
+**Not run on production.** This is a data change to live rows owned by three tailors, so it is deliberately left for a human to run — `php artisan catalogue:enrich-descriptions` to read the diff, then `--apply`.
+
+---
+
 ### [2026-09-24] Open requests are pictures a tailor opens, not lists they read
 
 **What was done:** The tailor dashboard's "ხელმისაწვდომი დიზაინები" (Available designs) section listed every open request as a full text dump. Studio designs had no picture at all, just a sparkle icon over a table of every attribute. The section is now a grid of picture cards. Tapping a card opens a pop-up with the picture large, the details, and the offer form.
@@ -636,6 +651,48 @@ All features and fixes are logged here in reverse chronological order.
 - The designer at `/design?gender=women&garment=womens-t-shirt` still shows its photograph after the refactor.
 
 The seeded data was deleted afterwards.
+
+---
+
+### [2026-09-25] Customers save their measurements once; every fitted order starts filled in
+
+**What was done:** Customers now keep their body measurements on their profile. Every order that needs a fit (studio and uploaded designs, remodels, and marketplace pieces bought "to measure") is prefilled from them. The customer can change the values for that order alone, or save them back to the profile deliberately. Each order stores its own snapshot, so later profile edits never change orders already placed. Tailors see the values only once the order is theirs, and are told plainly when none were given.
+
+**Before:** studio designs collected no measurements at all ("your tailor confirms measurements after the order is placed"). Remodels collected none. The upload panel and the product page each had their own hardcoded list of four fields. Products' `required_measurements` was stored but never enforced or read by any customer page. The open-requests feed sent every design's measurements, and the customer's full name, to every tailor, while the privacy policy promises both only to "the selected tailor/atelier".
+
+- **One definition:** `resources/js/data/measurements.json`, read by `App\Support\Measurements` (validation rules, normalising values for storage, known keys) and by `lib/measurements.ts` (forms, range messages, labels). It holds the fields and their accepted ranges:
+  - chest 55–175, waist 45–165, hips 55–175, shoulder 30–65, sleeve 40–90, inseam 25–110 (body fields, saved to the profile);
+  - `length` 25–155 (garment length, asked per order only, because a cropped top and full trousers differ).
+
+  It also says which garments ask for which fields (tops, trousers, skirts, dresses, jumpsuits and suits); a product's own required list wins when its tailor set one. It replaces the lists in `DesignerApp`, `ProductCustomization`, the tailor's product form, the unused `DesignCanvas` (deleted) and `utils/measurementSanity.ts` (deleted), plus 32 translation keys per locale that only those used.
+- **Profile:** `users.measurements`, a nullable JSON column. Existing users start empty; nothing is backfilled. It's in the User model's `$hidden`, so it never serializes by accident. `GET`/`PUT /api/customer/measurements` sit behind `role:customer`; an empty set clears. There is no route to anyone else's.
+- **Snapshots, no new format:** `order_items.cm_measurements` (marketplace) and `custom_design_data.measurements` (custom designs, and now remodels). All three order types validate with the same rules and store normalised numbers, with the key left out when nothing was given. `OrderController::withMeasurementSnapshot` copies the values; the profile is never referenced.
+- **Made to measure:** a product whose tailor marked fields required cannot be ordered without them (422 `measurements_required`, listing what's missing). Cart lines carry no measurements, so such a product is bought from its measure page:
+  - the product page shows "Made to your measurements" instead of the bag button;
+  - quick-buy opens the measure page;
+  - the cart translates the error if one gets through.
+
+  Tailors can only require fields a customer can enter; `head_circumference` is gone from the form, and stored values are ignored rather than enforced.
+- **Privacy, enforced in the API:** `GET /tailor/open-orders` strips the measurements and sends only `measurements_count`, plus the customer's first name. A bidding tailor sees "3 measurements provided — shown once you're chosen". The assigned tailor's order view carries the full snapshot. That matches the privacy policy as written, so the policy text did not change.
+- **UI:**
+  - `MyMeasurements` card on the customer dashboard: empty state, view, edit, clear, per-field range errors, saved/failed feedback.
+  - `OrderMeasurements` step on the order review page (studio and upload designs share it; the upload panel's own inputs are gone), the remodel form, and the product measure page. Each prefills from the profile and offers "save these to my profile" or "also update my profile" only when the values differ. Save-back merges just the fields this garment asked for, so a trouser order never wipes a saved chest. If the save fails, the order stops rather than going ahead without it.
+  - `MeasurementList` shows snapshots everywhere, with "No measurements provided — ask the customer in the chat" when there are none. A marketplace item with a standard size is not flagged.
+  - The studio wizard's note now says measurements come at review.
+- **Also fixed:** an **assigned remodel** showed the tailor nothing. `OrdersList` treated every non-custom order as marketplace and rendered its (nonexistent) item lines. It now shows the photos (with the missing-file fallback), the change request and the measurements.
+
+**Verified:**
+- **Tests:** 16 new feature tests (profile read, update and clear; unknown, out-of-range, non-number and garment-length values refused; tailor 403, guest 401; `$hidden`; the snapshot surviving a later profile edit; no empty snapshot stored; invalid snapshots refused on custom and remodel; remodels keeping theirs; required fields enforced on single orders and the cart; tailors unable to require unknown fields; the feed with a count and first name but no values or surname; the assigned tailor seeing the values). Full suite: 147 passed. `tsc`, `vite build` and locale parity clean; `eslint` shows only two warnings on effects in `OrderReview` that predate this change.
+- **Customer, in Chrome** (Georgian at 1280px, English at 390px), through the real forms:
+  - the profile card's empty state, a rejected 12 cm chest with Save disabled, then save, edit and clear;
+  - the review page prefilled with the trouser fields and a waist changed to 74 for that order only (the profile kept 70);
+  - a remodel with a real photo upload, prefilled with body fields;
+  - "update my profile" changing only waist and shoulder;
+  - the made-to-measure dress: no bag button, refused without hips, placed with it.
+- **Tailor, in both languages and widths:** "3 measurements provided — shown once you're chosen" and "Nino" (no surname) in the feed; once assigned, the snapshot in the order view, the remodel's brief and measurements, and "No measurements provided" on an order without any. No console errors throughout.
+- **Cleanup:** the QA accounts and their 8 orders were deleted, and product 14's stock restored.
+
+**Not covered:** the "how to measure" guide has diagrams for chest, waist, hips and length only. For shoulder, sleeve and inseam it opens at its first step. The empty "Colours" box in a studio order's tailor view predates this change.
 
 ---
 
