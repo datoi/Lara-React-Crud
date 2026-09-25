@@ -186,7 +186,7 @@ export function Footer() {
                                     background, so they carry no plate of their own.
                                     Served at 2x the rendered height to stay sharp. */}
                                 <img src="/assets/payment/visa.png" alt="Visa" width={198} height={64} loading="lazy" className="h-5 w-auto" />
-                                <img src="/assets/payment/mastercard.png" alt="Mastercard" width={106} height={64} loading="lazy" className="h-5 w-auto" />
+                                <img src="/assets/payment/mastercard.png" alt="Mastercard" width={102} height={64} loading="lazy" className="h-5 w-auto" />
                             </div>
                         </div>
                     </div>
