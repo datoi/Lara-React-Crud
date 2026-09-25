@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import { isHex } from '../components/CartDrawer';
 import { Navigation } from '../components/landing/Navigation';
+import { PaymentMarks } from '../components/PaymentMarks';
 import { Button } from '../components/ui/button';
 import { getAuthToken, saveReturnTo } from '../hooks/useAuth';
 import {
@@ -360,6 +361,17 @@ export default function CartPage() {
                             >
                                 {t('cart.continueShopping')}
                             </button>
+
+                            {/* The card is taken on Flitt's page, not this one, so
+                                the schemes are named here — on the summary the
+                                customer reads before committing — rather than left
+                                to be discovered after the redirect. Shares the
+                                footer's string deliberately: two copies of "We
+                                accept:" would eventually disagree. */}
+                            <PaymentMarks
+                                label={t('footer.weAccept')}
+                                className="mt-5 justify-center border-t border-[#111111]/12 pt-4 text-[10px] uppercase tracking-[0.08em] text-[#6c625b]"
+                            />
                         </aside>
                     </div>
                 )}

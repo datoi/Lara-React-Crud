@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
+import { PaymentMarks } from '../PaymentMarks';
 import { EmailSupportModal } from '../EmailSupportModal';
 import { COMPANY_EMAIL, COMPANY_ID_CODE, COMPANY_PHONE, COMPANY_PHONE_HREF } from '../../data/company';
 import { getAuthUser } from '../../hooks/useAuth';
@@ -180,14 +181,10 @@ export function Footer() {
 
                         <div className="text-left sm:text-right">
                             <p className="text-xl uppercase tracking-normal lg:text-2xl">#MADE FOR YOU</p>
-                            <div className="mt-2 flex items-center gap-2.5 text-[10px] uppercase tracking-[0.08em] text-black/45 sm:justify-end">
-                                <span>{t('footer.weAccept')}</span>
-                                {/* The marks are cut out against the footer's own
-                                    background, so they carry no plate of their own.
-                                    Served at 2x the rendered height to stay sharp. */}
-                                <img src="/assets/payment/visa.png" alt="Visa" width={198} height={64} loading="lazy" className="h-5 w-auto" />
-                                <img src="/assets/payment/mastercard.png" alt="Mastercard" width={102} height={64} loading="lazy" className="h-5 w-auto" />
-                            </div>
+                            <PaymentMarks
+                                label={t('footer.weAccept')}
+                                className="mt-2 text-[10px] uppercase tracking-[0.08em] text-black/45 sm:justify-end"
+                            />
                         </div>
                     </div>
 
