@@ -66,6 +66,15 @@ Route::get('/product/{id}', function (string $id) {
     return response()->view('app', [], Product::whereKey($id)->exists() ? 200 : 404);
 })->where('id', '[0-9]+');
 
+// ─── Gateway return ──────────────────────────────────────────────────────────
+// Flitt returns the customer to response_url with a POST, which the GET-only
+// catch-all below answers with 405 — an error page shown to someone whose money
+// has already gone. Serve the same shell instead: the query string survives the
+// POST, and PaymentComplete confirms the order against the server from there.
+Route::post('/checkout/complete', function () {
+    return view('app');
+});
+
 // ─── SPA catch-all ───────────────────────────────────────────────────────────
 Route::get('/{any}', function () {
     return view('app');

@@ -13,6 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->trustProxies(at: '*');
+
+        // Flitt posts the customer back with no CSRF token. The route renders
+        // the app shell and nothing more — the payment itself is confirmed
+        // server-side through /api/orders/{id}/verify-payment.
+        $middleware->validateCsrfTokens(except: ['checkout/complete']);
 $middleware->alias([
             'auth.bearer' => \App\Http\Middleware\BearerTokenAuth::class,
             'auth.admin'  => \App\Http\Middleware\AdminMiddleware::class,

@@ -609,6 +609,27 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-25] Payment switched on for merchant 4057819, and the 405 that met every paying customer
+
+**What was done:** Flitt's go-live thread asks for a test payment by card, Google Pay and Apple Pay before the merchant is moved to real money. Getting there surfaced two faults — one configuration, one in the code.
+
+- **The gateway was never configured in production.** Railway carried none of the `FLITT_*` variables, so `FlittService::isConfigured()` was false on kereforyou.com and `POST /api/orders/{id}/pay` answered 502 to everyone. Payment had not been half-working on the live site; it had never worked. Locally, `.env` still held Flitt's shared public sandbox merchant `1549901` rather than kereforyou.com's `4057819`, so the wallet methods enabled on 4057819 could not have appeared either. Both now carry the real merchant and its Payment key.
+- **The customer's return from the gateway answered 405.** Flitt returns the payer to `response_url` with a **POST**, and `routes/web.php` held only the GET catch-all — so Laravel refused the method and the customer met "Oops! An Error Occurred — 405 Method Not Allowed", *after* the money had gone. There is now an explicit `POST /checkout/complete` rendering the same app shell, and `bootstrap/app.php` exempts that one path from CSRF because the gateway carries no token. The query string survives the POST, so `PaymentComplete` reads the order and confirms it through `verify-payment` exactly as before — the page still does not believe itself.
+
+**The backend was never at fault, and the production incident is what proves it.** `ORD-8QXYYJGF` was paid on kereforyou.com for ₾327 while the return page was still broken: the server callback reached the live site, `markPaid` credited the order, and the customer's "Order Confirmed" email arrived. Only the page the customer was looking at was wrong.
+
+**Verified.** Against the real merchant: a checkout token mints; `fetchOrderStatus` answers `approved`/`GEL` for an order that exists and "Order not found" for one that does not — the same answer Flitt's public sandbox gives, which is what rules out our signature rather than assuming it. Through the real HTTP kernel, outside the test harness so CSRF genuinely runs: `POST /checkout/complete` is 200 with the app shell where it was 405, `GET` unchanged at 200, `/marketplace` unchanged, and `POST /marketplace` still 405 — the exemption did not spread. `php artisan test` 150/150, three of them new and pinning exactly this. Observed on Flitt's page for 4057819: card fields and a Google Pay button, Google Pay itself reporting "won't be charged because you're in a test environment"; Apple Pay completed from an iPhone; a card payment completed and recorded as `payment_system: card`, `payment_id 1017638341`.
+
+**Still open.**
+
+- **The checkout page comes up in English.** Flitt accepts a `lang` parameter and lists `ka`, but `createCheckoutToken` never sends one — so a Georgian-default site hands its customers an English payment page. Confirmed on screen, not yet fixed.
+- The three methods have not been paid end to end *on kereforyou.com* with the return page working; that needs this deployed first.
+- Google Pay is still on the portal's TEST environment and has to be switched at go-live.
+- The Payment key has been on screen repeatedly and should be regenerated once live approval clears — go-live step 1 below.
+
+**Noticed, not acted on:** ordering from the cart lands on "Order placed" with no mention that payment is still owed, while the customiser route goes straight to the gateway. The two flows disagree about whether checkout includes paying, and a customer has to find the Pay button on the dashboard unaided.
+
+---
 ### [2026-09-25] Catalogue descriptions that read as descriptions
 
 **What was done:** `catalogue:enrich-descriptions`, a one-off command for the last of Flitt's five go-live requirements — every product must carry a description and a price in GEL. The prices were always right. The descriptions were mostly one or two words, and several were just the product's own name repeated: "Kaba" described as "Kaba", "ქვედაბოლო" as "ქვედაბოლო". Technically present, and not what the requirement is for.

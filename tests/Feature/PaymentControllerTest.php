@@ -250,3 +250,27 @@ test('every refusal carries a code the client can translate', function () {
             ->assertJsonPath('code', $case['code']);
     }
 });
+
+
+/**
+ * Where the customer lands after paying.
+ *
+ * Flitt returns them to response_url with a POST, and the SPA catch-all is
+ * GET-only, so before routes/web.php carried an explicit POST route this put
+ * "405 Method Not Allowed" in front of someone whose money had already gone.
+ * Seen in production on ORD-8QXYYJGF, whose payment had in fact succeeded.
+ */
+test('the gateway may post the customer back to the completion page', function () {
+    $this->post('/checkout/complete?order=ORD-8QXYYJGF&id=20', [
+        'order_status' => 'approved',
+        'masked_card'  => '411111XXXXXX1111',
+    ])->assertOk();
+});
+
+test('the completion page still answers a plain get', function () {
+    $this->get('/checkout/complete?order=ORD-8QXYYJGF&id=20')->assertOk();
+});
+
+test('accepting that post does not make the rest of the app accept posts', function () {
+    $this->post('/marketplace')->assertStatus(405);
+});
