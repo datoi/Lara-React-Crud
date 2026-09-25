@@ -489,7 +489,7 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
 }
 
 export default function CustomerDashboard() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate  = useNavigate();
     const user      = getAuthUser();
     const token     = getAuthToken();
@@ -522,7 +522,12 @@ export default function CustomerDashboard() {
         try {
             const res = await fetch(`/api/orders/${orderId}/pay`, {
                 method: 'POST',
-                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ lang: i18n.language }),
             });
             const data = await res.json();
 

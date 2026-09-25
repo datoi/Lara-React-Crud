@@ -3,6 +3,7 @@
 use App\Models\Order;
 use App\Models\User;
 use App\Services\FlittService;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 /**
@@ -273,4 +274,52 @@ test('the completion page still answers a plain get', function () {
 
 test('accepting that post does not make the rest of the app accept posts', function () {
     $this->post('/marketplace')->assertStatus(405);
+});
+
+
+/**
+ * Flitt renders the checkout page itself, so the language the customer is
+ * reading the site in has to be sent with the token or the gateway picks its
+ * own — which is how a Georgian-default storefront served an English card form.
+ */
+test('the checkout page is asked for in the language the client is showing', function () {
+    Http::fake(['*/checkout/token' => Http::response(['response' => ['response_status' => 'success', 'token' => 'tok_1']])]);
+
+    [$user, $token] = payer();
+    $order = placeOrder($user);
+
+    $this->withToken($token)->postJson("/api/orders/{$order->id}/pay", ['lang' => 'en'])->assertOk();
+
+    Http::assertSent(fn ($request) => $request['request']['lang'] === 'en');
+});
+
+test('the checkout page defaults to georgian when the client says nothing', function () {
+    Http::fake(['*/checkout/token' => Http::response(['response' => ['response_status' => 'success', 'token' => 'tok_2']])]);
+
+    [$user, $token] = payer();
+    $order = placeOrder($user);
+
+    $this->withToken($token)->postJson("/api/orders/{$order->id}/pay")->assertOk();
+
+    Http::assertSent(fn ($request) => $request['request']['lang'] === 'ka');
+});
+
+/**
+ * The field reaches a signed request to the gateway, so it is never passed on as
+ * it arrives — and a junk value must cost the customer a Georgian page, not the
+ * order they are trying to pay for.
+ */
+test('a language the client invents does not fail the payment', function () {
+    Http::fake(['*/checkout/token' => Http::response(['response' => ['response_status' => 'success', 'token' => 'tok_3']])]);
+
+    [$user, $token] = payer();
+
+    foreach ([['de'], ['not', 'a', 'string'], [''], [null]] as $junk) {
+        $order = placeOrder($user);
+
+        $this->withToken($token)->postJson("/api/orders/{$order->id}/pay", ['lang' => count($junk) === 1 ? $junk[0] : $junk])
+            ->assertOk();
+    }
+
+    Http::assertSent(fn ($request) => $request['request']['lang'] === 'ka');
 });

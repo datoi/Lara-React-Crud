@@ -27,6 +27,15 @@ use Illuminate\Support\Str;
  */
 class FlittService
 {
+    /**
+     * Checkout languages Flitt renders, of the two this site speaks. One is sent
+     * with every token: leave it out and the gateway chooses for itself, which is
+     * how a Georgian-default storefront handed its customers an English card form.
+     */
+    public const LANGUAGES = ['ka', 'en'];
+
+    public const DEFAULT_LANGUAGE = 'ka';
+
     private string $merchantId;
 
     private string $secret;
@@ -103,10 +112,23 @@ class FlittService
     }
 
     /**
+     * The checkout language for what the client says it is displaying.
+     *
+     * Falls back rather than refusing: the language is cosmetic and a payment is
+     * not, so an unrecognised value costs the customer a Georgian page, not their
+     * order. This is also the validation — the value reaches a signed request to
+     * the gateway, so it is never passed through as it arrives.
+     */
+    public function languageFor(?string $requested): string
+    {
+        return in_array($requested, self::LANGUAGES, true) ? $requested : self::DEFAULT_LANGUAGE;
+    }
+
+    /**
      * Create a checkout token for an order. Returns the token, or null if Flitt
      * refused or could not be reached — the caller turns that into a 502.
      */
-    public function createCheckoutToken(Order $order): ?string
+    public function createCheckoutToken(Order $order, ?string $lang = null): ?string
     {
         if (! $this->isConfigured()) {
             Log::error('Flitt is not configured — set FLITT_MERCHANT_ID and FLITT_SECRET_KEY.');
@@ -122,6 +144,7 @@ class FlittService
             'order_desc'          => "Kere order {$order->order_number}",
             'amount'              => $this->minorUnits($order),
             'currency'            => 'GEL',
+            'lang'                => $this->languageFor($lang),
             'server_callback_url' => url('/api/payments/flitt/callback'),
             // Carries the id as well as the number: the completion page confirms
             // through /api/orders/{id}/verify-payment, which is keyed by id.

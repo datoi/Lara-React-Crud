@@ -67,7 +67,12 @@ class PaymentController extends Controller
             return response()->json(['message' => 'This order can no longer be paid.', 'code' => 'order_not_payable'], 409);
         }
 
-        $token = $this->flitt->createCheckoutToken($order);
+        // Flitt renders its own page, so the language the customer is reading the
+        // site in has to travel with the request. The client sends what it is
+        // displaying; the service decides whether that is a language Flitt speaks.
+        $requested = $request->input('lang');
+
+        $token = $this->flitt->createCheckoutToken($order, is_string($requested) ? $requested : null);
 
         if (! $token) {
             return response()->json(['message' => 'Could not start the payment. Please try again.', 'code' => 'payment_start_failed'], 502);

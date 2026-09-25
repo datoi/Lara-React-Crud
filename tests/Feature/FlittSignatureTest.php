@@ -96,3 +96,24 @@ test('amounts are converted to tetri without float drift', function () {
 
     expect(flitt()->minorUnits($order))->toBe(4510);
 });
+
+
+test('an unsupported checkout language falls back rather than refusing', function () {
+    $flitt = flitt();
+
+    expect($flitt->languageFor('ka'))->toBe('ka')
+        ->and($flitt->languageFor('en'))->toBe('en')
+        ->and($flitt->languageFor(null))->toBe('ka')
+        ->and($flitt->languageFor(''))->toBe('ka')
+        // Flitt renders German; this site does not speak it, so it is not offered.
+        ->and($flitt->languageFor('de'))->toBe('ka');
+});
+
+test('the language is inside the signed set, not alongside it', function () {
+    $flitt = flitt();
+
+    $base = ['order_id' => 'test123456', 'merchant_id' => '1396424', 'amount' => '100', 'currency' => 'GEL'];
+
+    expect($flitt->signature($base + ['lang' => 'ka']))
+        ->not->toBe($flitt->signature($base + ['lang' => 'en']));
+});

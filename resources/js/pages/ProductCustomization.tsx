@@ -57,7 +57,7 @@ function Lari() {
 }
 
 export default function ProductCustomization({ customize = false }: { customize?: boolean }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
@@ -309,7 +309,12 @@ export default function ProductCustomization({ customize = false }: { customize?
         try {
             const res = await fetch(`/api/orders/${orderId}/pay`, {
                 method: 'POST',
-                headers: { Authorization: `Bearer ${authToken}`, Accept: 'application/json' },
+                headers: {
+                    Authorization: `Bearer ${authToken}`,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ lang: i18n.language }),
             });
             const data = await res.json();
 
