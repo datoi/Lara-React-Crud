@@ -7,6 +7,13 @@ import type { LayerCategory, LayerOption, OptionColor } from '../../types/custom
  * two can never disagree about what the customer's garment looks like.
  */
 
+/**
+ * The spec line that carries the garment's colour. Orders placed before the
+ * colour name was stored alongside the ids still have it here, which is how
+ * their photograph is recovered.
+ */
+export const COLOUR_SPEC_ATTRIBUTE = 'Colour';
+
 /** The option a category renders: the sub-selected child when there is one, else the selected parent. */
 export function resolveEffectiveOption(
     category: LayerCategory,

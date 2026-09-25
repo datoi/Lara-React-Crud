@@ -299,6 +299,10 @@ class OrderController extends Controller
             'custom_design_data.customization.sub_selections' => 'nullable|array|max:30',
             'custom_design_data.customization.sub_selections.*' => 'nullable|integer|min:1',
             'custom_design_data.customization.fabric_id' => 'nullable|integer|min:1',
+            // The colour asked for, by name. The id maps cannot express a colour
+            // the chosen option was never photographed in, and without it the
+            // design cannot be pictured again for the tailor.
+            'custom_design_data.customization.color_name' => 'nullable|string|max:60',
             // What the customer was actually looking at, so an order names the
             // garment rather than only the taxonomy bucket it is filed under.
             'custom_design_data.customization.product_name' => 'nullable|string|max:120',

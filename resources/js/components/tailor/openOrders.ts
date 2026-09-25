@@ -1,4 +1,6 @@
 import type { Fabric, LayerCategory } from '../../types/customizer';
+import { COLOUR_SPEC_ATTRIBUTE } from '../customizer/designPhoto';
+import { readSpec } from '../DesignSpecList';
 
 /** What a studio design is photographed from: the garment's layers and fabrics. */
 export interface StudioProduct {
@@ -60,7 +62,11 @@ export function readStudioChoices(customization: unknown): StudioChoices | null 
         selections: c.selections,
         sub_selections: isIdMap(c.sub_selections) ? c.sub_selections : {},
         color_selections: isIdMap(c.color_selections) ? c.color_selections : {},
-        color_name: typeof c.color_name === 'string' ? c.color_name : null,
+        // Orders used to drop color_name on the way in, keeping only the
+        // spec's readable colour line — so that line stands in when it is absent.
+        color_name: typeof c.color_name === 'string'
+            ? c.color_name
+            : readSpec(customization).find(line => line.attribute === COLOUR_SPEC_ATTRIBUTE)?.option ?? null,
         fabric_id: typeof c.fabric_id === 'number' ? c.fabric_id : null,
     };
 }

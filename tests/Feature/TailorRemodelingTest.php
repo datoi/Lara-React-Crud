@@ -119,6 +119,40 @@ test('a tailor who does not take remodel work cannot offer on one', function () 
         ->assertSuccessful();
 });
 
+test('a studio order keeps every choice it was placed with, colour included', function () {
+    // The regression this guards: color_name had no rule, so validate() dropped
+    // it and the tailor could never be shown the design in the colour chosen.
+    $token = Str::random(60);
+    User::factory()->create([
+        'role' => 'customer',
+        'terms_accepted_at' => now(),
+        'api_token' => hash('sha256', $token),
+    ]);
+
+    $customization = [
+        'selections' => [9 => 30, 13 => 56],
+        'sub_selections' => [],
+        'color_selections' => [56 => 276],
+        'color_name' => 'Burgundy',
+        'fabric_id' => null,
+        'spec' => [['attribute' => 'Colour', 'option' => 'Burgundy', 'price_modifier' => 0]],
+        'product_name' => 'T-shirt',
+        'product_slug' => 'womens-t-shirt',
+    ];
+
+    $this->withToken($token)->postJson('/api/orders', [
+        'order_type' => 'custom',
+        'custom_design_data' => ['garment_type' => 'shirt', 'customization' => $customization],
+    ])->assertStatus(201);
+
+    $stored = Order::latest('id')->firstOrFail()->custom_design_data['customization'];
+
+    expect($stored['color_name'])->toBe('Burgundy')
+        ->and($stored['product_slug'])->toBe('womens-t-shirt')
+        ->and($stored['selections'])->toEqual([9 => 30, 13 => 56])
+        ->and($stored['color_selections'])->toEqual([56 => 276]);
+});
+
 test('a tailor can change the answer from their profile', function () {
     [$tailor, $token] = tailorWithToken(true);
 

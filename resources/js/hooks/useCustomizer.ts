@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { resolveEffectiveOption, resolveOptionColor } from '../components/customizer/designPhoto';
+import { COLOUR_SPEC_ATTRIBUTE, resolveEffectiveOption, resolveOptionColor } from '../components/customizer/designPhoto';
 import type {
     LayerCategory,
     LayerOption,
@@ -311,7 +311,7 @@ export function useCustomizer({
 
         // Colour is the garment's, not any one attribute's, so it is its own
         // line rather than an aside on whichever option carries the photographs.
-        if (colorName) lines.push({ attribute: 'Colour', option: colorName, price_modifier: 0 });
+        if (colorName) lines.push({ attribute: COLOUR_SPEC_ATTRIBUTE, option: colorName, price_modifier: 0 });
 
         return lines;
     }, [layerCategories, resolveOption, colorName]);
