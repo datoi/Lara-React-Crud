@@ -1,61 +1,36 @@
-import { motion } from 'motion/react';
-import { ArrowRight } from 'lucide-react';
+import { CheckCircle, Circle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui/button';
 
 interface Props {
+    profileComplete: boolean;
+    productsCount: number;
     onAddProduct: () => void;
     onEditProfile: () => void;
 }
 
-export function OnboardingPanel({ onAddProduct, onEditProfile }: Props) {
+export function OnboardingPanel({ profileComplete, productsCount, onAddProduct, onEditProfile }: Props) {
     const { t } = useTranslation();
-
-    const STEPS = [
-        { num: '1', label: t('tailorComponents.step1Label'), desc: t('tailorComponents.step1Desc') },
-        { num: '2', label: t('tailorComponents.step2Label'), desc: t('tailorComponents.step2Desc') },
-        { num: '3', label: t('tailorComponents.step3Label'), desc: t('tailorComponents.step3Desc') },
+    const productsReady = productsCount >= 3;
+    const steps = [
+        { done: profileComplete, label: t('tailorComponents.completeProfileItem') },
+        { done: productsReady, label: t('tailorComponents.listProducts', { goal: 3 }) },
+        { done: profileComplete && productsReady, label: t('tailorComponents.readyForOrders') },
     ];
-
+    const current = steps.findIndex(step => !step.done);
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="tailor-studio-onboarding"
-        >
-            <p className="text-[10px] font-normal uppercase tracking-widest text-[var(--store-muted)] mb-3">
-                {t('tailorComponents.gettingStarted')}
-            </p>
-            <h2 className="font-serif text-xl sm:text-2xl font-normal mb-1.5">{t('tailorComponents.onboardingHeading')}</h2>
-            <div className="mt-7 flex flex-col sm:flex-row gap-5 mb-8">
-                {STEPS.map((step) => (
-                    <div key={step.num.padStart(2, '0')} className="flex items-start gap-3 flex-1 relative">
-                        <div className="w-7 shrink-0 pt-0.5">
-                            <span className="font-serif text-xl font-normal text-brand">{step.num.padStart(2, '0')}</span>
-                        </div>
-                        <div className="pt-0.5">
-                            <p className="text-xs font-medium text-[var(--store-ink)] leading-relaxed">{step.label}</p>
-                            <p className="text-[11px] text-[var(--store-muted)] mt-1 leading-relaxed">{step.desc}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-            <Button
-                variant="default"
-                size="default"
-                onClick={onAddProduct}
-                className="rounded-none bg-brand text-white hover:bg-brand-dark text-xs font-normal flex items-center gap-2"
-            >
-                {t('tailorComponents.addFirstProductBtn')}
-                <ArrowRight className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" onClick={onEditProfile} className="rounded-none border-[var(--store-rule)] bg-transparent text-xs font-normal text-[var(--store-ink)]">
-                {t('tailorComponents.editProfileTitle')}
-            </Button>
-            </div>
-        </motion.div>
+        <section className="studio-checklist" aria-labelledby="studio-start-title">
+            <h2 id="studio-start-title">{t('studio.startHere')}</h2>
+            <ol>
+                {steps.map((step, index) => <li key={step.label} aria-current={index === current ? 'step' : undefined}>
+                    {step.done ? <CheckCircle aria-hidden="true" /> : <Circle aria-hidden="true" />}
+                    <span>{step.label}</span>
+                    {(step.done || index === current) && <small className={step.done ? 'studio-step-done' : 'studio-step-next'}>{t(step.done ? 'studio.done' : 'studio.next')}</small>}
+                </li>)}
+            </ol>
+            <p>{t('studio.productProgress', { count: productsCount })}</p>
+            <button type="button" onClick={profileComplete ? onAddProduct : onEditProfile} className="studio-text-action">
+                {t(profileComplete ? 'studio.goToProducts' : 'tailorComponents.editProfileTitle')}
+            </button>
+        </section>
     );
 }

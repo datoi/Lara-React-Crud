@@ -1,13 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { ChevronDown } from 'lucide-react';
+import { Instagram, Phone, Mail, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
-import { PaymentMarks } from '../PaymentMarks';
 import { EmailSupportModal } from '../EmailSupportModal';
-import { COMPANY_EMAIL, COMPANY_ID_CODE, COMPANY_PHONE, COMPANY_PHONE_HREF } from '../../data/company';
-import { getAuthUser } from '../../hooks/useAuth';
-import { isRestrictedTailor, tailorMayVisit } from '../../lib/tailorAccess';
 
 type FooterLink =
     | { label: string; type: 'router'; to: string }
@@ -23,30 +19,22 @@ interface FooterColumnProps {
 export function Footer() {
     const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
     const [emailSupportOpen, setEmailSupportOpen] = useState(false);
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
 
     const handleModalOpen = (modal: 'size-guide' | 'email-support') => {
         if (modal === 'size-guide') setSizeGuideOpen(true);
         if (modal === 'email-support') setEmailSupportOpen(true);
     };
 
-    const toggleLanguage = () => {
-        void i18n.changeLanguage(i18n.language === 'ka' ? 'en' : 'ka');
-    };
-
-    // A tailor is not offered a link the router would only send back to their
-    // dashboard; modals open in place, so they stay.
-    const restricted = isRestrictedTailor(getAuthUser());
-    const offered = (link: FooterLink) =>
-        !restricted || link.type === 'modal' || tailorMayVisit(link.type === 'router' ? link.to : link.href);
-
-    const allColumns: { title: string; links: FooterLink[] }[] = [
+    const footerColumns: { title: string; links: FooterLink[] }[] = [
         {
             title: t('footer.product'),
             links: [
                 { label: t('footer.howItWorks'), type: 'hash', href: '/#how-it-works' },
                 { label: t('footer.categories'), type: 'hash', href: '/#categories' },
                 { label: t('footer.designGallery'), type: 'router', to: '/marketplace' },
+                { label: t('footer.sizeGuide'), type: 'modal', modal: 'size-guide' },
+                { label: t('footer.faq'), type: 'hash', href: '/#faq' },
             ],
         },
         {
@@ -55,144 +43,59 @@ export function Footer() {
                 { label: t('footer.aboutUs'), type: 'router', to: '/about' },
                 { label: t('footer.ourTailors'), type: 'router', to: '/our-tailors' },
                 { label: t('footer.tailorDashboard'), type: 'router', to: '/tailor-dashboard' },
-            ],
-        },
-        {
-            title: t('footer.support'),
-            links: [
                 { label: t('footer.helpCenter'), type: 'router', to: '/help' },
-                { label: t('footer.contactUs'), type: 'router', to: '/contact' },
-                { label: t('footer.emailSupport'), type: 'modal', modal: 'email-support' },
-                { label: t('footer.sizeGuide'), type: 'modal', modal: 'size-guide' },
-                { label: t('footer.faq'), type: 'hash', href: '/#faq' },
             ],
         },
     ];
 
-    const footerColumns = allColumns
-        .map(column => ({ ...column, links: column.links.filter(offered) }))
-        .filter(column => column.links.length > 0);
-
-    const allLegalLinks: FooterLink[] = [
+    const legalLinks: FooterLink[] = [
         { label: t('footer.privacyPolicy'), type: 'router', to: '/privacy' },
         { label: t('footer.termsOfService'), type: 'router', to: '/terms' },
         { label: t('footer.refundPolicy'), type: 'router', to: '/refund-policy' },
     ];
-    const legalLinks = allLegalLinks.filter(offered);
 
     return (
         <>
             <MeasurementGuideModal open={sizeGuideOpen} onClose={() => setSizeGuideOpen(false)} />
             <EmailSupportModal open={emailSupportOpen} onClose={() => setEmailSupportOpen(false)} />
 
-            <footer className="overflow-hidden border-t border-black/15 bg-[#f7f6f3] text-[#111111]">
-                <div className="mx-auto max-w-[1600px] px-5 pb-8 pt-14 sm:px-8 sm:pb-10 sm:pt-16 lg:px-10 lg:pt-20">
-                    <div className="grid gap-14 border-b border-black/15 pb-16 md:grid-cols-2 lg:grid-cols-[1.55fr_0.8fr_0.9fr_0.7fr] lg:gap-16 lg:pb-20">
-                        <div>
-                            {!restricted && (
-                                <>
-                                    <h2 className="text-xl font-medium uppercase tracking-normal text-[#111111] sm:text-2xl">{t('footer.contactUs')}</h2>
-                                    <Link to="/contact" className="store-text-link mt-7">{t('footer.emailSupport')} ↗</Link>
-                                </>
-                            )}
-                        </div>
-
-                        {footerColumns.map((column) => (
-                            <FooterColumn key={column.title} title={column.title} links={column.links} onModalOpen={handleModalOpen} />
-                        ))}
+            <footer className="kere-footer">
+                <div className="kere-footer-inner">
+                    <div className="kere-footer-brand">
+                        <Link to="/" aria-label="Kere"><span className="kere-nav-logo" aria-hidden="true" /></Link>
+                        <p>{t('footer.tagline')}</p>
                     </div>
-
-                    <div className="grid gap-10 border-b border-black/15 py-12 lg:grid-cols-[1.55fr_0.8fr_0.9fr_0.7fr] lg:gap-16">
-                        <div>
-                            <p className="max-w-sm text-sm leading-7 text-black/55">
-                                {t('footer.tagline')}
-                            </p>
-
-                            {/* The registered name, code and address are here as
-                                well as in the terms: a shopper looking for who
-                                they actually paid should not have to open a
-                                legal page to find out. */}
-                            <div className="mt-5 flex flex-col gap-2 text-xs uppercase tracking-[0.02em] text-black/55">
-                                <span>{t('company.legalName')}</span>
-                                <span>{t('company.idCodeLabel')} {COMPANY_ID_CODE}</span>
-                                <span className="normal-case">{t('company.address')}</span>
-                                <a href={`tel:${COMPANY_PHONE_HREF}`} className="w-fit transition-opacity hover:opacity-45">
-                                    {COMPANY_PHONE}
-                                </a>
-                                <a href={`mailto:${COMPANY_EMAIL}`} className="w-fit normal-case transition-opacity hover:opacity-45">
-                                    {COMPANY_EMAIL}
-                                </a>
+                    <div className="kere-footer-columns">
+                        <section className="kere-footer-contact" aria-labelledby="footer-contact-title">
+                            <h3 id="footer-contact-title">{t('footer.contactUs')}</h3>
+                            <a href="tel:+995597032348"><Phone aria-hidden="true" /><span>+995 597 03 23 48</span></a>
+                            <a href="mailto:kereforyou@gmail.com"><Mail aria-hidden="true" /><span>kereforyou@gmail.com</span></a>
+                            <div className="kere-footer-social">
+                                <a href="https://www.instagram.com/kereforyou/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Instagram aria-hidden="true" /></a>
                             </div>
-                        </div>
-
-                        <div className="lg:col-span-2">
-                            {legalLinks.length > 0 && (
-                                <>
-                                    <h3 className="text-sm font-medium uppercase tracking-normal">{t('footer.legal')}</h3>
-
-                                    <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-x-8">
-                                        {legalLinks.map((item) => (
-                                            <FooterItem key={item.label} item={item} onModalOpen={handleModalOpen} />
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </div>
-
-                        <div>
-                            <h3 className="text-sm font-medium uppercase tracking-normal">Social</h3>
-
-                            <div className="mt-5 flex flex-col gap-3">
-                                <a
-                                    href="https://www.instagram.com/kereforyou?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label="Instagram"
-                                    className="w-fit text-xs uppercase tracking-[0.02em] text-black/60 transition-opacity hover:opacity-45"
-                                >
-                                    Instagram
-                                </a>
-                            </div>
-                        </div>
+                        </section>
+                        {footerColumns.map(column => <FooterColumn key={column.title} {...column} onModalOpen={handleModalOpen} />)}
                     </div>
-
-                    <div className="grid items-end gap-10 pt-8 sm:grid-cols-2 lg:grid-cols-[1fr_auto_1fr]">
-                        <div className="flex flex-wrap items-center gap-7">
-                            <Link to="/" className="font-serif text-[30px] font-medium leading-none tracking-normal sm:text-[34px]">
-                                Kere
-                            </Link>
-
-                            <button
-                                type="button"
-                                onClick={toggleLanguage}
-                                className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.04em] text-black/65 transition-opacity hover:opacity-45"
-                            >
-                                {i18n.language === 'ka' ? 'KA' : 'EN'}
-                                <ChevronDown className="h-3.5 w-3.5" />
-                            </button>
-
-                            <span className="inline-flex items-center gap-1.5 text-xs text-black/65">
-                                {t('footer.location')}
-                                <ChevronDown className="h-3.5 w-3.5" />
-                            </span>
-                        </div>
-
-                        <p className="text-left text-xl uppercase tracking-normal sm:text-right lg:text-center lg:text-2xl">#KERE CRAFT</p>
-
-                        <div className="text-left sm:text-right">
-                            <p className="text-xl uppercase tracking-normal lg:text-2xl">#MADE FOR YOU</p>
-                            <PaymentMarks
-                                label={t('footer.weAccept')}
-                                className="mt-2 text-[10px] uppercase tracking-[0.08em] text-black/45 sm:justify-end"
-                            />
-                        </div>
+                    <div className="kere-footer-payments" aria-label={t('footer.weAccept')}>
+                        <span>{t('footer.weAccept')}</span>
+                        <svg width="54" height="32" viewBox="0 0 54 32" role="img" aria-label="Visa">
+                            <rect x=".5" y=".5" width="53" height="31" rx="3" fill="#fff" stroke="#ded7ce" />
+                            <text x="27" y="22" textAnchor="middle" fill="#1434cb" fontFamily="Arial, sans-serif" fontSize="20" fontWeight="900" fontStyle="italic">VISA</text>
+                        </svg>
+                        <svg width="54" height="32" viewBox="0 0 54 32" role="img" aria-label="Mastercard">
+                            <rect x=".5" y=".5" width="53" height="31" rx="3" fill="#fff" stroke="#ded7ce" />
+                            <circle cx="21" cy="16" r="10" fill="#eb001b" />
+                            <circle cx="33" cy="16" r="10" fill="#f79e1b" />
+                            <path d="M27 8a10 10 0 0 1 0 16 10 10 0 0 1 0-16" fill="#ff5f00" />
+                        </svg>
                     </div>
-
-                    <div className="mt-9 flex flex-col gap-3 border-t border-black/10 pt-5 text-[10px] uppercase tracking-[0.08em] text-black/40 sm:flex-row sm:items-center sm:justify-between">
-                        <p>© {new Date().getFullYear()} Kere. {t('footer.allRightsReserved')}</p>
-
-                        <p>{t('footer.location')}</p>
+                    <div className="kere-footer-legal">
+                        <nav aria-label={t('footer.legal')}>
+                            {legalLinks.map(item => <FooterItem key={item.label} item={item} onModalOpen={handleModalOpen} />)}
+                        </nav>
                     </div>
+                    <p className="kere-footer-location"><MapPin aria-hidden="true" /><span>{t('footer.streetAddress')}</span></p>
+                    <p className="kere-footer-copyright">© {new Date().getFullYear()} {t('footer.registeredName')} · {t('footer.companyId')}</p>
                 </div>
             </footer>
         </>
@@ -202,9 +105,9 @@ export function Footer() {
 function FooterColumn({ title, links, onModalOpen }: FooterColumnProps) {
     return (
         <div>
-            <h3 className="text-sm font-medium uppercase tracking-normal text-[#111111] sm:text-base">{title}</h3>
+            <h3 className="kere-footer-heading">{title}</h3>
 
-            <div className="mt-6 flex flex-col gap-4">
+            <div className="kere-footer-links">
                 {links.map((item) => (
                     <FooterItem key={item.label} item={item} onModalOpen={onModalOpen} />
                 ))}
@@ -214,7 +117,7 @@ function FooterColumn({ title, links, onModalOpen }: FooterColumnProps) {
 }
 
 function FooterItem({ item, onModalOpen }: { item: FooterLink; onModalOpen: (modal: 'size-guide' | 'email-support') => void }) {
-    const className = 'w-fit text-xs uppercase tracking-[0.02em] text-black/60 transition-opacity hover:opacity-45';
+    const className = 'kere-footer-link';
 
     if (item.type === 'router') {
         return (

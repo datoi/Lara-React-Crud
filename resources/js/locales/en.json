@@ -1512,7 +1512,9 @@
         "confirmDeleteDesc": "This will permanently remove the product from the marketplace.",
         "confirmDeleteBtn": "Delete",
         "statsFetchError": "Stats unavailable — check your connection",
-        "studioSpec": "Design specification"
+        "studioSpec": "Design specification",
+        "backHome": "Back to Home",
+        "siteNavigation": "Site navigation"
     },
     "measurementGuide": {
         "title": "Measurement Guide",
@@ -1709,5 +1711,23 @@
         "noneForBidders": "No measurements provided",
         "madeToMeasure": "Made to your measurements",
         "orderFromPage": "This piece is made to your measurements — order it from its page."
+    },
+    "studio": {
+        "businessSummary": "Income and business overview",
+        "deleteProduct": "Delete",
+        "done": "Complete",
+        "goToProducts": "Go to products",
+        "home": "Home",
+        "next": "Next step",
+        "orderValue": "Total order value",
+        "orderValueHint": "All orders; not a payout balance",
+        "pauseProduct": "Pause",
+        "productProgress": "Products added: {{count}} / 3",
+        "profileHint": "Add your bio and specialty so customers can get to know your work.",
+        "profileIncomplete": "Profile needs a few details",
+        "profileReady": "Profile complete",
+        "resumeProduct": "Activate",
+        "sessionExpired": "Your session has ended. Sign in again, then reopen your profile to save. Your typed details are kept in this tab; please select the photo again.",
+        "startHere": "Start here"
     }
 }
