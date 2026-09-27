@@ -42,12 +42,15 @@ export function AnalyticsConsent() {
             document.documentElement.style.setProperty('--kere-consent-h', `${h}px`);
         };
 
+        const observer = new ResizeObserver(publish);
+        if (bannerRef.current) observer.observe(bannerRef.current);
         publish();
         // The banner is animated in, so its first measurement can be mid-flight.
         const settle = window.setTimeout(publish, 600);
         window.addEventListener('resize', publish);
 
         return () => {
+            observer.disconnect();
             window.clearTimeout(settle);
             window.removeEventListener('resize', publish);
             document.documentElement.style.removeProperty('--kere-consent-h');
@@ -91,21 +94,17 @@ export function AnalyticsConsent() {
                     data-testid="analytics-consent"
                     className="cookie-banner fixed inset-x-0 bottom-0 z-[200]"
                 >
-                    {/* Dismissing without choosing is not consent, so the close
-                        button records the refusal rather than just hiding the
-                        banner — otherwise analytics would stay unset and the
-                        visitor would be asked again on every page load. */}
-                    <button type="button" className="cookie-close" onClick={decline} aria-label={t('consent.close')}><X size={17} /></button>
+                    <button type="button" className="cookie-close" onClick={() => setVisible(false)} aria-label={t('consent.close')}><X size={17} /></button>
                     <h2>{t('consent.title')}</h2>
                     <div className="cookie-banner-row">
                         <p>
-                            {t('consent.message')}{' '}
+                            <span className="cookie-copy-desktop">{t('consent.message')}</span><span className="cookie-copy-mobile">{t('consent.shortMessage')}</span>{' '}
                             <a href="/privacy" className="underline underline-offset-2">{t('consent.learnMore')}</a>
                         </p>
                         <div className="cookie-actions">
                             <Button onClick={accept}>{t('consent.accept')}</Button>
                             <Button onClick={decline}>{t('consent.decline')}</Button>
-                            <Button variant="outline" onClick={() => setPreferencesOpen(value => !value)} aria-expanded={preferencesOpen} aria-controls="cookie-preferences">{t('consent.preferences')}</Button>
+                            <Button variant="outline" onClick={() => setPreferencesOpen(value => !value)} aria-expanded={preferencesOpen} aria-controls="cookie-preferences"><span className="cookie-copy-desktop">{t('consent.preferences')}</span><span className="cookie-copy-mobile">{t('consent.shortPreferences')}</span></Button>
                         </div>
                     </div>
                     {preferencesOpen && (

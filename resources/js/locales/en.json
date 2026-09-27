@@ -1543,7 +1543,9 @@
         "confirmDeleteBtn": "Delete",
         "deleteFailed": "Couldn't delete this product. Please try again.",
         "statsFetchError": "Stats unavailable — check your connection",
-        "studioSpec": "Design specification"
+        "studioSpec": "Design specification",
+        "backHome": "Back to Home",
+        "siteNavigation": "Site navigation"
     },
     "measurementGuide": {
         "title": "Measurement Guide",
@@ -1697,5 +1699,23 @@
         "address": "Nakaduli Street, 2nd Lane 92, Tbilisi, Georgia",
         "phoneLabel": "Phone",
         "emailLabel": "Email"
+    },
+    "studio": {
+        "businessSummary": "Income and business overview",
+        "deleteProduct": "Delete",
+        "done": "Complete",
+        "goToProducts": "Go to products",
+        "home": "Home",
+        "next": "Next step",
+        "orderValue": "Total order value",
+        "orderValueHint": "All orders; not a payout balance",
+        "pauseProduct": "Pause",
+        "productProgress": "Products added: {{count}} / 3",
+        "profileHint": "Add your bio and specialty so customers can get to know your work.",
+        "profileIncomplete": "Profile needs a few details",
+        "profileReady": "Profile complete",
+        "resumeProduct": "Activate",
+        "sessionExpired": "Your session has ended. Sign in again, then reopen your profile to save. Your typed details are kept in this tab; please select the photo again.",
+        "startHere": "Start here"
     }
 }

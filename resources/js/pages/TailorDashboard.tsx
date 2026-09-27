@@ -9,12 +9,9 @@ import { AvailableDesigns } from '../components/tailor/AvailableDesigns';
 import { ProductManager, type TailorProductFull } from '../components/tailor/ProductManager';
 import { TailorProfileEditor } from '../components/tailor/TailorProfileEditor';
 import { OnboardingPanel } from '../components/tailor/OnboardingPanel';
-import { SetupChecklist } from '../components/tailor/SetupChecklist';
 import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
 import { getAuthUser, getAuthToken, clearAuth, updateAuthUser } from '../hooks/useAuth';
 import { Link, useNavigate } from 'react-router';
-import { Button } from '../components/ui/button';
-import { TAILOR_HOME } from '../lib/tailorAccess';
 
 export default function TailorDashboard() {
     const { t } = useTranslation();
@@ -114,8 +111,7 @@ export default function TailorDashboard() {
 
     // ─── Setup state ──────────────────────────────────────────────────────────
     const setupComplete = profileComplete && products.length >= 3;
-    const showOnboarding = !loadingProducts && products.length === 0;
-    const showChecklist  = !loadingProducts && products.length > 0 && !setupComplete;
+
 
     const scrollToProfile = () => {
         setProfileEditorOpen(true);
@@ -163,7 +159,7 @@ export default function TailorDashboard() {
             <div className="tailor-dashboard-page min-h-screen bg-[var(--store-paper)] flex flex-col">
                 <nav className="bg-white border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                        <Link to={TAILOR_HOME} className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
+                        <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
                         <button onClick={() => { clearAuth(); navigate('/'); }} className="text-sm text-slate-500 hover:text-slate-900 transition-colors">
                             {t('tailorComponents.signOut')}
                         </button>
@@ -188,7 +184,7 @@ export default function TailorDashboard() {
             <div className="tailor-dashboard-page min-h-screen bg-[var(--store-paper)] flex flex-col">
                 <nav className="bg-white border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                        <Link to={TAILOR_HOME} className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
+                        <Link to="/" className="text-2xl font-bold text-slate-900 hover:text-slate-700 transition-colors">Kere</Link>
                         <button onClick={() => { clearAuth(); navigate('/'); }} className="text-sm text-slate-500 hover:text-slate-900 transition-colors">
                             {t('tailorComponents.signOut')}
                         </button>
@@ -201,12 +197,9 @@ export default function TailorDashboard() {
                         </div>
                         <h1 className="text-2xl font-bold text-slate-900 mb-3">{t('tailorDashboard.rejectedTitle')}</h1>
                         <p className="text-slate-500 leading-relaxed mb-8">{t('tailorDashboard.rejectedDesc')}</p>
-                        {/* A rejected tailor can do nothing signed in, and every
-                            other page sends a tailor back here — so the way out is
-                            out of the account, not a link that lands on this page. */}
-                        <Button onClick={() => { clearAuth(); navigate('/'); }} className="mx-auto">
-                            {t('tailorDashboard.rejectedSignOutHome')}
-                        </Button>
+                        <Link to="/" className="inline-flex items-center justify-center bg-brand hover:bg-brand-dark text-white text-sm font-medium px-6 py-3 rounded-lg transition-colors">
+                            {t('register.tailorPendingBack')}
+                        </Link>
                     </motion.div>
                 </div>
             </div>
@@ -214,8 +207,8 @@ export default function TailorDashboard() {
     }
 
     return (
-        <div className="tailor-dashboard-page min-h-screen bg-[var(--store-paper)] text-[#631E26]">
-            <DashboardHeader earnings={stats.revenue} />
+        <div className="tailor-dashboard-page min-h-screen bg-[var(--store-paper)] text-[#2a1418]">
+            <DashboardHeader />
 
             {/* ── Post-add success toast ── */}
             <AnimatePresence>
@@ -236,7 +229,7 @@ export default function TailorDashboard() {
                 )}
             </AnimatePresence>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <main className="studio-content">
                 {/* Greeting */}
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}
@@ -248,31 +241,53 @@ export default function TailorDashboard() {
                     </h1>
                 </motion.div>
 
-                {/* ── Onboarding panel — 0 products ── */}
-                {showOnboarding && (
-                    <OnboardingPanel onAddProduct={() => setOpenAddModal(true)} onEditProfile={scrollToProfile} />
+                <section aria-label={t('studio.businessSummary')}>
+                    {loadingOrders || loadingProducts ? <DashboardSkeleton /> : <StatsCards stats={stats} statsError={statsError} />}
+                </section>
+
+                {/* ── Edit Profile ── */}
+                <motion.div
+                    id="profile-section"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.35 }}
+                >
+                    {token && user && (
+                        <>
+                            <TailorProfileEditor
+                                name={`${user?.first_name ?? ''} ${user?.last_name ?? ''}`}
+                                complete={profileComplete}
+                                token={token}
+                                tailorId={user.id}
+                                expanded={profileEditorOpen}
+                                onExpandedChange={setProfileEditorOpen}
+                                onSaved={(complete) => setProfileComplete(complete)}
+                            />
+                        </>
+                    )}
+                </motion.div>
+
+                {!loadingProducts && !setupComplete && (
+                    <OnboardingPanel profileComplete={profileComplete} productsCount={products.length} onAddProduct={() => document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' })} onEditProfile={scrollToProfile} />
                 )}
 
-                {/* ── Stats + checklist side-by-side once there's data ── */}
-                {!showOnboarding && (
-                    <>
-                        <StatsCards stats={stats} statsError={statsError} />
-
-                        {showChecklist && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 12 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.3 }}
-                            >
-                                <SetupChecklist
-                                    profileComplete={profileComplete}
-                                    productsCount={products.length}
-                                    onAddProduct={() => setOpenAddModal(true)}
-                                    onEditProfile={scrollToProfile}
-                                />
-                            </motion.div>
+                {/* ── Products ── */}
+                {!loadingOrders && (
+                    <motion.div
+                        id="products-section"
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.25 }}
+                    >
+                        {!loadingProducts && (
+                            <ProductManager
+                                products={products}
+                                onProductAdded={handleProductAdded}
+                                externalOpen={openAddModal}
+                                onExternalClose={() => setOpenAddModal(false)}
+                            />
                         )}
-                    </>
+                    </motion.div>
                 )}
 
                 {/* ── Available design requests (open pool) ── */}
@@ -297,52 +312,9 @@ export default function TailorDashboard() {
                     )}
                 </motion.div>
 
-                {/* ── Products ── */}
-                {!loadingOrders && (
-                    <motion.div
-                        id="products-section"
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.25 }}
-                    >
-                        {!loadingProducts && (
-                            <ProductManager
-                                products={products}
-                                onProductAdded={handleProductAdded}
-                                externalOpen={openAddModal}
-                                onExternalClose={() => setOpenAddModal(false)}
-                            />
-                        )}
-                    </motion.div>
-                )}
 
-                {/* ── Edit Profile ── */}
-                <motion.div
-                    id="profile-section"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.35 }}
-                >
-                    {token && user && (
-                        <>
-                            {!profileComplete && (
-                                <div className="mb-3 flex items-center gap-2 text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
-                                    <span>
-                                        <strong>{t('tailorDashboard.completeProfile')}</strong> — {t('tailorDashboard.completeProfileHint')}
-                                    </span>
-                                </div>
-                            )}
-                            <TailorProfileEditor
-                                token={token}
-                                tailorId={user.id}
-                                expanded={profileEditorOpen}
-                                onExpandedChange={setProfileEditorOpen}
-                                onSaved={(complete) => setProfileComplete(complete)}
-                            />
-                        </>
-                    )}
-                </motion.div>
-            </div>
+
+            </main>
         </div>
     );
 }

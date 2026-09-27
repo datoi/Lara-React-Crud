@@ -1,3 +1,5 @@
+import { Link } from 'react-router';
+import { getAuthToken } from '../../hooks/useAuth';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useState, useEffect, useRef } from 'react';
 import { CheckCircle, Loader2, UserCircle, Camera, X } from 'lucide-react';
@@ -9,7 +11,6 @@ interface Profile {
     specialty: string;
     years_experience: string;
     profile_image: string;
-    does_remodeling: boolean;
 }
 
 interface Props {
@@ -17,14 +18,23 @@ interface Props {
     tailorId: number;
     expanded: boolean;
     onExpandedChange: (v: boolean) => void;
+    name: string;
+    complete: boolean;
     onSaved?: (complete: boolean) => void;
 }
 
-export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChange, onSaved }: Props) {
+export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChange, onSaved, name, complete }: Props) {
     const { t } = useTranslation();
     const [profile, setProfile] = useState<Profile>({
-        bio: '', specialty: '', years_experience: '', profile_image: '', does_remodeling: false,
+        bio: '', specialty: '', years_experience: '', profile_image: '',
     });
+    const [sessionExpired, setSessionExpired] = useState(false);
+    const draftKey = `kere-profile-draft-${tailorId}`;
+    const preserveDraft = () => {
+        sessionStorage.setItem(draftKey, JSON.stringify(profile));
+        setSessionExpired(true);
+    };
+    const [failedPhoto, setFailedPhoto] = useState('');
     const [saving,        setSaving]        = useState(false);
     const [saved,         setSaved]         = useState(false);
     const [saveError,     setSaveError]     = useState(false);
@@ -37,12 +47,14 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
             .then(r => r.json())
             .then(data => {
                 const tailor = data.tailor;
+                let draft: Partial<Profile> = {};
+                try { draft = JSON.parse(sessionStorage.getItem(`kere-profile-draft-${tailorId}`) ?? '{}'); } catch { /* Ignore invalid saved drafts. */ }
                 setProfile({
                     bio:              tailor.bio              ?? '',
                     specialty:        tailor.specialty        ?? '',
                     years_experience: tailor.years_experience != null ? String(tailor.years_experience) : '',
                     profile_image:    tailor.profile_image    ?? '',
-                    does_remodeling:  Boolean(tailor.does_remodeling),
+                    ...draft,
                 });
             })
             .catch(() => {});
@@ -61,9 +73,10 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
         try {
             const res = await fetch('/api/upload/profile-image', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 'Authorization': `Bearer ${getAuthToken() ?? token}`, 'Accept': 'application/json' },
                 body: formData,
             });
+            if (res.status === 401) { preserveDraft(); return; }
             if (!res.ok) {
                 const err = await res.json();
                 setUploadError(err.message ?? t('tailorComponents.networkErrorUpload'));
@@ -89,7 +102,6 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
             bio:           profile.bio       || null,
             specialty:     profile.specialty || null,
             profile_image: profile.profile_image || null,
-            does_remodeling: profile.does_remodeling,
             years_experience: profile.years_experience !== ''
                 ? Number(profile.years_experience)
                 : null,
@@ -100,15 +112,18 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                 method: 'PATCH',
                 headers: {
                     'Content-Type':  'application/json',
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${getAuthToken() ?? token}`,
                     'Accept':        'application/json',
                 },
                 body: JSON.stringify(payload),
             });
+            if (res.status === 401) { preserveDraft(); return; }
             if (!res.ok) {
                 setSaveError(true);
                 return;
             }
+            sessionStorage.removeItem(draftKey);
+            setSessionExpired(false);
             setSaved(true);
             onExpandedChange(false);
             onSaved?.(!!profile.bio.trim() && !!profile.specialty.trim());
@@ -122,30 +137,34 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
 
     return (
         <Dialog.Root open={expanded} onOpenChange={onExpandedChange}>
-            {/* Header row */}
-            <Dialog.Trigger asChild>
-            <button
-                type="button"
-                className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-slate-50 transition-colors"
-            >
-                <div className="flex items-center gap-3">
-                    <UserCircle className="w-5 h-5 text-slate-500" />
+            <section className="studio-profile" aria-labelledby="studio-profile-title">
+                <div className="studio-profile-info">
+                    <div className="studio-avatar">
+                        {profile.profile_image && failedPhoto !== profile.profile_image ? <img src={profile.profile_image} alt={name} onError={() => setFailedPhoto(profile.profile_image)} /> : <UserCircle aria-hidden="true" />}
+                    </div>
                     <div>
-                        <p className="font-semibold text-slate-900 text-sm">{t('tailorComponents.editProfileTitle')}</p>
-                        <p className="text-xs text-slate-400">{t('tailorComponents.editProfileSubtitle')}</p>
+                        <h2 id="studio-profile-title">{name}</h2>
+                        {profile.specialty && <p>{profile.specialty}</p>}
+                        <p className="studio-profile-status">{t(complete ? 'studio.profileReady' : 'studio.profileIncomplete')}</p>
                     </div>
                 </div>
-                <span className="text-slate-400 text-xs" aria-hidden="true">↗</span>
-            </button>
-            </Dialog.Trigger>
+                {!complete && <p>{t('studio.profileHint')}</p>}
+                <Dialog.Trigger asChild>
+                    <Button>{t('tailorComponents.editProfileTitle')}</Button>
+                </Dialog.Trigger>
+            </section>
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 z-[150] bg-[#2a1418]/30" />
-                <Dialog.Content className="kere-modal tailor-profile-modal fixed left-1/2 top-1/2 z-[151] w-[calc(100%-24px)] max-w-xl -translate-x-1/2 -translate-y-1/2 max-h-[90dvh] overflow-y-auto" aria-describedby={undefined}>
+                <Dialog.Content className="kere-modal tailor-profile-modal studio-dialog fixed left-1/2 top-1/2 z-[151] w-[calc(100%-24px)] max-w-xl -translate-x-1/2 -translate-y-1/2 max-h-[90dvh] overflow-y-auto" aria-describedby={undefined}>
                     <div className="flex items-center justify-between gap-4 border-b border-[#e5dfd8] px-5 py-4">
                         <Dialog.Title className="text-base">{t('tailorComponents.editProfileTitle')}</Dialog.Title>
                         <Dialog.Close className="shrink-0 p-2" aria-label={t('newsletterPopup.close')}><X size={18} /></Dialog.Close>
                     </div>
                 <form onSubmit={handleSave} className="px-4 sm:px-6 pb-6 space-y-4 pt-5">
+                    {sessionExpired && <div role="alert" className="border border-[#d8d0c7] bg-[#f0eae2] p-4">
+                        <p>{t('studio.sessionExpired')}</p>
+                        <Link to="/login/tailor" className="inline-flex min-h-11 items-center underline underline-offset-4" onClick={() => sessionStorage.setItem(draftKey, JSON.stringify(profile))}>{t('signIn.signIn')}</Link>
+                    </div>}
                     {/* Profile photo upload */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -206,10 +225,10 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        <label htmlFor="tailor-bio" className="block text-sm font-medium text-slate-700 mb-1.5">
                             {t('tailorComponents.bioLabel')}
                         </label>
-                        <textarea
+                        <textarea id="tailor-bio"
                             rows={3}
                             maxLength={1000}
                             value={profile.bio}
@@ -221,11 +240,11 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                            <label htmlFor="tailor-specialty" className="block text-sm font-medium text-slate-700 mb-1.5">
                                 {t('tailorComponents.specialtyLabel')}
                             </label>
                             <input
-                                type="text"
+                                id="tailor-specialty" type="text"
                                 maxLength={200}
                                 value={profile.specialty}
                                 onChange={e => setProfile(p => ({ ...p, specialty: e.target.value }))}
@@ -234,11 +253,11 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                            <label htmlFor="tailor-experience" className="block text-sm font-medium text-slate-700 mb-1.5">
                                 {t('tailorComponents.yearsExperience')}
                             </label>
                             <input
-                                type="number"
+                                id="tailor-experience" type="number"
                                 min={0}
                                 max={60}
                                 value={profile.years_experience}
@@ -248,19 +267,6 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                             />
                         </div>
                     </div>
-
-                    <label className="flex cursor-pointer items-start gap-2.5 text-sm text-slate-700">
-                        <input
-                            type="checkbox"
-                            checked={profile.does_remodeling}
-                            onChange={e => setProfile(p => ({ ...p, does_remodeling: e.target.checked }))}
-                            className="mt-0.5 h-4 w-4 shrink-0 accent-[#6F1D24]"
-                        />
-                        <span>
-                            <span className="block font-medium">{t('tailorComponents.doesRemodelingLabel')}</span>
-                            <span className="block text-xs text-slate-400">{t('tailorComponents.doesRemodelingHint')}</span>
-                        </span>
-                    </label>
 
                     <div className="flex flex-wrap items-center gap-3 pt-1">
                         <Button

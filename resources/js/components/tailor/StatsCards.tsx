@@ -20,11 +20,11 @@ export function StatsCards({ stats, statsError }: StatsCardsProps) {
 
     const cards = [
         {
-            label: t('tailorComponents.totalRevenue'),
+            label: t('studio.orderValue'),
             value: stats.revenue > 0 ? `₾${stats.revenue.toLocaleString()}` : '₾0',
             icon: TrendingUp,
             change: stats.revenue > 0
-                ? t('tailorComponents.fromCompletedOrders')
+                ? t('studio.orderValueHint')
                 : t('tailorComponents.noRevenueYet'),
             positive: stats.revenue > 0,
         },
@@ -58,9 +58,9 @@ export function StatsCards({ stats, statsError }: StatsCardsProps) {
     ];
 
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div className="studio-stats">
             {statsError && (
-                <div className="col-span-2 sm:col-span-4 text-xs text-destructive text-center py-1">
+                <div className="studio-stats-error" role="status">
                     {t('tailorComponents.statsFetchError', 'Stats unavailable — check your connection')}
                 </div>
             )}
@@ -70,11 +70,11 @@ export function StatsCards({ stats, statsError }: StatsCardsProps) {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: i * 0.08, ease: 'easeOut' }}
-                    className="bg-white rounded-2xl border border-slate-200 p-5"
+                    className="studio-stat-card border border-slate-200"
                 >
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-start justify-between gap-2 mb-3">
                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{card.label}</span>
-                        <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
+                        <div className="shrink-0 w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
                             <card.icon className="w-4 h-4 text-slate-600" />
                         </div>
                     </div>

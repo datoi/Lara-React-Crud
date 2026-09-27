@@ -113,7 +113,7 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                 </div>
 
                 {products.length === 0 ? (
-                    <div className="px-4 py-8 sm:px-6 sm:py-12 flex flex-col items-center gap-2 text-center">
+                    <div className="px-4 py-6 sm:px-6 flex flex-col items-start gap-2 text-left">
                         <p className="font-semibold text-slate-900 text-sm mb-1">{t('tailorComponents.noProductsYet')}</p>
                         <p className="mb-3 max-w-sm text-xs leading-6 text-[var(--store-muted)]">{t('tailorComponents.emptyProductsHint')}</p>
                         <Button
@@ -133,10 +133,10 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: i * 0.05 }}
-                                className="flex flex-wrap items-center justify-between gap-y-3 px-4 py-4 sm:px-6 hover:bg-slate-50 transition-colors"
+                                className="studio-product-row flex items-center justify-between px-6 py-4 transition-colors"
                             >
                                 {/* Thumbnail */}
-                                <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 mr-4">
+                                <div className="w-10 h-10 rounded-none overflow-hidden bg-[#eee6dd] flex-shrink-0 mr-4">
                                     {product.images?.[0] ? (
                                         <img
                                             src={product.images[0]}
@@ -153,8 +153,8 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                                         <div className="font-medium text-slate-900 truncate">{product.name}</div>
                                         <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full border font-medium ${
                                             product.status === 'active'
-                                                ? 'bg-slate-900 text-white border-slate-900'
-                                                : 'bg-slate-100 text-slate-500 border-slate-200'
+                                                ? 'studio-product-active'
+                                                : 'studio-product-paused'
                                         }`}>
                                             {product.status === 'active' ? t('tailorComponents.productActive') : t('tailorComponents.productPaused')}
                                         </span>
@@ -222,22 +222,22 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                                         <>
                                             <button
                                                 onClick={() => toggleStatus(product.id)}
-                                                className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                                                className="inline-flex items-center gap-2 p-2 rounded-lg text-slate-400 hover:bg-[#e9d8cf] hover:text-[#631e26] transition-colors"
                                                 title={product.status === 'active' ? t('tailorComponents.productPaused') : t('tailorComponents.productActive')}
                                             >
-                                                <Eye className="w-4 h-4" />
+                                                <Eye className="w-4 h-4" aria-hidden="true" /><span>{t(product.status === 'active' ? 'studio.pauseProduct' : 'studio.resumeProduct')}</span>
                                             </button>
                                             <button
                                                 onClick={() => openEdit(product)}
-                                                className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                                                className="inline-flex items-center gap-2 p-2 rounded-lg text-slate-400 hover:bg-[#e9d8cf] hover:text-[#631e26] transition-colors"
                                             >
-                                                <Edit2 className="w-4 h-4" />
+                                                <Edit2 className="w-4 h-4" aria-hidden="true" /><span>{t('tailorComponents.editProduct')}</span>
                                             </button>
                                             <button
                                                 onClick={() => setConfirmDeleteId(product.id)}
-                                                className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                                                className="inline-flex items-center gap-2 p-2 rounded-lg text-slate-400 hover:bg-[#e9d8cf] hover:text-[#631e26] transition-colors"
                                             >
-                                                <Trash2 className="w-4 h-4" />
+                                                <Trash2 className="w-4 h-4" aria-hidden="true" /><span>{t('studio.deleteProduct')}</span>
                                             </button>
                                         </>
                                     )}

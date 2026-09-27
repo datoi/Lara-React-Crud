@@ -534,7 +534,18 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: i * 0.06 }}
-                                    className="p-4 hover:bg-slate-50 transition-colors"
+                                    tabIndex={0}
+                                    onClick={(event) => {
+                                        if ((event.target as HTMLElement).closest('button, a, input, select, textarea')) return;
+                                        setOpenTab('details'); setViewing(order);
+                                    }}
+                                    onKeyDown={(event) => {
+                                        if (event.target !== event.currentTarget) return;
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault(); setOpenTab('details'); setViewing(order);
+                                        }
+                                    }}
+                                    className="cursor-pointer p-4 hover:bg-slate-50 transition-colors focus-visible:outline focus-visible:outline-1"
                                 >
                                     <div className="flex items-start justify-between gap-2 mb-2">
                                         <div>
@@ -608,7 +619,18 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             transition={{ delay: i * 0.06 }}
-                                            className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
+                                            tabIndex={0}
+                                    onClick={(event) => {
+                                        if ((event.target as HTMLElement).closest('button, a, input, select, textarea')) return;
+                                        setOpenTab('details'); setViewing(order);
+                                    }}
+                                    onKeyDown={(event) => {
+                                        if (event.target !== event.currentTarget) return;
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                            event.preventDefault(); setOpenTab('details'); setViewing(order);
+                                        }
+                                    }}
+                                    className="cursor-pointer border-b border-slate-50 hover:bg-slate-50 transition-colors focus-visible:outline focus-visible:outline-1"
                                         >
                                             <td className="px-4 sm:px-6 py-4 text-sm font-mono text-slate-500">{order.order_number}</td>
                                             <td className="px-4 sm:px-6 py-4 text-sm font-medium text-slate-900 table-cell">{order.customer.name}</td>
