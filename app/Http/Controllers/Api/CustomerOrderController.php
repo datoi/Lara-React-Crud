@@ -37,7 +37,7 @@ class CustomerOrderController extends Controller
                 return [
                     'id' => $item->id,
                     'product_id' => $item->product_id,
-                    'product_name' => $item->product?->name ?? 'Custom Design',
+                    'product_name' => $item->product_name,
                     'image' => $item->product?->images[0] ?? null,
                     'color' => $item->color,
                     'size' => $item->size,

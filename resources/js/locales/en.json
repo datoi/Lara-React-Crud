@@ -1541,6 +1541,7 @@
         "productUpdatedDesc": "Changes saved.",
         "confirmDeleteDesc": "This will permanently remove the product from the marketplace.",
         "confirmDeleteBtn": "Delete",
+        "deleteFailed": "Couldn't delete this product. Please try again.",
         "statsFetchError": "Stats unavailable — check your connection",
         "studioSpec": "Design specification"
     },

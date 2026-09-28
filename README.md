@@ -609,6 +609,28 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-28] Tailors can delete products from a phone, and deleting one no longer erases customers' orders
+
+**What was done:** A tailor reported she couldn't delete her uploaded products. Three faults were involved.
+- **The Delete button was off-screen on phones.** The confirmation (a full sentence plus Delete/Cancel) sat beside the product in a column that couldn't shrink, inside a card with `overflow-hidden`. At 390px the Delete button rendered at x≈453–511 in a card ending at 374, so it was clipped and couldn't be tapped. It worked on desktop. `ProductManager` now puts the confirmation on its own full-width line at every width, and the rows use the header's `px-4 sm:px-6` padding.
+- **A refused delete looked like success.** `deleteProduct` never checked the response: it removed the product from the list regardless, and the product came back on reload. It now keeps the product and shows "Couldn't delete this product", disables the buttons while the request runs, and treats a 404 as already gone.
+- **Deleting an ordered product erased the customer's order lines.** `order_items.product_id` was `cascadeOnDelete`, so a successful delete also deleted those lines from customers' orders. Migration `2026_09_28_000001_keep_order_items_when_product_deleted` makes the column nullable with `nullOnDelete`. A line already stores its own name, price, size, colour and measurements, so it outlives the product with no data lost. `CustomerOrderController` now reads the line's stored `product_name` rather than the live product's name, which fell back to "Custom Design" once the product was gone. The tailor's order view already used the stored name and a null-safe image.
+
+**Verified:**
+- **Tests:** `ProductDeletionTest` covers the owner deleting, another tailor getting a 404, and an ordered product's line surviving with `product_id` null and its name and price intact in both the customer's and the tailor's order views. Full suite on `main`: 142 passed. `tsc`, `eslint` on the file, `vite build` and locale parity are clean.
+- **Migration:** up, rollback and up again on the local SQLite database. The 12 existing order lines survived; the FK now reads `SET NULL`.
+- **Headless Chrome:**
+  - Delete button inside the card at 390px (Georgian and English), 768px and 1280px;
+  - a forced 500 showing the error with the product kept;
+  - a real delete of an ordered product: gone after reload, product page 404, and the customer's order still showing the line.
+  - No console errors. QA data deleted afterwards.
+
+**Not covered / noticed:**
+- The product row's meta line shows "orders" with no number: `GET /api/tailor/products` never returns the `orders` count that `ProductManager` reads. This predates the change.
+- The row's pause, edit and delete icons are raw styled `<button>`s rather than `<Button>`. Also pre-existing.
+
+---
+
 ### [2026-09-25] Payment switched on for merchant 4057819, and the 405 that met every paying customer
 
 **What was done:** Flitt's go-live thread asks for a test payment by card, Google Pay and Apple Pay before the merchant is moved to real money. Getting there surfaced two faults — one configuration, one in the code.

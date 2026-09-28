@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ImageOff, Plus, Eye, Edit2, Trash2 } from 'lucide-react';
+import { ImageOff, Loader2, Plus, Eye, Edit2, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { AddProductModal, type TailorProductFull } from './AddProductModal';
@@ -21,6 +21,8 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
     const [showModal, setShowModal]         = useState(false);
     const [editTarget, setEditTarget]       = useState<TailorProductFull | undefined>(undefined);
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+    const [deletingId, setDeletingId]       = useState<number | null>(null);
+    const [deleteFailedId, setDeleteFailedId] = useState<number | null>(null);
 
     useEffect(() => {
         if (externalOpen) setShowModal(true);
@@ -53,19 +55,24 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
     const deleteProduct = async (id: number) => {
         const token = getAuthToken();
         if (!token) return;
+        setDeletingId(id);
+        setDeleteFailedId(null);
         try {
-            await fetch(`/api/tailor/products/${id}`, {
+            const res = await fetch(`/api/tailor/products/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json',
                 },
             });
+            // 404: already gone, so the list should not show it either
+            if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`);
             setProducts(prev => prev.filter(p => p.id !== id));
-        } catch {
-            // ignore — product stays in list
-        } finally {
             setConfirmDeleteId(null);
+        } catch {
+            setDeleteFailedId(id);
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -126,7 +133,7 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: i * 0.05 }}
-                                className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors"
+                                className="flex flex-wrap items-center justify-between gap-y-3 px-4 py-4 sm:px-6 hover:bg-slate-50 transition-colors"
                             >
                                 {/* Thumbnail */}
                                 <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 mr-4">
@@ -182,27 +189,34 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                                     )}
                                 </div>
 
-                                <div className="flex items-center gap-1 ml-4 flex-shrink-0">
-                                    {/* Confirm-delete inline prompt */}
+                                {/* The prompt takes its own line: on a phone it did not fit
+                                    beside the product and its Delete button was clipped off. */}
+                                <div className={confirmDeleteId === product.id ? 'basis-full' : 'flex items-center gap-1 ml-4 flex-shrink-0'}>
                                     {confirmDeleteId === product.id ? (
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex flex-wrap items-center justify-end gap-1.5">
                                             <span className="text-xs text-slate-500">{t('tailorComponents.confirmDeleteDesc')}</span>
                                             <Button
                                                 variant="default"
                                                 size="sm"
+                                                disabled={deletingId === product.id}
                                                 onClick={() => deleteProduct(product.id)}
                                                 className="h-7 px-2 text-xs"
                                             >
+                                                {deletingId === product.id && <Loader2 className="h-3 w-3 animate-spin" />}
                                                 {t('tailorComponents.confirmDeleteBtn')}
                                             </Button>
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() => setConfirmDeleteId(null)}
+                                                disabled={deletingId === product.id}
+                                                onClick={() => { setConfirmDeleteId(null); setDeleteFailedId(null); }}
                                                 className="h-7 px-2 text-xs"
                                             >
                                                 {t('tailorComponents.cancelBtn')}
                                             </Button>
+                                            {deleteFailedId === product.id && (
+                                                <p role="alert" className="basis-full text-right text-xs text-destructive">{t('tailorComponents.deleteFailed')}</p>
+                                            )}
                                         </div>
                                     ) : (
                                         <>
