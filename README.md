@@ -609,6 +609,22 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-28] The home page hides its product strip when the marketplace is empty
+
+**What was done:** With no products in the marketplace, `MarketplaceCarousel` on the home page still rendered its category bar ("All" and nothing else), the KERE tile, "No products found" and a "View all products" button leading to an empty page. It now renders nothing once the products have loaded and the list is empty. A failed load still shows the section with its error message, so an outage is not mistaken for an empty shop. The "No products found" line was removed, since that case no longer reaches it.
+
+**Verified:**
+- `tsc` and `eslint` are clean.
+- Headless Chrome on `/` at 1280px and 390px, in Georgian:
+  - real products show the strip with 8 cards;
+  - an empty `/api/products` response leaves no `#categories` section at all;
+  - a 500 shows the section with "Couldn't load products".
+  - No console errors.
+
+**Note:** the footer's "Categories" link points at `/#categories`. When the section is hidden, that link opens the top of the home page.
+
+---
+
 ### [2026-09-28] Mariami's tailor studio redesign, taken without the fixes it undid
 
 **What was done:** Mariami's `mariam-latest-update` (b6e6ae6, "Update tailor dashboard and visual improvements") redesigns the tailor dashboard as a studio and restyles the footer and cookie banner. It was cherry-picked onto `main` under her name, with a follow-up commit restoring what her copies of the files had undone.
