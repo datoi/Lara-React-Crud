@@ -1,5 +1,6 @@
 import { CheckCircle, Circle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '../ui/button';
 
 interface Props {
     profileComplete: boolean;
@@ -28,9 +29,9 @@ export function OnboardingPanel({ profileComplete, productsCount, onAddProduct, 
                 </li>)}
             </ol>
             <p>{t('studio.productProgress', { count: productsCount })}</p>
-            <button type="button" onClick={profileComplete ? onAddProduct : onEditProfile} className="studio-text-action">
+            <Button type="button" variant="link" onClick={profileComplete ? onAddProduct : onEditProfile} className="studio-text-action h-auto px-0">
                 {t(profileComplete ? 'studio.goToProducts' : 'tailorComponents.editProfileTitle')}
-            </button>
+            </Button>
         </section>
     );
 }

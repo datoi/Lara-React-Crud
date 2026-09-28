@@ -23,11 +23,6 @@ export function DashboardHeader() {
                     <span className="kere-nav-logo" aria-hidden="true" />
                 </Link>
 
-                <nav className="tailor-studio-nav" aria-label={t('tailorComponents.siteNavigation')}>
-                    <Link to="/"><span className="hidden sm:inline">{t('tailorComponents.backHome')}</span><span className="sm:hidden">{t('studio.home')}</span></Link>
-                    <Link to="/marketplace">{t('marketplace.title')}</Link>
-                    <Link to="/remodel">{t('nav.remodel')}</Link>
-                </nav>
                 <div className="studio-header-actions flex items-center gap-3">
                     <NotificationBell />
 

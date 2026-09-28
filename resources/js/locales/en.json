@@ -1108,6 +1108,8 @@
     },
     "consent": {
         "preferences": "Preferences",
+        "shortPreferences": "Settings",
+        "shortMessage": "We use analytics cookies to improve Kere.",
         "close": "Close cookie notice",
         "essential": "Essential cookies are always enabled.",
         "analytics": "Allow analytics cookies",
@@ -1543,9 +1545,7 @@
         "confirmDeleteBtn": "Delete",
         "deleteFailed": "Couldn't delete this product. Please try again.",
         "statsFetchError": "Stats unavailable — check your connection",
-        "studioSpec": "Design specification",
-        "backHome": "Back to Home",
-        "siteNavigation": "Site navigation"
+        "studioSpec": "Design specification"
     },
     "measurementGuide": {
         "title": "Measurement Guide",
@@ -1705,7 +1705,6 @@
         "deleteProduct": "Delete",
         "done": "Complete",
         "goToProducts": "Go to products",
-        "home": "Home",
         "next": "Next step",
         "orderValue": "Total order value",
         "orderValueHint": "All orders; not a payout balance",

@@ -609,6 +609,58 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-28] Mariami's tailor studio redesign, taken without the fixes it undid
+
+**What was done:** Mariami's `mariam-latest-update` (b6e6ae6, "Update tailor dashboard and visual improvements") redesigns the tailor dashboard as a studio and restyles the footer and cookie banner. It was cherry-picked onto `main` under her name, with a follow-up commit restoring what her copies of the files had undone.
+
+**Kept from her work:**
+- **Dashboard:**
+  - the profile card up front, showing name, specialty, status and an Edit Profile button;
+  - a compact "Start here" checklist replacing `OnboardingPanel` and `SetupChecklist`;
+  - product actions labelled Pause, Edit Product and Delete;
+  - order rows that open on click or Enter.
+- **Revenue card:** relabelled "Total order value — all orders; not a payout balance", which is what the number sums.
+- **Profile editor:** labels tied to their inputs. On a 401, the typed details are kept in the tab and a sign-in link appears.
+- **Footer and cookie banner:** the footer's new layout, and the cookie banner re-measuring itself with a `ResizeObserver` plus shorter copy on phones.
+
+**Restored, because her versions of the files predated these fixes:**
+- **Tailor boundary** (2026-09-24):
+  - The header's new Home, Marketplace and Remodel links were removed. Each sent a tailor straight back to the dashboard, which a browser check confirmed.
+  - A rejected tailor again gets "Sign out and go home" instead of a link to `/`, which looped back to the rejected screen.
+  - The footer again filters out pages a tailor cannot open.
+  - The logo links go to `TAILOR_HOME`.
+- **Merchant identity** (2026-09-24):
+  - The footer shows the registered name, ID code and address from `company.*` and `data/company` again. Her version referenced `footer.registeredName`, `footer.companyId` and `footer.streetAddress`, which don't exist, so the raw keys showed on the page.
+  - Phone and email come from `data/company` rather than being retyped.
+- **Payment marks:** `PaymentMarks` with the real Visa and Mastercard images, instead of hand-drawn SVGs.
+- **Remodel work** (2026-09-24): the "I take remodel work" checkbox is back in the profile editor, loaded and saved.
+- **Cookie banner:** ✕ records a refusal again rather than only hiding the banner. The two short-copy keys she used (`consent.shortMessage`, `consent.shortPreferences`) were added in both languages.
+- **CSS:**
+  - The storefront header's inversion over dark sections (`data-nav-tone`) is back.
+  - `bg-brand` is removed again from the CTA-sizing selector, where it resized selected tabs, chips and designer tiles.
+  - The dead `.tailor-studio-nav` rules and their three strings are gone.
+- **Conventions:**
+  - The checklist's raw `<button>` is now a `<Button variant="link">`.
+  - `#631e26` is replaced by `text-brand` in the product rows.
+  - `SetupChecklist.tsx`, now unused, is deleted.
+- **Kept deliberately:** she dropped the footer's language switch (the header has one) and narrowed a registration-form label rule. Both are design choices, not regressions.
+
+**Verified:**
+- `tsc`, `eslint` on the touched files, `vite build`, locale parity with no missing keys, and 142 tests.
+- **Headless Chrome, before and after:**
+  - the dashboard at 1280px (English) and 390px (Georgian), no horizontal overflow and no console errors;
+  - the tailor's header offering no bouncing link;
+  - the footer on `/about` as a tailor showing only permitted pages;
+  - the guest footer in both languages with the company ID, real payment marks, and no raw keys;
+  - the remodel checkbox in the profile dialog;
+  - the header inverting over a dark section;
+  - a rejected tailor signed out and sent home.
+- QA data deleted afterwards.
+
+**Not covered:** the cookie banner did not appear locally, since no analytics project is configured, so its ✕ fix is verified by reading the code only.
+
+---
+
 ### [2026-09-28] Tailors can delete products from a phone, and deleting one no longer erases customers' orders
 
 **What was done:** A tailor reported she couldn't delete her uploaded products. Three faults were involved.

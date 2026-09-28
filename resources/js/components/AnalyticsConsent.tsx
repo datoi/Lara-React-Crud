@@ -94,7 +94,11 @@ export function AnalyticsConsent() {
                     data-testid="analytics-consent"
                     className="cookie-banner fixed inset-x-0 bottom-0 z-[200]"
                 >
-                    <button type="button" className="cookie-close" onClick={() => setVisible(false)} aria-label={t('consent.close')}><X size={17} /></button>
+                    {/* Dismissing without choosing is not consent, so the close
+                        button records the refusal rather than just hiding the
+                        banner — otherwise analytics would stay unset and the
+                        visitor would be asked again on every page load. */}
+                    <button type="button" className="cookie-close" onClick={decline} aria-label={t('consent.close')}><X size={17} /></button>
                     <h2>{t('consent.title')}</h2>
                     <div className="cookie-banner-row">
                         <p>

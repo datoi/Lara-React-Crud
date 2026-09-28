@@ -222,20 +222,20 @@ export function ProductManager({ products: initialProducts, onProductAdded, exte
                                         <>
                                             <button
                                                 onClick={() => toggleStatus(product.id)}
-                                                className="inline-flex items-center gap-2 p-2 rounded-lg text-slate-400 hover:bg-[#e9d8cf] hover:text-[#631e26] transition-colors"
+                                                className="inline-flex items-center gap-2 p-2 rounded-lg text-slate-400 hover:bg-[#e9d8cf] hover:text-brand transition-colors"
                                                 title={product.status === 'active' ? t('tailorComponents.productPaused') : t('tailorComponents.productActive')}
                                             >
                                                 <Eye className="w-4 h-4" aria-hidden="true" /><span>{t(product.status === 'active' ? 'studio.pauseProduct' : 'studio.resumeProduct')}</span>
                                             </button>
                                             <button
                                                 onClick={() => openEdit(product)}
-                                                className="inline-flex items-center gap-2 p-2 rounded-lg text-slate-400 hover:bg-[#e9d8cf] hover:text-[#631e26] transition-colors"
+                                                className="inline-flex items-center gap-2 p-2 rounded-lg text-slate-400 hover:bg-[#e9d8cf] hover:text-brand transition-colors"
                                             >
                                                 <Edit2 className="w-4 h-4" aria-hidden="true" /><span>{t('tailorComponents.editProduct')}</span>
                                             </button>
                                             <button
                                                 onClick={() => setConfirmDeleteId(product.id)}
-                                                className="inline-flex items-center gap-2 p-2 rounded-lg text-slate-400 hover:bg-[#e9d8cf] hover:text-[#631e26] transition-colors"
+                                                className="inline-flex items-center gap-2 p-2 rounded-lg text-slate-400 hover:bg-[#e9d8cf] hover:text-brand transition-colors"
                                             >
                                                 <Trash2 className="w-4 h-4" aria-hidden="true" /><span>{t('studio.deleteProduct')}</span>
                                             </button>
