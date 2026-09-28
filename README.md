@@ -809,6 +809,7 @@ The seeded data was deleted afterwards.
 - **Cleanup:** the QA accounts and their 8 orders were deleted, and product 14's stock restored.
 
 **Review follow-up (2026-09-28):**
+- **Released to production on 2026-09-28.** It was first taken back off `main` (454e2a2) while unreviewed, then released by reverting that and applying these fixes. It merged with the same day's tailor studio redesign and product-delete fix without losing either: 159 tests pass, and the 19 browser checks below were re-run on the combined code. The `users.measurements` migration was already recorded as run in production, so the deploy adds no schema change.
 - **Data loss fixed:** if the profile failed to load, an order still offered "save these to my profile", and the save merged into an empty set, wiping every saved field the garment didn't ask about. `useOrderMeasurements` now offers and commits the save only once the profile has loaded. The order step says "Couldn't load your saved measurements" instead of pretending the profile is empty.
 - **Privacy:** the open-requests feed fell back to the full `name` for accounts without a `first_name`, sending the surname to bidders. It now sends the first word only; a feature test covers it.
 - The cart's error handling reads the server code once instead of twice with a non-null assertion.
