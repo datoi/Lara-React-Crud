@@ -214,3 +214,14 @@ test('bidding tailors see how many measurements were given; the assigned tailor 
         ->assertOk()
         ->assertJsonPath('orders.0.custom_design_data.measurements.waist', 70);
 });
+
+test('an account with only a full name still reaches bidders by first name alone', function () {
+    [, $token] = measuringUser(['first_name' => null, 'last_name' => null, 'name' => 'Nino Beridze']);
+    $this->withToken($token)->postJson('/api/orders', customDesign(['waist' => 70]))->assertStatus(201);
+
+    [, $bidderToken] = measuringUser(['role' => 'tailor', 'approval_status' => 'approved']);
+    $feed = $this->withToken($bidderToken)->getJson('/api/tailor/open-orders')->assertOk();
+
+    $feed->assertJsonPath('orders.0.customer.name', 'Nino');
+    expect($feed->getContent())->not->toContain('Beridze');
+});
