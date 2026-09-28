@@ -20,6 +20,9 @@ const CODES: Record<string, string> = {
     email_taken: 'register.errorEmailTaken',
     guardian_contact_is_own: 'register.errorGuardianIsOwn',
 
+    // Ordering
+    measurements_required: 'measurements.orderFromPage',
+
     // Payment
     order_already_paid: 'customerDashboard.payErrorAlreadyPaid',
     order_not_payable: 'customerDashboard.payErrorNotPayable',

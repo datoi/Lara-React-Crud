@@ -1,0 +1,25 @@
+{
+    "fields": [
+        { "key": "chest",    "min": 55, "max": 175, "profile": true },
+        { "key": "waist",    "min": 45, "max": 165, "profile": true },
+        { "key": "hips",     "min": 55, "max": 175, "profile": true },
+        { "key": "shoulder", "min": 30, "max": 65,  "profile": true },
+        { "key": "sleeve",   "min": 40, "max": 90,  "profile": true },
+        { "key": "inseam",   "min": 25, "max": 110, "profile": true },
+        { "key": "length",   "min": 25, "max": 155, "profile": false }
+    ],
+    "garmentFields": {
+        "top":      ["chest", "waist", "shoulder", "sleeve", "length"],
+        "bottom":   ["waist", "hips", "inseam", "length"],
+        "skirt":    ["waist", "hips", "length"],
+        "dress":    ["chest", "waist", "hips", "shoulder", "length"],
+        "onepiece": ["chest", "waist", "hips", "shoulder", "inseam", "length"]
+    },
+    "garmentTypes": {
+        "shirt": "top", "womens-top": "top", "tops": "top", "blazers": "top", "jacket": "top", "coat": "top",
+        "trousers": "bottom", "bottoms": "bottom",
+        "skirt": "skirt", "skirts": "skirt",
+        "dress": "dress", "dresses": "dress", "evening-dresses": "dress",
+        "jumpsuits": "onepiece", "suits": "onepiece"
+    }
+}

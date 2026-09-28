@@ -110,17 +110,9 @@ function UploadTypeStep({
 
 export interface UploadResult {
     fileUrl: string;
-    measurements: Record<string, string>;
     customizationRequest: string;
     notes: string;
 }
-
-const MEASUREMENT_FIELDS = [
-    { key: 'chest',  tKey: 'design.sizeChest' },
-    { key: 'waist',  tKey: 'design.sizeWaist' },
-    { key: 'hips',   tKey: 'design.sizeHips' },
-    { key: 'length', tKey: 'design.sizeLength' },
-];
 
 function UploadPanel({
     category,
@@ -135,19 +127,12 @@ function UploadPanel({
     const [fileUrl,     setFileUrl]     = useState<string | null>(null);
     const [previewUrl,  setPreviewUrl]  = useState<string | null>(null);
     const [fileName,    setFileName]    = useState<string | null>(null);
-    const [measurements, setMeasurements] = useState<Record<string, string>>({});
     const [wantsCustomization, setWantsCustomization] = useState(false);
     const [customizationRequest, setCustomizationRequest] = useState('');
     const [notes,       setNotes]       = useState('');
     const [uploading,   setUploading]   = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
-
-    const setMeasurement = (key: string, value: string) => {
-        // Digits with optional decimal, capped at 3 integer digits — matches backend max:999
-        if (value !== '' && !/^\d{1,3}(\.\d{0,1})?$/.test(value)) return;
-        setMeasurements(prev => ({ ...prev, [key]: value }));
-    };
 
     const catLabel = t(category.tKey);
 
@@ -298,32 +283,6 @@ function UploadPanel({
                     </p>
                 )}
 
-                {/* Measurements */}
-                <div>
-                    <label className="mb-1.5 block text-sm font-medium text-[#261D1B]">
-                        {t('design.sizesLabel')} <span className="font-normal text-[#776158]">{t('design.notesOptional')}</span>
-                    </label>
-                    <p className="mb-3 text-xs text-[#776158]">{t('design.sizesHint')}</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        {MEASUREMENT_FIELDS.map(field => (
-                            <div key={field.key}>
-                                <label className="mb-1 block text-xs text-[#776158]">{t(field.tKey)}</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        inputMode="decimal"
-                                        value={measurements[field.key] ?? ''}
-                                        onChange={e => setMeasurement(field.key, e.target.value)}
-                                        placeholder="—"
-                                        className="w-full border border-[#111111]/25 bg-[var(--store-paper)] py-2.5 pl-3 pr-9 text-sm text-[#111111] placeholder:text-[#111111]/30 focus:outline-none focus:ring-2 focus:ring-[#111111]"
-                                    />
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#776158]">{t('design.cmUnit')}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
                 {/* Customization request */}
                 <div>
                     <label className="flex items-start gap-2.5 cursor-pointer select-none">
@@ -379,7 +338,6 @@ function UploadPanel({
                     disabled={!canContinue}
                     onClick={() => onContinue({
                         fileUrl: fileUrl ?? '',
-                        measurements,
                         customizationRequest: wantsCustomization ? customizationRequest : '',
                         notes,
                     })}
@@ -525,15 +483,10 @@ export default function DesignerApp() {
     const handleUploadContinue = (result: UploadResult) => {
         if (!uploadStep || uploadStep.step !== 'upload-file') return;
 
-        const filledMeasurements = Object.fromEntries(
-            Object.entries(result.measurements).filter(([, v]) => v !== '')
-        );
-
         saveDraft({
             garment_type:          uploadStep.category.orderKey,
             customization:         null,
             design_file_url:       result.fileUrl || null,
-            measurements:          filledMeasurements,
             customization_request: result.customizationRequest.trim(),
             tailor_notes:          result.notes,
         });

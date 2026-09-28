@@ -6,6 +6,9 @@ import DesignSpecList, { readProductName, readSpec } from '../DesignSpecList';
 import { Button } from '../ui/button';
 import { OrderChat } from '../OrderChat';
 import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
+import { MeasurementList } from '../measurements/MeasurementList';
+import { measurementLabelKey } from '../../lib/measurements';
+import { ProductImage } from '../marketplace/ProductImage';
 
 // ─── Module-level status label map ────────────────────────────────────────────
 
@@ -57,6 +60,9 @@ interface CustomDesign {
     garment_type?: string | null;
     design_file_url?: string | null;
     measurements?: Record<string, number | string>;
+    // remodel shape
+    change_request?: string;
+    remodel_images?: string[];
     customization_request?: string;
     tailor_notes?: string;
     /** Studio configuration: raw ids plus a readable spec snapshot */
@@ -66,7 +72,7 @@ interface CustomDesign {
 export interface TailorOrder {
     id: number;
     order_number: string;
-    order_type: 'marketplace' | 'custom';
+    order_type: 'marketplace' | 'custom' | 'remodel';
     status: 'pending' | 'processing' | 'finished' | 'delivered' | 'cancelled';
     subtotal: number;
     total: number;
@@ -117,6 +123,9 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
     const statusClasses = STATUS_CLASSES[order.status] ?? STATUS_CLASSES.pending;
     const statusLabel   = t(STATUS_LABEL_KEYS[order.status] ?? STATUS_LABEL_KEYS.pending);
     const isCustom = order.order_type === 'custom';
+    // A remodel carries its brief in custom_design_data like a custom order, but
+    // no line items — it used to fall through to the item list and show nothing.
+    const isRemodel = order.order_type === 'remodel';
     const cd = order.custom_design_data;
 
     const [actioning,  setActioning]  = useState<string | null>(null);
@@ -169,11 +178,11 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                 {statusLabel}
                             </span>
                             <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border ${
-                                isCustom
+                                isCustom || isRemodel
                                     ? 'bg-slate-800 text-white border-slate-700'
                                     : 'bg-slate-50 text-slate-600 border-slate-200'
                             }`}>
-                                {isCustom ? t('tailorComponents.customDesignBadge') : t('tailorComponents.marketplaceBadge')}
+                                {isRemodel ? t('tailorComponents.remodelBadge') : isCustom ? t('tailorComponents.customDesignBadge') : t('tailorComponents.marketplaceBadge')}
                             </span>
                         </div>
                         <p className="font-bold text-slate-900">{order.customer.name}</p>
@@ -219,7 +228,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                 <div className={activeTab === 'details' ? 'block' : 'hidden'}>
                     <div className="p-6 space-y-5">
                         {/* Marketplace order details */}
-                        {!isCustom && order.items.map(item => (
+                        {order.order_type === 'marketplace' && order.items.map(item => (
                             <div key={item.id} className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                                 {/* Product image */}
                                 {item.product_image ? (
@@ -258,18 +267,47 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                         </p>
                                     </div>
                                 )}
-                                {item.cm_measurements && Object.keys(item.cm_measurements).length > 0 && (
-                                    <>
-                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-3 mb-2">
+                                {/* A standard size is fit information in itself; with neither
+                                    size nor measurements, the tailor is told to ask. */}
+                                {(Object.keys(item.cm_measurements ?? {}).length > 0 || !item.size) && (
+                                    <div className="mt-3">
+                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
                                             {t('tailorComponents.measurementsCm')}
                                         </div>
-                                        {Object.entries(item.cm_measurements).map(([k, v]) => (
-                                            <SpecRow key={k} label={t(`orderReview.size_${k}`, { defaultValue: k.charAt(0).toUpperCase() + k.slice(1) })} value={`${v} ${t('tailorComponents.cmUnit')}`} />
-                                        ))}
-                                    </>
+                                        <MeasurementList values={item.cm_measurements} emptyText={t('measurements.noneProvided')} />
+                                    </div>
                                 )}
                             </div>
                         ))}
+
+                        {/* Remodel: the customer's garment, what to change, and their fit */}
+                        {isRemodel && cd && (
+                            <>
+                                {(cd.remodel_images ?? []).length > 0 && (
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {(cd.remodel_images ?? []).map((src, i) => (
+                                            <a key={src} href={src} target="_blank" rel="noopener noreferrer" className="block aspect-square overflow-hidden rounded-lg border border-slate-100">
+                                                <ProductImage src={src} alt={`${t('tailorComponents.remodelBadge')} ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
+                                {cd.change_request && (
+                                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                            {t('tailorComponents.remodelChangeLabel')}
+                                        </div>
+                                        <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{cd.change_request}</p>
+                                    </div>
+                                )}
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                        {t('tailorComponents.measurementsCm')}
+                                    </div>
+                                    <MeasurementList values={cd.measurements} emptyText={t('measurements.noneProvided')} />
+                                </div>
+                            </>
+                        )}
 
                         {/* Custom design details */}
                         {isCustom && cd && (
@@ -329,13 +367,15 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                     </div>
                                     <SpecRow label={t('tailorComponents.specStandardSize')} value={cd.sizeStandard} />
                                     {Object.entries(cd.sizeCm ?? {}).map(([k, v]) => v
-                                        ? <SpecRow key={k} label={t(`orderReview.size_${k}`, { defaultValue: k.charAt(0).toUpperCase() + k.slice(1) })} value={`${v} ${t('tailorComponents.cmUnit')}`} />
+                                        ? <SpecRow key={k} label={t(measurementLabelKey(k), { defaultValue: k.charAt(0).toUpperCase() + k.slice(1) })} value={`${v} ${t('tailorComponents.cmUnit')}`} />
                                         : null
                                     )}
-                                    {Object.entries(cd.measurements ?? {}).map(([k, v]) => v !== '' && v !== null
-                                        ? <SpecRow key={k} label={t(`orderReview.size_${k}`, { defaultValue: k.charAt(0).toUpperCase() + k.slice(1) })} value={`${v} ${t('tailorComponents.cmUnit')}`} />
-                                        : null
-                                    )}
+                                    <div className="pt-2">
+                                        <MeasurementList
+                                            values={cd.measurements}
+                                            emptyText={cd.sizeStandard || Object.values(cd.sizeCm ?? {}).some(Boolean) ? undefined : t('measurements.noneProvided')}
+                                        />
+                                    </div>
                                     {(cd.height ?? cd.designElements?.height) && (
                                         <SpecRow label={t('tailorComponents.specHeight')} value={`${cd.height ?? cd.designElements?.height} ${t('tailorComponents.cmUnit')}`} />
                                     )}

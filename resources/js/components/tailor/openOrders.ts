@@ -15,7 +15,6 @@ export interface OpenOrderDesign {
     design_file_url?: string | null;
     tailor_notes?: string;
     customization_request?: string;
-    measurements?: Record<string, number | string>;
     /** Studio configuration: raw ids plus a readable spec snapshot */
     customization?: unknown;
     change_request?: string;
@@ -29,6 +28,9 @@ export interface OpenOrder {
     created_at: string;
     custom_design_data: OpenOrderDesign | null;
     expected_price?: number | null;
+    /** How many measurements the customer gave; the values reach only the tailor they choose */
+    measurements_count: number;
+    /** First name only, until a tailor is chosen */
     customer: { name: string };
     requests_count: number;
     my_request_status: 'pending' | 'accepted' | 'declined' | null;

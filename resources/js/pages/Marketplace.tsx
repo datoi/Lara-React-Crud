@@ -10,6 +10,7 @@ import { ErrorFallback } from '../components/ErrorFallback';
 import { Navigation } from '../components/landing/Navigation';
 import { ProductCardSkeleton } from '../components/marketplace/ProductCardSkeleton';
 import { addToCart, openCart } from '../hooks/useCart';
+import { knownKeys } from '../lib/measurements';
 import { getSection, setSection, type Section } from '../hooks/useSection';
 
 interface ApiProduct {
@@ -24,6 +25,8 @@ interface ApiProduct {
     tailor_id: number | null;
     tailor_name: string | null;
     category: { id: number; name: string; slug: string };
+    /** Non-empty for a piece made to the customer's measurements */
+    required_measurements?: string[] | null;
     reviews_count: number;
     average_rating: number | null;
 }
@@ -685,7 +688,7 @@ export default function Marketplace() {
                                                     {product.sizes!.map((size) => <button key={size} className="min-h-12 min-w-12 flex-1 px-3 text-sm hover:bg-brand hover:text-white" onClick={() => addProductToCart(product, size)} aria-label={`${t('marketplace.chooseSize')} ${size}`}>{size}</button>)}
                                                 </div>
                                             ) : (
-                                                <button className="w-full py-2 text-[10px] font-medium uppercase sm:py-2.5 sm:text-[11px]" onClick={() => product.colors && product.colors.length > 1 ? navigate(`/product/${product.id}`) : product.sizes?.length ? setQuickBuyId(product.id) : navigate(`/product/${product.id}`)}>{t('marketplace.quickBuy')}</button>
+                                                <button className="w-full py-2 text-[10px] font-medium uppercase sm:py-2.5 sm:text-[11px]" onClick={() => knownKeys(product.required_measurements ?? []).length > 0 ? navigate(`/product/${product.id}/customize`) : product.colors && product.colors.length > 1 ? navigate(`/product/${product.id}`) : product.sizes?.length ? setQuickBuyId(product.id) : navigate(`/product/${product.id}`)}>{t('marketplace.quickBuy')}</button>
                                             )}
                                         </div>
                                     </div>

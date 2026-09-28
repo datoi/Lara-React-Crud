@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'motion/react';
@@ -8,6 +8,9 @@ import { getAuthUser, getAuthToken } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
 import { useTranslation } from 'react-i18next';
 import DesignSpecList, { readProductName, readSpec } from '../components/DesignSpecList';
+import { OrderMeasurements } from '../components/measurements/OrderMeasurements';
+import { useOrderMeasurements } from '../hooks/useOrderMeasurements';
+import { fieldsFor } from '../lib/measurements';
 
 const SHIPPING = 15;
 
@@ -30,6 +33,8 @@ export default function OrderReview() {
     const [submitting,  setSubmitting]  = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const submitted = useRef(false);
+    const measurementFields = useMemo(() => fieldsFor(draft.garment_type), [draft.garment_type]);
+    const measurements = useOrderMeasurements(measurementFields);
 
     useEffect(() => {
         if (!user || !token) { navigate('/login/customer'); return; }
@@ -53,15 +58,10 @@ export default function OrderReview() {
     const handlePlaceOrder = async () => {
         if (submitted.current || submitting) return;
         if (!token) { navigate('/login/customer'); return; }
+        if (measurements.invalid) { setSubmitError(t('measurements.invalidBeforeSubmit')); return; }
         submitted.current = true;
         setSubmitting(true);
         setSubmitError(null);
-
-        const measurements = Object.fromEntries(
-            Object.entries(draft.measurements ?? {})
-                .filter(([, v]) => v !== '')
-                .map(([k, v]) => [k, Number(v)])
-        );
 
         const body: Record<string, unknown> = {
             order_type:             'custom',
@@ -72,10 +72,19 @@ export default function OrderReview() {
                 customization:   draft.customization,
                 design_file_url: draft.design_file_url,
                 tailor_notes:    draft.tailor_notes,
-                ...(Object.keys(measurements).length > 0 && { measurements }),
+                ...(!measurements.isEmpty && { measurements: measurements.snapshot }),
                 ...(draft.customization_request && { customization_request: draft.customization_request }),
             },
         };
+
+        try {
+            await measurements.commitToProfile();
+        } catch {
+            setSubmitError(t('measurements.saveProfileFailed'));
+            setSubmitting(false);
+            submitted.current = false;
+            return;
+        }
 
         try {
             const res = await fetch('/api/orders', {
@@ -198,18 +207,6 @@ export default function OrderReview() {
                                     <dt className="text-slate-500">{t('orderReview.garment')}</dt>
                                     <dd className="font-medium text-slate-900">{garmentLabel}</dd>
                                 </div>
-                                {Object.entries(draft.measurements ?? {}).filter(([, v]) => v !== '').length > 0 && (
-                                    <div className="flex justify-between gap-4">
-                                        <dt className="text-slate-500 shrink-0">{t('orderReview.measurements')}</dt>
-                                        <dd className="flex flex-wrap justify-end gap-1">
-                                            {Object.entries(draft.measurements).filter(([, v]) => v !== '').map(([k, v]) => (
-                                                <span key={k} className="text-xs bg-slate-50 border border-slate-200 text-slate-600 px-2 py-0.5 rounded">
-                                                    {t(`orderReview.size_${k}`, k)}: {v} {t('orderReview.cmUnit')}
-                                                </span>
-                                            ))}
-                                        </dd>
-                                    </div>
-                                )}
                                 {draft.customization_request && (
                                     <div className="flex justify-between gap-4">
                                         <dt className="text-slate-500 shrink-0">{t('orderReview.customizationRequest')}</dt>
@@ -223,6 +220,11 @@ export default function OrderReview() {
                                     </div>
                                 )}
                             </dl>
+                        </div>
+
+                        {/* Measurements: prefilled from the profile, editable for this order */}
+                        <div className="p-6 border-b border-slate-100">
+                            <OrderMeasurements state={measurements} idPrefix="order-measure" />
                         </div>
 
                         {/* Tailor section */}
