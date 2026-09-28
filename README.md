@@ -643,6 +643,7 @@ All features and fixes are logged here in reverse chronological order.
   - The checklist's raw `<button>` is now a `<Button variant="link">`.
   - `#631e26` is replaced by `text-brand` in the product rows.
   - `SetupChecklist.tsx`, now unused, is deleted.
+- **Footer logo:** her brand row used `.kere-nav-logo` outside the headers that size it, so the mask-painted wordmark collapsed to 0×0 and the row showed only the tagline. It now has `height: 20px` there, rendering at 90×20 at 1280px and 390px.
 - **Kept deliberately:** she dropped the footer's language switch (the header has one) and narrowed a registration-form label rule. Both are design choices, not regressions.
 
 **Verified:**

@@ -2114,6 +2114,7 @@ footer.kere-footer { background: var(--store-paper) !important; color: #2a1418; 
 .kere-footer-inner { max-width: 1440px; margin: auto; padding: 40px 24px 20px; }
 .kere-footer-brand { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 24px; border-bottom: 1px solid #ded7ce; padding-bottom: 28px; }
 .kere-footer-brand p { font-size: 13px; max-width: 420px; }
+.kere-footer-brand .kere-nav-logo { height: 20px; }
 .kere-footer-columns { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 32px; padding: 32px 0; }
 .kere-footer h3 { font-size: 13px; font-weight: 600; margin-bottom: 16px; }
 .kere-footer-contact > :is(a,p) { display: flex; align-items: flex-start; gap: 12px; font-size: 13px; line-height: 1.6; padding: 8px 0; overflow-wrap: anywhere; }
