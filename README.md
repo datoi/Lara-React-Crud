@@ -627,11 +627,10 @@ All features and fixes are logged here in reverse chronological order.
 - **Tailor boundary** (2026-09-24):
   - The header's new Home, Marketplace and Remodel links were removed. Each sent a tailor straight back to the dashboard, which a browser check confirmed.
   - A rejected tailor again gets "Sign out and go home" instead of a link to `/`, which looped back to the rejected screen.
-  - The footer again filters out pages a tailor cannot open.
   - The logo links go to `TAILOR_HOME`.
 - **Merchant identity** (2026-09-24):
-  - The footer shows the registered name, ID code and address from `company.*` and `data/company` again. Her version referenced `footer.registeredName`, `footer.companyId` and `footer.streetAddress`, which don't exist, so the raw keys showed on the page.
-  - Phone and email come from `data/company` rather than being retyped.
+  - The footer's address and copyright lines show the registered name, ID code and address from `company.*` and `data/company`. Her version referenced `footer.registeredName`, `footer.companyId` and `footer.streetAddress`, which don't exist, so the raw keys showed on the page.
+- **Footer otherwise hers, by decision (same day):** her footer is kept as written apart from the payment marks and those two lines. That includes her hardcoded phone and email, no Contact Us or Email Support links, and no tailor filtering, so a signed-in tailor again sees links that return them to the dashboard.
 - **Payment marks:** `PaymentMarks` with the real Visa and Mastercard images, instead of hand-drawn SVGs.
 - **Remodel work** (2026-09-24): the "I take remodel work" checkbox is back in the profile editor, loaded and saved.
 - **Cookie banner:** ✕ records a refusal again rather than only hiding the banner. The two short-copy keys she used (`consent.shortMessage`, `consent.shortPreferences`) were added in both languages.
@@ -651,7 +650,7 @@ All features and fixes are logged here in reverse chronological order.
 - **Headless Chrome, before and after:**
   - the dashboard at 1280px (English) and 390px (Georgian), no horizontal overflow and no console errors;
   - the tailor's header offering no bouncing link;
-  - the footer on `/about` as a tailor showing only permitted pages;
+  - the footer on `/about` as a tailor showing only permitted pages (since reverted to her unfiltered footer, see above);
   - the guest footer in both languages with the company ID, real payment marks, and no raw keys;
   - the remodel checkbox in the profile dialog;
   - the header inverting over a dark section;

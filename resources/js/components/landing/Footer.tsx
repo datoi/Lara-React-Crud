@@ -5,9 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
 import { PaymentMarks } from '../PaymentMarks';
 import { EmailSupportModal } from '../EmailSupportModal';
-import { COMPANY_EMAIL, COMPANY_ID_CODE, COMPANY_PHONE, COMPANY_PHONE_HREF } from '../../data/company';
-import { getAuthUser } from '../../hooks/useAuth';
-import { isRestrictedTailor, tailorMayVisit } from '../../lib/tailorAccess';
+import { COMPANY_ID_CODE } from '../../data/company';
 
 type FooterLink =
     | { label: string; type: 'router'; to: string }
@@ -30,13 +28,7 @@ export function Footer() {
         if (modal === 'email-support') setEmailSupportOpen(true);
     };
 
-    // A tailor is not offered a link the router would only send back to their
-    // dashboard; modals open in place, so they stay.
-    const restricted = isRestrictedTailor(getAuthUser());
-    const offered = (link: FooterLink) =>
-        !restricted || link.type === 'modal' || tailorMayVisit(link.type === 'router' ? link.to : link.href);
-
-    const allColumns: { title: string; links: FooterLink[] }[] = [
+    const footerColumns: { title: string; links: FooterLink[] }[] = [
         {
             title: t('footer.product'),
             links: [
@@ -54,21 +46,15 @@ export function Footer() {
                 { label: t('footer.ourTailors'), type: 'router', to: '/our-tailors' },
                 { label: t('footer.tailorDashboard'), type: 'router', to: '/tailor-dashboard' },
                 { label: t('footer.helpCenter'), type: 'router', to: '/help' },
-                { label: t('footer.contactUs'), type: 'router', to: '/contact' },
-                { label: t('footer.emailSupport'), type: 'modal', modal: 'email-support' },
             ],
         },
     ];
 
-    const footerColumns = allColumns
-        .map(column => ({ ...column, links: column.links.filter(offered) }))
-        .filter(column => column.links.length > 0);
-
-    const legalLinks = ([
+    const legalLinks: FooterLink[] = [
         { label: t('footer.privacyPolicy'), type: 'router', to: '/privacy' },
         { label: t('footer.termsOfService'), type: 'router', to: '/terms' },
         { label: t('footer.refundPolicy'), type: 'router', to: '/refund-policy' },
-    ] satisfies FooterLink[]).filter(offered);
+    ];
 
     return (
         <>
@@ -84,8 +70,8 @@ export function Footer() {
                     <div className="kere-footer-columns">
                         <section className="kere-footer-contact" aria-labelledby="footer-contact-title">
                             <h3 id="footer-contact-title">{t('footer.contactUs')}</h3>
-                            <a href={`tel:${COMPANY_PHONE_HREF}`}><Phone aria-hidden="true" /><span>{COMPANY_PHONE}</span></a>
-                            <a href={`mailto:${COMPANY_EMAIL}`}><Mail aria-hidden="true" /><span>{COMPANY_EMAIL}</span></a>
+                            <a href="tel:+995597032348"><Phone aria-hidden="true" /><span>+995 597 03 23 48</span></a>
+                            <a href="mailto:kereforyou@gmail.com"><Mail aria-hidden="true" /><span>kereforyou@gmail.com</span></a>
                             <div className="kere-footer-social">
                                 <a href="https://www.instagram.com/kereforyou/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Instagram aria-hidden="true" /></a>
                             </div>
@@ -93,16 +79,11 @@ export function Footer() {
                         {footerColumns.map(column => <FooterColumn key={column.title} {...column} onModalOpen={handleModalOpen} />)}
                     </div>
                     <PaymentMarks label={t('footer.weAccept')} className="kere-footer-payments" />
-                    {legalLinks.length > 0 && (
-                        <div className="kere-footer-legal">
-                            <nav aria-label={t('footer.legal')}>
-                                {legalLinks.map(item => <FooterItem key={item.label} item={item} onModalOpen={handleModalOpen} />)}
-                            </nav>
-                        </div>
-                    )}
-                    {/* The registered name, code and address are here as well as in
-                        the terms: a shopper looking for who they actually paid should
-                        not have to open a legal page to find out. */}
+                    <div className="kere-footer-legal">
+                        <nav aria-label={t('footer.legal')}>
+                            {legalLinks.map(item => <FooterItem key={item.label} item={item} onModalOpen={handleModalOpen} />)}
+                        </nav>
+                    </div>
                     <p className="kere-footer-location"><MapPin aria-hidden="true" /><span>{t('company.address')}</span></p>
                     <p className="kere-footer-copyright">© {new Date().getFullYear()} {t('company.legalName')} · {t('company.idCodeLabel')} {COMPANY_ID_CODE}</p>
                 </div>
