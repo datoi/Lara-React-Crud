@@ -1682,6 +1682,7 @@
         "loadingProfile": "Loading your saved measurements…",
         "orderHintPrefilled": "Filled in from your profile. Change anything for this order — your profile stays as it is unless you choose to update it.",
         "orderHintEmptyProfile": "Your tailor needs these to sew the right fit. Values in centimetres.",
+        "orderHintLoadFailed": "Couldn't load your saved measurements. Enter them for this order — your profile is left as it is.",
         "saveNewToProfile": "Save these to my profile for next time",
         "updateProfile": "Also update my profile with these values",
         "missingWarning": "No measurements yet — you can still order, and your tailor will ask for them in the chat.",

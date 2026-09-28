@@ -41,20 +41,26 @@ export function useOrderMeasurements(fields: readonly MeasurementKey[], initial?
     // Only offer to save what would actually change the profile.
     const differsFromProfile = profileFields.some(k => (snapshot[k] ?? null) !== (profile.saved[k] ?? null));
     const profileEmpty = Object.keys(profile.saved).length === 0;
+    // The save merges into what was loaded; without a loaded profile it would
+    // replace every saved field this garment does not ask about.
+    const canOfferSave = profile.canSave
+        && profile.status === 'ready'
+        && differsFromProfile
+        && Object.keys(snapshot).some(k => PROFILE_KEYS.includes(k as MeasurementKey));
 
     /**
      * Writes this order's body measurements into the profile when asked to,
      * keeping every saved field this garment did not ask about.
      */
     const commitToProfile = useCallback(async () => {
-        if (!saveToProfile || !profile.canSave || !differsFromProfile) return;
+        if (!saveToProfile || !canOfferSave) return;
         const merged: MeasurementSet = { ...profile.saved };
         for (const key of profileFields) {
             if (snapshot[key] === undefined) delete merged[key];
             else merged[key] = snapshot[key];
         }
         await profile.save(merged);
-    }, [saveToProfile, profile, differsFromProfile, profileFields, snapshot]);
+    }, [saveToProfile, canOfferSave, profile, profileFields, snapshot]);
 
     return {
         fields,
@@ -65,7 +71,7 @@ export function useOrderMeasurements(fields: readonly MeasurementKey[], initial?
         invalid: hasInvalid(draft, fields),
         profileStatus: profile.status,
         profileEmpty,
-        canOfferSave: profile.canSave && differsFromProfile && Object.keys(snapshot).some(k => PROFILE_KEYS.includes(k as MeasurementKey)),
+        canOfferSave,
         saveToProfile,
         setSaveToProfile,
         commitToProfile,

@@ -606,7 +606,8 @@ class OrderController extends Controller
                 'custom_design_data' => $design,
                 'measurements_count' => $measurementsCount,
                 'expected_price' => $o->expected_price,
-                'customer' => ['name' => $o->user->first_name ?: $o->user->getFullName()],
+                // An older account may have only `name`, which holds the full name.
+                'customer' => ['name' => $o->user->first_name ?: Str::before($o->user->getFullName(), ' ')],
                 'requests_count' => $o->tailor_requests_count,
                 'my_request_status' => $myRequests[$o->id] ?? null,
             ];

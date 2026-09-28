@@ -718,6 +718,12 @@ The seeded data was deleted afterwards.
 - **Tailor, in both languages and widths:** "3 measurements provided — shown once you're chosen" and "Nino" (no surname) in the feed; once assigned, the snapshot in the order view, the remodel's brief and measurements, and "No measurements provided" on an order without any. No console errors throughout.
 - **Cleanup:** the QA accounts and their 8 orders were deleted, and product 14's stock restored.
 
+**Review follow-up (2026-09-28):**
+- **Data loss fixed:** if the profile failed to load, an order still offered "save these to my profile", and the save merged into an empty set, wiping every saved field the garment didn't ask about. `useOrderMeasurements` now offers and commits the save only once the profile has loaded. The order step says "Couldn't load your saved measurements" instead of pretending the profile is empty.
+- **Privacy:** the open-requests feed fell back to the full `name` for accounts without a `first_name`, sending the surname to bidders. It now sends the first word only; a feature test covers it.
+- The cart's error handling reads the server code once instead of twice with a non-null assertion.
+- Verified: 156 tests, `tsc`, `vite build`, locale parity; headless Chrome drove the dashboard card, the made-to-measure dress (refused without hips, placed with it, profile untouched), the review page with the profile request forced to 500, the remodel prefill, the tailor feed, and Georgian at 390px. QA data deleted afterwards.
+
 **Not covered:** the "how to measure" guide has diagrams for chest, waist, hips and length only. For shoulder, sleeve and inseam it opens at its first step. The empty "Colours" box in a studio order's tailor view predates this change.
 
 ---

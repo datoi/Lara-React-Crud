@@ -25,6 +25,8 @@ export function OrderMeasurements({ state, required = [], idPrefix, titleClassNa
             <p className="mb-3 mt-1 text-xs text-slate-500">
                 {state.profileStatus === 'loading'
                     ? <span className="inline-flex items-center gap-1.5"><Loader2 className="h-3 w-3 animate-spin" />{t('measurements.loadingProfile')}</span>
+                    : state.profileStatus === 'error'
+                        ? t('measurements.orderHintLoadFailed')
                     : state.profileEmpty
                         ? t('measurements.orderHintEmptyProfile')
                         : t('measurements.orderHintPrefilled')}
