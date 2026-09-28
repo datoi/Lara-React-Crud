@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\CustomerMeasurementController;
 use App\Http\Controllers\Api\CustomerOnboardingController;
 use App\Http\Controllers\Api\CustomerOrderController;
 use App\Http\Controllers\Api\CustomizerAdminController;
@@ -64,7 +63,6 @@ Route::middleware(['auth.bearer', 'throttle:60,1,api-reads'])->group(function ()
         Route::get('/customer/orders/{orderId}/review-status', [ReviewController::class, 'orderReviewStatus']);
         Route::get('/customer/orders/{orderId}/requests', [CustomerOrderController::class, 'requests']);
         Route::get('/wishlist', [WishlistController::class, 'index']);
-        Route::get('/customer/measurements', [CustomerMeasurementController::class, 'show']);
     });
 
     // Notifications
@@ -109,7 +107,6 @@ Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function (
         Route::post('/uploads', [UploadController::class, 'design']);
         Route::post('/wishlist/{product}', [WishlistController::class, 'store']);
         Route::delete('/wishlist/{product}', [WishlistController::class, 'destroy']);
-        Route::put('/customer/measurements', [CustomerMeasurementController::class, 'update']);
     });
 
     // Orders — tailor side

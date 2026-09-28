@@ -4,7 +4,6 @@ import { X, Plus, Loader2, Check, ImagePlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { getAuthToken } from '../../hooks/useAuth';
-import { MEASUREMENT_FIELDS, knownKeys, measurementLabelKey } from '../../lib/measurements';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -49,6 +48,16 @@ const GENDER_KEYS: { key: ProductGender; tKey: string }[] = [
     { key: 'unisex', tKey: 'tailorComponents.genderBoth' },
 ];
 
+const MEASUREMENT_KEYS = [
+    { key: 'chest',              tKey: 'tailorComponents.measureChest' },
+    { key: 'waist',              tKey: 'tailorComponents.measureWaist' },
+    { key: 'hips',               tKey: 'tailorComponents.measureHips' },
+    { key: 'length',             tKey: 'tailorComponents.measureLength' },
+    { key: 'inseam',             tKey: 'tailorComponents.measureInseam' },
+    { key: 'shoulder',           tKey: 'tailorComponents.measureShoulder' },
+    { key: 'head_circumference', tKey: 'tailorComponents.measureHead' },
+    { key: 'sleeve',             tKey: 'tailorComponents.measureSleeve' },
+];
 
 const PRESET_COLORS = [
     '#1E293B', '#475569', '#94A3B8', '#FFFFFF',
@@ -135,7 +144,7 @@ function productToForm(p: TailorProductFull): FormState {
         sizes: [...p.sizes],
         fabric: p.fabric ?? '',
         texture: p.texture ?? '',
-        required_measurements: knownKeys(p.required_measurements),
+        required_measurements: [...p.required_measurements],
         is_customizable: p.is_customizable,
     };
 }
@@ -600,7 +609,7 @@ export function AddProductModal({ onClose, onCreated, editProduct, onUpdated }: 
                             <p className="text-xs text-slate-400 mt-1">{t('tailorComponents.measurementReqsDesc')}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            {MEASUREMENT_FIELDS.map(m => {
+                            {MEASUREMENT_KEYS.map(m => {
                                 const active = form.required_measurements.includes(m.key);
                                 return (
                                     <button
@@ -617,7 +626,7 @@ export function AddProductModal({ onClose, onCreated, editProduct, onUpdated }: 
                                         }`}>
                                             {active && <Check className="w-2.5 h-2.5 text-slate-900" />}
                                         </div>
-                                        {t(measurementLabelKey(m.key))}
+                                        {t(m.tKey)}
                                     </button>
                                 );
                             })}

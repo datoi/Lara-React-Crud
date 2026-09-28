@@ -6,10 +6,8 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\User;
-use App\Support\Measurements;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
@@ -232,7 +230,7 @@ class ProductController extends Controller
             'fabric'                => 'nullable|string|max:100',
             'texture'               => 'nullable|string|max:100',
             'required_measurements' => 'nullable|array',
-            'required_measurements.*' => ['string', Rule::in(Measurements::keys())],
+            'required_measurements.*' => 'string',
             'is_customizable'       => 'boolean',
             'stock'                 => 'nullable|integer|min:0|max:9999',
         ]);
@@ -286,7 +284,7 @@ class ProductController extends Controller
             'fabric'                  => 'nullable|string|max:100',
             'texture'                 => 'nullable|string|max:100',
             'required_measurements'   => 'nullable|array',
-            'required_measurements.*' => ['string', Rule::in(Measurements::keys())],
+            'required_measurements.*' => 'string',
             'is_customizable'         => 'boolean',
             'stock'                   => 'nullable|integer|min:0|max:9999',
         ]);
@@ -345,7 +343,7 @@ class ProductController extends Controller
             'sizes'                 => $p->sizes ?? [],
             'fabric'                => $p->fabric,
             'texture'               => $p->texture,
-            'required_measurements' => Measurements::known($p->required_measurements ?? []),
+            'required_measurements' => $p->required_measurements ?? [],
             'is_customizable'       => $p->is_customizable,
             'stock'                 => $p->stock,
             'status'                => $p->status ?? 'active',
