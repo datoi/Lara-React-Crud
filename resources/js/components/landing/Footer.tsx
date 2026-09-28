@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
 import { PaymentMarks } from '../PaymentMarks';
 import { EmailSupportModal } from '../EmailSupportModal';
-import { COMPANY_ID_CODE } from '../../data/company';
 
 type FooterLink =
     | { label: string; type: 'router'; to: string }
@@ -84,8 +83,8 @@ export function Footer() {
                             {legalLinks.map(item => <FooterItem key={item.label} item={item} onModalOpen={handleModalOpen} />)}
                         </nav>
                     </div>
-                    <p className="kere-footer-location"><MapPin aria-hidden="true" /><span>{t('company.address')}</span></p>
-                    <p className="kere-footer-copyright">© {new Date().getFullYear()} {t('company.legalName')} · {t('company.idCodeLabel')} {COMPANY_ID_CODE}</p>
+                    <p className="kere-footer-location"><MapPin aria-hidden="true" /><span>{t('footer.streetAddress')}</span></p>
+                    <p className="kere-footer-copyright">© {new Date().getFullYear()} {t('footer.registeredName')} · {t('footer.companyId')}</p>
                 </div>
             </footer>
         </>

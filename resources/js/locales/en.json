@@ -267,7 +267,10 @@
         "legal": "Legal",
         "privacyPolicy": "Privacy Policy",
         "termsOfService": "Terms of Service",
-        "refundPolicy": "Refund Policy"
+        "refundPolicy": "Refund Policy",
+        "streetAddress": "Nakaduli Street, 2nd Lane 92, Tbilisi, Georgia",
+        "registeredName": "KereForYou LLC",
+        "companyId": "Identification code 406562376"
     },
     "newsletterPopup": {
         "title": "Don't miss out.",

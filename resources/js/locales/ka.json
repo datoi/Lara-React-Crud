@@ -267,7 +267,10 @@
         "legal": "სამართლებრივი",
         "privacyPolicy": "კონფიდენციალურობა",
         "termsOfService": "გამოყენების წესები",
-        "refundPolicy": "თანხის დაბრუნება"
+        "refundPolicy": "თანხის დაბრუნება",
+        "streetAddress": "ნაკადულის ქუჩა, მეორე ჩიხი 92, თბილისი, საქართველო",
+        "registeredName": "შპს კერე შენთვის",
+        "companyId": "საიდენტიფიკაციო კოდი 406562376"
     },
     "newsletterPopup": {
         "title": "არ გამოგრჩეს.",

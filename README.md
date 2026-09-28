@@ -629,8 +629,8 @@ All features and fixes are logged here in reverse chronological order.
   - A rejected tailor again gets "Sign out and go home" instead of a link to `/`, which looped back to the rejected screen.
   - The logo links go to `TAILOR_HOME`.
 - **Merchant identity** (2026-09-24):
-  - The footer's address and copyright lines show the registered name, ID code and address from `company.*` and `data/company`. Her version referenced `footer.registeredName`, `footer.companyId` and `footer.streetAddress`, which don't exist, so the raw keys showed on the page.
-- **Footer otherwise hers, by decision (same day):** her footer is kept as written apart from the payment marks and those two lines. That includes her hardcoded phone and email, no Contact Us or Email Support links, and no tailor filtering, so a signed-in tailor again sees links that return them to the dashboard.
+  - The footer's address and copyright lines use her own keys (`footer.streetAddress`, `footer.registeredName`, `footer.companyId`). Her commit never added them, so the raw keys showed on the page; they now exist in both languages with the registered name, ID code and address.
+- **Footer otherwise hers, by decision (same day):** her footer file is kept exactly as written apart from the payment marks (the real images, via `PaymentMarks`) and the wordmark's height. That includes her hardcoded phone and email, no Contact Us or Email Support links, and no tailor filtering, so a signed-in tailor again sees links that return them to the dashboard.
 - **Payment marks:** `PaymentMarks` with the real Visa and Mastercard images, instead of hand-drawn SVGs.
 - **Remodel work** (2026-09-24): the "I take remodel work" checkbox is back in the profile editor, loaded and saved.
 - **Cookie banner:** ✕ records a refusal again rather than only hiding the banner. The two short-copy keys she used (`consent.shortMessage`, `consent.shortPreferences`) were added in both languages.
