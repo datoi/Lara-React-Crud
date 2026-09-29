@@ -1479,13 +1479,7 @@ body {
 }
 :where(a, button, summary):focus-visible { outline: 1px solid var(--color-brand); outline-offset: 3px; }
 .kere-storefront { background: var(--store-paper); color: var(--store-ink); }
-.store-header { position: fixed; inset: 0 0 auto; z-index: 100; height: 50px; color: var(--store-ink); background: var(--store-paper); border-bottom: 0; transition: color .5s, background-color .5s, box-shadow .5s; }
-/* Over a dark section the bar inverts rather than sitting as a pale slab on it.
-   The tone is measured in Navigation.tsx and published as `data-nav-tone`. */
-.store-header[data-nav-tone="dark"] { color: #faf5ef; background: #1c1c1c; }
-.store-header[data-nav-tone="dark"] .store-skip { background: #faf5ef; color: var(--store-ink); }
-.store-header[data-scrolled="true"] { box-shadow: 0 1px 0 rgb(42 20 24 / .1); }
-.store-header[data-nav-tone="dark"][data-scrolled="true"] { box-shadow: 0 1px 0 rgb(255 255 255 / .12); }
+.store-header { position: fixed; inset: 0 0 auto; z-index: 100; height: 50px; color: var(--store-ink); background: var(--store-paper); border-bottom: 0; }
 .store-header-inner { max-width: 1600px; margin: auto; padding: 0 var(--store-gutter); height: 100%; display: flex; align-items: center; gap: 24px; }
 .store-logo { display: inline-flex; align-items: center; min-height: 44px; }
 .store-logo .kere-nav-logo { height: 17px; }

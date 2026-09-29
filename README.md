@@ -609,6 +609,22 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-09-29] The storefront navbar stays light over dark sections, as Mariami designed it
+
+**What was done:** Mariami's header is single-tone: it stays cream (`--store-paper`) with dark text on every page. She made that change on 2026-09-21 (`9bfa33a`). Two imports treated it as a lost function and put the inversion back: `e26d743` on 2026-09-22 and `11f263f` on 2026-09-28. So on `/partners` the bar turned black (`#1c1c1c`) over the olive benefits section. She has confirmed the single tone is intentional, so it is now her design:
+- `Navigation.tsx`: the dark-section probe is removed (`isDarkElement`, `updateTone`, the scroll/resize listeners, `data-nav-tone`, `data-scrolled`). The header is a plain `<header className="store-header">`.
+- `app.css`: the `.store-header[data-nav-tone]` and `[data-scrolled]` rules and the header transition are removed. The `.store-header` line now matches her branch exactly. That drops the hairline shadow on scroll too, which she had also removed.
+- `data-nav-theme` is no longer read by anything. No page set it.
+
+**Verified:**
+- `tsc` and `eslint` are clean.
+- Headless Chrome on `/partners` at 1440px and 390px, in Georgian, scrolled into the benefits section: the header is `rgb(250, 245, 239)` with `rgb(42, 20, 24)` text and no shadow.
+- No console errors.
+
+**Note:** the `.kere-site-header` rules in `app.css` (about lines 602–698, including their own `data-nav-tone` selectors) style a header class that no component renders any more. They were left for a separate cleanup.
+
+---
+
 ### [2026-09-28] The home page hides its product strip when the marketplace is empty
 
 **What was done:** With no products in the marketplace, `MarketplaceCarousel` on the home page still rendered its category bar ("All" and nothing else), the KERE tile, "No products found" and a "View all products" button leading to an empty page. It now renders nothing once the products have loaded and the list is empty. A failed load still shows the section with its error message, so an outage is not mistaken for an empty shop. The "No products found" line was removed, since that case no longer reaches it.

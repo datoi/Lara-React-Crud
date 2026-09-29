@@ -123,67 +123,9 @@ export function Navigation() {
         }
     };
 
-    // ── Adaptive tone ───────────────────────────────────────────────────────
-    // The bar is transparent over whatever it happens to be sitting on, so it
-    // reads its own contrast rather than assuming the page is light. A section
-    // can declare itself with `data-nav-theme`; anything else is measured.
-    const [isOverDark, setIsOverDark] = useState(false);
-    const [isScrolled, setIsScrolled] = useState(false);
-
-    useEffect(() => {
-        function isDarkElement(element: Element | null) {
-            const section = element?.closest?.('section, main, [data-nav-theme]');
-
-            if (!section) {
-                return false;
-            }
-
-            if (section.matches('[data-nav-theme="dark"], .partners-benefits-design, .kere-brand-dark-section, .bg-slate-900, .bg-slate-800')) {
-                return true;
-            }
-
-            const background = window.getComputedStyle(section).backgroundColor;
-            const match = background.match(/\d+(\.\d+)?/g);
-
-            if (!match || match.length < 3) {
-                return false;
-            }
-
-            const [r, g, b] = match.slice(0, 3).map(Number);
-            const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-
-            return luminance < 0.42;
-        }
-
-        function updateTone() {
-            const probeY = Math.min(92, window.innerHeight - 1);
-            const probeX = Math.floor(window.innerWidth / 2);
-            setIsOverDark(isDarkElement(document.elementFromPoint(probeX, probeY)));
-            setIsScrolled(window.scrollY > 8);
-        }
-
-        updateTone();
-        window.addEventListener('scroll', updateTone, { passive: true });
-        window.addEventListener('resize', updateTone);
-
-        return () => {
-            window.removeEventListener('scroll', updateTone);
-            window.removeEventListener('resize', updateTone);
-        };
-    }, [pathname]);
-
-    // The landing page and the customizer pin their own header colours in CSS,
-    // so the probe only drives the tone on the pages that have not claimed one.
-    const isLanding = pathname === '/';
-    const isCustomizer = pathname.startsWith('/customize/');
-    const navIsDark = isOverDark && !isLanding && !isCustomizer;
     return (
         <>
-            <header
-                className="store-header"
-                data-nav-tone={navIsDark ? 'dark' : 'light'}
-                data-scrolled={isScrolled ? 'true' : 'false'}
-            >
+            <header className="store-header">
                 <a
                     href="#main-content"
                     className="store-skip"
