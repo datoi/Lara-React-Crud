@@ -58,6 +58,7 @@ class CustomerOrderController extends Controller
                 'tailor_name' => $tailorName,
                 'custom_design_data' => $order->custom_design_data,
                 'expected_price' => $order->expected_price,
+                'needed_by' => $order->needed_by?->toDateString(),
                 'items' => $items,
                 'created_at' => $order->created_at->toISOString(),
                 'has_review' => $reviewedOrderIds->has($order->id),

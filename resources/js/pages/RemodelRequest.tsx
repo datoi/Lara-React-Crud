@@ -11,6 +11,7 @@ import { getAuthToken, getAuthUser, saveReturnTo } from '../hooks/useAuth';
 import { OrderMeasurements } from '../components/measurements/OrderMeasurements';
 import { useOrderMeasurements } from '../hooks/useOrderMeasurements';
 import { PROFILE_KEYS } from '../lib/measurements';
+import { tomorrowCalendarDay } from '../lib/dates';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -38,6 +39,10 @@ export default function RemodelRequest() {
     const [city, setCity] = useState('თბილისი');
     const [zip, setZip] = useState('');
     const [expectedPrice, setExpectedPrice] = useState('');
+    const [neededBy, setNeededBy] = useState('');
+    const earliestNeededBy = tomorrowCalendarDay();
+    // `min` only limits the picker; a typed date can still be earlier.
+    const neededByInvalid = neededBy !== '' && neededBy < earliestNeededBy;
 
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
@@ -111,6 +116,7 @@ export default function RemodelRequest() {
         address.trim().length > 0 &&
         city.trim().length > 0 &&
         !measurements.invalid &&
+        !neededByInvalid &&
         !uploading &&
         !submitting;
 
@@ -137,6 +143,7 @@ export default function RemodelRequest() {
         const body = {
             order_type: 'remodel',
             expected_price: expectedPrice.trim() !== '' ? Number(expectedPrice) : null,
+            needed_by: neededBy || null,
             first_name: firstName.trim(),
             last_name: lastName.trim(),
             phone: phone.trim(),
@@ -323,7 +330,7 @@ export default function RemodelRequest() {
                             </section>
 
                             {/* Optional expected price */}
-                            <section className="mb-10">
+                            <section className="mb-8 sm:mb-14">
                                 <label htmlFor="price" className="mb-2 block text-lg font-semibold tracking-normal text-[#17130F]">
                                     {t('remodel.priceLabel')}
                                 </label>
@@ -343,6 +350,36 @@ export default function RemodelRequest() {
                                         className={`${inputClass} pl-8`}
                                     />
                                 </div>
+                            </section>
+
+                            {/* Optional date the customer needs it by */}
+                            <section className="mb-10">
+                                <label htmlFor="needed-by" className="mb-2 block text-lg font-semibold tracking-normal text-[#17130F]">
+                                    {t('remodel.neededByLabel')}
+                                </label>
+                                <p id="needed-by-hint" className="mb-5 text-sm leading-5 text-[#5C5148]">{t('remodel.neededByHint')}</p>
+                                <div className="flex flex-wrap items-end gap-x-5 gap-y-2">
+                                    <div className="w-full max-w-[220px]">
+                                        <input
+                                            id="needed-by"
+                                            type="date"
+                                            min={earliestNeededBy}
+                                            value={neededBy}
+                                            onChange={(e) => setNeededBy(e.target.value)}
+                                            aria-describedby={neededByInvalid ? 'needed-by-hint needed-by-error' : 'needed-by-hint'}
+                                            aria-invalid={neededByInvalid}
+                                            className={inputClass}
+                                        />
+                                    </div>
+                                    {neededBy !== '' && (
+                                        <Button type="button" variant="link" onClick={() => setNeededBy('')} className="h-auto px-0 py-3 text-[#4F463E]">
+                                            {t('remodel.neededByClear')}
+                                        </Button>
+                                    )}
+                                </div>
+                                {neededByInvalid && (
+                                    <p id="needed-by-error" role="alert" className="mt-2 text-xs text-[#6F1D24]">{t('remodel.neededByInvalid')}</p>
+                                )}
                             </section>
 
                             {submitError && (

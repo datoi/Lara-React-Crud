@@ -8,6 +8,7 @@ import DesignSpecList, { readProductName, readSpec } from '../DesignSpecList';
 import { ProductImage } from '../marketplace/ProductImage';
 import { OpenDesignPicture } from './OpenDesignPicture';
 import { isImageUrl, type OpenOrder, type StudioProduct } from './openOrders';
+import { formatCalendarDay } from '../../lib/dates';
 
 /**
  * Everything a tailor needs to decide on one open request, and the offer
@@ -138,6 +139,9 @@ function OpenDesignDetails({ order, product, title, dateLabel, onRequested }: {
                 )}
                 {isRemodel && order.expected_price != null && (
                     <DetailBlock label={t('tailorComponents.remodelExpectedPrice')}>₾{order.expected_price}</DetailBlock>
+                )}
+                {isRemodel && order.needed_by && (
+                    <DetailBlock label={t('tailorComponents.remodelNeededBy')}>{formatCalendarDay(order.needed_by, t)}</DetailBlock>
                 )}
 
                 {spec.length > 0 && (

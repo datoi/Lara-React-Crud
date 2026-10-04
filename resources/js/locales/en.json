@@ -1,4 +1,21 @@
 {
+    "calendar": {
+        "day": "{{day}} {{month}} {{year}}",
+        "months": {
+            "1": "January",
+            "2": "February",
+            "3": "March",
+            "4": "April",
+            "5": "May",
+            "6": "June",
+            "7": "July",
+            "8": "August",
+            "9": "September",
+            "10": "October",
+            "11": "November",
+            "12": "December"
+        }
+    },
     "productDetails": {
         "findSize": "Find your size",
         "sizeGuide": "Size guide",
@@ -835,6 +852,10 @@
         "priceLabel": "Your expected price (optional)",
         "priceHint": "Optional. Tailors may offer a different price.",
         "pricePlaceholder": "e.g. 80",
+        "neededByLabel": "When you need it by (optional)",
+        "neededByHint": "Optional. Tailors see this date before they send an offer.",
+        "neededByInvalid": "Choose a date from tomorrow onwards.",
+        "neededByClear": "Clear date",
         "submit": "Post Remodel Request",
         "submitHint": "Tailors will send offers you can compare before choosing one.",
         "errorFileType": "Please upload a JPG, PNG, or WebP image.",
@@ -875,6 +896,7 @@
         "remodelLabel": "Remodel request",
         "remodelChangeLabel": "What to change",
         "remodelExpectedPrice": "Your expected price",
+        "remodelNeededBy": "You need it by",
         "chooseTailorBtn": "Choose This Tailor",
         "choosing": "Choosing…",
         "chooseFailed": "Couldn't choose this tailor. Please try again.",
@@ -1395,6 +1417,7 @@
         "remodelBadge": "Remodel request",
         "remodelChangeLabel": "Wants changed",
         "remodelExpectedPrice": "Customer's expected price",
+        "remodelNeededBy": "Customer needs it by",
         "subtotal": "Subtotal",
         "shipping": "Shipping",
         "total": "Total",

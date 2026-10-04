@@ -9,6 +9,7 @@ import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
 import { MeasurementList } from '../measurements/MeasurementList';
 import { measurementLabelKey } from '../../lib/measurements';
 import { ProductImage } from '../marketplace/ProductImage';
+import { formatCalendarDay } from '../../lib/dates';
 
 // ─── Module-level status label map ────────────────────────────────────────────
 
@@ -77,6 +78,8 @@ export interface TailorOrder {
     subtotal: number;
     total: number;
     created_at: string;
+    /** Calendar day (`YYYY-MM-DD`) the customer would like it ready by */
+    needed_by: string | null;
     customer: { name: string };
     items: OrderItem[];
     custom_design_data: CustomDesign | null;
@@ -298,6 +301,14 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                             {t('tailorComponents.remodelChangeLabel')}
                                         </div>
                                         <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{cd.change_request}</p>
+                                    </div>
+                                )}
+                                {order.needed_by && (
+                                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                            {t('tailorComponents.remodelNeededBy')}
+                                        </div>
+                                        <p className="text-sm font-medium text-slate-900">{formatCalendarDay(order.needed_by, t)}</p>
                                     </div>
                                 )}
                                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">

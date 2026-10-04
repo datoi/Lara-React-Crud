@@ -16,6 +16,7 @@ import { OrderCardSkeleton } from '../components/skeletons/OrderCardSkeleton';
 import { translateServerMessage } from '../lib/serverMessage';
 import { MyMeasurements } from '../components/measurements/MyMeasurements';
 import { MeasurementList } from '../components/measurements/MeasurementList';
+import { formatCalendarDay } from '../lib/dates';
 
 interface OrderItem {
     id: number;
@@ -70,6 +71,8 @@ interface CustomerOrder {
     payment_status?: 'unpaid' | 'paid' | 'expired' | 'not_required';
     total: number;
     expected_price?: number | null;
+    /** Calendar day (`YYYY-MM-DD`) the customer would like it ready by */
+    needed_by: string | null;
     tailor_id: number | null;
     tailor_name: string | null;
     custom_design_data: DesignData | null;
@@ -349,6 +352,12 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                     <div className="bg-slate-50 rounded-none p-4 flex items-center justify-between">
                                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('customerDashboard.remodelExpectedPrice')}</span>
                                         <span className="text-sm font-semibold text-slate-900">₾{order.expected_price}</span>
+                                    </div>
+                                )}
+                                {order.needed_by && (
+                                    <div className="bg-slate-50 rounded-none p-4 flex items-center justify-between gap-4">
+                                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('customerDashboard.remodelNeededBy')}</span>
+                                        <span className="text-sm font-semibold text-slate-900 text-right">{formatCalendarDay(order.needed_by, t)}</span>
                                     </div>
                                 )}
                             </div>

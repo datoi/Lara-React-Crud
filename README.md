@@ -609,6 +609,35 @@ All features and fixes are logged here in reverse chronological order.
 
 ---
 
+### [2026-10-04] Remodel requests take an optional "needed by" date
+
+**What was done:** A customer posting a remodel can now say when they need the garment back. The field is optional, and tailors see the date before they send an offer.
+- **Database:** `orders.needed_by`, a nullable `date` placed after `expected_price`. Existing orders keep `null`, meaning no preference. The model casts it as `date:Y-m-d`, so any serialization gives a plain calendar day, never a UTC timestamp.
+- **API:** `POST /api/orders` (remodel) validates `needed_by` as `nullable|date_format:Y-m-d|after:today`. The app runs in UTC and Georgia is UTC+4, so the server's "today" is never later than the customer's. The client offers tomorrow at the earliest, so the server rule never rejects a date the form allowed. The date is returned by `GET /api/tailor/open-orders`, `GET /api/tailor/orders` and `GET /api/customer/orders`.
+- **Form (`RemodelRequest.tsx`):** a date input under the budget, styled like it. `min` is tomorrow. A typed earlier date shows an error and disables submit, and "Clear date" empties the field.
+- **Shown in:** the tailor's offer dialog (`OpenDesignDialog`), the assigned tailor's order modal (`OrdersList`) and the customer's order detail (`CustomerDashboard`).
+- **New `lib/dates.ts` (`formatCalendarDay`):** builds the date from month names in `calendar.*` in `en.json`/`ka.json`. It doesn't use `toLocaleDateString`, because Chrome ships no Georgian date data and silently writes `ka-GE` dates in English. The helper also avoids `new Date('YYYY-MM-DD')`, which is UTC midnight and so the previous day west of UTC.
+
+**Verified:**
+- `tsc`, `eslint` and `vite build` are clean.
+- All 165 PHP tests pass. 7 of them are new in `TailorRemodelingTest`:
+  - the date is stored and reaches all three views;
+  - the date is optional;
+  - today, yesterday, free text and a datetime are rejected with 422.
+- Headless Chrome against the dev server, in Georgian and English, using a throwaway customer and remodel tailor:
+  - the form's `min` is tomorrow;
+  - a past date shows the error and disables submit;
+  - "Clear date" empties the field;
+  - a future date submits and is stored as typed;
+  - the customer modal, the tailor's offer dialog and the assigned-order modal show "14 ოქტომბერი, 2026" / "14 October 2026";
+  - at 390px there is no horizontal overflow;
+  - no console errors.
+  - The QA accounts and their 6 orders were deleted afterwards.
+
+**Note:** the other dates in these views (order created dates) still use `toLocaleDateString` and so show in English in Georgian Chrome. Moving them to `formatCalendarDay` is a separate change.
+
+---
+
 ### [2026-09-29] The storefront navbar stays light over dark sections, as Mariami designed it
 
 **What was done:** Mariami's header is single-tone: it stays cream (`--store-paper`) with dark text on every page. She made that change on 2026-09-21 (`9bfa33a`). Two imports treated it as a lost function and put the inversion back: `e26d743` on 2026-09-22 and `11f263f` on 2026-09-28. So on `/partners` the bar turned black (`#1c1c1c`) over the olive benefits section. She has confirmed the single tone is intentional, so it is now her design:

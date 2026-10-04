@@ -92,6 +92,72 @@ test('a remodel request is announced only to tailors who take remodel work', fun
         ->and(KereNotification::where('user_id', $declined->id)->count())->toBe(0);
 });
 
+function remodelPayload(array $overrides = []): array
+{
+    return array_merge([
+        'order_type' => 'remodel',
+        'first_name' => 'Nino',
+        'phone' => '+995555000111',
+        'address' => 'Rustaveli 1',
+        'city' => 'Tbilisi',
+        'custom_design_data' => [
+            'change_request' => 'Shorten the sleeves',
+            'remodel_images' => ['https://example.com/jacket.jpg'],
+        ],
+    ], $overrides);
+}
+
+test('a remodel keeps the date the customer needs it by, and it reaches every tailor view', function () {
+    [$tailor, $tailorToken] = tailorWithToken(true);
+    $customerToken = Str::random(60);
+    User::factory()->create([
+        'role' => 'customer',
+        'terms_accepted_at' => now(),
+        'api_token' => hash('sha256', $customerToken),
+    ]);
+    $date = now()->addDays(14)->toDateString();
+
+    $this->withToken($customerToken)->postJson('/api/orders', remodelPayload(['needed_by' => $date]))
+        ->assertStatus(201);
+    $order = Order::latest('id')->firstOrFail();
+
+    expect($order->needed_by->toDateString())->toBe($date);
+
+    $this->withToken($tailorToken)->getJson('/api/tailor/open-orders')
+        ->assertOk()->assertJsonPath('orders.0.needed_by', $date);
+
+    $this->withToken($customerToken)->getJson('/api/customer/orders')
+        ->assertOk()->assertJsonPath('orders.0.needed_by', $date);
+
+    $order->update(['tailor_id' => $tailor->id, 'status' => 'processing']);
+    $this->withToken($tailorToken)->getJson('/api/tailor/orders')
+        ->assertOk()->assertJsonPath('orders.0.needed_by', $date);
+});
+
+test('the needed-by date is optional', function () {
+    $token = Str::random(60);
+    User::factory()->create(['role' => 'customer', 'terms_accepted_at' => now(), 'api_token' => hash('sha256', $token)]);
+
+    $this->withToken($token)->postJson('/api/orders', remodelPayload())->assertStatus(201);
+
+    expect(Order::latest('id')->firstOrFail()->needed_by)->toBeNull();
+});
+
+test('the needed-by date must be a future calendar day', function (string $date) {
+    $token = Str::random(60);
+    User::factory()->create(['role' => 'customer', 'terms_accepted_at' => now(), 'api_token' => hash('sha256', $token)]);
+
+    $this->withToken($token)->postJson('/api/orders', remodelPayload(['needed_by' => $date]))
+        ->assertStatus(422)->assertJsonValidationErrors('needed_by');
+
+    expect(Order::count())->toBe(0);
+})->with([
+    'today' => fn () => now()->toDateString(),
+    'yesterday' => fn () => now()->subDay()->toDateString(),
+    'not a date' => 'next week',
+    'with a time' => fn () => now()->addDays(3)->toDateTimeString(),
+]);
+
 test('the open-orders feed shows remodels only to tailors who take them', function () {
     $custom = openOrder('custom');
     $remodel = openOrder('remodel');

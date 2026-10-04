@@ -28,6 +28,8 @@ export interface OpenOrder {
     created_at: string;
     custom_design_data: OpenOrderDesign | null;
     expected_price?: number | null;
+    /** Calendar day (`YYYY-MM-DD`) the customer would like it ready by */
+    needed_by: string | null;
     /** How many measurements the customer gave; the values reach only the tailor they choose */
     measurements_count: number;
     /** First name only, until a tailor is chosen */
