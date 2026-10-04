@@ -2,7 +2,7 @@
 
 **Read this first, before exploring code.** It describes the whole system as verified against the code on **2026-10-04** (commit `4868366`): what exists, where it lives, how it behaves, which rules apply, and what is known to be broken. Open the code only to confirm a detail or to change it.
 
-- Detailed history (why things are the way they are): `README.md` §9 "Project Evolution & Logic Log", newest first. README §1–8 are partly stale (they still describe `context/CartContext.tsx`, an oklch brand colour and an old file map). Where README §1–8 and this file disagree, this file and the code win.
+- Detailed history (why things are the way they are): `CHANGELOG.md`, newest first. Until 2026-10-04 it was README §9, the "Project Evolution & Logic Log". `README.md` is now a conventional project introduction: overview, setup, commands, deployment and contributing. This file is the deep technical reference.
 - **Keep this file true.** When a change makes a statement here wrong, update it in the same commit. Changing it is part of the task, not an optional extra.
 - The original source briefs (customizer design handoff zips, tailor and customer registration specs as `.docx`) are in `/.claude/`, which is gitignored.
 
@@ -34,7 +34,7 @@
 | Product | **Kere**: a marketplace that connects customers with local Georgian (Tbilisi) tailors for made-to-measure clothing |
 | Live site | https://kereforyou.com (Railway, behind Cloudflare) |
 | Legal entity | შპს კერე შენთვის, identification code **406562376**. Phone **+995 597 03 23 48**, email **kereforyou@gmail.com**, Instagram **@kereforyou**. These constants live in `resources/js/data/company.ts`; the legal name and address are translated (`company.*`, `footer.*` in the locales). |
-| Repo | `github.com/datoi/Lara-React-Crud`, default branch `main` |
+| Repo | `github.com/datoi/Lara-React-Crud`, **public**, default branch `main` (pushing to `main` deploys to production) |
 | People | **datoi** is the owner and developer, and the person giving instructions. **Mariami** (git author `mbadzaghua`) is the designer; she pushes design work to `mariam-*` branches, which are imported selectively. |
 | Stack | Laravel **12.56** JSON API (PHP ^8.2; local 8.2.12, production php83) and a React **19** SPA (TypeScript 5.7, React Router 7 `createBrowserRouter`, Tailwind CSS v4, Radix, Motion 12, i18next) built with Vite 6. **Not Inertia**: the Inertia starter-kit files are dead code. |
 | Database | SQLite locally (`database/database.sqlite`), **PostgreSQL in production** (Railway). Tests use in-memory SQLite. |
@@ -70,7 +70,7 @@ These carry forward the owner's standing instructions from the previous CLAUDE.m
 - The storefront header is **single-tone cream** with dark text. Mariami confirmed this on 2026-09-29. Do not reintroduce the dark-section inversion.
 
 ### 2.3 Protocol
-- **Living docs**: every shipped feature or fix gets a README §9 Evolution Log entry, added at the top of §9 and dated `### [YYYY-MM-DD] Title`. Use plain sentences in this structure: **What was done** (bullets), **Verified** (exactly what was run and observed), and **Not covered / Noticed**. Also update this CLAUDE.md when it is affected.
+- **Living docs**: every shipped feature or fix gets a `CHANGELOG.md` entry at the top, headed `## YYYY-MM-DD — Title`. Use plain sentences in this structure: **What was done** (bullets), **Verified** (exactly what was run and observed), and **Not covered / Noticed**. Also update this CLAUDE.md when it is affected, and `README.md` when setup, commands, configuration or deployment change.
 - **Verify before claiming done.** For backend work, run `php artisan test` and add feature tests. For frontend work, run `npm run typecheck`, `npx eslint <files>`, `npm run build` and check locale parity. **For UI changes, drive the real page in a browser**: Georgian and English, about 390px and desktop width, no console errors, and no horizontal overflow measured against `document.documentElement.clientWidth` (not `innerWidth`). Typecheck alone is not verification. If you cannot test something, say so plainly.
 - **QA data hygiene**: delete any QA accounts, orders and products you create, and restore stock.
 - **Never send real email, SMS or payments during QA.** The local `.env` holds live credentials (see §3.3).
@@ -80,7 +80,7 @@ These carry forward the owner's standing instructions from the previous CLAUDE.m
 Verify independently; treat every "done" as a hypothesis. Drive the golden path in the browser, then probe edges: empty states, long text, missing images, failed or slow network, mobile widths, keyboard. For APIs, hit the real endpoint and check status codes, error shapes, unauthorized access and boundary values. Treat violations of §2.2 as bugs. Check adjacent features for regressions. Look for silent failures in the console and network tab. Report concrete repro steps (expected vs actual). Do not fix unless asked, and never call untested things verified.
 
 ### 2.5 Senior code reviewer role (when asked to review)
-Review the actual diff line by line, including paths the author did not mention. Order findings by severity: correctness, security and data loss first, then regressions and edge cases, then convention violations, then style. Treat §2.2 as review gates. Watch for drift: two lists that must agree, copy-pasted logic, a new pattern where one already exists. Flag dead code, swallowed errors and a missing Evolution Log entry. For each finding give file and line, the failure scenario and the fix direction, and mark it blocking or a nit. Do not rewrite unless asked.
+Review the actual diff line by line, including paths the author did not mention. Order findings by severity: correctness, security and data loss first, then regressions and edge cases, then convention violations, then style. Treat §2.2 as review gates. Watch for drift: two lists that must agree, copy-pasted logic, a new pattern where one already exists. Flag dead code, swallowed errors and a missing CHANGELOG entry. For each finding give file and line, the failure scenario and the fix direction, and mark it blocking or a nit. Do not rewrite unless asked.
 
 ---
 
@@ -104,7 +104,7 @@ Review the actual diff line by line, including paths the author did not mention.
 ### 3.2 Seeders (`database/seeders`)
 | Seeder | What it does |
 |---|---|
-| `DatabaseSeeder` | Test user `test@example.com` (factory), then Clothing, SleevelessTank, MensGarments and WomensTops |
+| `DatabaseSeeder` | Test user `test@example.com` / `password` (factory; it has not completed onboarding, so it cannot order, see §15), then Clothing, SleevelessTank, MensGarments and WomensTops |
 | `ClothingSeeder` | Six categories (IDs 1 dresses, 2 shirts, 3 pants, 4 jackets, 5 scarves, 6 hats) and 13 demo products with no tailor, some with Unsplash images. **Only runs when `categories` is empty.** |
 | `SleevelessTankSeeder` | `sleeveless-tank` (unisex, ₾90, category `shirt`): one "Style your own" layer, one `Sleeveless` option, nine colours from `/assets/garments/shirts/`; White has four views. **Not run by `start.sh`.** |
 | `MensGarmentsSeeder` | Six men's garments: elbow shirt ₾95, short-sleeve tee ₾45, chino, corduroy, dress and cargo trousers ₾120 each. Each has a single `style` layer with colour variants; the first colour slug is the default (a "hero" colour, not white). Extra views are picked up only when the file exists. |
@@ -204,6 +204,7 @@ Other backend files: `routes/console.php` (only `inspire`; **no scheduler**), `c
 - `resources/views/app.blade.php`: `<html lang="ka">`, default SEO, Open Graph and Twitter tags (`og-image.jpg?v=3`), favicons `?v=5`, the Google Fonts `<link>`, and `@vite`.
 - `public/assets/`: brand, hero, garments (`ManElbowShirts`, `ManShortSleeve`, `ManTrousers{Cargo,Chino,Curdory,Dress}`, `shirts` (the tank), `WomanTshirtStudio` (688 derived T-shirt photos), `WomanTshirtClassic` (legacy, unreferenced), `WomanTshirtKere`, `WomanSweaterKere`), design-categories (cut-outs), partners, size-fit, payment (`visa.png`, `mastercard.png`), backgrounds, textures, catalog, editorial. **Gitignored masters**: `/garment-masters/`, `public/assets/garments/{Woman T-shirts,WomanTshirtCassic2,New Tshirts,01. Fitted-*,drive-download-*}`.
 - `scripts/import-studio-drop.mjs` and `scripts/prepare-tshirt-photos.mjs`: the T-shirt photo pipeline (§9.6).
+- `README.md`: the project introduction (overview, setup, commands, configuration, deployment, contributing checklist). `CHANGELOG.md`: the full history, newest first.
 - `docs/qa-report-2026-07-23.md`: an old QA report.
 - Deploy files: `nixpacks.toml`, `Procfile`, `start.sh`, `Dockerfile`, `render-start.sh` (legacy Render plus SQLite), `.devcontainer/` (Codespaces with Postgres 16), `.github/workflows/{lint,tests}.yml`.
 
@@ -533,7 +534,7 @@ CSS variable published at runtime: `--kere-consent-h` (the consent banner's meas
 
 ## 11. Design system and CSS gotchas
 
-### 11.1 Tokens (current values in `resources/css/app.css`; README §8 is stale)
+### 11.1 Tokens (current values in `resources/css/app.css`)
 - Brand: `--color-brand: #631e26`, `--color-brand-dark: #4f1820` (Tailwind `bg-brand` and so on). `--primary` is still `oklch(0.42 0.13 25)`. `--destructive` is a red `hsl(0 84% 60%)`.
 - Storefront (`:root`): `--store-paper #faf5ef` (cream page and header), `--store-ink #2a1418`, `--store-brand #6f1d24`, `--store-muted #715951`, `--store-rule #d9c9be`, `--store-gutter` and `--store-space` (clamps).
 - `.kere-product` (the same block also names `.kere-market`, which no component uses any more): `--kd-burgundy #6f1d24`, `--kd-stage #f4ebe3`, `--kd-tile #fffcf8`, `--kd-ink #2a1418`, `--kd-body #6b4a4a`, `--kd-muted #9c7a73`, `--kd-hairline`, `--kd-rule`, `--kd-rule-soft`, and `.kd-display` in Cormorant Garamond.
@@ -562,7 +563,7 @@ Most newer UI uses hairline borders, square corners (`rounded-none`), uppercase 
 |---|---|---|
 | **Railway** | Hosting: PHP server, PostgreSQL, and a queue worker started from `start.sh` | Nixpacks; `DATABASE_URL` is parsed into `DB_*` by `start.sh` |
 | **Cloudflare** | Registrar, DNS and proxy for kereforyou.com, plus Resend DNS records | A long edge TTL for `/assets/*` was suggested but not confirmed |
-| **Cloudflare R2** (S3 API) | User uploads. Disk `uploads` (public, served from `R2_PUBLIC_URL`) and `documents` (private, `private/` prefix). Without `R2_BUCKET`, the code falls back to the local `public` and `local` disks. | `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_PUBLIC_URL`, `R2_REGION` (default auto). The Evolution Log on 2026-09-24 treats production as already on R2. |
+| **Cloudflare R2** (S3 API) | User uploads. Disk `uploads` (public, served from `R2_PUBLIC_URL`) and `documents` (private, `private/` prefix). Without `R2_BUCKET`, the code falls back to the local `public` and `local` disks. | `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_PUBLIC_URL`, `R2_REGION` (default auto). The 2026-09-24 changelog entry treats production as already on R2. |
 | **Resend** | Production email over HTTP (Railway blocks SMTP), from `noreply@kereforyou.com` | `MAIL_MAILER=resend`, `RESEND_KEY`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` |
 | Gmail SMTP | **Local** `.env` mailer (real mail) | `MAIL_*` |
 | **SMSOffice.ge** | SMS: OTPs, tailor alerts, the customer fallback. Sender "Kere". The API returns HTTP 200 even on rejection, so `SmsService` parses the body and logs `Success:false`. The balance must stay funded; it read 0 on 2026-09-24. | `SMSOFFICE_KEY` (empty means log only), `SMSOFFICE_SENDER=Kere`, `SMSOFFICE_URL` (default `https://smsoffice.ge/api/v2/send/`) |
@@ -602,38 +603,40 @@ Other environment variables: `APP_KEY`, `APP_ENV`, `APP_URL` (used for consent l
 None of these have been fixed. Fix them only when asked, or when they are directly in scope.
 
 **Correctness, security and privacy**
-1. **The login throttle keys on the wrong field.** `RateLimiter::for('login')` (`AppServiceProvider`) keys on `email|ip`, but `Login.tsx` posts `login`, so the key collapses to `|ip`: one shared bucket of 10 per minute for everyone behind an IP, and no per-account limit.
-2. **Unapproved tailors leak and can be hired.** `GET /api/tailors` and `/tailors/{id}` (`TailorController`) return every tailor, including pending, rejected and suspended ones. They appear publicly on Our Tailors, Become a Partner and the tailor-select step. `storeCustomOrder`'s manual path checks only role and `is_available`, so an unapproved or suspended tailor can be assigned a custom order. `randomTailor()` (for demo products without a tailor) checks neither approval nor suspension.
-3. **"Pause product" is cosmetic.** `products.status` is ignored by `/api/products`, the product page, related products, the tailor profile, the sitemap, the wishlist and `POST /orders`.
-4. **Unpaid marketplace orders appear in the tailor's order list immediately** (`formatOrder` has no `payment_status`). A tailor can accept one before payment, even though their notification waits for payment.
-5. Customizer admin uploads (`CustomizerAdminController`, `storeOption` and similar) write to the **`public` disk directly**, not `uploads_disk`, so they are lost on redeploy. `FabricResource` and the saved-design preview build `asset('storage/…')` URLs.
-6. **`start.sh` re-seeds Mens and WomensTops on every deploy**: admin edits to seeded garments (name, description, price, preview, defaults, colours) are overwritten, and a seeded garment an admin deactivated is re-activated (`is_active => true`). `WomensTopsSeeder` also deletes attributes and colours that an admin added to its garments.
-7. `ProductController::store` checks only `role === tailor`, not approval. A pending tailor could create products through the API.
-8. There is **no password reset, change-password, customer profile edit or account deletion** anywhere.
-9. Tokens never expire, there is one session per user, and the token lives in `sessionStorage`, so a 3-D Secure return into a new tab arrives signed out (`PaymentComplete` handles this).
-10. Guardian consent links never expire, and an admin cannot resend one on a customer's behalf.
-11. Tailor ID documents: the endpoint exists but has no UI, and no admin screen shows documents or the registration answers. On R2 the `private/` separation relies on bucket configuration, not code. Product image URLs are stored absolute, so changing `APP_URL` or `R2_PUBLIC_URL` breaks old rows.
-12. In the designer's upload branch, `UploadPanel.handleFile` skips the upload when signed out but still enables Continue. After login, the order can go through with `design_file_url: null`.
-13. **Remodel webp photos fail.** `RemodelRequest` accepts `image/webp` in the browser, but `POST /api/uploads` (`UploadController::design`) allows only jpg, jpeg, png, pdf and svg, so a webp photo is refused with Laravel's English 422 message.
+1. **The GitHub repository is public, and `start.sh` contains a fallback admin password** that is used whenever `ADMIN_PASSWORD` is unset. Make sure `ADMIN_PASSWORD` is set in Railway (otherwise the production admin password is publicly readable), and treat everything committed, including this file, as public.
+2. **The login throttle keys on the wrong field.** `RateLimiter::for('login')` (`AppServiceProvider`) keys on `email|ip`, but `Login.tsx` posts `login`, so the key collapses to `|ip`: one shared bucket of 10 per minute for everyone behind an IP, and no per-account limit.
+3. **Unapproved tailors leak and can be hired.** `GET /api/tailors` and `/tailors/{id}` (`TailorController`) return every tailor, including pending, rejected and suspended ones. They appear publicly on Our Tailors, Become a Partner and the tailor-select step. `storeCustomOrder`'s manual path checks only role and `is_available`, so an unapproved or suspended tailor can be assigned a custom order. `randomTailor()` (for demo products without a tailor) checks neither approval nor suspension.
+4. **"Pause product" is cosmetic.** `products.status` is ignored by `/api/products`, the product page, related products, the tailor profile, the sitemap, the wishlist and `POST /orders`.
+5. **Unpaid marketplace orders appear in the tailor's order list immediately** (`formatOrder` has no `payment_status`). A tailor can accept one before payment, even though their notification waits for payment.
+6. Customizer admin uploads (`CustomizerAdminController`, `storeOption` and similar) write to the **`public` disk directly**, not `uploads_disk`, so they are lost on redeploy. `FabricResource` and the saved-design preview build `asset('storage/…')` URLs.
+7. **`start.sh` re-seeds Mens and WomensTops on every deploy**: admin edits to seeded garments (name, description, price, preview, defaults, colours) are overwritten, and a seeded garment an admin deactivated is re-activated (`is_active => true`). `WomensTopsSeeder` also deletes attributes and colours that an admin added to its garments.
+8. `ProductController::store` checks only `role === tailor`, not approval. A pending tailor could create products through the API.
+9. There is **no password reset, change-password, customer profile edit or account deletion** anywhere.
+10. Tokens never expire, there is one session per user, and the token lives in `sessionStorage`, so a 3-D Secure return into a new tab arrives signed out (`PaymentComplete` handles this).
+11. Guardian consent links never expire, and an admin cannot resend one on a customer's behalf.
+12. Tailor ID documents: the endpoint exists but has no UI, and no admin screen shows documents or the registration answers. On R2 the `private/` separation relies on bucket configuration, not code. Product image URLs are stored absolute, so changing `APP_URL` or `R2_PUBLIC_URL` breaks old rows.
+13. In the designer's upload branch, `UploadPanel.handleFile` skips the upload when signed out but still enables Continue. After login, the order can go through with `design_file_url: null`.
+14. **Remodel webp photos fail.** `RemodelRequest` accepts `image/webp` in the browser, but `POST /api/uploads` (`UploadController::design`) allows only jpg, jpeg, png, pdf and svg, so a webp photo is refused with Laravel's English 422 message.
+15. **An abandoned registration can never be finished.** The account exists once the one-time code is verified, but date of birth and terms are asked only in that same flow (`CustomerProfileSteps`). A customer who closes the tab there has no way back: nothing shows the profile steps again, and `POST /orders` answers 403 `registration_incomplete`, a code the frontend does not translate, so the English message shows. The seeded `test@example.com` is in this state.
 
 **UX, i18n and design drift**
-14. **Marketplace i18n regression**: colour, fabric and category labels render in English (`COLOUR_OPTIONS` labels, `FABRIC_OPTIONS`, API category names), although `marketplace.colours.*`, `.fabrics.*` and `.categories.*` exist in both locales and are unused. The Navigation mega-menu also shows English category names. Catalogue content (product names and descriptions, customizer attribute and option names, notification text) is English-only data.
-15. **The marketplace colour filter cannot match**: its eight hex values (`#1B1B1B` and so on) are not in the tailor form's `PRESET_COLORS`, and no local product matches any of them. The size lists also disagree: the marketplace offers XXS and 3XL, while the tailor form has Custom.
-16. `AddProductModal` hardcodes category IDs 1–6.
-17. The cart never starts payment, and the success screen does not mention that payment is owed (the product page does go to payment).
-18. Raw server `message` text can still reach the page in English: the `ProductCustomization` and `CartPage` fallbacks, `OrderReview`, Login 403 (suspended or wrong role), and upload errors in `DesignerApp` and `RemodelRequest`.
-19. Dates other than `needed_by` use `toLocaleDateString`, which Chrome renders in English for Georgian. Use `formatCalendarDay` for new date displays.
-20. Old slate styling and the text "Kere" logo remain on `TailorSelectStep`, `OrderReview`, `MyDesignsPage`, the customer, tailor and admin dashboards, and the email templates. Since the redesign, auth-form errors render in ink (`#2a1418`) rather than red.
-21. Marketplace cards are `div onClick` rather than links, and their stagger delay is `0.04` (off-spec). Many raw styled `<button>`s come from Mariami's class-driven markup. There is no search input below `sm`.
-22. Emails are English-only. The OTP email says "expires in 10 minutes", but codes live 30 minutes. Mail and SMS are sent synchronously (checkout took about 6 s per tailor order when measured).
-23. Orphan routes and features: `/wishlist` (and there is no add button), `/my-designs`. The footer mounts `EmailSupportModal` but nothing opens it. `OrderReview` and `RemodelRequest` pass a `pendingAssignment` navigation state that the customer dashboard ignores. The contact form and both newsletter forms are UI-only. Unused endpoints: `/products/{id}/meta`, `/customizer/preview`, `/customer/orders/{id}/review-status`.
-24. SEO: the static `public/robots.txt` (allow everything) shadows the dynamic `/robots.txt` route, so crawlers never get the sitemap pointer or the disallows. `sitemap.xml` lists `/how-it-works` (which shows the SPA NotFound page with HTTP 200) and includes paused products. Fifteen pages have no `<Helmet>` title (§13).
-25. `/api/products` ignores `per_page`. `CategoryController` runs one random query per category.
+16. **Marketplace i18n regression**: colour, fabric and category labels render in English (`COLOUR_OPTIONS` labels, `FABRIC_OPTIONS`, API category names), although `marketplace.colours.*`, `.fabrics.*` and `.categories.*` exist in both locales and are unused. The Navigation mega-menu also shows English category names. Catalogue content (product names and descriptions, customizer attribute and option names, notification text) is English-only data.
+17. **The marketplace colour filter cannot match**: its eight hex values (`#1B1B1B` and so on) are not in the tailor form's `PRESET_COLORS`, and no local product matches any of them. The size lists also disagree: the marketplace offers XXS and 3XL, while the tailor form has Custom.
+18. `AddProductModal` hardcodes category IDs 1–6.
+19. The cart never starts payment, and the success screen does not mention that payment is owed (the product page does go to payment).
+20. Raw server `message` text can still reach the page in English: the `ProductCustomization` and `CartPage` fallbacks, `OrderReview`, Login 403 (suspended or wrong role), and upload errors in `DesignerApp` and `RemodelRequest`.
+21. Dates other than `needed_by` use `toLocaleDateString`, which Chrome renders in English for Georgian. Use `formatCalendarDay` for new date displays.
+22. Old slate styling and the text "Kere" logo remain on `TailorSelectStep`, `OrderReview`, `MyDesignsPage`, the customer, tailor and admin dashboards, and the email templates. Since the redesign, auth-form errors render in ink (`#2a1418`) rather than red.
+23. Marketplace cards are `div onClick` rather than links, and their stagger delay is `0.04` (off-spec). Many raw styled `<button>`s come from Mariami's class-driven markup. There is no search input below `sm`.
+24. Emails are English-only. The OTP email says "expires in 10 minutes", but codes live 30 minutes. Mail and SMS are sent synchronously (checkout took about 6 s per tailor order when measured).
+25. Orphan routes and features: `/wishlist` (and there is no add button), `/my-designs`. The footer mounts `EmailSupportModal` but nothing opens it. `OrderReview` and `RemodelRequest` pass a `pendingAssignment` navigation state that the customer dashboard ignores. The contact form and both newsletter forms are UI-only. Unused endpoints: `/products/{id}/meta`, `/customizer/preview`, `/customer/orders/{id}/review-status`.
+26. SEO: the static `public/robots.txt` (allow everything) shadows the dynamic `/robots.txt` route, so crawlers never get the sitemap pointer or the disallows. `sitemap.xml` lists `/how-it-works` (which shows the SPA NotFound page with HTTP 200) and includes paused products. Fifteen pages have no `<Helmet>` title (§13).
+27. `/api/products` ignores `per_page`. `CategoryController` runs one random query per category.
 
 **Housekeeping**
-26. Dead code and dependencies are listed in §5.1 and §5.2. `public/images/garments/dress-maxi.png` and `WomanTshirtClassic/` are unreferenced. The `.kere-site-header` CSS is dead, and the `.kere-market` token scope has no users.
-27. README §1–8 are stale; this file supersedes them.
-28. There are seven ESLint `exhaustive-deps` warnings.
+28. Dead code and dependencies are listed in §5.1 and §5.2. `public/images/garments/dress-maxi.png` and `WomanTshirtClassic/` are unreferenced. The `.kere-site-header` CSS is dead, and the `.kere-market` token scope has no users.
+29. There are seven ESLint `exhaustive-deps` warnings.
+30. `composer.json` still says `"license": "MIT"` (from the Laravel starter kit), while no license file is published. Decide the intended license.
 
 ---
 
@@ -648,7 +651,7 @@ None of these have been fixed. Fix them only when asked, or when they are direct
 
 ---
 
-## 17. History timeline (details in README §9)
+## 17. History timeline (details in CHANGELOG.md)
 
 | Date (2026) | Milestone |
 |---|---|
