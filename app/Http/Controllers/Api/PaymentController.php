@@ -25,9 +25,9 @@ use Illuminate\Support\Facades\Mail;
  * the customer's confirmation is sent, hanging off the single conditional
  * update so a callback and a poll racing cannot announce it twice.
  *
- * Live money is still gated on the merchant being approved — what remains is in
- * README §"Flitt go-live". Errors carry a `code` as well as a message, because
- * the message is English and the interface is not.
+ * The remaining go-live steps are listed in CHANGELOG.md (2026-09-14, "Flitt
+ * go-live"). Errors carry a `code` as well as a message, because the message
+ * is English and the interface is not.
  */
 class PaymentController extends Controller
 {

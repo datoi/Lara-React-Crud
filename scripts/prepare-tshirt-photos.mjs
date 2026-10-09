@@ -15,7 +15,7 @@
  * here has to correct or translate a name any more — the shoot's own
  * vocabulary, its typos, its one mislabelled side view and its interchanged
  * cream/off-white puff frames were all resolved when the masters were renamed
- * (see the README Evolution Log). Re-deriving is now a pure resize.
+ * (see CHANGELOG.md). Re-deriving is now a pure resize.
  *
  * Framing: the masters are shot larger and lower than WomanTshirtClassic/, and
  * the side views are shot at a different zoom again (garment height 1000±44px

@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { Instagram, Phone, Mail, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
+import { PaymentMarks } from '../PaymentMarks';
 import { EmailSupportModal } from '../EmailSupportModal';
 
 type FooterLink =
@@ -76,19 +77,7 @@ export function Footer() {
                         </section>
                         {footerColumns.map(column => <FooterColumn key={column.title} {...column} onModalOpen={handleModalOpen} />)}
                     </div>
-                    <div className="kere-footer-payments" aria-label={t('footer.weAccept')}>
-                        <span>{t('footer.weAccept')}</span>
-                        <svg width="54" height="32" viewBox="0 0 54 32" role="img" aria-label="Visa">
-                            <rect x=".5" y=".5" width="53" height="31" rx="3" fill="#fff" stroke="#ded7ce" />
-                            <text x="27" y="22" textAnchor="middle" fill="#1434cb" fontFamily="Arial, sans-serif" fontSize="20" fontWeight="900" fontStyle="italic">VISA</text>
-                        </svg>
-                        <svg width="54" height="32" viewBox="0 0 54 32" role="img" aria-label="Mastercard">
-                            <rect x=".5" y=".5" width="53" height="31" rx="3" fill="#fff" stroke="#ded7ce" />
-                            <circle cx="21" cy="16" r="10" fill="#eb001b" />
-                            <circle cx="33" cy="16" r="10" fill="#f79e1b" />
-                            <path d="M27 8a10 10 0 0 1 0 16 10 10 0 0 1 0-16" fill="#ff5f00" />
-                        </svg>
-                    </div>
+                    <PaymentMarks label={t('footer.weAccept')} className="kere-footer-payments" />
                     <div className="kere-footer-legal">
                         <nav aria-label={t('footer.legal')}>
                             {legalLinks.map(item => <FooterItem key={item.label} item={item} onModalOpen={handleModalOpen} />)}

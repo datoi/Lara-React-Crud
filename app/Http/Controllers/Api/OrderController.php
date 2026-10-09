@@ -468,6 +468,7 @@ class OrderController extends Controller
     {
         $data = $request->validate([
             'expected_price' => 'nullable|numeric|min:0|max:99999',
+            'needed_by' => 'nullable|date_format:Y-m-d|after:today',
             'first_name' => 'required|string|max:255',
             'last_name' => 'nullable|string|max:255',
             'phone' => 'required|string|max:40',
@@ -498,6 +499,7 @@ class OrderController extends Controller
                 'shipping' => $shipping,
                 'total' => $shipping,
                 'expected_price' => $data['expected_price'] ?? null,
+                'needed_by' => $data['needed_by'] ?? null,
                 'custom_design_data' => $this->withMeasurementSnapshot($data['custom_design_data']),
                 'first_name' => $data['first_name'],
                 'last_name' => $data['last_name'] ?? '',
@@ -606,7 +608,9 @@ class OrderController extends Controller
                 'custom_design_data' => $design,
                 'measurements_count' => $measurementsCount,
                 'expected_price' => $o->expected_price,
-                'customer' => ['name' => $o->user->first_name ?: $o->user->getFullName()],
+                'needed_by' => $o->needed_by?->toDateString(),
+                // An older account may have only `name`, which holds the full name.
+                'customer' => ['name' => $o->user->first_name ?: Str::before($o->user->getFullName(), ' ')],
                 'requests_count' => $o->tailor_requests_count,
                 'my_request_status' => $myRequests[$o->id] ?? null,
             ];
@@ -809,6 +813,7 @@ class OrderController extends Controller
             'shipping' => $order->shipping,
             'total' => $order->total,
             'created_at' => $order->created_at?->toDateString(),
+            'needed_by' => $order->needed_by?->toDateString(),
             'custom_design_data' => $order->custom_design_data,
             'customer' => [
                 'name' => $order->user->getFullName(),

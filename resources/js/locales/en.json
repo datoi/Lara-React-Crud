@@ -1,4 +1,21 @@
 {
+    "calendar": {
+        "day": "{{day}} {{month}} {{year}}",
+        "months": {
+            "1": "January",
+            "2": "February",
+            "3": "March",
+            "4": "April",
+            "5": "May",
+            "6": "June",
+            "7": "July",
+            "8": "August",
+            "9": "September",
+            "10": "October",
+            "11": "November",
+            "12": "December"
+        }
+    },
     "productDetails": {
         "findSize": "Find your size",
         "sizeGuide": "Size guide",
@@ -267,7 +284,10 @@
         "legal": "Legal",
         "privacyPolicy": "Privacy Policy",
         "termsOfService": "Terms of Service",
-        "refundPolicy": "Refund Policy"
+        "refundPolicy": "Refund Policy",
+        "streetAddress": "Nakaduli Street, 2nd Lane 92, Tbilisi, Georgia",
+        "registeredName": "KereForYou LLC",
+        "companyId": "Identification code 406562376"
     },
     "newsletterPopup": {
         "title": "Don't miss out.",
@@ -832,6 +852,10 @@
         "priceLabel": "Your expected price (optional)",
         "priceHint": "Optional. Tailors may offer a different price.",
         "pricePlaceholder": "e.g. 80",
+        "neededByLabel": "When you need it by (optional)",
+        "neededByHint": "Optional. Tailors see this date before they send an offer.",
+        "neededByInvalid": "Choose a date from tomorrow onwards.",
+        "neededByClear": "Clear date",
         "submit": "Post Remodel Request",
         "submitHint": "Tailors will send offers you can compare before choosing one.",
         "errorFileType": "Please upload a JPG, PNG, or WebP image.",
@@ -872,6 +896,7 @@
         "remodelLabel": "Remodel request",
         "remodelChangeLabel": "What to change",
         "remodelExpectedPrice": "Your expected price",
+        "remodelNeededBy": "You need it by",
         "chooseTailorBtn": "Choose This Tailor",
         "choosing": "Choosing…",
         "chooseFailed": "Couldn't choose this tailor. Please try again.",
@@ -1086,6 +1111,8 @@
     },
     "consent": {
         "preferences": "Preferences",
+        "shortPreferences": "Settings",
+        "shortMessage": "We use analytics cookies to improve Kere.",
         "close": "Close cookie notice",
         "essential": "Essential cookies are always enabled.",
         "analytics": "Allow analytics cookies",
@@ -1390,6 +1417,7 @@
         "remodelBadge": "Remodel request",
         "remodelChangeLabel": "Wants changed",
         "remodelExpectedPrice": "Customer's expected price",
+        "remodelNeededBy": "Customer needs it by",
         "subtotal": "Subtotal",
         "shipping": "Shipping",
         "total": "Total",
@@ -1511,10 +1539,9 @@
         "productUpdatedDesc": "Changes saved.",
         "confirmDeleteDesc": "This will permanently remove the product from the marketplace.",
         "confirmDeleteBtn": "Delete",
+        "deleteFailed": "Couldn't delete this product. Please try again.",
         "statsFetchError": "Stats unavailable — check your connection",
-        "studioSpec": "Design specification",
-        "backHome": "Back to Home",
-        "siteNavigation": "Site navigation"
+        "studioSpec": "Design specification"
     },
     "measurementGuide": {
         "title": "Measurement Guide",
@@ -1665,6 +1692,23 @@
         "phoneLabel": "Phone",
         "emailLabel": "Email"
     },
+    "studio": {
+        "businessSummary": "Income and business overview",
+        "deleteProduct": "Delete",
+        "done": "Complete",
+        "goToProducts": "Go to products",
+        "next": "Next step",
+        "orderValue": "Total order value",
+        "orderValueHint": "All orders; not a payout balance",
+        "pauseProduct": "Pause",
+        "productProgress": "Products added: {{count}} / 3",
+        "profileHint": "Add your bio and specialty so customers can get to know your work.",
+        "profileIncomplete": "Profile needs a few details",
+        "profileReady": "Profile complete",
+        "resumeProduct": "Activate",
+        "sessionExpired": "Your session has ended. Sign in again, then reopen your profile to save. Your typed details are kept in this tab; please select the photo again.",
+        "startHere": "Start here"
+    },
     "measurements": {
         "cm": "cm",
         "fields": {
@@ -1684,6 +1728,7 @@
         "loadingProfile": "Loading your saved measurements…",
         "orderHintPrefilled": "Filled in from your profile. Change anything for this order — your profile stays as it is unless you choose to update it.",
         "orderHintEmptyProfile": "Your tailor needs these to sew the right fit. Values in centimetres.",
+        "orderHintLoadFailed": "Couldn't load your saved measurements. Enter them for this order — your profile is left as it is.",
         "saveNewToProfile": "Save these to my profile for next time",
         "updateProfile": "Also update my profile with these values",
         "missingWarning": "No measurements yet — you can still order, and your tailor will ask for them in the chat.",
@@ -1711,23 +1756,5 @@
         "noneForBidders": "No measurements provided",
         "madeToMeasure": "Made to your measurements",
         "orderFromPage": "This piece is made to your measurements — order it from its page."
-    },
-    "studio": {
-        "businessSummary": "Income and business overview",
-        "deleteProduct": "Delete",
-        "done": "Complete",
-        "goToProducts": "Go to products",
-        "home": "Home",
-        "next": "Next step",
-        "orderValue": "Total order value",
-        "orderValueHint": "All orders; not a payout balance",
-        "pauseProduct": "Pause",
-        "productProgress": "Products added: {{count}} / 3",
-        "profileHint": "Add your bio and specialty so customers can get to know your work.",
-        "profileIncomplete": "Profile needs a few details",
-        "profileReady": "Profile complete",
-        "resumeProduct": "Activate",
-        "sessionExpired": "Your session has ended. Sign in again, then reopen your profile to save. Your typed details are kept in this tab; please select the photo again.",
-        "startHere": "Start here"
     }
 }

@@ -133,10 +133,11 @@ export default function CartPage() {
 
                 if (!res.ok) {
                     const body = await res.json().catch(() => ({}));
+                    const known = serverMessageKey(body.code);
                     const reason =
                         res.status === 429
                             ? t('cart.errorThrottled')
-                            : serverMessageKey(body.code) ? t(serverMessageKey(body.code)!) : (body.message ?? t('cart.errorGeneric'));
+                            : known ? t(known) : (body.message ?? t('cart.errorGeneric'));
                     // Groups already ordered were removed as they succeeded, so the
                     // cart now holds only what still needs buying — pressing Place
                     // order again retries exactly that and cannot double-order.

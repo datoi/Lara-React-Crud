@@ -115,6 +115,10 @@ export function MarketplaceCarousel() {
     setIsDragging(false);
   };
 
+  // With nothing in the marketplace there is nothing to show here: no tabs, no
+  // empty strip, no "view all" into an empty page. A failed load still shows.
+  if (ready && !fetchError && displayedProducts.length === 0) return null;
+
   return (
     <section id="categories" className="overflow-hidden bg-white px-4 py-12 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
       <div className="mx-auto max-w-[1500px]">
@@ -142,7 +146,7 @@ export function MarketplaceCarousel() {
           ))}
         </nav>
 
-        {ready && displayedProducts.length === 0 && <p role="status" className="py-12 text-center text-sm text-[#514843]">{t(fetchError ? 'marketplace.errorLoad' : 'marketplace.noProducts')}</p>}
+        {fetchError && <p role="status" className="py-12 text-center text-sm text-[#514843]">{t('marketplace.errorLoad')}</p>}
         <div className="relative">
           <div
             ref={stripRef}
