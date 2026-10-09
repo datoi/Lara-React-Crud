@@ -644,8 +644,9 @@ None of these have been fixed. Fix them only when asked, or when they are direct
 
 - `main` is the only live branch and deploys to production. Local branches: `backup/main-before-mariami-merge`, `design/mariam-import`, `feature/customer-measurements` (merged), `flitt-payments`, `integrate-mariami-design`, `mariam-design-import`, `mariami` (stale).
 - Remote design branches from Mariami (`mbadzaghua`):
-  - **`origin/mariam-october`**, commit **`e5e4c31`, 2026-09-30, "Update Kere UI"**, is **not yet in `main`**. It changes only `app.css`: the mobile (640px and below) hero gallery gets a taller band (`clamp(320px, 82vw, 400px)`), larger images (`clamp(190px, 54vw, 280px)` wide) and new ellipse offsets. Its parent `b6e6ae6` was already imported on 2026-09-28 as `ec41042` plus the follow-up `11f263f`.
+  - **`origin/mariam-october`** is the branch she works on. Her last commit there, `e5e4c31` (2026-09-30, a taller home page slider on phones), was imported on 2026-10-09 as `74ce814`. The same day `main` was merged into the branch with `main`'s tree, without a force push, so her next pull brings her fully up to date. Its earlier commit `b6e6ae6` was imported on 2026-09-28 as `ec41042` plus the follow-up `11f263f`.
   - `origin/mariam-changes` (2026-09-22) was imported selectively on 2026-09-22. `origin/mariam-latest-update` (`b6e6ae6`) has been imported. `origin/mariami` is stale.
+- Other remote branches, all fully contained in `main` (checked 2026-10-09): `origin/feature/customer-measurements`, `origin/mariam-design-import`.
 - `flitt-payments` (2026-08-11) holds the original embedded-checkout version and the `orders:expire-unpaid` job. `main` uses the hosted redirect instead, and the expiry job was never ported.
 - Owner decisions on record: photography is a preview and never a gate on what can be ordered; review text was removed from product pages; legal pages stay readable to tailors; a tailor's home is the dashboard, not `/partners`; colour is one garment-wide choice; the navbar is single-tone; Mariami's footer is kept as she wrote it.
 
@@ -680,3 +681,4 @@ None of these have been fixed. Fix them only when asked, or when they are direct
 | 09-28 | Product deletion fixed on phones (order lines kept); Mariami's tailor studio redesign; empty marketplace hides the home strip |
 | 09-29 | Storefront navbar single-tone, as Mariami designed it |
 | 10-04 | Remodel requests take an optional "needed by" date (`lib/dates.ts`, `formatCalendarDay`) |
+| 10-09 | Mariami's taller home page slider on phones imported from `mariam-october` |

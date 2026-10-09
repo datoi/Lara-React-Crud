@@ -6,6 +6,17 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-10-09 — Mariami's taller home page slider on phones
+
+**What was done:** Mariami's commit `e5e4c31` ("Update Kere UI", 2026-09-30) was taken from `origin/mariam-october` onto `main` as `74ce814`, under her name. It was the only change on any branch that `main` did not already have.
+- It changes only `resources/css/app.css`, inside the `max-width: 640px` block. The hero card's middle row and the gallery band grow from 235px to `clamp(320px, 82vw, 400px)`. Gallery photos grow from 148px wide to `clamp(190px, 54vw, 280px)`, and as tall as the band. The top, depth and bottom ellipses move outward to frame the taller band. Desktop is unchanged.
+- Only that one commit was taken. The rest of `mariam-october` is a copy of the code from about 2026-09-27, so merging the branch would have undone fifteen later commits on `main`.
+- Afterwards `main` was merged into `mariam-october` with `main`'s tree, so the branch now matches `main` and her next pull brings her fully up to date. This is a fast-forward for the branch, so nothing she pushed was overwritten.
+
+**Verified:** `npm run build` passes. Headless Chrome on the home page, in Georgian and English, at 360, 390, 640 and 1440px: the gallery measures 320px tall with 194.4px and 210.6px photos at 360 and 390px, and 400px tall with 280px photos at 640px, as her CSS specifies. At 1440px it is 422px tall, as before. All 8 photos load, there is no horizontal overflow against `document.documentElement.clientWidth`, and there are no console errors. The 390px screenshots were checked by eye in both languages.
+
+**Noticed, not changed:** `<html lang>` stays `ka` when the site is switched to English, because the blade shell hardcodes it and the language toggle does not update it.
+
 ## 2026-10-04 — A knowledge base in CLAUDE.md, a conventional README, and this changelog
 
 **What was done:** the project's documentation was reorganised. No application behaviour changed.
