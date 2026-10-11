@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { saveAuth, getReturnTo, clearReturnTo, type AuthUser } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { Navigation } from '../components/landing/Navigation';
+import { serverMessageKey } from '../lib/serverMessage';
 
 type Role = 'customer' | 'tailor';
 
@@ -19,7 +20,8 @@ export default function Login() {
     const [login, setLogin] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [errors, setErrors] = useState<{ login?: string; password?: string; general?: string }>({});
+    // `credentials` is the server refusing the pair, so it marks both fields.
+    const [errors, setErrors] = useState<{ login?: string; password?: string; credentials?: string; general?: string }>({});
     const [loading, setLoading] = useState(false);
 
     function validate(): boolean {
@@ -46,7 +48,17 @@ export default function Login() {
             const data = await res.json();
 
             if (!res.ok) {
-                setErrors({ general: res.status === 401 ? t('signIn.errorInvalidCredentials') : data.message ?? t('signIn.errorLoginFailed') });
+                if (res.status === 401) {
+                    setErrors({ credentials: t('signIn.errorInvalidCredentials') });
+                    return;
+                }
+                // Never data.message: the server answers in English.
+                const key = res.status === 429
+                    ? 'signIn.errorThrottled'
+                    : data.code === 'wrong_role'
+                    ? (isCustomer ? 'signIn.errorWrongRoleCustomer' : 'signIn.errorWrongRoleTailor')
+                    : serverMessageKey(data.code) ?? 'signIn.errorLoginFailed';
+                setErrors({ general: t(key) });
                 return;
             }
 
@@ -81,9 +93,9 @@ export default function Login() {
                 >
                     <h1 className="kere-login-title">{t('signIn.signIn')}</h1>
                     <div className="kere-login-form">
-                    {errors.general && (
-                        <div className="mb-6 border border-[#d8d0c7] bg-[#f0e8e0] px-4 py-3">
-                            <p className="text-xs leading-5 text-[#2a1418]">{errors.general}</p>
+                    {(errors.credentials || errors.general) && (
+                        <div role="alert" className="mb-6 border border-destructive/30 bg-destructive/10 px-4 py-3">
+                            <p className="text-xs leading-5 text-destructive">{errors.credentials ?? errors.general}</p>
                         </div>
                     )}
 
@@ -94,15 +106,14 @@ export default function Login() {
                             </label>
                             <input
                                 id="login-identifier"
-                                aria-invalid={!!errors.login}
+                                aria-invalid={!!(errors.login || errors.credentials)}
                                 type="text"
                                 autoComplete="username"
                                 value={login}
-                                onChange={e => { setLogin(e.target.value); setErrors(er => ({ ...er, login: undefined, general: undefined })); }}
-                                
-                                className={`mt-2 w-full border-0 border-b bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0 ${errors.login ? 'border-[#d8d0c7]' : 'border-[#d8d0c7] focus:border-[#d8d0c7]'}`}
+                                onChange={e => { setLogin(e.target.value); setErrors(er => ({ ...er, login: undefined, credentials: undefined, general: undefined })); }}
+                                className="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"
                             />
-                            {errors.login && <p className="mt-2 text-[10px] font-medium text-[#2a1418]">{errors.login}</p>}
+                            {errors.login && <p className="mt-2 text-[10px] font-medium text-destructive">{errors.login}</p>}
                         </div>
 
                         <div>
@@ -113,12 +124,11 @@ export default function Login() {
                                 <input
                                     id="login-password"
                                     autoComplete="current-password"
-                                    aria-invalid={!!errors.password}
+                                    aria-invalid={!!(errors.password || errors.credentials)}
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
-                                    onChange={e => { setPassword(e.target.value); setErrors(er => ({ ...er, password: undefined, general: undefined })); }}
-                                    
-                                    className={`mt-2 w-full border-0 border-b bg-transparent px-0 pb-2 pr-8 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0 ${errors.password ? 'border-[#d8d0c7]' : 'border-[#d8d0c7] focus:border-[#d8d0c7]'}`}
+                                    onChange={e => { setPassword(e.target.value); setErrors(er => ({ ...er, password: undefined, credentials: undefined, general: undefined })); }}
+                                    className="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 pr-8 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"
                                 />
                                 <button
                                     type="button"
@@ -130,7 +140,7 @@ export default function Login() {
                                     {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                                 </button>
                             </div>
-                            {errors.password && <p className="mt-2 text-[10px] font-medium text-[#2a1418]">{errors.password}</p>}
+                            {errors.password && <p className="mt-2 text-[10px] font-medium text-destructive">{errors.password}</p>}
                         </div>
 
                         <Button

@@ -8,18 +8,37 @@ import { Footer } from '../components/landing/Footer';
 import { Navigation } from '../components/landing/Navigation';
 import { Button } from '../components/ui/button';
 import { getAuthToken, getAuthUser, saveReturnTo } from '../hooks/useAuth';
-import { OrderMeasurements } from '../components/measurements/OrderMeasurements';
-import { useOrderMeasurements } from '../hooks/useOrderMeasurements';
-import { PROFILE_KEYS } from '../lib/measurements';
 import { tomorrowCalendarDay } from '../lib/dates';
+import { shrinkPhoto } from '../lib/shrinkPhoto';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-const MAX_IMAGES = 6;
+/** Mirrors the remodel_images rule in OrderController::storeRemodelOrder. */
+const MAX_IMAGES = 10;
 
 interface UploadedImage {
     url: string;
     preview: string;
+}
+
+interface UploadResult {
+    status: number;
+    /** Where the photo can be fetched, when the server kept it */
+    url?: string;
+}
+
+/** One photo sent to the server. Throws only when the request never got an answer. */
+async function uploadPhoto(file: File, token: string): Promise<UploadResult> {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch('/api/uploads', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        body: form,
+    });
+    if (!res.ok) return { status: res.status };
+    const data = (await res.json()) as { file_url: string };
+    return { status: res.status, url: data.file_url };
 }
 
 const inputClass =
@@ -45,17 +64,13 @@ export default function RemodelRequest() {
     const neededByInvalid = neededBy !== '' && neededBy < earliestNeededBy;
 
     const [uploading, setUploading] = useState(false);
-    const [uploadError, setUploadError] = useState<string | null>(null);
+    const [uploadErrors, setUploadErrors] = useState<string[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
-    // The garment already exists, so there is no garment length to ask — only
-    // the body it has to fit now.
-    const measurements = useOrderMeasurements(PROFILE_KEYS);
 
     const handleFiles = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
-        setUploadError(null);
 
         const token = getAuthToken();
         if (!token) {
@@ -64,40 +79,60 @@ export default function RemodelRequest() {
             return;
         }
 
+        // Every problem in the batch stays on screen, not only the last one.
+        const problems = new Set<string>();
+        const report = (message: string) => {
+            problems.add(message);
+            setUploadErrors([...problems]);
+        };
+        setUploadErrors([]);
+
+        // Refused types are set aside first, so they never take a free place.
+        const chosen = Array.from(files);
+        const photos = chosen.filter((file) => ALLOWED_TYPES.includes(file.type));
+        if (photos.length < chosen.length) report(t('remodel.errorFileType'));
         const remaining = MAX_IMAGES - images.length;
-        const toUpload = Array.from(files).slice(0, remaining);
-        if (Array.from(files).length > remaining) {
-            setUploadError(t('remodel.errorMaxImages', { max: MAX_IMAGES }));
-        }
+        if (photos.length > remaining) report(t('remodel.errorMaxImages', { max: MAX_IMAGES }));
 
         setUploading(true);
         try {
-            for (const file of toUpload) {
-                if (!ALLOWED_TYPES.includes(file.type)) {
-                    setUploadError(t('remodel.errorFileType'));
-                    continue;
-                }
-                if (file.size > MAX_FILE_SIZE) {
-                    setUploadError(t('remodel.errorFileSize'));
+            // Photo by photo: one that fails is reported and skipped, so the
+            // rest of the batch still arrives.
+            for (const original of photos.slice(0, remaining)) {
+                let file: File;
+                let result: UploadResult;
+                try {
+                    file = await shrinkPhoto(original);
+                    if (file.size > MAX_FILE_SIZE) {
+                        report(t('remodel.errorFileSize'));
+                        continue;
+                    }
+                    result = await uploadPhoto(file, token);
+                } catch {
+                    report(t('remodel.errorUploadFailed'));
                     continue;
                 }
 
-                const form = new FormData();
-                form.append('file', file);
-                const res = await fetch('/api/uploads', {
-                    method: 'POST',
-                    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-                    body: form,
-                });
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    throw new Error((err as { message?: string }).message ?? t('remodel.errorUploadFailed'));
+                if (result.url) {
+                    const image = { url: result.url, preview: URL.createObjectURL(file) };
+                    setImages((prev) => [...prev, image]);
+                    continue;
                 }
-                const data = (await res.json()) as { file_url: string };
-                setImages((prev) => [...prev, { url: data.file_url, preview: URL.createObjectURL(file) }]);
+                // A dead session fails every photo the same way, so sign in again
+                // rather than report each one.
+                if (result.status === 401) {
+                    saveReturnTo('/remodel');
+                    navigate('/login/customer');
+                    return;
+                }
+                // Over the upload limit, the rest of the batch would be refused too.
+                if (result.status === 429) {
+                    report(t('remodel.errorUploadThrottled'));
+                    return;
+                }
+                // Never the server's wording: it is English.
+                report(t('remodel.errorUploadFailed'));
             }
-        } catch (err: unknown) {
-            setUploadError(err instanceof Error ? err.message : t('remodel.errorUploadFailed'));
         } finally {
             setUploading(false);
             if (inputRef.current) inputRef.current.value = '';
@@ -115,7 +150,6 @@ export default function RemodelRequest() {
         phone.trim().length > 0 &&
         address.trim().length > 0 &&
         city.trim().length > 0 &&
-        !measurements.invalid &&
         !neededByInvalid &&
         !uploading &&
         !submitting;
@@ -132,14 +166,6 @@ export default function RemodelRequest() {
         setSubmitting(true);
         setSubmitError(null);
 
-        try {
-            await measurements.commitToProfile();
-        } catch {
-            setSubmitError(t('measurements.saveProfileFailed'));
-            setSubmitting(false);
-            return;
-        }
-
         const body = {
             order_type: 'remodel',
             expected_price: expectedPrice.trim() !== '' ? Number(expectedPrice) : null,
@@ -153,7 +179,6 @@ export default function RemodelRequest() {
             custom_design_data: {
                 change_request: changeRequest.trim(),
                 remodel_images: images.map((i) => i.url),
-                ...(!measurements.isEmpty && { measurements: measurements.snapshot }),
             },
         };
 
@@ -199,11 +224,10 @@ export default function RemodelRequest() {
                     </div>
 
                     <div className="relative left-1/2 w-screen -translate-x-1/2 bg-[var(--store-paper)] px-4 py-8 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-                        <div className="mx-auto mb-8 w-full max-w-[1050px] text-center sm:mb-20">
-                            <p className="mb-5 text-left text-[10px] font-semibold tracking-[0.12em] text-[#111111] uppercase">
+                        <div className="mx-auto mb-8 w-full max-w-[1050px] sm:mb-20">
+                            <p className="text-[10px] font-semibold tracking-[0.12em] text-[#111111] uppercase">
                                 <Link to="/" className="transition-opacity hover:opacity-55">Kere</Link> / {t('nav.remodel')}
                             </p>
-                            <p className="mx-auto max-w-[620px] text-sm leading-6 text-[#4F463E] sm:text-base sm:leading-7">{t('remodel.subtitle')}</p>
                         </div>
 
                         <div className="remodel-form relative mx-auto w-full max-w-[1050px] border border-[#261D1B]/12 bg-[#F2EAD7] px-4 py-6 sm:px-12 sm:py-14 lg:px-16 lg:py-16">
@@ -248,7 +272,9 @@ export default function RemodelRequest() {
                                     className="hidden"
                                     onChange={(e) => handleFiles(e.target.files)}
                                 />
-                                {uploadError && <p className="mt-2 text-xs text-[#6F1D24]">{uploadError}</p>}
+                                {uploadErrors.map((message) => (
+                                    <p key={message} role="alert" className="mt-2 text-xs text-destructive">{message}</p>
+                                ))}
                             </section>
 
                             {/* What to change */}
@@ -266,14 +292,6 @@ export default function RemodelRequest() {
                                     className={`${inputClass} max-w-[900px] min-h-[112px] resize-y`}
                                 />
                             </section>
-
-                            <div className="mb-8 max-w-[900px] sm:mb-14">
-                                <OrderMeasurements
-                                    state={measurements}
-                                    idPrefix="remodel-measure"
-                                    titleClassName="text-lg font-semibold tracking-normal text-[#17130F]"
-                                />
-                            </div>
 
                             {/* Pickup / return address */}
                             <section className="mb-8 sm:mb-14">
@@ -378,12 +396,12 @@ export default function RemodelRequest() {
                                     )}
                                 </div>
                                 {neededByInvalid && (
-                                    <p id="needed-by-error" role="alert" className="mt-2 text-xs text-[#6F1D24]">{t('remodel.neededByInvalid')}</p>
+                                    <p id="needed-by-error" role="alert" className="mt-2 text-xs text-destructive">{t('remodel.neededByInvalid')}</p>
                                 )}
                             </section>
 
                             {submitError && (
-                                <p className="mb-4 border border-[#6F1D24]/30 bg-[#FDFBF5] px-4 py-2.5 text-sm text-[#6F1D24]">{submitError}</p>
+                                <p role="alert" className="mb-4 border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive">{submitError}</p>
                             )}
 
                             <Button

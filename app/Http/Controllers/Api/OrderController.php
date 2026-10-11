@@ -478,7 +478,7 @@ class OrderController extends Controller
             'custom_design_data' => 'required|array|max:50',
             'custom_design_data.garment_type' => 'nullable|string|max:100',
             'custom_design_data.change_request' => 'required|string|max:2000',
-            'custom_design_data.remodel_images' => 'required|array|min:1|max:6',
+            'custom_design_data.remodel_images' => 'required|array|min:1|max:10',
             'custom_design_data.remodel_images.*' => 'required|url|max:2000',
             ...Measurements::rules('custom_design_data.measurements'),
         ]);

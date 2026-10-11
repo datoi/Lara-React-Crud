@@ -23,26 +23,37 @@ use Illuminate\Support\Str;
  */
 class UploadController extends Controller
 {
-    /** Store a public file and return the URL it can be fetched from. */
+    /**
+     * Store a public file and return the URL it can be fetched from.
+     *
+     * Named by its content, never by the name the browser sent: validation
+     * checks what the file is, so a page called `x.html` that starts like a PNG
+     * is stored, and served, as a PNG. An SVG can carry script, so it is served
+     * as a download rather than opened in place; inside an <img>, where scripts
+     * never run, it still shows.
+     */
     private function storePublic(UploadedFile $file, string $folder): string
     {
         $disk = config('filesystems.uploads_disk');
-        $path = $file->storeAs(
-            $folder,
-            Str::uuid().'.'.$file->getClientOriginalExtension(),
-            ['disk' => $disk, 'visibility' => 'public']
-        );
+        $extension = $file->extension();
+        $options = ['disk' => $disk, 'visibility' => 'public'];
+
+        if ($extension === 'svg') {
+            $options['ContentDisposition'] = 'attachment';
+        }
+
+        $path = $file->storeAs($folder, Str::uuid().'.'.$extension, $options);
 
         // Asked of the disk rather than assembled from APP_URL: the same code
         // then returns a /storage path locally and a bucket URL in production.
         return Storage::disk($disk)->url($path);
     }
 
-    // POST /api/uploads — customer design file (jpg, png, pdf, svg, max 10 MB)
+    // POST /api/uploads — customer design file or remodel photo (jpg, png, webp, pdf, svg, max 10 MB)
     public function design(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:jpg,jpeg,png,pdf,svg|max:10240',
+            'file' => 'required|file|mimes:jpg,jpeg,png,webp,pdf,svg|max:10240',
         ]);
 
         return response()->json([
@@ -115,7 +126,7 @@ class UploadController extends Controller
 
         $path = $file->storeAs(
             'tailor-ids',
-            $user->id.'-'.Str::uuid().'.'.$file->getClientOriginalExtension(),
+            $user->id.'-'.Str::uuid().'.'.$file->extension(),
             ['disk' => $disk, 'visibility' => 'private']
         );
 

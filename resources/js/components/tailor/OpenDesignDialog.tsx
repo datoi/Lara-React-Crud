@@ -148,11 +148,15 @@ function OpenDesignDetails({ order, product, title, dateLabel, onRequested }: {
                     <DesignSpecList spec={spec} garment={readProductName(design?.customization)} label={t('tailorComponents.studioSpec')} />
                 )}
 
-                <DetailBlock label={t('measurements.providedTitle')}>
-                    {order.measurements_count > 0
-                        ? t('measurements.countForBidders', { count: order.measurements_count })
-                        : t('measurements.noneForBidders')}
-                </DetailBlock>
+                {/* The remodel form no longer asks for measurements, so a remodel
+                    without them is not missing anything; older ones keep theirs. */}
+                {(!isRemodel || order.measurements_count > 0) && (
+                    <DetailBlock label={t('measurements.providedTitle')}>
+                        {order.measurements_count > 0
+                            ? t('measurements.countForBidders', { count: order.measurements_count })
+                            : t('measurements.noneForBidders')}
+                    </DetailBlock>
+                )}
 
                 {design?.customization_request && (
                     <DetailBlock label={t('tailorComponents.customizationRequest')}>{design.customization_request}</DetailBlock>

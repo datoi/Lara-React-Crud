@@ -15,6 +15,9 @@ import type { TFunction } from 'i18next';
  * leak this exists to stop.
  */
 const CODES: Record<string, string> = {
+    // Signing in (wrong_role depends on which sign-in page asked, so Login maps it)
+    account_suspended: 'signIn.errorSuspended',
+
     // Registration
     phone_taken: 'register.errorPhoneTaken',
     email_taken: 'register.errorEmailTaken',

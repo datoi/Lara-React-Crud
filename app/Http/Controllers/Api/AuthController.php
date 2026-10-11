@@ -464,8 +464,9 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials.'], 401);
         }
 
+        // Codes, because the sign-in page is Georgian and these sentences are not.
         if ($user->is_suspended) {
-            return response()->json(['message' => 'This account has been suspended.'], 403);
+            return response()->json(['message' => 'This account has been suspended.', 'code' => 'account_suspended'], 403);
         }
 
         if ($user->role !== 'admin' && $user->role !== $data['role']) {
@@ -473,6 +474,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'message' => "Access denied. This account is not registered as a {$expected}.",
+                'code' => 'wrong_role',
             ], 403);
         }
 

@@ -647,8 +647,8 @@ export default function CustomerDashboard() {
             {/* Navbar */}
             <nav className="sticky top-0 z-40 bg-white border-b border-slate-100">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-                    <Link to="/" className="kere-nav-logo text-slate-900">
-                        Kere
+                    <Link to="/" className="store-logo text-slate-900" aria-label="Kere">
+                        <span className="kere-nav-logo" aria-hidden="true" />
                     </Link>
                     <div className="flex items-center gap-2">
                         {user && (

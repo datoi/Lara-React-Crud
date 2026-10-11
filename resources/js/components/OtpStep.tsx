@@ -21,6 +21,9 @@ export function OtpStep({ icon, title, description, verificationId, otpType, end
     const { t } = useTranslation();
     const [digits, setDigits]     = useState(['', '', '', '', '', '']);
     const [error, setError]       = useState('');
+    // Only a refused code marks the boxes; a failed resend or a lost
+    // connection says nothing about what was typed.
+    const [codeRejected, setCodeRejected] = useState(false);
     const [loading, setLoading]   = useState(false);
     const [resending, setResending] = useState(false);
     const [cooldown, setCooldown] = useState(0);
@@ -53,6 +56,7 @@ export function OtpStep({ icon, title, description, verificationId, otpType, end
         next[i] = val.slice(-1);
         setDigits(next);
         setError('');
+        setCodeRejected(false);
         if (val && i < 5) inputRefs.current[i + 1]?.focus();
         if (val && i === 5 && next.every(d => d)) submitCode(next.join(''));
     };
@@ -75,6 +79,7 @@ export function OtpStep({ icon, title, description, verificationId, otpType, end
         if (loading) return;
         setLoading(true);
         setError('');
+        setCodeRejected(false);
         try {
             const res = await fetch(endpoint, {
                 method: 'POST',
@@ -89,6 +94,7 @@ export function OtpStep({ icon, title, description, verificationId, otpType, end
             }
             if (!res.ok) {
                 setError(data.message ?? t('register.incorrectCode'));
+                setCodeRejected(true);
                 setDigits(['', '', '', '', '', '']);
                 inputRefs.current[0]?.focus();
                 return;
@@ -105,6 +111,7 @@ export function OtpStep({ icon, title, description, verificationId, otpType, end
         if (resending || cooldown > 0) return;
         setResending(true);
         setError('');
+        setCodeRejected(false);
         try {
             const res = await fetch('/api/register/resend', {
                 method: 'POST',
@@ -135,7 +142,7 @@ export function OtpStep({ icon, title, description, verificationId, otpType, end
 
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
                 {error && (
-                    <div className="mb-4 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg px-4 py-3">
+                    <div role="alert" className="mb-4 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg px-4 py-3">
                         {error}
                     </div>
                 )}
@@ -152,8 +159,9 @@ export function OtpStep({ icon, title, description, verificationId, otpType, end
                             onChange={e => handleDigit(i, e.target.value)}
                             onKeyDown={e => handleKeyDown(i, e)}
                             disabled={loading}
+                            aria-invalid={codeRejected}
                             className={`w-11 h-14 text-center text-xl font-semibold border rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors ${
-                                error ? 'border-destructive bg-destructive/10' : d ? 'border-slate-900 bg-slate-50' : 'border-slate-200'
+                                codeRejected ? 'border-destructive bg-destructive/10' : d ? 'border-slate-900 bg-slate-50' : 'border-slate-200'
                             } disabled:opacity-50`}
                         />
                     ))}

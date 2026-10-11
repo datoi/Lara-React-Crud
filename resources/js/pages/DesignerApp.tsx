@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useSearchParams, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
@@ -12,7 +12,7 @@ import { Navigation } from '../components/landing/Navigation';
 import { categoriesFor, categoryForProduct, findCategory, type GarmentCategory } from '../data/garmentTaxonomy';
 import DesignerWizard, { type WizardProduct } from '../components/customizer/DesignerWizard';
 import { submitDesign } from '../components/customizer/submitDesign';
-import { useCategoryProducts } from '../hooks/useCategoryProducts';
+import { useSectionGarments } from '../hooks/useSectionGarments';
 import { useProductData } from '../hooks/useProductData';
 import type { DesignConfiguration } from '../types/customizer';
 
@@ -405,7 +405,23 @@ export default function DesignerApp() {
             ?? (product ? categoryForProduct(section, product.category) : undefined)
         : undefined;
 
-    const { products, loading: productsLoading, error: productsError } = useCategoryProducts(section, activeCategory);
+    const { garments, loading: productsLoading, error: productsError, reload: reloadGarments } = useSectionGarments(section);
+
+    // Only headings with a garment to design are offered. Unphotographed garments
+    // are not in the catalogue, so an empty heading is named as coming soon and
+    // returns by itself once one of its garments is shot. If the catalogue fails
+    // to load, every heading stays offered, since none can be ruled out.
+    const headings = useMemo(() => {
+        const all = section ? categoriesFor(section) : [];
+        if (productsError) return { offered: all, upcoming: [] };
+        const filled = (category: GarmentCategory) => garments.some(g => category.productCategories.includes(g.category));
+        return { offered: all.filter(filled), upcoming: all.filter(category => !filled(category)) };
+    }, [section, garments, productsError]);
+
+    const products = useMemo(
+        () => (activeCategory ? garments.filter(g => activeCategory.productCategories.includes(g.category)) : []),
+        [garments, activeCategory],
+    );
 
     // A garment that will not load is reported where the customer is standing,
     // rather than leaving them on a step whose CTA silently does nothing. The
@@ -447,6 +463,9 @@ export default function DesignerApp() {
     }, [designId]);
 
     const openCategory = (category: GarmentCategory) => {
+        // After a failed load every heading is offered; picking one is also
+        // the customer's way of asking again.
+        if (productsError) reloadGarments();
         const params = new URLSearchParams(searchParams);
         params.set('cat', category.key);
         // Changing heading abandons the garment chosen under the old one.
@@ -564,6 +583,8 @@ export default function DesignerApp() {
                 // so either changing needs a new mount rather than a re-seed.
                 key={`${product?.slug ?? 'browse'}:${designId ?? ''}`}
                 section={section}
+                categories={headings.offered}
+                upcomingCategories={headings.upcoming}
                 category={activeCategory}
                 onSelectCategory={openCategory}
                 onSwitchSection={switchSection}

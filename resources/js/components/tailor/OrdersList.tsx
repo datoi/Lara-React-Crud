@@ -283,7 +283,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                             </div>
                         ))}
 
-                        {/* Remodel: the customer's garment, what to change, and their fit */}
+                        {/* Remodel: the customer's garment and what to change */}
                         {isRemodel && cd && (
                             <>
                                 {(cd.remodel_images ?? []).length > 0 && (
@@ -311,12 +311,15 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                         <p className="text-sm font-medium text-slate-900">{formatCalendarDay(order.needed_by, t)}</p>
                                     </div>
                                 )}
-                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-                                        {t('tailorComponents.measurementsCm')}
+                                {/* Only older remodels carry measurements; the form no longer asks. */}
+                                {Object.keys(cd.measurements ?? {}).length > 0 && (
+                                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                            {t('tailorComponents.measurementsCm')}
+                                        </div>
+                                        <MeasurementList values={cd.measurements} />
                                     </div>
-                                    <MeasurementList values={cd.measurements} emptyText={t('measurements.noneProvided')} />
-                                </div>
+                                )}
                             </>
                         )}
 

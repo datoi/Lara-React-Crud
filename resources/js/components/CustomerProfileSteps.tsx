@@ -31,10 +31,9 @@ interface Props {
     onDone: () => void;
 }
 
+/** An invalid field turns red through its aria-invalid (see app.css, .kere-auth-page). */
 const field =
-    'mt-2 w-full border-0 border-b bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0';
-const fieldTone = (hasError: boolean) =>
-    hasError ? 'border-[#d8d0c7]' : 'border-[#d8d0c7] focus:border-[#d8d0c7]';
+    'mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0';
 const label = 'block text-[10px] font-medium uppercase tracking-[0.18em] text-[#2a1418]';
 
 /** Compact primary action matching the storefront. */
@@ -152,21 +151,25 @@ export function CustomerProfileSteps({ onDone }: Props) {
             const data = await response.json();
 
             if (!response.ok) {
-                // Never data.message — the server answers in English.
-                setGeneral(t(serverMessageKey(data.code) ?? 'register.errorRegistrationFailed'));
-
                 // A rejected field belongs to the screen that asked it, and the
                 // fields on this step all live on the age screen. Without this
                 // the customer sits on the terms screen reading "registration
                 // failed" about a guardian field they were never shown — which
                 // is exactly what a disagreement over the date could produce.
-                if (data.errors) {
+                // The server counts age in Tbilisi and this form in local time,
+                // so a birthday today can pass here and be refused there; that
+                // answer is about the date too, and is shown under it.
+                if (data.errors || data.code === 'below_minimum_age') {
                     const mapped: Record<string, string> = {};
 
-                    for (const [field, messages] of Object.entries(data.errors)) {
+                    for (const [field, messages] of Object.entries(data.errors ?? {})) {
                         mapped[field] = t(
                             serverMessageKey((messages as string[])[0]) ?? 'register.errorFieldInvalid',
                         );
+                    }
+
+                    if (data.code === 'below_minimum_age') {
+                        mapped.date_of_birth = t('register.errorTooYoung', { age: MINIMUM_AGE });
                     }
 
                     setErrors(mapped);
@@ -175,7 +178,8 @@ export function CustomerProfileSteps({ onDone }: Props) {
                     return;
                 }
 
-                if (data.code === 'below_minimum_age') setScreen('age');
+                // Never data.message — the server answers in English.
+                setGeneral(t(serverMessageKey(data.code) ?? 'register.errorRegistrationFailed'));
 
                 return;
             }
@@ -254,7 +258,7 @@ export function CustomerProfileSteps({ onDone }: Props) {
                     {box('marketing', t('register.consentMarketing'), false)}
                 </div>
 
-                {general && <p className="mt-4 text-xs text-[#2a1418]">{general}</p>}
+                {general && <p role="alert" className="mt-4 text-xs text-destructive">{general}</p>}
 
                 <Button type="button" onClick={() => void submit()} disabled={loading} className={primaryAction}>
                     {loading && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -295,13 +299,14 @@ export function CustomerProfileSteps({ onDone }: Props) {
                             value={dob[part]}
                             onChange={e => setDobPart(part)(e.target.value)}
                             placeholder={placeholder}
-                            className={`${field} ${fieldTone(Boolean(errors.date_of_birth))}`}
+                            aria-invalid={Boolean(errors.date_of_birth)}
+                            className={field}
                         />
                     </div>
                 ))}
             </div>
 
-            {errors.date_of_birth && <p className="mt-2 text-xs text-[#2a1418]">{errors.date_of_birth}</p>}
+            {errors.date_of_birth && <p className="mt-2 text-xs text-destructive">{errors.date_of_birth}</p>}
 
             {needsGuardian && (
                 <div className="mt-7 border-t border-[#d8d0c7] pt-6">
@@ -321,9 +326,10 @@ export function CustomerProfileSteps({ onDone }: Props) {
                                     value={guardian[name]}
                                     onChange={e => setGuardianField(name)(e.target.value)}
                                     placeholder={name === 'guardian_phone' ? '+995555123456' : ''}
-                                    className={`${field} ${fieldTone(Boolean(errors[name]))}`}
+                                    aria-invalid={Boolean(errors[name])}
+                                    className={field}
                                 />
-                                {errors[name] && <p className="mt-1.5 text-xs text-[#2a1418]">{errors[name]}</p>}
+                                {errors[name] && <p className="mt-1.5 text-xs text-destructive">{errors[name]}</p>}
                             </div>
                         ))}
 
@@ -335,14 +341,15 @@ export function CustomerProfileSteps({ onDone }: Props) {
                                 id="guardian_relationship"
                                 value={guardian.guardian_relationship}
                                 onChange={e => setGuardianField('guardian_relationship')(e.target.value)}
-                                className={`${field} ${fieldTone(Boolean(errors.guardian_relationship))} [&>option]:text-[#111111]`}
+                                aria-invalid={Boolean(errors.guardian_relationship)}
+                                className={`${field} [&>option]:text-[#111111]`}
                             >
                                 <option value="">{t('register.choosePlaceholder')}</option>
                                 <option value="parent">{t('register.relationshipParent')}</option>
                                 <option value="legal_guardian">{t('register.relationshipLegalGuardian')}</option>
                             </select>
                             {errors.guardian_relationship && (
-                                <p className="mt-1.5 text-xs text-[#2a1418]">{errors.guardian_relationship}</p>
+                                <p className="mt-1.5 text-xs text-destructive">{errors.guardian_relationship}</p>
                             )}
                         </div>
                     </div>

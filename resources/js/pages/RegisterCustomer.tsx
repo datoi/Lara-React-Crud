@@ -149,7 +149,7 @@ export default function RegisterCustomer() {
 
                                 <div>
                                     {formErrors.general && (
-                                        <div className="mb-5 border border-[#d8d0c7] bg-[#f0e8e0] px-4 py-3 text-xs leading-5 text-[#2a1418]">
+                                        <div role="alert" className="mb-5 border border-destructive/30 bg-destructive/10 px-4 py-3 text-xs leading-5 text-destructive">
                                             {formErrors.general}
                                         </div>
                                     )}
@@ -163,9 +163,10 @@ export default function RegisterCustomer() {
                                                     value={form.first_name}
                                                     onChange={setField('first_name')}
                                                     placeholder={t('register.firstNamePlaceholder')}
-                                                    className={`mt-2 w-full border-0 border-b bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0 ${formErrors.first_name ? 'border-[#d8d0c7]' : 'border-[#d8d0c7] focus:border-[#d8d0c7]'}`}
+                                                    aria-invalid={!!formErrors.first_name}
+                                                    className="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"
                                                 />
-                                                {formErrors.first_name && <p className="mt-2 text-[10px] font-medium text-[#2a1418]">{formErrors.first_name}</p>}
+                                                {formErrors.first_name && <p className="mt-2 text-[10px] font-medium text-destructive">{formErrors.first_name}</p>}
                                             </div>
                                             <div>
                                                 <label className="block text-[10px] font-semibold leading-none text-[#2a1418]">{t('register.lastName')}</label>
@@ -174,9 +175,10 @@ export default function RegisterCustomer() {
                                                     value={form.last_name}
                                                     onChange={setField('last_name')}
                                                     placeholder={t('register.lastNamePlaceholder')}
-                                                    className={`mt-2 w-full border-0 border-b bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0 ${formErrors.last_name ? 'border-[#d8d0c7]' : 'border-[#d8d0c7] focus:border-[#d8d0c7]'}`}
+                                                    aria-invalid={!!formErrors.last_name}
+                                                    className="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"
                                                 />
-                                                {formErrors.last_name && <p className="mt-2 text-[10px] font-medium text-[#2a1418]">{formErrors.last_name}</p>}
+                                                {formErrors.last_name && <p className="mt-2 text-[10px] font-medium text-destructive">{formErrors.last_name}</p>}
                                             </div>
                                         </div>
 
@@ -187,9 +189,10 @@ export default function RegisterCustomer() {
                                                 value={form.email}
                                                 onChange={setField('email')}
                                                 placeholder={t('register.emailPlaceholder')}
-                                                className={`mt-2 w-full border-0 border-b bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0 ${formErrors.email ? 'border-[#d8d0c7]' : 'border-[#d8d0c7] focus:border-[#d8d0c7]'}`}
+                                                aria-invalid={!!formErrors.email}
+                                                className="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"
                                             />
-                                            {formErrors.email && <p className="mt-2 text-[10px] font-medium text-[#2a1418]">{formErrors.email}</p>}
+                                            {formErrors.email && <p className="mt-2 text-[10px] font-medium text-destructive">{formErrors.email}</p>}
                                         </div>
 
                                         <div>
@@ -202,7 +205,7 @@ export default function RegisterCustomer() {
                                                 }}
                                                 error={!!formErrors.phone}
                                             />
-                                            {formErrors.phone && <p className="mt-2 text-[10px] font-medium text-[#2a1418]">{formErrors.phone}</p>}
+                                            {formErrors.phone && <p className="mt-2 text-[10px] font-medium text-destructive">{formErrors.phone}</p>}
                                         </div>
 
                                         <fieldset>
@@ -240,13 +243,14 @@ export default function RegisterCustomer() {
                                                     value={form.password}
                                                     onChange={setField('password')}
                                                     placeholder={t('register.passwordPlaceholder')}
-                                                    className={`mt-2 w-full border-0 border-b bg-transparent px-0 pb-2 pr-8 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0 ${formErrors.password ? 'border-[#d8d0c7]' : 'border-[#d8d0c7] focus:border-[#d8d0c7]'}`}
+                                                    aria-invalid={!!formErrors.password}
+                                                    className="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 pr-8 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"
                                                 />
                                                 <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-0 top-1/2 -translate-y-1/2 text-[#2a1418] transition-colors hover:text-[#2a1418]">
                                                     {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                                                 </button>
                                             </div>
-                                            {formErrors.password && <p className="mt-2 text-[10px] font-medium text-[#2a1418]">{formErrors.password}</p>}
+                                            {formErrors.password && <p className="mt-2 text-[10px] font-medium text-destructive">{formErrors.password}</p>}
                                         </div>
 
                                         <div>
@@ -257,13 +261,14 @@ export default function RegisterCustomer() {
                                                     value={form.password_confirmation}
                                                     onChange={setField('password_confirmation')}
                                                     placeholder={t('register.confirmPasswordPlaceholder')}
-                                                    className={`mt-2 w-full border-0 border-b bg-transparent px-0 pb-2 pr-8 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0 ${formErrors.password_confirmation ? 'border-[#d8d0c7]' : 'border-[#d8d0c7] focus:border-[#d8d0c7]'}`}
+                                                    aria-invalid={!!formErrors.password_confirmation}
+                                                    className="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 pr-8 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"
                                                 />
                                                 <button type="button" onClick={() => setShowConfirm(v => !v)} className="absolute right-0 top-1/2 -translate-y-1/2 text-[#2a1418] transition-colors hover:text-[#2a1418]">
                                                     {showConfirm ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                                                 </button>
                                             </div>
-                                            {formErrors.password_confirmation && <p className="mt-2 text-[10px] font-medium text-[#2a1418]">{formErrors.password_confirmation}</p>}
+                                            {formErrors.password_confirmation && <p className="mt-2 text-[10px] font-medium text-destructive">{formErrors.password_confirmation}</p>}
                                         </div>
 
                                         <Button type="submit" disabled={submitting} className="kere-auth-submit mt-2 min-h-11 w-full bg-[#631e26] px-4 py-3 text-xs text-white transition-colors hover:bg-[#c3a69a] hover:text-[#631e26]">

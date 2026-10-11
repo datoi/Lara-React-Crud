@@ -93,6 +93,16 @@ Route::middleware(['auth.bearer', 'role:customer', 'throttle:40,1,api-payments']
     Route::post('/orders/{id}/verify-payment', [PaymentController::class, 'verify']);
 });
 
+// ─── Customer uploads ─────────────────────────────────────────────────────────
+// Own bucket: a remodel takes up to ten photos, one request each, and in the
+// 10/min write bucket the batch alone would leave no room to place the order.
+// Twenty a minute is a full batch with every photo retried once; the daily cap
+// bounds what one account can put in the public bucket, since nothing removes
+// a file that never made it onto an order.
+Route::middleware(['auth.bearer', 'role:customer', 'throttle:20,1,api-uploads', 'throttle:100,1440,api-uploads-daily'])->group(function () {
+    Route::post('/uploads', [UploadController::class, 'design']);
+});
+
 // ─── Authenticated writes (10 req/min) ────────────────────────────────────────
 Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function () {
     // Finishing registration — date of birth, guardian, terms.
@@ -106,7 +116,6 @@ Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function (
         Route::post('/orders', [OrderController::class, 'store']);
         Route::post('/customer/orders/{orderId}/choose-tailor', [CustomerOrderController::class, 'chooseTailor']);
         Route::post('/reviews', [ReviewController::class, 'store']);
-        Route::post('/uploads', [UploadController::class, 'design']);
         Route::post('/wishlist/{product}', [WishlistController::class, 'store']);
         Route::delete('/wishlist/{product}', [WishlistController::class, 'destroy']);
         Route::put('/customer/measurements', [CustomerMeasurementController::class, 'update']);

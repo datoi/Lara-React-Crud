@@ -1677,15 +1677,22 @@ body {
   .remodel-form > button svg { flex-shrink: 0; width: 14px; height: 14px; }
 }
 
-/* One restrained focus indicator, without stacked browser/Tailwind rings. */
-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
-textarea:focus,
-select:focus,
-.kere-modal :is(input, textarea, select):focus-visible {
+/* One restrained focus indicator, without stacked browser/Tailwind rings. A field
+   flagged invalid is left to the next rule, so focusing it never hides the error. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([aria-invalid="true"]):focus,
+textarea:not([aria-invalid="true"]):focus,
+select:not([aria-invalid="true"]):focus,
+.kere-modal :is(input, textarea, select):not([aria-invalid="true"]):focus-visible {
   border-color: #b8afa4 !important;
   outline: none !important;
   box-shadow: 0 1px 0 0 #887d70 !important;
 }
+
+/* A field a form has flagged (aria-invalid) reads red, focused or not, on every page.
+   !important because page rules such as `.kere-auth-page input` set border colours
+   outside a layer, which beats any Tailwind border utility. */
+:is(input, textarea, select)[aria-invalid="true"] { border-color: var(--destructive) !important; }
+:is(input, textarea, select)[aria-invalid="true"]:focus { outline: none; box-shadow: 0 1px 0 0 var(--destructive); }
 
 /* Compact marketplace controls and quiet secondary filter choices. */
 .market-filter-trigger { white-space: nowrap; font-size: 10px; line-height: 1.4; }
@@ -1891,7 +1898,6 @@ select:focus,
 .kere-refined-page :is(button, a)[class*="bg-brand"]:hover,
 .kere-refined-page :is(button, a)[class~="bg-slate-900"]:hover { background-color: #c3a69a !important; color: #631e26; }
 .kere-refined-page > nav { background: var(--store-paper) !important; }
-.kere-refined-page > nav .kere-nav-logo { font-size: 16px; }
 .kere-refined-page :is(button, a)[class*="px-8"] { font-size: 12px; padding: 12px 20px; }
 .kere-refined-page .prose { font-size: 14px; line-height: 1.8; }
 .kere-auth-page { background: var(--store-paper); color: #2a1418; }
@@ -2008,7 +2014,6 @@ button[type="submit"],
 .kere-login-form { max-width: 400px; margin-inline: auto; }
 .kere-login-page label { color: #817b75; font-size: 13px; font-weight: 400; }
 .kere-login-page input { border: 0; border-bottom: 1px solid #111; border-radius: 0; height: 44px; font-weight: 400; }
-.kere-login-page input:focus { border-color: #111 !important; box-shadow: 0 1px 0 #111 !important; }
 .kere-login-page .kere-login-submit { display: flex; margin: 34px auto 0; min-height: 44px; padding: 12px 38px; border: 1px solid #111; background: transparent !important; color: #111 !important; font-size: 12px; font-weight: 400; letter-spacing: .08em; border-radius: 0; }
 .kere-login-page .kere-login-submit:hover { background: #c3a69a !important; color: #631e26 !important; border-color: #c3a69a; }
 .kere-login-page .kere-login-form > p { margin-top: 28px; font-size: 11px; }

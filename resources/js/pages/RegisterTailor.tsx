@@ -375,16 +375,13 @@ export default function RegisterTailor() {
         }
     }
 
-    const inputClass = (hasError: boolean) =>
-        [
-            'h-11 w-full rounded-md border bg-white px-3.5 text-sm text-[#1A1A1A]',
-            'placeholder:text-black/30',
-            'outline-none transition duration-200',
-            'focus:border-black focus:ring-1 focus:ring-black/10',
-            hasError
-                ? 'border-[#6F1D24]'
-                : 'border-black/15',
-        ].join(' ');
+    // An invalid field turns red through its aria-invalid (see app.css, .tailor-registration-page).
+    const inputClass = [
+        'h-11 w-full rounded-md border border-black/15 bg-white px-3.5 text-sm text-[#1A1A1A]',
+        'placeholder:text-black/30',
+        'outline-none transition duration-200',
+        'focus:border-black focus:ring-1 focus:ring-black/10',
+    ].join(' ');
 
     if (pendingApproval) {
         return (
@@ -474,7 +471,7 @@ export default function RegisterTailor() {
                             </div>
 
                             {errors.general && (
-                                <div className="mb-5 rounded-md border border-[#6F1D24]/20 bg-[#6F1D24]/5 px-4 py-3 text-sm text-[#6F1D24]">
+                                <div role="alert" className="mb-5 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                                     {errors.general}
                                 </div>
                             )}
@@ -524,13 +521,12 @@ export default function RegisterTailor() {
                                                 'register.firstNamePlaceholder',
                                             )}
                                             autoComplete="given-name"
-                                            className={inputClass(
-                                                Boolean(errors.first_name),
-                                            )}
+                                            aria-invalid={Boolean(errors.first_name)}
+                                            className={inputClass}
                                         />
 
                                         {errors.first_name && (
-                                            <p className="mt-1.5 text-xs text-[#6F1D24]">
+                                            <p className="mt-1.5 text-xs text-destructive">
                                                 {errors.first_name}
                                             </p>
                                         )}
@@ -553,13 +549,12 @@ export default function RegisterTailor() {
                                                 'register.lastNamePlaceholder',
                                             )}
                                             autoComplete="family-name"
-                                            className={inputClass(
-                                                Boolean(errors.last_name),
-                                            )}
+                                            aria-invalid={Boolean(errors.last_name)}
+                                            className={inputClass}
                                         />
 
                                         {errors.last_name && (
-                                            <p className="mt-1.5 text-xs text-[#6F1D24]">
+                                            <p className="mt-1.5 text-xs text-destructive">
                                                 {errors.last_name}
                                             </p>
                                         )}
@@ -586,13 +581,12 @@ export default function RegisterTailor() {
                                             'register.emailPlaceholder',
                                         )}
                                         autoComplete="email"
-                                        className={inputClass(
-                                            Boolean(errors.email),
-                                        )}
+                                        aria-invalid={Boolean(errors.email)}
+                                        className={inputClass}
                                     />
 
                                     {errors.email && (
-                                        <p className="mt-1.5 text-xs text-[#6F1D24]">
+                                        <p className="mt-1.5 text-xs text-destructive">
                                             {errors.email}
                                         </p>
                                     )}
@@ -621,7 +615,7 @@ export default function RegisterTailor() {
                                     />
 
                                     {errors.phone && (
-                                        <p className="mt-1.5 text-xs text-[#6F1D24]">
+                                        <p className="mt-1.5 text-xs text-destructive">
                                             {errors.phone}
                                         </p>
                                     )}
@@ -649,9 +643,8 @@ export default function RegisterTailor() {
                                                 'register.passwordPlaceholder',
                                             )}
                                             autoComplete="new-password"
-                                            className={`${inputClass(
-                                                Boolean(errors.password),
-                                            )} pr-11`}
+                                            aria-invalid={Boolean(errors.password)}
+                                            className={`${inputClass} pr-11`}
                                         />
 
                                         <button
@@ -677,7 +670,7 @@ export default function RegisterTailor() {
                                     </div>
 
                                     {errors.password && (
-                                        <p className="mt-1.5 text-xs text-[#6F1D24]">
+                                        <p className="mt-1.5 text-xs text-destructive">
                                             {errors.password}
                                         </p>
                                     )}
@@ -711,11 +704,8 @@ export default function RegisterTailor() {
                                                 'register.confirmPasswordPlaceholder',
                                             )}
                                             autoComplete="new-password"
-                                            className={`${inputClass(
-                                                Boolean(
-                                                    errors.password_confirmation,
-                                                ),
-                                            )} pr-11`}
+                                            aria-invalid={Boolean(errors.password_confirmation)}
+                                            className={`${inputClass} pr-11`}
                                         />
 
                                         <button
@@ -741,7 +731,7 @@ export default function RegisterTailor() {
                                     </div>
 
                                     {errors.password_confirmation && (
-                                        <p className="mt-1.5 text-xs text-[#6F1D24]">
+                                        <p className="mt-1.5 text-xs text-destructive">
                                             {
                                                 errors.password_confirmation
                                             }
@@ -762,7 +752,8 @@ export default function RegisterTailor() {
                                             id="tailor-business-type"
                                             value={form.business_type}
                                             onChange={(e) => setChoice('business_type', e.target.value)}
-                                            className={inputClass(Boolean(errors.business_type))}
+                                            aria-invalid={Boolean(errors.business_type)}
+                                            className={inputClass}
                                         >
                                             <option value="">{t('register.choosePlaceholder')}</option>
                                             {BUSINESS_TYPES.map((value) => (
@@ -772,7 +763,7 @@ export default function RegisterTailor() {
                                             ))}
                                         </select>
                                         {errors.business_type && (
-                                            <p className="mt-1.5 text-xs text-[#6F1D24]">{errors.business_type}</p>
+                                            <p className="mt-1.5 text-xs text-destructive">{errors.business_type}</p>
                                         )}
                                     </div>
 
@@ -784,7 +775,7 @@ export default function RegisterTailor() {
                                             {(['yes', 'no'] as const).map((answer) => (
                                                 <label
                                                     key={answer}
-                                                    className={`flex h-11 cursor-pointer items-center justify-center rounded-md border bg-[var(--kere-panel)] text-sm transition-colors hover:border-black has-[:checked]:border-[#6F1D24] has-[:checked]:bg-[#6F1D24] has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#6F1D24] has-[:focus-visible]:ring-offset-2 ${errors.does_remodeling ? 'border-[#6F1D24]' : 'border-black/15'}`}
+                                                    className={`flex h-11 cursor-pointer items-center justify-center rounded-md border bg-[var(--kere-panel)] text-sm transition-colors hover:border-black has-[:checked]:border-[#6F1D24] has-[:checked]:bg-[#6F1D24] has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#6F1D24] has-[:focus-visible]:ring-offset-2 ${errors.does_remodeling ? 'border-destructive' : 'border-black/15'}`}
                                                 >
                                                     <input
                                                         type="radio"
@@ -800,7 +791,7 @@ export default function RegisterTailor() {
                                         </div>
                                         <p className="mt-1.5 text-xs text-black/45">{t('register.doesRemodelingHint')}</p>
                                         {errors.does_remodeling && (
-                                            <p className="mt-1.5 text-xs text-[#6F1D24]">{errors.does_remodeling}</p>
+                                            <p className="mt-1.5 text-xs text-destructive">{errors.does_remodeling}</p>
                                         )}
                                     </fieldset>
 
@@ -814,10 +805,11 @@ export default function RegisterTailor() {
                                             value={form.workspace_address}
                                             onChange={set('workspace_address')}
                                             placeholder={t('register.workspaceAddressPlaceholder')}
-                                            className={inputClass(Boolean(errors.workspace_address))}
+                                            aria-invalid={Boolean(errors.workspace_address)}
+                                            className={inputClass}
                                         />
                                         {errors.workspace_address && (
-                                            <p className="mt-1.5 text-xs text-[#6F1D24]">{errors.workspace_address}</p>
+                                            <p className="mt-1.5 text-xs text-destructive">{errors.workspace_address}</p>
                                         )}
                                     </div>
 
@@ -829,7 +821,8 @@ export default function RegisterTailor() {
                                             id="tailor-experience"
                                             value={form.experience_band}
                                             onChange={(e) => setChoice('experience_band', e.target.value)}
-                                            className={inputClass(Boolean(errors.experience_band))}
+                                            aria-invalid={Boolean(errors.experience_band)}
+                                            className={inputClass}
                                         >
                                             <option value="">{t('register.choosePlaceholder')}</option>
                                             {EXPERIENCE_BANDS.map((value) => (
@@ -839,7 +832,7 @@ export default function RegisterTailor() {
                                             ))}
                                         </select>
                                         {errors.experience_band && (
-                                            <p className="mt-1.5 text-xs text-[#6F1D24]">{errors.experience_band}</p>
+                                            <p className="mt-1.5 text-xs text-destructive">{errors.experience_band}</p>
                                         )}
                                     </div>
                                 </>
@@ -855,7 +848,8 @@ export default function RegisterTailor() {
                                             id="tailor-legal-status"
                                             value={form.legal_status}
                                             onChange={(e) => setChoice('legal_status', e.target.value)}
-                                            className={inputClass(Boolean(errors.legal_status))}
+                                            aria-invalid={Boolean(errors.legal_status)}
+                                            className={inputClass}
                                         >
                                             <option value="">{t('register.choosePlaceholder')}</option>
                                             {LEGAL_STATUSES.map((value) => (
@@ -865,7 +859,7 @@ export default function RegisterTailor() {
                                             ))}
                                         </select>
                                         {errors.legal_status && (
-                                            <p className="mt-1.5 text-xs text-[#6F1D24]">{errors.legal_status}</p>
+                                            <p className="mt-1.5 text-xs text-destructive">{errors.legal_status}</p>
                                         )}
                                     </div>
 
@@ -879,10 +873,11 @@ export default function RegisterTailor() {
                                             value={form.national_id}
                                             onChange={set('national_id')}
                                             placeholder={t('register.nationalIdPlaceholder')}
-                                            className={inputClass(Boolean(errors.national_id))}
+                                            aria-invalid={Boolean(errors.national_id)}
+                                            className={inputClass}
                                         />
                                         {errors.national_id && (
-                                            <p className="mt-1.5 text-xs text-[#6F1D24]">{errors.national_id}</p>
+                                            <p className="mt-1.5 text-xs text-destructive">{errors.national_id}</p>
                                         )}
                                     </div>
                                     <p className="-mt-2 text-xs text-black/45">
@@ -918,7 +913,7 @@ export default function RegisterTailor() {
                                             <span>{t('register.consentAccurate')}</span>
                                         </label>
                                         {consentError && (
-                                            <p className="text-xs text-[#6F1D24]">{consentError}</p>
+                                            <p role="alert" className="text-xs text-destructive">{consentError}</p>
                                         )}
                                     </div>
                                 </>

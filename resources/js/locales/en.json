@@ -119,7 +119,7 @@
     },
     "partners": {
         "eyebrow": "Kere Partner Program",
-        "heroTitle": "Get More Clients for Your",
+        "heroTitle": "Get More Customers for Your",
         "heroTitleHighlight": "Tailoring Business",
         "heroSubtitle": "Join Kere and start receiving custom clothing orders from real customers. Free to join. No marketing required.",
         "becomePartner": "Join Kere",
@@ -862,6 +862,7 @@
         "errorFileSize": "Each image must be under 10 MB.",
         "errorMaxImages": "You can add up to {{max}} photos.",
         "errorUploadFailed": "Upload failed. Please try again.",
+        "errorUploadThrottled": "Too many uploads right now. Please try again a little later.",
         "errorSubmit": "Could not post your request. Please try again."
     },
     "customerDashboard": {
@@ -1104,6 +1105,10 @@
         "errorRequired": "Required",
         "errorInvalidEmail": "Invalid email",
         "errorLoginFailed": "Login failed. Please try again.",
+        "errorSuspended": "This account has been suspended. Please contact us for help.",
+        "errorWrongRoleCustomer": "This is a tailor account. Please sign in as a tailor.",
+        "errorWrongRoleTailor": "This is a customer account. Please sign in as a customer.",
+        "errorThrottled": "Too many sign-in attempts. Wait a minute and try again.",
         "errorNetwork": "Network error. Please try again.",
         "emailOrPhoneLabel": "Email or phone number",
         "emailOrPhonePlaceholder": "you@example.com or 555 123 456",

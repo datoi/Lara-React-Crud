@@ -105,6 +105,25 @@ test('with a bucket configured, uploads move to object storage', function () {
         ->and(config('filesystems.disks.uploads.visibility'))->toBe('public');
 });
 
+test('an upload is stored as what it is, not what it is called', function () {
+    // Validation reads the content; the stored name used to come from the
+    // browser. A PNG called page.html must not end up served as HTML.
+    Storage::fake('public');
+    config()->set('filesystems.uploads_disk', 'public');
+    [, $token] = uploader('customer');
+
+    $path = tempnam(sys_get_temp_dir(), 'png');
+    file_put_contents($path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='));
+
+    $url = $this->withToken($token)->postJson('/api/uploads', [
+        'file' => new UploadedFile($path, 'page.html', null, null, true),
+    ])->assertStatus(201)->json('file_url');
+
+    expect($url)->toEndWith('.png')
+        ->and(Storage::disk('public')->files('designs'))->toHaveCount(1)
+        ->and(Storage::disk('public')->files('designs')[0])->toEndWith('.png');
+});
+
 test('the s3 adapter is actually installed', function () {
     // Without it every disk above fails at runtime, not at deploy.
     expect(class_exists(League\Flysystem\AwsS3V3\AwsS3V3Adapter::class))->toBeTrue();

@@ -25,7 +25,7 @@ import { previewCategories, showsDesign } from './designPhoto';
 import { garmentColors } from './garmentColors';
 import { money } from './money';
 import { useCustomizer } from '../../hooks/useCustomizer';
-import { categoriesFor, type GarmentCategory } from '../../data/garmentTaxonomy';
+import type { GarmentCategory } from '../../data/garmentTaxonomy';
 import type { Section } from '../../hooks/useSection';
 import type {
     CustomizerProduct,
@@ -106,6 +106,10 @@ function liveStepsFor(layerCategories: LayerCategory[], colorCount: number, fabr
 
 interface DesignerWizardProps {
     section: Section;
+    /** The section's headings that have a garment to design */
+    categories: GarmentCategory[];
+    /** The section's headings with nothing to design yet, named as coming soon */
+    upcomingCategories: GarmentCategory[];
     /** The heading being browsed, once the customer has picked one */
     category?: GarmentCategory;
     onSelectCategory: (category: GarmentCategory) => void;
@@ -133,6 +137,8 @@ interface DesignerWizardProps {
 
 export default function DesignerWizard({
     section,
+    categories,
+    upcomingCategories,
     category,
     onSelectCategory,
     onSwitchSection,
@@ -274,8 +280,11 @@ export default function DesignerWizard({
 
     const optionName = (attribute: LayerCategory): string => resolveOption(attribute)?.name ?? '—';
 
-    const categories = categoriesFor(section);
     const [changingCategory, setChangingCategory] = useState(false);
+    const browsingCategories = !category || changingCategory;
+    // An open heading is shown even when it is not on offer, so a link to a
+    // heading that has since emptied still says where the customer is.
+    const categoryTiles = browsingCategories ? categories : [category];
 
     // ── Step plumbing ───────────────────────────────────────────────────────
 
@@ -455,7 +464,12 @@ export default function DesignerWizard({
                         )}
 
                         <TileGroup label={t('designer.groupCategory')} value={category ? t(category.tKey) : null} hideHeader>
-                            {categories.filter(entry => !category || changingCategory || entry.key === category.key).map(entry => (
+                            {browsingCategories && productsLoading && (
+                                <div className="col-span-full flex justify-center py-8">
+                                    <Loader2 className="h-6 w-6 animate-spin text-[var(--kd-burgundy)]/55" />
+                                </div>
+                            )}
+                            {categoryTiles.map(entry => (
                                 <OptionTile
                                     key={entry.key}
                                     label={t(entry.tKey)}
@@ -468,7 +482,7 @@ export default function DesignerWizard({
                                     figure={<GarmentMark category={entry.key} className="h-7 w-6 flex-none min-[900px]:h-10 min-[900px]:w-[34px]" />}
                                 />
                             ))}
-                            {(!category || changingCategory) && <OptionTile
+                            {browsingCategories && <OptionTile
                                 label={t('design.uploadMyDesign')}
                                 selected={false}
                                 onClick={onUpload}
@@ -479,6 +493,14 @@ export default function DesignerWizard({
                                 }
                             />}
                         </TileGroup>
+                        {browsingCategories && !productsLoading && upcomingCategories.length > 0 && (
+                            <div>
+                                <p className="mb-1.5 text-[11px] uppercase tracking-[0.14em] text-[var(--kd-muted)]">{t('design.comingSoon')}</p>
+                                <p className="text-[13px] leading-6 text-[var(--kd-body)]">
+                                    {upcomingCategories.map(entry => t(entry.tKey)).join(' · ')}
+                                </p>
+                            </div>
+                        )}
                         {category && !changingCategory && (
                             <Button
                                 variant="link"

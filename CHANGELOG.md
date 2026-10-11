@@ -6,6 +6,148 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-10-11 — Fixes from the code review of the day's changes
+
+**What was done:** A code review of the 2026-10-11 changes reported 15 findings. Each was checked against the code, all 15 held, and all are fixed.
+- **Uploads are named by what they are.** `storePublic` and the ID-document upload took the stored extension from the browser's file name, while validation read the content. A PNG named `page.html` was saved, and served, as `.html`. Files are now named by `$file->extension()`, the extension of the detected type. An SVG, which can carry script, is stored on R2 with `Content-Disposition: attachment`; inside an `<img>` it still shows.
+- **Upload limits are lower:** `api-uploads` went from 30 to 20 a minute, plus a new `api-uploads-daily` cap of 100 a day per account. Nothing removes an upload that never reaches an order, so the cap is what bounds it.
+- **Sign-in never shows the server's English.** `POST /login` now sends `code` `account_suspended` or `wrong_role` with its 403s. `Login.tsx` maps those, a 429, and anything else to new translated `signIn.*` messages (`errorSuspended`, `errorWrongRoleCustomer`, `errorWrongRoleTailor`, `errorThrottled`).
+- **One rule for invalid fields.** The global focus rule now skips `[aria-invalid="true"]`. A single site-wide rule paints any flagged input, textarea or select red, with a red underline when focused. This replaces the page-scoped rules added earlier the same day, and also fixes the measurement fields and the remodel "needed by" date, which turned beige while focused. `.kere-login-page input:focus` was removed: the global rule always beat it, so it never applied.
+- **The code boxes go red only for a wrong code.** `OtpStep` tracks a refused code separately, so a failed resend, a lost connection or an expired session no longer mark the six boxes invalid.
+- **Too young for the server.** A server `below_minimum_age` answer now appears under the date of birth instead of bouncing back to the age screen with nothing said. The server counts age in Tbilisi and the form in local time, so this can happen.
+- **Design studio:**
+  - `useSectionGarments` tags each result with the section and attempt it belongs to. The render right after a switch therefore shows loading instead of the other section's catalogue.
+  - A failed load can be retried: picking a heading asks again.
+  - `/api/customizer/products` drops the attribute tree it loads to judge what is showable. The women's list went from 88,135 bytes to 520, so headings appear almost at once.
+- **Remodel photos:**
+  - `shrinkPhoto` falls back to decoding through an `<img>` when the browser refuses `imageOrientation: 'from-image'`. Before, such browsers sent photos full size.
+  - Refused file types no longer use up free places.
+  - Every problem in a batch stays listed.
+  - A 401 sends the customer to sign in, returning to `/remodel`, and a 429 stops the batch with the new `remodel.errorUploadThrottled`.
+  - The page's error messages are red (`text-destructive`) instead of wine, matching the red invalid field.
+- **Smaller fixes:**
+  - The tailor wizard's general banner and consent message have `role="alert"`.
+  - Two references to known issues by number in the ten-photos entry now name the issue, since that same change renumbered the list.
+
+**Verified:** `php artisan test` passes 173 tests, 4 of them new. Each new test fails against the previous code, and the webp test now uses a real WebP file:
+- a PNG named `page.html` is stored as `.png`
+- a suspended login and a wrong-role login carry their codes
+- the studio list carries no attribute tree, while `show` still does
+
+`npm run typecheck` is clean, `npx eslint` reports nothing on the 15 changed frontend files, the locales are in parity at 1,633 keys, and `npm run build` passes. In headless Chrome at 390px in Georgian, every finding was checked, 21 checks in all:
+- wrong-role, suspended and rate-limited sign-ins show the new Georgian messages
+- an invalid login field stays red while focused and goes back to normal on typing
+- a wrong code marks the boxes, and a failed resend does not
+- a forced `below_minimum_age` shows its reason, red, under the date
+- the women's list is 520 bytes
+- no DOM state after switching to men lists Trousers as coming soon
+- after a forced 500, picking Tops loads its two garments
+- with `imageOrientation` refused, a 4000×3000 photo still arrives at 2000px
+- with nine photos in, a HEIC plus a JPEG ends at ten photos and a red type message
+- a forced 429 stops after one request
+- a past "needed by" date is red at rest and focused
+- a forced 401 lands on sign-in with `/remodel` saved
+- an out-of-range measurement stays red while focused
+
+The earlier 114-check sign-in and registration suite was re-run against the site-wide rule and passes. All QA accounts and uploaded files were deleted.
+
+**Not covered:** the SVG `Content-Disposition` header applies only on R2, which a local run cannot exercise, and no test asserts it. On the local `public` fallback an SVG is still served inline from the site's own origin.
+
+## 2026-10-11 — The remodel form no longer asks for measurements
+
+**What was done:** By the owner's request, the "Your measurements" section ("თქვენი ზომები": six body measurements, "how to measure", and the "not provided yet" note) was removed from `/remodel`.
+- **`RemodelRequest.tsx`:** the `OrderMeasurements` section, `useOrderMeasurements(PROFILE_KEYS)`, the "save to my profile" step before posting, and the measurement check on the submit button are gone. A remodel request is now posted without `custom_design_data.measurements`.
+- **Tailor views:** both showed a measurements block on every remodel, and an empty one reads "No measurements provided — ask the customer in the chat", which would have sent tailors after something the customer was never asked for. `OpenDesignDialog` (the offer window) and `OrdersList` (the assigned order window) now show the block on a remodel only when it has measurements, so remodels placed earlier still show theirs. Custom orders are unchanged. The customer dashboard already showed the block only when there were measurements.
+- **Server:** unchanged. `storeRemodelOrder` still accepts optional measurements, so older clients and existing orders stay valid.
+
+**Verified:** `php artisan test` passes 169 tests, `npm run typecheck` is clean, `npx eslint` reports nothing on the three changed files, and `npm run build` passes. Headless Chrome, signed in as a throwaway customer:
+- `/remodel` in Georgian and English, at 390 and 1280px, no longer shows "თქვენი ზომები" / "Your measurements" or "how to measure", with no horizontal overflow and no console errors.
+- A request posted through the form sent only `change_request` and `remodel_images`.
+- A second remodel was posted straight to the API with measurements, as older ones were.
+- A throwaway remodel tailor's offer window, and the order window after assignment at 390 and 1280px, showed no measurements block for the new request, and showed it for the one with measurements. There were no console errors.
+
+The QA orders, their 16 notifications, both QA accounts and the uploaded photo were deleted.
+
+**Noticed, not changed:** the tailor's order window (`OrdersList`) does not close with Escape; only its close button and the backdrop close it.
+
+## 2026-10-11 — Remodel requests take up to ten photos, shrunk before they upload
+
+**What was done:** By the owner's request, a remodel request now takes up to ten photos instead of six. The six had been set with the remodel service on 2026-08-04, with no recorded reason. Three things stood in the way of simply changing the number, and all three are fixed.
+- **Photos were uploaded full size.** Each one, up to 10 MB, went up one at a time. The new `lib/shrinkPhoto.ts` redraws each photo in the browser as a JPEG at most 2000px on its long side (quality 0.85, the camera's rotation applied, transparency filled white) before it is sent. A photo the browser cannot decode, or one that would not come out smaller, is sent as it was, and the server still checks it. This also keeps uploads well under the possible 2 MB PHP default described below.
+- **Uploads shared the 10-a-minute write limit with placing the order.** Ten photos would have used it up, and the order itself would have been refused with 429. `POST /uploads` now has its own bucket, `api-uploads` (30 a minute per user).
+- **WebP photos were refused** (the CLAUDE.md known issue "Remodel webp photos fail", now removed from that list): the form offered them, but `UploadController::design` did not accept them. It now accepts `webp` as well as jpg, jpeg, png, pdf and svg.
+- **The form:** `MAX_IMAGES` is 10, mirroring the new `remodel_images` rule `max:10` in `storeRemodelOrder`. A photo that fails to upload is now skipped with the translated `remodel.errorUploadFailed`, and the rest of the batch still arrives. Before, the first failure stopped the batch and printed the server's English message.
+
+**Verified:** `php artisan test` passes 169 tests, including the new `RemodelPhotosTest`: ten photos accepted, an eleventh refused with 422, a webp upload accepted, and ten uploads followed by the order inside a minute. Run against the old routes, that last test fails with 429, as it should. `npm run typecheck` is clean, `npx eslint` reports nothing on the changed files, and `npm run build` passes. In headless Chrome, signed in as a throwaway customer at 390px in Georgian:
+- Eleven 4000×3000 photos of about 6.6 MB each, including a webp, were chosen at once. Ten were kept, with "შეგიძლია დაამატო მაქსიმუმ 10 ფოტო.", and the add tile disappeared.
+- Every photo arrived at 2000×1500 or 1500×2000, stored at about 700 KB. The test images were noise-filled, close to the worst case for compression.
+- One upload forced to answer 500 was skipped with "ატვირთვა ვერ მოხერხდა. სცადე თავიდან.", while the next photo still arrived.
+- The request posted with all ten photos. The customer's order window (390 and 1280px) and a throwaway remodel tailor's offer window (390 and 1280px) showed all ten loaded, with no horizontal overflow and no console errors. Screenshots were checked by eye.
+
+The QA order, its eight `open_order` notifications to local remodel tailors, both QA accounts and the 22 uploaded test files were deleted.
+
+**Not covered / Noticed:**
+- Nothing in the repository sets PHP's upload limits for production (`php artisan serve` under Nix php83). PHP's own defaults are 2 MB per file and 8 MB per request, against the app's 10 MB rule. Shrunk photos stay well under that, but a photo the browser cannot shrink could still be refused, so check with `php -i | grep -E 'upload_max|post_max'` in a Railway shell.
+- Rotation was not checked with a real rotated phone photo; `createImageBitmap(…, { imageOrientation: 'from-image' })` is what applies it.
+- The remodel submit error and the designer's upload panel still print the server's English message (the CLAUDE.md known issue about raw server messages reaching the page).
+
+## 2026-10-11 — The remodel page no longer repeats its subtitle under the breadcrumb
+
+**What was done:** By the owner's request, the line "ატვირთე ფოტოები, მიიღე შეთავაზებები და შეუკვეთე კურიერის წაღება-დაბრუნება." ("Upload photos, receive tailor offers, and arrange courier pickup and return.") was removed from `/remodel`, between the breadcrumb and the form.
+- `remodel.subtitle` stays in both locales, because it is still the page's meta description, which search engines and link previews show.
+- The wrapper's `text-center`, and the breadcrumb's `text-left` and `mb-5`, only served that line and went with it.
+
+**Verified:** `npm run typecheck` is clean, `npx eslint` reports nothing on `RemodelRequest.tsx`, and `npm run build` passes. Headless Chrome on `/remodel`, in Georgian and English, at 390 and 1280px: the line no longer renders, the meta description still carries it, the breadcrumb is left-aligned with 32px (phone) and 80px (desktop) before the form as before, and there is no horizontal overflow and no console errors. Screenshots were checked by eye.
+
+## 2026-10-11 — The customer dashboard's logo is the same size as the site header's
+
+**What was done:** The KERE wordmark in the customer dashboard's top bar was tiny. The page put the `kere-nav-logo` class straight on the link, which still contained the word "Kere" set at 16px, and gave it no height. The class paints the wordmark as a mask sized by its aspect ratio, so the mark was only as wide as that small text.
+- The link now uses the same markup as the storefront header and the tailor dashboard: a `.store-logo` link (labelled "Kere", 44px tall) around an empty `kere-nav-logo` span. The wordmark is 77×17px on desktop and 54×12px below 768px, like the main header.
+- `.kere-refined-page > nav .kere-nav-logo { font-size: 16px; }` was removed. Only this dashboard's `<nav>` matched it (the storefront header is a `<header>`), and it no longer had anything to size.
+
+**Verified:** `npm run typecheck` is clean, `npx eslint` reports nothing on `CustomerDashboard.tsx`, and `npm run build` passes. Headless Chrome on `/customer-dashboard`, signed in as a throwaway customer, in Georgian and English, at 390 and 1280px: the mark measures 54×12px and 77×17px in `rgb(42, 20, 24)`, the link is 44px tall and goes home when clicked, and there is no horizontal overflow and no console errors. Screenshots were checked by eye. The QA customer was deleted.
+
+**Noticed, not changed:** a typed "Kere" still stands in for the wordmark on `TailorSelectStep`, `OrderReview`, `MyDesignsPage`, the admin dashboard, the tailor's pending and rejected screens and both registration pages.
+
+## 2026-10-11 — The design studio offers only headings it can design, and names the rest as coming soon
+
+**What was done:** Step 01 of `/design` listed every heading in `garmentTaxonomy.ts`, eight for women and four for men, although women can design only tops and men only shirts and trousers today. The other headings opened onto "No styles available yet". By the owner's request, a heading is now offered only when the section's catalogue has a garment filed under it. The rest are named in one line under the grid, headed "Coming soon" / "მალე დაემატება" (the existing, unused `design.comingSoon`), so customers can see the range will grow.
+- **Read from the catalogue, not hardcoded:** `/api/customizer/products` already lists only photographed garments (`isShowable`), so a heading comes back on its own once one of its garments is shot. Today women see Tops plus "Upload my design", with Bottoms, Skirts, Dresses, Evening & Formal Dresses, Jumpsuits & Playsuits, Suits & Sets and Blazers & Jackets coming soon. Men see Shirt / Top, Trousers and "Upload my design", with Jacket and Coat coming soon.
+- **`useCategoryProducts` became `useSectionGarments`:** it already fetched the whole section and narrowed by heading, refetching on every heading change. It now fetches once per section and returns everything. `DesignerApp` works out the offered and upcoming headings and the open heading's garments from that one request, and passes the headings to `DesignerWizard`, which no longer reads the taxonomy itself. The previous section's garments are cleared when a new one starts loading.
+- **Loading:** the grid shows a spinner until the catalogue arrives, rather than an empty grid or a "coming soon" list of everything.
+- **If the catalogue fails:** every heading stays offered, as before, with the existing load error, and no "coming soon" line, since nothing can be ruled out.
+- **An open heading is always shown,** so an old `?cat=dresses` link still shows its heading and the "no styles yet" message, with "Change category".
+- **Upload your own design is unchanged:** its heading picker (`UploadTypeStep`) still lists every heading, because a customer's own design does not depend on photography.
+
+**Verified:** `npm run typecheck` is clean, `npx eslint` reports nothing on the three changed files, and `npm run build` passes. There are no locale changes. Headless Chrome on `/design`, in Georgian and English, at 390 and 1280px, 44 checks. Women show Tops and upload, with the seven others under "coming soon". Opening Tops lists the T-shirt and the tank and hides the line, and "Change category" brings both back. Switching to Men in the page shows Shirt / Top, Trousers and upload, with Jacket · Coat. There is no horizontal overflow and no console errors. Also checked: an old `?cat=dresses` link, a catalogue answering 500 (all nine tiles and the error, with no "coming soon" line), a catalogue delayed by 1.5 s (spinner, no "coming soon" line), and `?upload=1` (all women's headings). Screenshots were checked by eye.
+
+**Noticed, not changed:** with only two tiles, the shared grid (`auto-fit`) stretches them to half the row each on desktop.
+
+## 2026-10-11 — "Customer" and "მომხმარებელი" replace "client" and "კლიენტი"
+
+**What was done:** The person who orders is now called a customer everywhere the site says it, by the owner's request. Georgian already used მომხმარებელი 30 times alongside 32 uses of კლიენტი, so the two words no longer compete.
+- **`ka.json`:** all 32 forms of კლიენტი, each in its own case: მომხმარებელი, მომხმარებლის, მომხმარებლისა, მომხმარებელს, მომხმარებელმა, მომხმარებლად, მომხმარებელთან, and the plurals მომხმარებლები, მომხმარებლების, მომხმარებლებს and მომხმარებლებსა. The stem drops its ე before a vowel ending (მომხმარებლის), so a plain find-and-replace would have been wrong. The changes cover the role choice and sign-in links, the partner page, the terms, privacy and refund policies, the tailor registration question about remodel work, and the tailor dashboard. In the refund policy's `n4`, "სადაც კლიენტი … არ გასცა პასუხი" was in the wrong case for its verb, and now reads "სადაც მომხმარებელმა … არ გასცა პასუხი".
+- **`en.json`:** the partner page headline reads "Get More Customers for Your Tailoring Business". It was the only English text that said "client".
+- Uses of "client" in code comments, tests and documentation were left alone. They mean the browser or HTTP client, not a person.
+
+**Verified:** no კლიენტ remains in `resources`, `app`, `routes` or `database`. Locale parity holds at 1,628 keys each, and `npm run build` passes. Headless Chrome, in Georgian and English, at 390 and 1280px, on `/signin`, `/login/customer`, `/register/customer`, `/register/tailor`, `/partners`, `/terms`, `/privacy` and `/refund-policy`: none of them shows the old word, there is no horizontal overflow, and there are no console errors. The 390px role-choice screenshot was checked by eye.
+
+**Not covered:** the tailor dashboard's order table header (`customerCol`) and the admin's role label (`roleCustomer`) sit behind sign-in and were not opened. The header is in a horizontally scrollable table.
+
+## 2026-10-11 — Sign-in and registration errors are red again
+
+**What was done:** When a sign-in or registration field has an error, its box and its message are red again, as they were made on 2026-07-12. The storefront redesign had turned both into the page's ink and beige: the error branch of each input's class was the same `#d8d0c7` as the normal one. The tailor wizard had used wine (`#6F1D24`), which reads as brand rather than error.
+- **Why it needed CSS, not just classes:** `.kere-auth-page input` and `.kere-login-page input` set border colours outside a cascade layer, so they beat any Tailwind border utility. That is why `PhoneInput`'s and `OtpStep`'s own `border-destructive` never showed on the customer page. The global focus rule (`input:not(…):focus`, `#b8afa4 !important`) also repainted every focused field, red ones included.
+- **One mechanism:** a flagged field now carries `aria-invalid`, and `app.css` turns `[aria-invalid="true"]` inputs and selects red inside `.kere-auth-page` and `.tailor-registration-page`. A second rule keeps them red, with a red underline, while focused; its `:not()` pair lifts it above the global focus rule. Screen readers now hear that the field is invalid as well.
+- **Login:** a wrong email, phone or password (401) now marks both fields as well as showing the banner, and typing in either clears all three. Other failures (network, 403) still show only the banner.
+- **Customer registration:** name, email, phone, password and confirmation fields, the code boxes after a wrong code, and the date of birth, guardian fields and relationship select in `CustomerProfileSteps`. Field messages and banners use `text-destructive`, and banners use `border-destructive/30 bg-destructive/10`.
+- **Tailor registration:** `inputClass` is now one string, and each field has `aria-invalid`. Field messages, the consent message, the general banner and the "do you take remodel work" choice use the red token instead of wine. The progress bar, checked radios and checkboxes stay wine.
+- Banners and the terms-step message have `role="alert"`.
+
+**Verified:** `npm run typecheck` is clean, `npx eslint` on the six changed files reports nothing, and `npm run build` passes. There are no locale or backend changes. Headless Chrome against `MAIL_MAILER=log SMSOFFICE_KEY= php artisan serve --no-reload`, in Georgian and English, at 390 and 1280px: 114 checks passed. A field measures `rgb(239, 68, 68)` after an empty submit, after a wrong password, and with an email or phone already registered, on both registration pages. It stays red while focused, returns to its normal colour on typing, and its message is red. The checks cover all three tailor pages, a wrong one-time code (all six boxes), the age and guardian steps (three inputs and the select), and the unticked-terms message. There is no horizontal overflow against `document.documentElement.clientWidth`, and no console errors apart from the deliberate 401 and 422 responses. Screenshots were checked by eye. The one-time code was read from the mail log, so no real email was sent. The two QA customer accounts and one pending verification were deleted.
+
+**Noticed, not changed:** `OtpStep` shows the server's English `message` for a wrong or expired code ("Incorrect code. Please try again." on the Georgian page), and the code step still uses the old slate card. Measurement fields (`MeasurementFields`) have the same focus problem: the global focus rule turns their red border beige while focused. `AdminLogin` marks no field, only its banner, which was already red.
+
 ## 2026-10-09 — Mariami's taller home page slider on phones
 
 **What was done:** Mariami's commit `e5e4c31` ("Update Kere UI", 2026-09-30) was taken from `origin/mariam-october` onto `main` as `74ce814`, under her name. It was the only change on any branch that `main` did not already have.

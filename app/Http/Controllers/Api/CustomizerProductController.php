@@ -31,6 +31,11 @@ class CustomizerProductController extends Controller
             // had to walk into to discover. They return on their own the moment
             // a photograph exists, because this is read from the photography.
             ->filter->isShowable()
+            // The attributes were loaded only to judge that. The studio's list
+            // needs each garment's name and price, and it is what /design waits
+            // for before showing any heading, so the tree (80 KB for the
+            // T-shirt alone) stays behind; `show` sends it for the one garment.
+            ->each->unsetRelation('layerCategories')
             ->values();
 
         return response()->json([
