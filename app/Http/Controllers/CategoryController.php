@@ -13,10 +13,11 @@ class CategoryController extends Controller
 
         return response()->json(
             $categories->map(function ($cat) {
-                // One random product with an actual image for the category card
+                // One random product with an actual image for the category card.
+                // Compared as text: PostgreSQL has no `<>` for a json column.
                 $product = Product::where('category_id', $cat->id)
-                    ->where('images', '!=', '[]')
                     ->whereNotNull('images')
+                    ->whereRaw("CAST(images AS TEXT) <> '[]'")
                     ->inRandomOrder()
                     ->first();
 

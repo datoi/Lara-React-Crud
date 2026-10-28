@@ -6,6 +6,19 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-10-29 — The header's Marketplace menu gets its categories back on the live site
+
+**What was done:** While the deploy of `54d304a` was being checked, `GET /api/categories` answered 500 on kereforyou.com. The header's Marketplace menu reads that endpoint on every page, so its category links were missing. The cause predates the deploy: `CategoryController` picked a sample picture with `where('images', '!=', '[]')`, and PostgreSQL has no `<>` operator for a `json` column. SQLite allows the comparison, so it failed only in production, most likely since the move to PostgreSQL in April. The comparison is now `CAST(images AS TEXT) <> '[]'`, which both databases accept.
+
+**Verified:**
+- The new `CategoryListTest` failed on the local PostgreSQL with production's error (`operator does not exist: json <> unknown`), then passed after the fix.
+- The whole suite passes: 235 tests on PostgreSQL and 235 on SQLite.
+- The scratch database was dropped and PostgreSQL stopped.
+
+**Not covered / Noticed:**
+- The test suite had run only on SQLite, which is how this survived. Running it on PostgreSQL before a deploy is now described in CLAUDE.md §14.
+- The live catalogue has no marketplace products (`/api/products` answers with none), so the menu will list categories, each with a count of 0.
+
 ## 2026-10-29 — Refunds cannot go out twice, late payments can be returned, and fourteen other review fixes
 
 **What was done:** A code review of the uncommitted 2026-10-13 and 2026-10-28 work found fifteen problems. Each was checked against the code and fixed.
