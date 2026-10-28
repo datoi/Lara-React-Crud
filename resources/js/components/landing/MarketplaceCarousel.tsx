@@ -9,7 +9,6 @@ interface Product {
   price: number;
   images: string[];
   sizes: string[] | null;
-  tailor_name: string | null;
   category: {
     name: string;
     slug: string;
@@ -247,15 +246,7 @@ export function MarketplaceCarousel() {
                       {product.name}
                     </h3>
 
-                    <div className="mt-1 flex items-center justify-between gap-4">
-                      <p className="text-sm text-[#777777]">₾{product.price}</p>
-
-                      {product.tailor_name && (
-                        <p className="truncate text-right text-[11px] uppercase tracking-[0.08em] text-[#9a9a9a]">
-                          {product.tailor_name}
-                        </p>
-                      )}
-                    </div>
+                    <p className="mt-1 text-sm text-[#777777]">₾{product.price}</p>
                   </Link>
                 </article>
               );

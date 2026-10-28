@@ -1429,13 +1429,6 @@
   box-shadow: none !important;
 }
 
-/* Reserve room for the fixed cookie banner while it is up, so page content —
-   notably the customizer's Continue button — is never stranded underneath it.
-   AnalyticsConsent publishes its measured height; the var is absent otherwise. */
-body {
-  padding-bottom: var(--kere-consent-h, 0px);
-}
-
 /* ── Art-directed warm palette ──────────────────────────────────────────────
    The guided designer, the marketplace and the product page run the palette
    from the design pass: warmer and lighter than the studio's --kere-ivory,
@@ -1858,24 +1851,6 @@ select:not([aria-invalid="true"]):focus,
 .product-detail-controls input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .product-detail-page footer { background: var(--store-paper) !important; }
 
-.cookie-banner { padding: 18px 24px; background: var(--store-paper); color: var(--store-ink); border-top: 1px solid #dfd8d0; }
-.cookie-banner h2 { margin: 0 32px 20px 0; font-size: 15px; font-weight: 600; }
-.cookie-close { position: absolute; right: 12px; top: 10px; padding: 8px; color: #887870; }
-.cookie-banner-row { display: flex; align-items: center; justify-content: space-between; gap: 28px; }
-.cookie-banner p { font-size: 12px; line-height: 1.7; }
-.cookie-actions { display: flex; flex-shrink: 0; gap: 8px; }
-.cookie-actions button, .cookie-preferences button { min-width: 120px; height: 38px; padding: 8px 18px; border-radius: 0; font-size: 12px; font-weight: 400; }
-.cookie-actions button:last-child { background: transparent; border: 1px solid var(--color-brand); color: var(--color-brand); }
-.cookie-preferences { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 28px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #dfd8d0; font-size: 12px; }
-.cookie-preferences input { accent-color: var(--color-brand); }
-@media (max-width: 900px) {
-  .cookie-banner-row { flex-direction: column; align-items: stretch; gap: 14px; }
-  .cookie-banner { padding: 14px 16px; }
-  .cookie-banner h2 { margin-bottom: 10px; font-size: 14px; }
-  .cookie-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .cookie-actions button { min-width: 0; height: auto; min-height: 38px; padding: 8px 4px; font-size: 10px; white-space: normal; }
-}
-
 .tailor-profile-modal input, .tailor-profile-modal textarea { min-width: 0; max-width: 100%; }
 .tailor-profile-modal form button { height: auto; min-height: 40px; white-space: normal; font-size: 12px; }
 @media (max-width: 639px) { .tailor-profile-modal label { font-size: 12px; } .tailor-profile-modal input, .tailor-profile-modal textarea { font-size: 13px; } }
@@ -2171,22 +2146,6 @@ footer.kere-footer { background: var(--store-paper) !important; color: #2a1418; 
  .tailor-dashboard-page .studio-header-actions :is(button,a) { min-height: 44px; font-size: 13px; padding: 8px; }
  .tailor-dashboard-page .studio-header-actions a { min-width: 36px; justify-content: center; }
  .tailor-dashboard-page .studio-content h1 { font-size: 27px; }
-}
-
-.cookie-copy-mobile { display: none; }
-@media (max-width: 639px) {
- .cookie-copy-desktop { display: none; }
- .cookie-copy-mobile { display: inline; }
- .cookie-banner { padding: 10px 12px max(10px, env(safe-area-inset-bottom)); max-height: 80dvh; overflow-y: auto; }
- .cookie-banner h2 { margin: 0 36px 4px 0; font-size: 13px; line-height: 1.4; }
- .cookie-banner p { font-size: 12px; line-height: 1.45; margin: 0; }
- .cookie-close { width: 44px; height: 44px; top: 0; right: 0; display: grid; place-items: center; padding: 0; }
- .cookie-banner-row { gap: 8px; }
- .cookie-actions { display: flex; flex-wrap: wrap; gap: 6px; }
- .cookie-actions button { min-height: 44px; height: auto; min-width: 0; max-width: 100%; padding: 8px 10px; font-size: 11px; line-height: 1.35; }
- .cookie-preferences { margin-top: 8px; padding-top: 8px; gap: 8px; }
- .cookie-preferences label { min-height: 44px; font-size: 12px; }
- .cookie-preferences button { min-height: 44px; height: auto; font-size: 12px; padding: 8px 12px; }
 }
 
 .kere-footer-payments { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding-bottom: 24px; }

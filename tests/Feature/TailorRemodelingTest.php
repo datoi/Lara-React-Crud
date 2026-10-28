@@ -181,13 +181,15 @@ test('a tailor who does not take remodel work cannot offer on one', function () 
         ->assertStatus(409);
 
     $this->withToken($remodelerToken)
-        ->postJson("/api/tailor/orders/{$remodel->id}/request", ['offered_price' => 80])
+        ->postJson("/api/tailor/orders/{$remodel->id}/request", ['offered_price' => 80, 'ready_in_days' => 5])
         ->assertSuccessful();
 });
 
 test('a studio order keeps every choice it was placed with, colour included', function () {
     // The regression this guards: color_name had no rule, so validate() dropped
     // it and the tailor could never be shown the design in the colour chosen.
+    // Custom orders are paused (KereOfferTest); this is for when they reopen.
+    config()->set('app.custom_orders_open', true);
     $token = Str::random(60);
     User::factory()->create([
         'role' => 'customer',

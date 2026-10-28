@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'motion/react';
 import { Navigation } from '../components/landing/Navigation';
 import { Footer } from '../components/landing/Footer';
@@ -20,6 +21,9 @@ export default function RefundPolicy() {
 
     return (
         <div className="kere-info-page kere-refined-page min-h-screen bg-white">
+            <Helmet>
+                <title>{t('refund.pageTitle')}</title>
+            </Helmet>
             <Navigation />
 
             <section className="kere-page-intro pt-24 pb-8 md:pt-28 md:pb-12 border-b border-[#e5dfd8]">
@@ -111,7 +115,7 @@ export default function RefundPolicy() {
                     >
                         <h2 className="text-xl font-black text-slate-900 mb-3">{t('refund.ctaTitle')}</h2>
                         <p className="text-slate-500 text-sm mb-6">{t('refund.ctaDesc')}</p>
-                        <Link to="/" className="inline-block bg-brand text-white font-semibold px-8 py-3 rounded-full hover:bg-brand-dark transition-colors">
+                        <Link to="/contact" className="inline-block bg-brand text-white font-semibold px-8 py-3 rounded-full hover:bg-brand-dark transition-colors">
                             {t('refund.contactSupport')}
                         </Link>
                     </motion.div>

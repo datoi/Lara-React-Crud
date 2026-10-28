@@ -6,6 +6,356 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-10-29 — Refunds cannot go out twice, late payments can be returned, and fourteen other review fixes
+
+**What was done:** A code review of the uncommitted 2026-10-13 and 2026-10-28 work found fifteen problems. Each was checked against the code and fixed.
+- **Money.**
+  - `FlittService::reverse` and `PaymentController::announcePaidOrder` caught `Throwable` without importing it. Inside their namespaces that name means a class that does not exist, so both blocks caught nothing. A Flitt timeout during a refund became a 500, with the refund row stuck at `pending`. A failed tailor notification after a payment broke the callback, and the tailor's alert was lost for good. Both now catch `\Throwable`.
+  - **A refund whose answer is lost is no longer sent again.** Every attempt used to get a fresh `reverse_id`, and an unanswered one counted as nothing refunded. So a second click could return the same money twice. Now a request Flitt did not answer stays `pending`. Before anything new is sent on that order, it is asked about again with its own `reverse_id`, which Flitt cannot carry out twice. If that shows it went through, the money is counted and the admin is told, with nothing new sent (`refund_confirmed_earlier`, 409). With still no clear answer, the admin is told the outcome is unknown (`refund_unresolved`, 502). Only an explicit decline settles a repeated request as failed. The customer now hears about money that did go back even when a run stops part way.
+  - **A payment that lands after the order moved on is kept on record.** That covers a cancelled order, an expired one, or a second tab paying an order that was already paid. Such a payment was only written to the log, so the refund button could not return it. It is still never credited, but `recordLatePayment` now stores it as an `OrderPayment`, and the admins get `refund_due`.
+- **Orders.**
+  - **An answer names the offer it answers.** Accept and decline send the offer's `sent_at`, and the server refuses with 409 `offer_changed` if Kere has replaced the offer since. Before, a customer could accept ₾100 and be sent straight to pay the first half of a ₾150 offer they never saw. The dashboard then shows the new offer and says it changed.
+  - **An unpaid marketplace order is not the tailor's anywhere.** It was hidden from the tailor's list only. The tailor could still move it to processing and finished through the API, and chat about it. `Order::isReleasedToTailor()` and its scope are now the one rule, used by the list, every tailor step (`tailorOrder()`, which `updateStatus` now uses too), the chat and the unread counts.
+  - **Orders a tailor took on before card payment existed are settled offline.** Marketplace orders from before 2026-09-25 still read `unpaid`, so the rule above would have hidden them from their tailors. A finished one would also have lost its courier step. Migration `2026_10_29_000001_settle_pre_payment_marketplace_orders_offline` marks them `not_required`, as `2026_09_15_000001` did for custom and remodel orders. It touches only orders already past `pending` (processing, finished, shipped or delivered). An order still `pending` may be waiting for its customer to pay online (the owner's call), so it stays `unpaid` and keeps its Pay button.
+  - **Cancelling puts the stock back, once.** A customer could otherwise drain any product's stock by ordering and cancelling. `Order::cancel($by)` now holds what the customer's and the tailor's cancel each did separately, in two drifting copies:
+    - It cancels only from the status it read, so two cancels cannot both go through.
+    - It turns `unpaid` into `expired` in SQL, so a payment credited in between stays `paid`.
+    - It returns a marketplace order's stock.
+    - It tells the admins about money or a garment that has to go back.
+
+    A tailor cancelling now returns stock too.
+  - `returnable_until` is sent only while the 14 days last, so the Return button no longer outlives them.
+- **Chat.**
+  - Each participant sees only their own messages and Kere's (`Message::visibleTo`), and unread counts count Kere's only. After a reassignment, the new tailor used to read the previous tailor's messages labelled "Kere".
+  - The unread badge reads a new key, `kere_chat_seen_<orderId>`. Counts kept under the old key came from the shared chat, and were usually higher than Kere's new count, which hid new messages. Both dashboards now use `countOthersMessages` instead of their own copy of it.
+- **Tailors.**
+  - The estimate form asks for a price and days on custom orders too, not only on remodels. The server has required both since 2026-10-28, so no custom-order estimate could be sent. For a new piece the days are counted "from the order". Send stays off until the price is 1–99,999 and the days 1–120, where the price field used to allow 0.
+  - `PhotoPicker` updates the parent's list through its state setter. A photo removed while others were uploading used to come back with the next upload.
+- **Tidying.** `User::canTakeWork()` and `Order::clearOffer()` replace duplicated checks in `acceptOffer`, `sendOffer` and `declineOffer`. `TailorController::updateProfile` no longer works out a second, different rating from product reviews that nothing read.
+
+**Verified:**
+- `php artisan test`: 234 passed (1,098 assertions). New tests:
+  - a product's stock comes back on cancel, and only once;
+  - a tailor's cancel tells the admins;
+  - the dashboard stops offering a return after 14 days;
+  - an unanswered refund is asked about again with the same `reverse_id`: a timeout, then an error answer, then a confirmation, then a normal refund under a new key;
+  - a tailor cannot change status on, chat about or count an unpaid marketplace order;
+  - the migration settles only pre-go-live orders the tailor had taken on, which stay with the tailor and the courier, while a pre-go-live `pending` order keeps its Pay button;
+  - a replaced offer is refused for accept and decline;
+  - a custom order's estimate is accepted with a price and days;
+  - a reassigned tailor sees only Kere's messages;
+  - a late payment is recorded once and the admins are told;
+  - a failing tailor notification does not stop the payment being announced.
+
+  Changed tests: the existing remodel test for a double first payment now expects it recorded, and the offer tests send `sent_at`. Putting the unimported `Throwable` back makes both of its new tests fail.
+- `npm run typecheck` is clean. `npx eslint .` reports 0 errors and the 4 known warnings. `npm run build` is clean. Locales are in parity at 1,662 keys.
+- **On PostgreSQL, the production database**, using the local install in `E:\tools\pgsql` and a throwaway `kere_test` database, both since removed:
+  - The whole suite passes: 234 tests. Two tests in `TailorCustomerBoundaryTest` failed at first. They created a product with `'id' => 1`, but `id` is not fillable, and PostgreSQL does not restart its counter between tests the way SQLite's numbering does. The test now forces the id. The app was not at fault.
+  - The five new migrations were rolled back and run again over production-shaped data, as the next deploy will run them. The results:
+    - A paid October order kept `paid`, and its payment was backfilled.
+    - Pre-go-live orders that were processing or delivered became `not_required`.
+    - A pre-go-live `pending` order and an October `processing` one stayed `unpaid`.
+    - The old messages split into the customer's and the tailor's conversations.
+    - The existing review became pending.
+  - No new order status is added, so the PostgreSQL check constraint that SQLite ignores is not touched.
+- Locally, the first version of the migration had marked four `pending` August orders `not_required`. They were put back to `unpaid` and the migration re-run under the final rule, which leaves them as they are.
+- In headless Edge against a QA server on port 8001 (mail to the log, SMS and Flitt unconfigured), with a QA customer, tailor and admin, in Georgian and English at 390px and 1280px:
+  - The tailor's dialog on a custom order showed the price and days fields with the new label. Send stayed off when empty and at a ₾0 price, then came on. A real send answered 201.
+  - The customer's order showed the unread badge although the old key held a higher count.
+  - With the offer replaced while open, Accept answered 409. The panel showed the new ₾150 offer with the "changed" message, Accept was usable again, and the order stayed open.
+  - No horizontal overflow and no console errors from our code. The only console line is the browser's own network entry for the expected 409.
+- All QA accounts, orders, estimates, messages and the notifications they caused, including those to the real local admins, were deleted. The QA server was stopped.
+
+**Not covered / Noticed:**
+- The retry relies on Flitt treating a repeated `reverse_id` as the same request, as `FlittService` and CLAUDE.md already state. This was not re-tested against the sandbox in this round. If Flitt answers a repeat with an error, the request stays pending and refunds on that order stop with "Flitt did not answer". There is no admin control to settle it by hand: after checking the Flitt portal, that takes a database edit.
+- When an earlier refund turns out to cover everything still refundable, the refund form disappears with the refreshed totals, so its explanation is not seen. The refunded amount on the order is.
+- After a reassignment, the new tailor still sees Kere's earlier messages to the previous tailor, without the messages they answered.
+- Unpaid marketplace orders that are still `pending`, or that were placed after go-live and that a tailor had already started under the old visibility, are hidden from the tailor until they are paid. The cut-off is 2026-09-25 00:00 UTC, so an order placed that morning before the switch-on stays `unpaid`.
+- A payment whose amount does not match is still only logged, like late payments used to be.
+- The `PhotoPicker` race was not reproduced in the browser, because it depends on upload timing. The fix is in the update form, which the type of `onChange` now enforces.
+- In the screenshots taken after the refused accept, the "Accept and pay" button looks pale, with dark text, though it is enabled. The pointer was still over it after the click, so this may be its hover style. It was not investigated.
+- The local database holds older QA accounts that this round did not create (`qa.customer@example.test`, `qa.tailora@example.test` and five more). They were left alone.
+
+## 2026-10-28 — Reviews come back: Kere publishes them anonymously, and tailors have internal scores
+
+**What was done:** The owner asked to bring back tailors' review scores, which the Flitt revision had removed along with every public mention of a tailor. Terms §20 and the privacy policy now say that customer feedback concerns Kere's service and that no public rating or review of a tailor is created. The owner's design fits those texts: reviews are visible but read as reviews of Kere, with no customer and no tailor named, and each tailor's score is internal.
+- **Nothing is public until Kere publishes it.**
+  - `reviews.status` is new (pending, published or hidden), with migration `2026_10_28_000003_add_status_to_reviews`. Every existing review became pending.
+  - A new review notifies the admins (`review_received`, in Georgian).
+  - The new "Reviews" tab in the admin panel (`ReviewsTab`, with a badge for waiting reviews) lists each review with its order, what was made, the customer and the tailor. Publish and hide can each be undone.
+  - New endpoints: `GET /api/admin/reviews` and `PATCH /api/admin/reviews/{id}`.
+  - Free text can name a tailor or carry a phone number, so this step is what keeps the published reviews within §20.
+- **Public reviews name no one.**
+  - The home page section shows published reviews only. Where the customer's name used to be, it says what was made: the product's name, "Remodel" or "Custom design".
+  - The product page lists published reviews by rating and text. Its average and count still cover every review, since they are anonymous.
+  - `/api/reviews/landing` and `/api/products/{id}/reviews` no longer send a name.
+- **What the old version leaked, and what it made up.**
+  - The home page published the latest 5-star reviews automatically with the customer's **full name**.
+  - With none, it showed three invented testimonials, with names, cities and stock photos, as if they were real customers. They and their locale keys (`guarantee.review1–3`) are gone, and the section is not rendered until something is published.
+  - `GET /api/products/{id}/reviews` gave anyone the full name of every reviewer, and the product page printed it beside each review. CLAUDE.md said review text appeared nowhere, which was no longer true.
+- **The review form tells the customer.** One line says Kere may show the review on kereforyou.com without their name, and asks them to leave out names and contact details. Its five hard-coded English messages are now translated in both languages. It no longer shows the server's English message: the API sends `review_not_delivered` and `review_exists`, which `serverMessage.ts` maps.
+- **Each tailor's score is internal.** `Review::scoresForTailors()` is the one query behind every score: average and count over all of a tailor's reviewed orders, hidden ones included. Admins see it beside every estimate in Kere's offer form and in the users list. The tailor sees it on their dashboard; until now that counted only reviews of their marketplace products, so remodels never counted. Customers never see it.
+
+**Verified:**
+- `php artisan test`: 225 passed (1,026 assertions). The new `ReviewModerationTest` has 6 tests, covering:
+  - a new review is pending and the admins are told;
+  - a published review names neither the customer nor the tailor (checked against their names, the email and the word "tailor");
+  - product reviews are published-only and anonymous, while the average counts all;
+  - only admins moderate;
+  - the refusal codes;
+  - a tailor's score counts a marketplace and a hidden remodel review, and reaches the tailor, the users list and the estimate.
+- `npm run typecheck` is clean. ESLint on the changed files reports nothing. `npm run build` is clean. Locales are in parity at 1,658 keys.
+- In a real browser (headless Edge), with a QA customer, tailor and admin:
+  - The customer (Georgian, 390px) wrote a review. The form showed the notice and the Georgian placeholder, and an empty rating gave the Georgian message. After sending, the order read "reviewed".
+  - The home page had no review section while nothing was published.
+  - The admin (English, 1440px and 390px) saw the "Reviews 2" badge, published the dress review and hid the remodel review that named the tailor and a phone number. The badge went 2 → 1 → none.
+  - The estimate read "Eka QA · 4.5★ (2)", as did the users list. The tailor's dashboard read 4.5★ from 2 reviews.
+  - The home page (Georgian 1440px, English 390px) showed the published review over "QA Linen Dress", with no customer name, tailor name, phone number or hidden review. The product page listed "5/5" and the text.
+  - No console errors and no horizontal overflow anywhere.
+- All QA accounts, orders, the product, the reviews and the notifications they caused, including those sent to the real local admins, were deleted.
+
+**Not covered / Noticed:**
+- On deploy, reviews already on production become pending and leave the home page until an admin publishes them.
+- Terms §20 says feedback is used for quality control but does not mention publishing it. The form now tells customers, and the owner may want the lawyer to add a sentence at the next revision.
+- `GET /api/platform/stats` still publishes an overall average rating across all reviews; it is anonymous and about Kere.
+- Four of the admin panel's English tab labels are lower case in `en.json` ("orders", "unassigned", "pending tailors", "users"), beside "Returns & problems" and "Reviews". They were left as they are.
+
+## 2026-10-28 — The sleeveless tank leaves the women's design studio
+
+**What was done:** `sleeveless-tank` is photographed on a man but was seeded `unisex`. The studio shows each section its own garments plus unisex ones, so the women's Tops heading listed it beside the women's T-shirt. It is menswear now, at the owner's request.
+- New migration `2026_10_28_000002_make_sleeveless_tank_menswear` sets its gender to `men`. A migration is needed because `start.sh` does not run `SleevelessTankSeeder`, so a seeder change alone would never reach production. Migrations run on every deploy. The step is a no-op where the row does not exist, and it reverses cleanly.
+- `SleevelessTankSeeder` now says `men` too, so a fresh database agrees.
+- New test in `StudioCatalogueTest`: the tank is in the men's list and not in the women's. It fails with the seeder's old value.
+
+**Verified:**
+- `php artisan migrate` ran the new migration locally, and the tank now reads `men`.
+- In a real browser (headless Edge; Georgian at 1440px, English at 390px), women's Tops offers only the T-shirt. Men's Shirt / Top offers the elbow-sleeve shirt, the short-sleeve tee and the sleeveless tank.
+- No console errors and no horizontal overflow.
+- `php artisan test`: 219 passed (979 assertions).
+
+**Not covered / Noticed:** women's Tops now holds a single garment, the T-shirt. Saved designs and orders for the tank are unaffected, because they reference it by ID.
+
+## 2026-10-28 — The colour step offers only colours the design was photographed in
+
+**What was done:** The design studio's colour step listed all 24 palette colours whichever sleeve was chosen. A colour that sleeve was never photographed in (Emerald on anything but Cap, Navy on Bell, Red on Rolled Cuff) turned the stage into a "preview coming soon" placeholder. The owner's rule now is that a colour we have no photograph of is not offered. This reverses the colour half of the 2026-09-01 decision that photography is a preview and not a gate. Cuts are unaffected.
+- `garmentColors()` returns the colours every option painting the canvas was photographed in, rather than the union of every option's colours. On the T-shirt that means the chosen sleeve's own set: Cap and Raglan 23, Rolled Cuff 22, Dropped Shoulder 20, Bell 14. Each colour keeps its palette position.
+- **Changing sleeve keeps the colour coherent.** `useCustomizer` now derives `colorName`: the customer's pick while the shown sleeve has it, otherwise the colour that sleeve's photograph resolves to, which is the latest pick it carries or its cover. For example, a customer picks Navy and then Emerald on Cap, then moves to Rolled Cuff: the garment is Navy. Going back to Cap restores Emerald. The colour stage, the review and the saved design's `color_name` and `Colour` spec line all use the derived colour, so they agree. Sessions and saved designs that hold a colour the sleeve lacks fall back the same way, with no special case.
+- `colors` and `shownOptions` moved from `DesignerWizard` into the hook that decides the colour. The wizard's own copies, and the comments that described the old rule, were removed or rewritten, including the seeder's palette docblock.
+
+**Verified** in a real browser (headless Edge; Georgian and English; 1440px and 390px; 74 checks, 0 failures):
+- Each sleeve offers exactly its own colours: Cap has Emerald and not Green; Rolled Cuff has neither Red nor Emerald; Bell has neither Navy nor Emerald.
+- Navy then Emerald on Cap, then Rolled Cuff, paints `rolled-navy-front` with Navy selected and no placeholder. The review says Rolled Cuff in Navy, and returning to Cap shows `cap-emerald-front` again.
+- Red on Cap, then Rolled Cuff, opens on Rolled Cuff's Burgundy cover, and a reload holding that stored Red pick still shows a photograph.
+- `mens-elbow-shirt` and `sleeveless-tank` still offer all 9 of their colours.
+- No horizontal overflow, broken images, console errors or failed requests.
+
+`npm run typecheck` is clean. ESLint on the three changed files reports nothing. `npm run build` is clean. No locale keys changed.
+
+**Not covered / Noticed:** the placeholder still exists for garments or cuts with no photograph. No garment in the live catalogue reaches it today, because availability is already filtered to the photography. Designs saved before `color_name` was stored can still show a colour mismatch, as they did before this change.
+
+## 2026-10-28 — Raglan and Rolled Cuff join the T-shirt
+
+**What was done:** A 230-file drop (`drive-download-20261028T185146Z-1-001.zip`) brought two more sleeve constructions of the cropped crew T-shirt. Raglan comes in 23 colourways and Rolled Cuff in 22, each with four stored angles. The tee now offers ten sleeves, and the derived set grows from 688 photographs to 868.
+- **The drop arrived without its outer folders.** It held only `05. Raglan/` and `06. Rolled/`, each split into colour folders. Every file name states the rest (`T-shirt_Fit_Above_Crew_Cap_…`), and the numbering continues the Fitted drop's Cap Sleeve shapes (01 Classic Straight, 02 Puff, 03 Balloon, 04 Bell). So the extracted copy was nested under `01. Fitted/01. Above the waist/01. Crew Neck/02. Cap Sleeve/` and imported by the unchanged walk. The importer learned the two shape names (`raglan`, `rolled`, both on a plain closed back). The extracted drop is in the gitignored `garment-masters/`.
+- **Rolled Cuff has no Red.** Its Red front and left are byte-identical to Raglan's Red front and left (md5). The front shows raglan seams, while the back and right show a rolled cuff. A colourway cannot exist without its own front, so the folder is set aside in `garment-masters/withheld/rolled-red-2026-10-28/` and not imported. Since the colour-step change recorded in the entry above, Rolled Cuff is simply not offered in Red.
+- **One frame had no name.** Rolled Charcoal's right view came as `6dc7163f-….png`, with no view prefix, so the importer would have refused it. It shows a rolled cuff with the chest facing right, like every other right view and unlike its own left. It was the only empty slot in that folder, so it was renamed `05.…_Right.png` in the extracted copy. The zip is unchanged.
+- Every frame was checked by eye on contact sheets: 23 per view, per sleeve. The Rolled file names all say `Reglan`. That is copy-paste naming; the importer reads the sleeve from the folder.
+- **Seeder:** `raglan` (Raglan) and `rolled` (Rolled Cuff) are new Sleeves options, placed after Cap. They cost +₾0 on the T-shirt, like every photographed sleeve, so the total stays ₾45. The line-wide modifier of ₾5 each applies only to the 16 Tops that are not yet photographed. `TSHIRT_SLEEVES` gains both colour sets. Hexes come from `prepare-tshirt-photos.mjs --hexes`, and `TSHIRT_PALETTE` is unchanged. The docblocks that counted six or eight sleeves now say ten, and they record which sleeve lacks which colour.
+- **Same body as Cap.** Measured across the hem, below the sleeves, at the common garment height: Raglan's median is 280px and Rolled Cuff's 274px, against Cap's 286 and Puff's 254. Switching from Cap changes the sleeve, not the body.
+
+**Verified:** All 688 existing photographs re-derived byte-identically (git shows no modified file), with no clipping. All 868 seeded photo references resolve on disk, at four angles per colourway. `/api/customizer/products/womens-t-shirt` serves Sleeveless, Cap, Raglan (23), Rolled Cuff (22), Wide, Dropped Shoulder, Oversized, Puff, Bell and Balloon, and nothing unphotographed. In a real browser (headless Edge, Georgian and English, 1440px and 390px; 62 checks): Raglan and Rolled Cuff each paint only their own Burgundy front, and all four angles on desktop. Rolled Cuff in Red shows the placeholder, and Navy brings the photograph back. The renamed Charcoal right view shows. The review lists Rolled Cuff and Charcoal at ₾45.00. No horizontal overflow, broken images, console errors or failed requests. `php artisan test`: 218 passed. `npm run build` is clean. No frontend code changed.
+
+**Not covered / Noticed:**
+- Production needs the 180 new files in `public/assets/garments/WomanTshirtStudio/` committed. `start.sh` re-seeds `WomensTopsSeeder` on deploy, so nothing else is needed.
+- **The swatch sampler is biased on ruched fronts.** It takes the modal colour of a window across the chest. Several Raglan fronts are gathered there, and when the vote splits across a bucket boundary the shadowed half can win. Raglan Red samples `#9f0b14`, while the same window's median is `#ad0e18` and the flat back gives `#b6141e`. Raglan Camel is about 15 levels dark too. Balloon already ships swatches off by the same 12–16 levels, in both directions, so the new hexes were kept as sampled for consistency. Switching the sampler to a median would fix all of them, but it re-samples every swatch, so that is left for the owner to decide.
+- Ask the studio for a correct Rolled Red front and left. Its back, three-quarter and right are already in the withheld folder.
+- The previous drop's extracted copy (Bell and Balloon) still sits in the gitignored `public/assets/garments/01. Fitted-…/` rather than `garment-masters/`. It was left where it is.
+
+## 2026-10-28 — Kere is the only seller: Flitt's revised terms and privacy policy, and the site to match
+
+**What was done:** Flitt asked for revised legal texts before taking the merchant live, and the owner supplied them: Terms and Conditions v1.1 ("for customers") and Privacy Policy v1.2 of 26 October 2026, kept in `.claude/Flit terms and conditions and privacy policy/`. Both say one new thing. The customer's contract is with Kere alone. Tailors are Kere's contractors: they are not published and the customer cannot choose one. A tailor's price is an internal estimate, and Kere makes the customer its own offer. The customer talks to Kere, never to the tailor. Tailors get no public ratings. The site sets no analytics cookies. The owner decided four questions: remove Clarity; keep the profile-measurements row; an admin sends Kere's offer; pause custom orders.
+- **The legal texts** are published word for word in Georgian, with the English translation updated to match. Terms §2, §3, §7, §8, §14, §15, §18, §19 and §20 changed; the version is 1.1 and the subtitle "for customers" is new (`LegalDocument.subtitle`). The privacy policy changed in the overview, §4.1, §4.2, §6, §8.1, §8.4, §9, §10 and §13, dated 26 October. One deviation, at the owner's request: §13 keeps the row for measurements saved on the profile, and the row before it still says "given for an order" so the two do not contradict.
+- **Microsoft Clarity is gone**: the script, the consent banner, the footer's "Cookie settings" link and their CSS. `App.tsx` expires the `_clck`/`_clsk` cookies and the stored answer left with returning visitors.
+- **No tailor is published.**
+  - The public `GET /api/tailors` and `/tailors/{id}`, the `/our-tailors` and `/tailor/:id` pages, the partner page's tailor list, and the footer link are removed.
+  - Products no longer carry their tailor (`PUBLIC_TAILOR_COLUMNS` is gone), and search no longer matches tailor names.
+  - The marketplace cards, home carousel, wishlist, cart, product page and customer dashboard name no tailor.
+  - The cart labels its groups "Delivery 1/2" rather than "Made by …".
+- **Kere's offer** (terms §8).
+  - A tailor's offer is now an estimate: price and days are both required, and it goes to the admins (`estimate_received`), not the customer.
+  - On the admin's "unassigned" tab, an admin picks an estimate, sets the customer's price and days with an optional note, and sends Kere's offer (`POST /api/admin/orders/{id}/offer`). The customer gets an in-app notice and the new Georgian `OfferSent` email, which replaces `TailorRequestReceived` and names no tailor.
+  - The customer sees one offer (price, delivery, total, time, and for a remodel the first payment) and accepts or declines it (`accept-offer`, `decline-offer`). Accepting assigns the tailor behind the estimate at Kere's price and goes straight to the first payment.
+  - Declining clears the offer and tells the admins. If that tailor became unavailable meanwhile, accepting is refused and Kere is asked for a new offer.
+  - New columns: `orders.offer_request_id`, `offer_price`, `offer_days`, `offer_note`, `offer_sent_at`. A pending remodel can no longer be assigned straight to a tailor (`use_offer`), because that would skip the price and the payment.
+  - `choose-tailor` and `GET /customer/orders/{id}/requests` are gone.
+- **Two conversations per order** (terms §18, privacy §9): customer ↔ Kere and tailor ↔ Kere (`messages.channel`).
+  - Each side sees only its own, with Kere's messages labelled "Kere". Admins read and answer both from the orders tab (`AdminOrderChat`, `POST /api/admin/orders/{id}/messages`).
+  - A message from either side notifies the admins, not the other party.
+  - Existing messages went to the conversation of whoever wrote them.
+- **Custom orders are paused** (terms §5 lists remodels and ready-made only).
+  - The switch is `config('app.custom_orders_open')` (`CUSTOM_ORDERS_OPEN`, default off). The server refuses with `custom_orders_paused`, and the page shell states the switch in `<meta name="kere-custom-orders">`, which `lib/customOrders.ts` reads.
+  - The studio's last step says ordering opens soon (designing and saving still work), and the upload page says so with a link to remodels.
+  - The tailor-select step is deleted. When custom orders reopen they go to the open pool and Kere's offer, never to a tailor the customer picked.
+- **Marketplace orders** take their tailor from the product; the request's `tailor_id` is ignored.
+- **Site copy** that spoke of choosing tailors, tailors' offers, "independent tailors" or contacting the tailor now speaks of Kere, in both languages: about 50 strings. This covers the about, help, FAQ, how-it-works, remodel and partner pages, the cart, and the payment page. The tailor's open-order form now says "send estimate to Kere". The default SEO title, description and structured data no longer say "marketplace connecting customers with tailors". The notice of a later date comes from Kere, not the tailor.
+- **Fixed on the way:**
+  - The product page crashed for any product whose `required_measurements` is `null`, as products from before 2026-09-28 and seeded ones are (`fieldsFor` defaulted only `undefined`).
+  - Assigning a tailor in the admin panel left the button stuck on "Saving…" on any error; it now shows the translated error.
+  - A failed chat message vanished silently; it now says so.
+  - The order review, cart and product page no longer show the server's raw English error message.
+
+**Verified:**
+- `php artisan test` passes 218 tests (975 assertions). `KereOfferTest` is new (14 tests): estimates reach admins, not the customer; the offer names no tailor; accept, decline and a lapsed tailor; only admins send offers; no direct remodel assignment; the custom-order pause and the meta tag; no customer-chosen tailor on custom or marketplace orders; the two conversations. `CatalogueTailorPrivacyTest`, `GeorgianEmailsTest`, `RemodelPaymentFlowTest`, `MeasurementsTest`, `TailorRemodelingTest` and `TailorCustomerBoundaryTest` were updated to the new rules.
+- `npm run typecheck` is clean. `npx eslint resources/js` reports 0 errors and 4 warnings (the 3 in the deleted tailor-select page are gone). `npm run build` passes. Locales are in parity at 1,634 keys, and every key the code uses exists.
+- The published Georgian texts were diffed paragraph by paragraph against Flitt's Word documents: identical, except the one intended row.
+- In headless Chrome against a separate server on port 8010 (mail to the log, SMS off, Flitt's public sandbox merchant), in Georgian and English at 390px and 1280px, 161 checks passed:
+  - the terms and privacy pages show the new versions; there is no banner, and old Clarity cookies are expired;
+  - the footer, marketplace, product, partner pages and every customer view show no tailor; `/our-tailors` is not found;
+  - the studio and upload pages say ordering opens soon;
+  - customer, admin and tailor ran the whole remodel flow: estimate, Kere's offer at a different price, decline, new offer, accept to Flitt's sandbox checkout (not paid), and both conversations, each seen only by its side;
+  - the offer email went to the log;
+  - no console errors from Kere's code and no horizontal overflow on any page. Screenshots were checked by eye.
+- All QA accounts, the order, the product and the notifications they caused were removed.
+
+**Not covered / Noticed:**
+- Production runs the migration on deploy. Open requests keep their pending estimates, but their customers will see "Kere is reviewing" until an admin sends an offer. Chat history on live orders is split by who wrote each message.
+- A bag with products from two tailors still becomes two orders, two delivery fees and two payments. It is now labelled by delivery, but the customer is not told why.
+- Tailors still see the order total, which is Kere's price, on their dashboard and in the new-order email. If Kere prices above an estimate, the tailor sees the difference.
+- The ready-made section is still called "Marketplace" (navigation, page title), which a reviewer may read as many sellers. Renaming it is a brand and design choice for the owner and Mariami. The home page's "Upload your design" button now leads to the "opens soon" page.
+- The English translations of the changed paragraphs are mine, not the owner's lawyer's.
+- The CSS for the removed partner list and its secondary button sits inside shared selector lists and was left in place.
+- From the Flitt read-through, not fixed: two `catch (Throwable $e)` without the leading backslash (`FlittService::reverse`, `PaymentController::announcePaidOrder`) catch nothing, and a refund that times out can be refunded again under a new `reverse_id`.
+- Old QA accounts from 2026-07-19 (`qa.*@example.test`) are still in the local database.
+
+## 2026-10-14 — "Available orders" for tailors, and შეთავაზება instead of შემოთავაზება
+
+**What was done:**
+- The tailor dashboard's open-requests section is now titled "ხელმისაწვდომი შეკვეთები", with the owner's text: "აქ ნახავ შეკვეთებს, რომელთა აღებაც შეგიძლია. აირჩიე სასურველი შეკვეთა, გაეცანი დეტალებს და გაუგზავნე მომხმარებელს შენი შეთავაზება." The English counterpart now matches ("Available orders").
+- "შემოთავაზება" became "შეთავაზება" everywhere, in every form: 16 strings in `ka.json` and the SMS a tailor gets when their offer is accepted. The forms were შეთავაზებები, შეთავაზების, შეთავაზებებისთვის and შეთავაზებული. No file in the project contains "შემოთავაზ" any more.
+- Recorded in CLAUDE.md §2.2 as a wording rule.
+
+**Verified:**
+- Locales in parity at 1,678 keys; `php artisan test` passes 204.
+- Headless Chrome on `/tailor-dashboard` as a throwaway tailor with two open requests, one already offered on, in Georgian at 390px and English at 1280px: the new heading and text show, "შეთავაზება" appears on the cards, the old word appears nowhere, and there is no overflow and no console errors. The QA accounts and orders were deleted.
+
+**Not changed:** the verb forms შემოგთავაზებენ / შემოგთავაზათ ("they will offer you" / "offered you") are a different word. They appear in the remodel page's hints, the offer email's subject and heading, and the SMS about a remodel offer.
+
+## 2026-10-14 — Every email to customers and tailors is in Georgian
+
+**What was done:** The owner asked that every email to customers and tailors be in Georgian.
+- **Eight emails rewritten in Georgian**, subjects included: the registration code, order confirmation, new order (to the tailor), order status, a tailor's offer (to the customer), tailor approved, tailor rejected, and the guardian's consent request. They share one new layout, `emails/layout.blade.php` (`lang="ka"`), instead of eight copies of the same styles. Status words match the dashboards (პროცესშია, გაიგზავნა, დამთავრდა, ჩამოვიდა, გაუქმებულია). The footer says replies are not read (mail comes from `noreply@`) and gives kereforyou@gmail.com. Before, three emails told people to "reply to this email".
+- **The wording now follows the order type.**
+  - The order confirmation said "a tailor has been assigned" even to remodel and open custom requests that were waiting for offers. It now says what actually happens for each kind of order; for a remodel, that includes the two-half payment.
+  - The tailor's new-order email for a remodel tells them the courier will bring the garment and to photograph it on arrival.
+  - A finished paid remodel's status email asks for the second half by amount.
+  - The offer email now shows the offered price and the days.
+- **Two bugs fixed:**
+  - The rejection email never showed the reason the admin typed: the template read `$tailor->reason`, which does not exist.
+  - The code email said "expires in 10 minutes" while codes last 30. Both now read `Verification::LIFETIME_MINUTES`.
+- The order confirmation no longer prints each item's colour as a hex code (`#1E293B`), which means nothing to a reader.
+- `SupportRequest` goes to Kere's own support inbox, not to customers, and is left in English.
+
+**Verified:**
+- `php artisan test` passes 204 tests. `GeorgianEmailsTest` (5) renders all 16 variants: each has a Georgian subject, `lang="ka"`, Georgian body text and none of the old English phrases. It also checks the rejection reason, the 30 minutes, the offer's price and days, and the second-half amount.
+- I rendered ten of the emails with sample data (inside a rolled-back transaction) and checked them in Chrome at 390px and 800px. No horizontal overflow; screenshots checked by eye. That check caught a serif fallback for Latin text in the first font order, now fixed.
+- No email was sent.
+
+**Not covered:** How the emails look in real mail clients (Gmail, Outlook) was not tested; the layout keeps the `<style>` block and flexbox the old templates used, which older Outlook ignores. In-app notifications are not emails and are unchanged; older ones are stored in English.
+
+## 2026-10-13 — The site now does what the new terms and privacy policy say
+
+**What was done:** The owner asked for five things after the new legal texts were published. They decided the open questions as follows: refunds go through a button that calls Flitt, Kere books the courier by hand, the delivery fee is paid with the first half, and measurements saved on a profile stay until the customer deletes them. They also decided that the terms keep saying tailors act on Kere's behalf, and that custom orders stay outside the terms for now.
+- **The privacy policy describes Microsoft Clarity** (version 1.2, updated 13 October). This is an owner-requested change to their text, made in both languages. §10 now says Clarity runs only with consent and what it records. §6 and §8.4 name it, and §13 gives its retention (Microsoft's own: recordings 30 days, heatmaps and click data 13 months) and the profile-measurements rule. Visitors can withdraw consent through a new **Cookie settings** link in the footer, which reopens the banner. Declining tells Clarity consent is denied, expires its `_clck`/`_clsk` cookies and reloads the page without the script.
+- **The 90 days are kept.** A new command, `php artisan privacy:purge` (with `--dry-run`), runs nightly from the scheduler, and `start.sh` now starts `schedule:work`. It deletes the measurements copied onto an order 90 days after the order was delivered or cancelled, unless a return or problem report on it is still open, and records `measurements_purged_at`; the dashboards then say the measurements were deleted. It also deletes pending sign-ups older than 90 days, and customer accounts that verified their code but never accepted the terms and have no orders.
+- **Remodels are paid online and follow the terms' steps** (§7, §8, §12, §13, §17).
+  - A tailor's offer now names a final price and how many days the work takes.
+  - Accepting an offer makes the first half plus delivery due and sends the customer straight to Flitt.
+  - That payment tells the tailor and asks admins to book the courier.
+  - The admin records the pickup. The tailor confirms arrival with photos and any damage already there, which starts the agreed completion date. The tailor can only start work after that, and finishes with photos of the result.
+  - The customer pays the second half; the admin records handing it to the courier, then delivery.
+  - A tailor can ask for a later date; it applies only if the customer accepts.
+  - Remodels accepted before today stay settled offline.
+- **Payments are recorded one by one** (`order_payments`). Each Flitt reference names its stage (`_d-`, `_b-`), so a late payment is credited to the half it was for. A second payment under a different reference on an order already past that stage is never credited; it is logged for a manual refund. Before, it was silently ignored. Existing paid marketplace orders were backfilled.
+- **After the order** (§9, §14–§16):
+  - Customers can cancel until work begins.
+  - A ready-made item (no measurements or note) can be returned within 14 days of delivery.
+  - Any delivered order can get a problem report with photos.
+  - Admins answer returns and reports in a new "Returns & problems" tab.
+  - Admins refund from the order with a **Refund** button. `RefundService` reverses the amount across the order's payments, latest first, each by its own reference and idempotency key, under a lock; every attempt is kept in `order_refunds`. When a paid order is cancelled, admins are told money is owed.
+- **A tailor sees a marketplace order only once it is paid** (§6). This fixes the known issue where unpaid orders sat in the tailor's list.
+- **Site copy that contradicted the terms now follows them.** This covers:
+  - the refund policy page, rewritten from §9–§16, now with a page title and a support link that goes to `/contact` instead of the home page;
+  - the FAQ and help-centre answers about returns and fit (no "free adjustment", 24 hours, 14 days);
+  - the features card;
+  - the tailor FAQ on getting paid (only through Kere);
+  - the product page note ("pay by card when you place the order");
+  - the product page and cart messages that said an unpaid order was "sent to the tailor";
+  - the remodel page hints (photos from all sides; how payment works).
+
+  The cart's success screen now lists each order with a Pay button. The chat shows the §18 note about not sharing contact or card details.
+- **The address** shown on `/contact`, in the footer and in the merchant box is now the one in the terms. The footer and the merchant box used two copies of it; there is now one key, `company.address`.
+- New shared pieces: `PhotoPicker` (and `lib/photoUpload.ts`, now also used by the remodel form), `formatTimestampDay`, and `KereNotification::aboutOrder`/`toAdmins`. The admin tabs wrap on phones.
+
+**Verified:**
+- `php artisan test` passes 199 tests, 26 of them new: `RemodelPaymentFlowTest` 9, `OrderAftercareTest` 12, `PrivacyPurgeTest` 5. Two existing tests changed to the new rules (an unpaid order is hidden from the tailor; remodel offers need days).
+- `npm run typecheck` is clean, `npx eslint` reports nothing on every changed and new file, the locales are in parity at 1,678 keys, and `npm run build` passes.
+- `php artisan privacy:purge --dry-run` runs, and `schedule:list` shows it at 03:30.
+
+In headless Chrome, with throwaway QA accounts, against **Flitt's sandbox** (merchant 1549901), in Georgian at 390px and English at 1280px:
+- a tailor offered ₾100 over 5 days through the dashboard (Send stays disabled until both are filled)
+- the customer saw the work days and the payment note, accepted, and was sent to Flitt's page, which read "Kere order RMD-… (first 50%)", 65 GEL
+- paying with the sandbox test card returned to `/checkout/complete`: "First payment received". The tailor and admins were notified, and one ₾65 payment was recorded.
+- the admin's "Courier collected" step; the tailor's Start stayed disabled until arrival was confirmed with a photo and a note, which set the date to five days later
+- Finish refused to submit without a photo
+- the second ₾50 was paid the same way: "Final payment received"
+- "Handed to courier" and "Delivered"
+- a **real sandbox refund** of ₾10 from the admin row, after which the admin and customer both showed it
+- a problem report with a photo, answered by the admin, with the answer reaching the customer
+- a tailor's proposed date, accepted by the customer
+- cancelling an unpaid order
+- a 14-day return on a ready-made item
+- the cart's Pay button
+- Cookie settings: Clarity's script (blocked from leaving the PC) loaded with consent; after Decline the consent was "denied" and the reloaded page had no script
+- the privacy, refund, contact and terms pages show the new text and address
+
+No horizontal overflow and no console errors from Kere's own code on any of these. Screenshots were checked by eye. All QA accounts, orders, notifications, photos and the stock the cart order took were removed afterwards.
+
+**Not covered / Noticed:**
+- On the owner's PC, the dev server's connection to Flitt sometimes stalls on IPv6 ("SSL connection timeout"), while IPv4 answers in about 2 s. Paying worked on later tries; this is the local network, not the code, and production was not affected.
+- The courier is booked by hand; nothing books it automatically.
+- The terms say Kere uploads the arrival and finished photos; on the site the tailor does, on Kere's behalf.
+- The Georgian wording added to the privacy policy (§6, §8.4, §10, §13) is mine, not the owner's lawyer's, and should be reviewed. The same applies to the English translations.
+- Custom orders still settle offline; the terms do not cover them yet (owner's decision).
+- Site copy still calls tailors "independent" (About, partners, features card); the owner plans to change it.
+- The emails at the new steps are the existing English templates (`NewOrderAlert` at the first payment, `OrderStatusUpdated` "shipped"). The new in-app notifications are in Georgian.
+- Dates in the dashboards' order headers still use `toLocaleDateString` and appear in English (known issue).
+- The admin order table shows "—" in the items column for remodels.
+
+## 2026-10-13 — New Terms and Conditions and Privacy Policy
+
+**What was done:** The owner supplied new legal texts, in Georgian, as two HTML files: the Terms and Conditions (version 1.0, effective 20 September 2026) and the Privacy Policy (version 1.1, effective 20 September 2026, updated 12 October 2026). They replace the old texts on `/terms` and `/privacy`.
+- **The Georgian is the supplied text, unchanged.** It was lifted from the HTML by a script rather than retyped, and a second script checked that every word of each source document appears, in order, in the data. The English is a translation written for this change. Both documents say the Georgian prevails, and the English pages say so under the title.
+- **Both documents are data**: `data/termsOfService.ts` (new) and `data/privacyPolicy.ts` (rewritten), typed by `types/legal.ts`. One shared page, `components/LegalDocumentPage.tsx`, draws them with the title, version and dates, a contents list and the sections. It handles paragraphs, subheadings, bulleted and numbered lists, and tables. The contents list is pinned beside the text on wide screens and folds into a "Contents" disclosure on phones. Every section has an anchor, so a link such as `/terms#section-15` opens on that section, below the fixed header. E-mail and web addresses in the text become links.
+- `/terms` keeps the merchant details box (name, ID code, address, phone, e-mail), now after the appendix, because the card scheme needs the seller reachable and the new terms do not give the phone number.
+- Both pages now set a `<Helmet>` title and description.
+- The old texts are gone: the `terms` (41 keys) and `privacy` (40 keys) locale namespaces are removed. The old terms page asked for nine keys that did not exist and showed them raw. The `privacy` keys were already unused. One key was added, `legal.contents`. In English, "Terms of Service" became "Terms and Conditions" in the footer and on the sign-in page, matching the document. The Georgian labels already matched.
+
+**Verified:** `npm run typecheck` is clean, `npx eslint` reports nothing on the six changed source files, the locales are in parity at 1,553 keys, and `npm run build` passes. Headless Chrome on `/terms` and `/privacy`, in Georgian and English, at 390 and 1280px (8 runs):
+- the right document in the right language, 30 sections on the terms and 21 on the privacy policy, and the page title set
+- no horizontal overflow, no console errors and no raw translation keys
+- a contents link lands its section 80px from the top, below the 50px header. On wide screens the contents list stays pinned while scrolling.
+- a fresh load of a `#section-…` link opens on that section
+- the privacy policy's three-column table scrolls inside its own box on a phone
+
+Screenshots were checked by eye. No backend code changed, so `php artisan test` was not run.
+
+**Noticed, not changed.** These are places where the new texts describe something the site does not do. They are recorded in CLAUDE.md §15.
+- Privacy §10 says Kere uses no analytics cookies "at this stage". The site runs Microsoft Clarity after consent, and the consent banner links to this policy.
+- Privacy §13 promises retention periods that nothing enforces. Measurements and body photos are to be kept 90 days after an order and unfinished registrations at most 90 days, but there is no scheduler and nothing deletes them.
+- The terms describe paid remodels (50% up front and 50% on completion), a courier chosen by Kere, intake and finished photos uploaded by Kere, and a 14-day return right on ready-made clothing. Remodels are settled offline, there is no courier, and none of the photo or return steps exist. The terms mention only remodels and ready-made clothing, not the design studio's custom orders, and describe tailors as working on Kere's behalf rather than as independent sellers.
+- `/refund-policy` contradicts the new terms in places. For example, it says every garment is made to order and that problems must be reported within 7 days.
+- The terms give the legal address as "სამგორის რაიონი, ნაკადულის II ჩიხი, N 92". `company.address`, used by the merchant box and `/contact`, says "ნაკადულის ქუჩა, მეორე ჩიხი 92".
+
 ## 2026-10-11 — Fixes from the code review of the day's changes
 
 **What was done:** A code review of the 2026-10-11 changes reported 15 findings. Each was checked against the code, all 15 held, and all are fixed.

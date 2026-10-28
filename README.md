@@ -1,6 +1,6 @@
 # Kere
 
-Made-to-measure clothing from local Georgian tailors: a marketplace, a design studio and a remodelling service in one site.
+Made-to-measure clothing from Kere, made by Georgian tailors it works with: ready-made pieces, a design studio and a remodelling service in one site.
 
 **Live site:** [kereforyou.com](https://kereforyou.com) · **History:** [CHANGELOG.md](CHANGELOG.md) · **Technical reference:** [CLAUDE.md](CLAUDE.md)
 
@@ -24,11 +24,11 @@ Made-to-measure clothing from local Georgian tailors: a marketplace, a design st
 
 ## About
 
-Kere connects customers in Georgia with independent tailors and ateliers. A customer can get a garment made in three ways:
+Kere sells made-to-measure clothing in Georgia. The customer's contract is with Kere alone: tailors and ateliers work for Kere under contract, and customers never see or choose them (terms v1.1, §3). A customer can get a garment in three ways:
 
-1. **Marketplace**: buy a design a tailor has listed, as it is or customized to their measurements.
-2. **Design studio**: build a garment step by step (garment, shape, details, colour, review), or upload their own sketch, then choose a tailor or let tailors send offers.
-3. **Remodel**: send photos of a garment they already own, describe the change, and pick from tailors' priced offers.
+1. **Marketplace**: buy a ready-made piece, as it is or customized to their measurements.
+2. **Design studio**: build a garment step by step (garment, shape, details, colour, review), or upload their own sketch. Ordering from the studio is paused until the terms cover custom orders; designing and saving stay open.
+3. **Remodel**: send photos of a garment they already own and describe the change. Tailors send Kere internal estimates, and Kere offers the customer one final price and timeframe. They pay half (plus delivery) when accepting it and half when the work is done; Kere's courier collects the garment and brings it back.
 
 The interface is Georgian first, with a full English translation, and all prices are in Georgian lari (₾). The site is live at [kereforyou.com](https://kereforyou.com) and under active development.
 
@@ -36,25 +36,28 @@ The interface is Georgian first, with a full English translation, and all prices
 
 **Customers**
 - Browse by section (women or men), category, colour, size, fabric and price.
-- Pay marketplace orders by card, Google Pay or Apple Pay.
+- Pay marketplace orders, and remodels in two halves, by card, Google Pay or Apple Pay.
+- Cancel an order before work begins, return a ready-made item within 14 days, and report a problem with photos.
 - Save body measurements once and reuse them on every fitted order.
-- Compare tailors' offers on design and remodel requests, then choose one.
-- Chat with the tailor on each order, get in-app notifications, and review delivered orders.
+- Accept or decline Kere's offer on a remodel request.
+- Chat with Kere on each order, get in-app notifications, and review delivered orders.
 
 **Tailors**
 - Register with phone verification and admin approval.
 - List products, and choose whether to take remodel work.
-- Send offers on open requests and move orders from accepted to finished.
+- Send Kere estimates on open requests (a price and how many days the work takes), chat with Kere, and move orders from accepted to finished.
+- Photograph a remodel's garment when it arrives and when it is finished, and ask the customer for a later date if needed.
 
 **Admins**
 - Approve or reject tailors and suspend accounts.
-- Assign tailors to unassigned orders and mark orders delivered.
+- Turn a tailor's estimate into Kere's offer to the customer, answer both the customer and the tailor in each order's chat, and record each courier hand-over up to delivery.
+- Refund card payments through Flitt, and answer returns and problem reports.
 - Manage the design studio catalogue: garments, attributes, options, colours and photos.
 
 **Platform**
 - Customers aged 16–17 need a parent or guardian to confirm by email before ordering.
 - Tailors receive SMS alerts as well as email, because many register with a phone only.
-- Analytics load only after the visitor consents.
+- No analytics or tracking cookies: the site sets only the cookies it needs to work.
 
 ## Built with
 
@@ -69,7 +72,6 @@ The interface is Georgian first, with a full English translation, and all prices
 | Email and SMS | [Resend](https://resend.com) for email, [SMSOffice.ge](https://smsoffice.ge) for SMS |
 | File storage | Cloudflare R2 (S3-compatible) |
 | Hosting | [Railway](https://railway.com) behind Cloudflare |
-| Analytics | Microsoft Clarity, behind a consent banner |
 
 ## Getting started
 
@@ -119,7 +121,7 @@ php artisan serve
 npm run dev
 ```
 
-The support form sends its email through the queue. To deliver those emails locally, also run `php artisan queue:work`.
+The support form sends its email through the queue. To deliver those emails locally, also run `php artisan queue:work`. Scheduled jobs (the nightly `privacy:purge`) run under `php artisan schedule:work`.
 
 ### Accounts for local testing
 
@@ -137,7 +139,7 @@ The support form sends its email through the queue. To deliver those emails loca
 | SMS | Written to `storage/logs/laravel-YYYY-MM-DD.log` | `SMSOFFICE_KEY` |
 | Card payments | Starting a payment fails with an error | `FLITT_MERCHANT_ID` and `FLITT_SECRET_KEY` (use test credentials) |
 | File uploads | Stored in `storage/app` on your machine | the `R2_*` variables |
-| Analytics | Off | `VITE_CLARITY_PROJECT_ID`, at build time |
+| Custom orders from the design studio | Paused | `CUSTOM_ORDERS_OPEN=true`, once the terms cover them |
 
 If your `.env` does hold live credentials, start the server with `MAIL_MAILER=log SMSOFFICE_KEY= php artisan serve --no-reload` while testing, so no real email or SMS is sent.
 
@@ -153,6 +155,7 @@ If your `.env` does hold live credentials, start the server with `MAIL_MAILER=lo
 | `php artisan test` | Run the backend test suite |
 | `php artisan db:seed --class=WomensTopsSeeder` | Re-seed one catalogue (all garment seeders are safe to re-run) |
 | `php artisan catalogue:enrich-descriptions` | Preview fuller descriptions for thin product listings; add `--apply` to save them |
+| `php artisan privacy:purge` | Delete order measurements and unfinished registrations past the privacy policy's 90 days; add `--dry-run` to preview. The scheduler runs it nightly |
 
 ## Testing
 
@@ -181,7 +184,7 @@ All settings come from `.env`. See [`.env.example`](.env.example) for the full l
 | `FLITT_MERCHANT_ID`, `FLITT_SECRET_KEY`, `FLITT_API_URL` | Card payments |
 | `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_PUBLIC_URL` | Object storage for uploads. Without `R2_BUCKET`, files stay on the local disk. |
 | `SHIPPING_COST` | Flat shipping per order in ₾ (default 15) |
-| `VITE_CLARITY_PROJECT_ID` | Analytics project, read at build time |
+| `CUSTOM_ORDERS_OPEN` | Whether the design studio takes orders (default `false`: paused until the terms cover custom orders) |
 
 ## Project structure
 
@@ -216,7 +219,7 @@ On every deploy, [`start.sh`](start.sh):
 2. creates or updates the admin account;
 3. re-seeds the design studio catalogue;
 4. links public storage;
-5. starts a queue worker and the web server.
+5. starts a queue worker, the scheduler (which runs `privacy:purge` every night) and the web server.
 
 Production uses PostgreSQL, Resend for email and Cloudflare R2 for uploads. Set the variables in [Configuration](#configuration) in Railway, including `APP_KEY` and `APP_ENV=production`.
 

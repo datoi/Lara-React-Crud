@@ -2,20 +2,20 @@ import { useState, useEffect, useCallback, Fragment } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { Users, Package, ShieldAlert, LogOut, CheckCircle, Scissors, Clock, X, MessageCircle, Truck } from 'lucide-react';
+import { Users, Package, ShieldAlert, LogOut, CheckCircle, Scissors, Clock, X, MessageCircle } from 'lucide-react';
 import { getAuthUser, getAuthToken, clearAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
-import { OrderChat } from '../components/OrderChat';
 import { NotificationBell } from '../components/NotificationBell';
+import { ClaimsTab, OrderOperations, type AdminOrderMoney } from '../components/admin/OrderOperations';
+import { AdminOrderChat, KereOfferForm, type OfferableOrder } from '../components/admin/KereOffer';
+import { ReviewsTab, TailorScore, type TailorScoreValue } from '../components/admin/ReviewsTab';
+import { translateServerMessage } from '../lib/serverMessage';
 import { useTranslation } from 'react-i18next';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface AdminOrder {
-    id: number;
-    order_number: string;
-    order_type: 'marketplace' | 'custom';
-    status: string;
+interface AdminOrder extends AdminOrderMoney, OfferableOrder {
+    order_type: 'marketplace' | 'custom' | 'remodel';
     total: number;
     created_at: string;
     tailor_assignment_mode: string;
@@ -24,6 +24,7 @@ interface AdminOrder {
     items:    { id: number; product_name: string; quantity: number; price: number }[];
     message_count: number;
     delivered_at: string | null;
+    review: { rating: number; status: 'pending' | 'published' | 'hidden' } | null;
 }
 
 interface AdminUser {
@@ -35,6 +36,8 @@ interface AdminUser {
     is_suspended: boolean;
     /** A 16-17 year old whose guardian has not confirmed; they cannot order. */
     guardian_consent_pending?: boolean;
+    /** A tailor's internal review score; null for everyone else and for tailors not yet reviewed. */
+    score: TailorScoreValue | null;
     created_at: string;
 }
 
@@ -42,6 +45,7 @@ interface AssignSlot {
     tailorId: string;
     saving:   boolean;
     saved:    boolean;
+    error?:   string;
 }
 
 interface PendingTailor {
@@ -91,7 +95,7 @@ export default function AdminDashboard() {
     const user     = getAuthUser();
     const token    = getAuthToken();
 
-    const [tab,     setTab]     = useState<'orders' | 'users' | 'unassigned' | 'pending_tailors'>('orders');
+    const [tab,     setTab]     = useState<'orders' | 'users' | 'unassigned' | 'pending_tailors' | 'claims' | 'reviews'>('orders');
     const [orders,  setOrders]  = useState<AdminOrder[]>([]);
     const [users,   setUsers]   = useState<AdminUser[]>([]);
     const [loadingOrders, setLoadingOrders] = useState(true);
@@ -100,7 +104,6 @@ export default function AdminDashboard() {
     const [assignMap, setAssignMap] = useState<Record<number, AssignSlot>>({});
     const [suspendingId, setSuspendingId] = useState<number | null>(null);
     const [openChatOrderId, setOpenChatOrderId] = useState<number | null>(null);
-    const [deliveringId, setDeliveringId] = useState<number | null>(null);
 
     const [pendingTailors,   setPendingTailors]   = useState<PendingTailor[]>([]);
     const [loadingPending,   setLoadingPending]   = useState(true);
@@ -205,7 +208,7 @@ export default function AdminDashboard() {
         const slot = assignMap[orderId];
         if (!slot?.tailorId || !token) return;
 
-        setAssignMap(prev => ({ ...prev, [orderId]: { ...prev[orderId], saving: true, saved: false } }));
+        setAssignMap(prev => ({ ...prev, [orderId]: { ...prev[orderId], saving: true, saved: false, error: undefined } }));
 
         try {
             const res = await fetch(`/api/admin/orders/${orderId}/assign`, {
@@ -217,7 +220,11 @@ export default function AdminDashboard() {
                 },
                 body: JSON.stringify({ tailor_id: Number(slot.tailorId) }),
             });
-            if (!res.ok) return;
+            if (!res.ok) {
+                const failure = await res.json().catch(() => ({}));
+                setAssignMap(prev => ({ ...prev, [orderId]: { ...prev[orderId], saving: false, error: translateServerMessage(failure, t, 'adminDashboard.assignFailed') } }));
+                return;
+            }
             const data = await res.json();
             setOrders(prev => prev.map(o => o.id === orderId ? {
                 ...o,
@@ -229,27 +236,7 @@ export default function AdminDashboard() {
                 setAssignMap(prev => ({ ...prev, [orderId]: { ...prev[orderId], saved: false } }));
             }, 3000);
         } catch {
-            setAssignMap(prev => ({ ...prev, [orderId]: { ...prev[orderId], saving: false } }));
-        }
-    };
-
-    const handleDeliver = async (orderId: number) => {
-        if (!token) return;
-        setDeliveringId(orderId);
-        try {
-            const res = await fetch(`/api/admin/orders/${orderId}/deliver`, {
-                method: 'PATCH',
-                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-            });
-            if (!res.ok) return;
-            const data = await res.json();
-            setOrders(prev => prev.map(o => o.id === orderId ? {
-                ...o,
-                status:       data.status ?? o.status,
-                delivered_at: data.delivered_at ?? o.delivered_at,
-            } : o));
-        } finally {
-            setDeliveringId(null);
+            setAssignMap(prev => ({ ...prev, [orderId]: { ...prev[orderId], saving: false, error: t('adminDashboard.assignFailed') } }));
         }
     };
 
@@ -272,6 +259,8 @@ export default function AdminDashboard() {
     const handleSignOut = () => { clearAuth(); navigate('/'); };
 
     const unassignedOrders = orders.filter(o => o.status === 'pending_assignment');
+    const openClaims = orders.reduce((n, o) => n + o.open_claims_count, 0);
+    const reviewsWaiting = orders.filter(o => o.review?.status === 'pending').length;
 
     const stats = [
         { labelKey: 'adminDashboard.statTotalOrders', value: orders.length,                            icon: Package },
@@ -280,9 +269,11 @@ export default function AdminDashboard() {
         { labelKey: 'adminDashboard.statSuspended',   value: users.filter(u => u.is_suspended).length, icon: ShieldAlert },
     ];
 
-    const tabs = (['orders', 'unassigned', 'pending_tailors', 'users'] as const);
+    const tabs = (['orders', 'unassigned', 'claims', 'reviews', 'pending_tailors', 'users'] as const);
     const tabLabels: Record<string, string> = {
         orders:          t('adminDashboard.tabOrders'),
+        claims:          t('adminCare.tabClaims'),
+        reviews:         t('adminReviews.tab'),
         unassigned:      t('adminDashboard.tabUnassigned'),
         pending_tailors: t('adminDashboard.tabPendingTailors'),
         users:           t('adminDashboard.tabUsers'),
@@ -361,7 +352,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* ── Tabs ── */}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     {tabs.map(tabKey => (
                         <button
                             key={tabKey}
@@ -376,6 +367,16 @@ export default function AdminDashboard() {
                             {tabKey === 'unassigned' && unassignedOrders.length > 0 && (
                                 <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === 'unassigned' ? 'bg-white text-slate-900' : 'bg-slate-200 text-slate-700'}`}>
                                     {unassignedOrders.length}
+                                </span>
+                            )}
+                            {tabKey === 'claims' && openClaims > 0 && (
+                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === 'claims' ? 'bg-white text-slate-900' : 'bg-brand text-white'}`}>
+                                    {openClaims}
+                                </span>
+                            )}
+                            {tabKey === 'reviews' && reviewsWaiting > 0 && (
+                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === 'reviews' ? 'bg-white text-slate-900' : 'bg-brand text-white'}`}>
+                                    {reviewsWaiting}
                                 </span>
                             )}
                             {tabKey === 'pending_tailors' && pendingTailors.length > 0 && (
@@ -422,7 +423,8 @@ export default function AdminDashboard() {
                                             const slot    = assignMap[order.id] ?? { tailorId: '', saving: false, saved: false };
                                             const changed = slot.tailorId !== String(order.tailor?.id ?? '');
                                             const chatOpen = openChatOrderId === order.id;
-                                            const canViewChat = !!order.tailor && order.message_count > 0;
+                                            // A remodel goes to a tailor through Kere's offer (terms §8), never straight.
+                                            const viaOffer = order.status === 'pending_assignment' && order.order_type === 'remodel';
 
                                             return (
                                                 <Fragment key={order.id}>
@@ -450,18 +452,7 @@ export default function AdminDashboard() {
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <StatusBadge status={order.status} />
-                                                        {order.status === 'finished' && (
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => handleDeliver(order.id)}
-                                                                disabled={deliveringId === order.id}
-                                                                className="h-7 px-2.5 text-xs mt-1.5 flex items-center gap-1"
-                                                            >
-                                                                <Truck className="w-3.5 h-3.5" />
-                                                                {deliveringId === order.id ? t('adminDashboard.delivering') : t('adminDashboard.markDelivered')}
-                                                            </Button>
-                                                        )}
+                                                        <OrderOperations order={order} onChanged={() => void fetchOrders()} />
                                                         {order.status === 'delivered' && order.delivered_at && (
                                                             <p className="text-[11px] text-slate-400 mt-1">
                                                                 {t('adminDashboard.deliveredOn', { date: order.delivered_at })}
@@ -469,6 +460,9 @@ export default function AdminDashboard() {
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4">
+                                                        {viaOffer ? (
+                                                            <p className="text-xs text-slate-400">{t('adminOffer.viaOffer')}</p>
+                                                        ) : (
                                                         <div className="flex items-center gap-2 flex-wrap">
                                                             <select
                                                                 value={slot.tailorId}
@@ -502,6 +496,8 @@ export default function AdminDashboard() {
                                                                 </span>
                                                             )}
                                                         </div>
+                                                        )}
+                                                        {slot.error && <p role="alert" className="text-xs text-destructive mt-1">{slot.error}</p>}
                                                         {order.tailor && (
                                                             <p className="text-xs text-slate-400 mt-1">
                                                                 {t('adminDashboard.current', { name: order.tailor.name })}
@@ -513,24 +509,17 @@ export default function AdminDashboard() {
                                                             variant="ghost"
                                                             size="sm"
                                                             onClick={() => setOpenChatOrderId(chatOpen ? null : order.id)}
-                                                            disabled={!canViewChat}
                                                             className="h-7 px-2 text-xs text-slate-600 hover:text-slate-900"
                                                         >
                                                             <MessageCircle className="w-3.5 h-3.5" />
-                                                            {order.message_count > 0 ? t('adminDashboard.viewChat', { n: order.message_count }) : t('adminDashboard.noChat')}
+                                                            {order.message_count > 0 ? t('adminDashboard.viewChat', { n: order.message_count }) : t('adminDashboard.openChat')}
                                                         </Button>
                                                     </td>
                                                 </motion.tr>
-                                                {chatOpen && order.tailor && (
+                                                {chatOpen && (
                                                     <tr className="border-b border-slate-50 bg-slate-50/60">
                                                         <td colSpan={6} className="px-6 py-4">
-                                                            <OrderChat
-                                                                orderId={order.id}
-                                                                currentUserId={order.tailor.id}
-                                                                endpoint={`/api/admin/orders/${order.id}/messages`}
-                                                                readOnly
-                                                                showSenderLabels
-                                                            />
+                                                            <AdminOrderChat orderId={order.id} adminId={user?.id ?? 0} hasTailor={!!order.tailor} />
                                                         </td>
                                                     </tr>
                                                 )}
@@ -543,6 +532,10 @@ export default function AdminDashboard() {
                         )}
                     </motion.div>
                 )}
+
+                {tab === 'claims' && <ClaimsTab onChanged={() => void fetchOrders()} />}
+
+                {tab === 'reviews' && <ReviewsTab onChanged={() => void fetchOrders()} />}
 
                 {/* ── Unassigned orders ── */}
                 {tab === 'unassigned' && (
@@ -571,14 +564,11 @@ export default function AdminDashboard() {
                                             <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colOrderNum')}</th>
                                             <th className="text-left px-6 py-3 font-semibold hidden sm:table-cell">{t('adminDashboard.colCustomer')}</th>
                                             <th className="text-left px-6 py-3 font-semibold hidden md:table-cell">{t('adminDashboard.colDesign')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colAssignTailor')}</th>
+                                            <th className="text-left px-6 py-3 font-semibold">{t('adminOffer.colOffer')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {unassignedOrders.map((order, i) => {
-                                            const slot    = assignMap[order.id] ?? { tailorId: '', saving: false, saved: false };
-                                            const changed = slot.tailorId !== String(order.tailor?.id ?? '');
-
                                             return (
                                                 <motion.tr
                                                     key={order.id}
@@ -597,43 +587,11 @@ export default function AdminDashboard() {
                                                     </td>
                                                     <td className="px-6 py-4 hidden md:table-cell">
                                                         <p className="text-xs text-slate-600 max-w-[200px] truncate">
-                                                            {t('adminDashboard.customDesign')}
+                                                            {order.order_type === 'remodel' ? t('adminOffer.remodel') : t('adminDashboard.customDesign')}
                                                         </p>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <div className="flex items-center gap-2 flex-wrap">
-                                                            <select
-                                                                value={slot.tailorId}
-                                                                onChange={e => setAssignMap(prev => ({
-                                                                    ...prev,
-                                                                    [order.id]: { ...prev[order.id], tailorId: e.target.value, saved: false },
-                                                                }))}
-                                                                disabled={slot.saving || tailors.length === 0}
-                                                                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:opacity-50"
-                                                            >
-                                                                <option value="">{t('adminDashboard.selectTailor')}</option>
-                                                                {tailors.map(tl => (
-                                                                    <option key={tl.id} value={String(tl.id)}>{tl.name}</option>
-                                                                ))}
-                                                            </select>
-
-                                                            <Button
-                                                                variant="default"
-                                                                size="sm"
-                                                                onClick={() => handleAssign(order.id)}
-                                                                disabled={!changed || !slot.tailorId || slot.saving}
-                                                                className="h-7 px-3 text-xs"
-                                                            >
-                                                                {slot.saving ? t('adminDashboard.saving') : t('adminDashboard.assign')}
-                                                            </Button>
-
-                                                            {slot.saved && (
-                                                                <span className="flex items-center gap-1 text-xs text-slate-900 font-medium">
-                                                                    <CheckCircle className="w-3.5 h-3.5" />
-                                                                    {t('adminDashboard.saved')}
-                                                                </span>
-                                                            )}
-                                                        </div>
+                                                        <KereOfferForm order={order} onSent={() => void fetchOrders()} />
                                                     </td>
                                                 </motion.tr>
                                             );
@@ -800,6 +758,11 @@ export default function AdminDashboard() {
                                                     {u.guardian_consent_pending && (
                                                         <span className="ml-1.5 inline-flex items-center rounded-full border border-brand/20 bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand">
                                                             {t('adminDashboard.awaitingGuardian')}
+                                                        </span>
+                                                    )}
+                                                    {u.role === 'tailor' && (
+                                                        <span className="mt-1 block text-xs">
+                                                            <TailorScore score={u.score} />
                                                         </span>
                                                     )}
                                                 </td>

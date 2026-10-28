@@ -42,8 +42,6 @@ Route::get('/products/{product}', [ProductController::class, 'show']);
 Route::get('/products/{id}/meta', [ProductController::class, 'meta']);
 Route::get('/products/{productId}/reviews', [ReviewController::class, 'productReviews']);
 Route::get('/categories', [CategoryController::class, 'index']);
-Route::get('/tailors', [TailorController::class, 'index']);
-Route::get('/tailors/{id}', [TailorController::class, 'show']);
 Route::get('/reviews/landing', [ReviewController::class, 'landing']);
 Route::get('/platform/stats', [ProductController::class, 'platformStats']);
 
@@ -62,7 +60,6 @@ Route::middleware(['auth.bearer', 'throttle:60,1,api-reads'])->group(function ()
     Route::middleware('role:customer')->group(function () {
         Route::get('/customer/orders', [CustomerOrderController::class, 'index']);
         Route::get('/customer/orders/{orderId}/review-status', [ReviewController::class, 'orderReviewStatus']);
-        Route::get('/customer/orders/{orderId}/requests', [CustomerOrderController::class, 'requests']);
         Route::get('/wishlist', [WishlistController::class, 'index']);
         Route::get('/customer/measurements', [CustomerMeasurementController::class, 'show']);
     });
@@ -103,6 +100,12 @@ Route::middleware(['auth.bearer', 'role:customer', 'throttle:20,1,api-uploads', 
     Route::post('/uploads', [UploadController::class, 'design']);
 });
 
+// A tailor photographs a remodel's garment on arrival and when finished, up to
+// ten photos each, so these get the same kind of bucket as customer uploads.
+Route::middleware(['auth.bearer', 'role:tailor', 'throttle:20,1,api-tailor-uploads', 'throttle:100,1440,api-tailor-uploads-daily'])->group(function () {
+    Route::post('/upload/order-photo', [UploadController::class, 'orderPhoto']);
+});
+
 // ─── Authenticated writes (10 req/min) ────────────────────────────────────────
 Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function () {
     // Finishing registration — date of birth, guardian, terms.
@@ -114,7 +117,11 @@ Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function (
     // Customer — buying, and everything that follows from having bought
     Route::middleware('role:customer')->group(function () {
         Route::post('/orders', [OrderController::class, 'store']);
-        Route::post('/customer/orders/{orderId}/choose-tailor', [CustomerOrderController::class, 'chooseTailor']);
+        Route::post('/customer/orders/{orderId}/accept-offer', [CustomerOrderController::class, 'acceptOffer']);
+        Route::post('/customer/orders/{orderId}/decline-offer', [CustomerOrderController::class, 'declineOffer']);
+        Route::post('/customer/orders/{orderId}/cancel', [CustomerOrderController::class, 'cancel']);
+        Route::post('/customer/orders/{orderId}/due-date', [CustomerOrderController::class, 'respondToDueDate']);
+        Route::post('/customer/orders/{orderId}/claims', [CustomerOrderController::class, 'storeClaim']);
         Route::post('/reviews', [ReviewController::class, 'store']);
         Route::post('/wishlist/{product}', [WishlistController::class, 'store']);
         Route::delete('/wishlist/{product}', [WishlistController::class, 'destroy']);
@@ -124,6 +131,8 @@ Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function (
     // Orders — tailor side
     Route::patch('/tailor/orders/{id}/status', [OrderController::class, 'updateStatus']);
     Route::post('/tailor/orders/{id}/request', [OrderController::class, 'requestOrder']);
+    Route::post('/tailor/orders/{id}/received', [OrderController::class, 'markReceived']);
+    Route::post('/tailor/orders/{id}/due-date', [OrderController::class, 'proposeDueDate']);
 
     // Tailor
     Route::patch('/tailor/profile', [TailorController::class, 'updateProfile']);
@@ -165,9 +174,18 @@ Route::middleware(['auth.bearer', 'role:customer', 'throttle:30,1,api-customizer
 Route::middleware(['auth.bearer', 'auth.admin', 'throttle:30,1,api-admin'])->prefix('admin')->group(function () {
     Route::get('/orders', [AdminController::class, 'orders']);
     Route::get('/orders/{orderId}/messages', [AdminController::class, 'orderMessages']);
+    Route::post('/orders/{orderId}/messages', [AdminController::class, 'postMessage']);
+    Route::post('/orders/{id}/offer', [AdminController::class, 'sendOffer']);
     Route::get('/users', [AdminController::class, 'users']);
     Route::patch('/orders/{id}/assign', [AdminController::class, 'assignTailor']);
     Route::patch('/orders/{id}/deliver', [AdminController::class, 'deliverOrder']);
+    Route::patch('/orders/{id}/picked-up', [AdminController::class, 'markPickedUp']);
+    Route::patch('/orders/{id}/ship', [AdminController::class, 'shipOrder']);
+    Route::post('/orders/{id}/refund', [AdminController::class, 'refundOrder']);
+    Route::get('/claims', [AdminController::class, 'claims']);
+    Route::patch('/claims/{id}', [AdminController::class, 'resolveClaim']);
+    Route::get('/reviews', [AdminController::class, 'reviews']);
+    Route::patch('/reviews/{id}', [AdminController::class, 'updateReview']);
     Route::patch('/users/{id}/suspend', [AdminController::class, 'suspendUser']);
     Route::get('/tailors/pending', [AdminController::class, 'pendingTailors']);
     Route::post('/tailors/{id}/approve', [AdminController::class, 'approveTailor']);

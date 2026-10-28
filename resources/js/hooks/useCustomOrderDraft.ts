@@ -10,10 +10,6 @@ export interface CustomOrderDraft {
     customization_request: string;                 // what the customer wants modified
     tailor_notes: string;
 
-    // Step B
-    tailor_id: number | null;           // null = "Let Kere Choose"
-    assignment_mode: 'manual' | 'random';
-
     // Derived
     estimated_price: number;
 }
@@ -26,9 +22,7 @@ const DEFAULT_DRAFT: CustomOrderDraft = {
     design_file_url:       null,
     customization_request: '',
     tailor_notes:          '',
-    tailor_id:        null,
-    assignment_mode:  'random',
-    estimated_price:  0,
+    estimated_price:       0,
 };
 
 export function getDraft(): CustomOrderDraft {

@@ -11,12 +11,16 @@ import { getAuthToken, getAuthUser, clearAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
 import { NotificationBell } from '../components/NotificationBell';
 import { ReviewModal } from '../components/ReviewModal';
-import { OrderChat } from '../components/OrderChat';
+import { OrderChat, countOthersMessages } from '../components/OrderChat';
 import { OrderCardSkeleton } from '../components/skeletons/OrderCardSkeleton';
 import { translateServerMessage } from '../lib/serverMessage';
 import { MyMeasurements } from '../components/measurements/MyMeasurements';
 import { MeasurementList } from '../components/measurements/MeasurementList';
 import { formatCalendarDay } from '../lib/dates';
+import {
+    CancelOrder, ClaimsPanel, DueDateProposal, RemodelProgress, isPaidRemodel,
+    type AftercareOrder, type PaymentDue,
+} from '../components/customer/OrderAftercare';
 
 interface OrderItem {
     id: number;
@@ -60,44 +64,35 @@ interface DesignData {
     remodel_images?: string[];
 }
 
-interface CustomerOrder {
-    id: number;
-    order_type: 'marketplace' | 'custom' | 'remodel';
-    status: string;
+interface CustomerOrder extends AftercareOrder {
     /**
-     * Absent on orders placed before card payment existed. 'expired' is written
+     * 'deposit_paid' is a remodel with its first half in. 'expired' is written
      * when an unpaid order is cancelled, which closes it to payment.
      */
-    payment_status?: 'unpaid' | 'paid' | 'expired' | 'not_required';
+    payment_status?: 'unpaid' | 'deposit_paid' | 'paid' | 'expired' | 'not_required';
     total: number;
+    measurements_purged?: boolean;
     expected_price?: number | null;
     /** Calendar day (`YYYY-MM-DD`) the customer would like it ready by */
     needed_by: string | null;
-    tailor_id: number | null;
-    tailor_name: string | null;
+    /** Kere's offer on an open request, while there is one to answer */
+    offer: KereOfferTerms | null;
     custom_design_data: DesignData | null;
     items: OrderItem[];
     created_at: string;
     has_review: boolean;
-    tailor_requests_count: number;
 }
 
-interface TailorOffer {
-    id: number;
-    status: string;
-    message: string | null;
-    offered_price: number | null;
-    created_at: string;
-    tailor: {
-        id: number;
-        name: string;
-        specialty: string | null;
-        years_experience: number | null;
-        turnaround_days: string | null;
-        profile_image: string | null;
-        avg_rating: number | null;
-        reviews_count: number;
-    };
+/** Order::offerSummary(): one price and time, from Kere (terms §8). */
+interface KereOfferTerms {
+    price: number;
+    shipping: number;
+    total: number;
+    /** A remodel's first half with the delivery fee, due on accepting */
+    first_payment: number | null;
+    days: number | null;
+    note: string | null;
+    sent_at: string | null;
 }
 
 const STATUS_CONFIG: Record<string, { labelKey: string; color: string; icon: typeof Package }> = {
@@ -110,145 +105,126 @@ const STATUS_CONFIG: Record<string, { labelKey: string; color: string; icon: typ
     cancelled:  { labelKey: 'customerDashboard.statusCancelled',  color: 'bg-slate-200 text-slate-600',  icon: X },
 };
 
-/**
- * Orders that still have work ahead of them, and so may be paid for. Mirrors
- * PaymentController::PAYABLE_STATUSES — the server is the one that enforces it,
- * this only keeps the button from appearing where the server would refuse.
- */
-const PAYABLE_STATUSES = new Set(['pending', 'pending_assignment', 'processing']);
+/** The chip shown on an order while a payment is due on it. */
+const DUE_LABEL: Record<PaymentDue['stage'], string> = {
+    full: 'customerDashboard.awaitingPayment',
+    deposit: 'orderCare.chipFirstPayment',
+    balance: 'orderCare.chipFinalPayment',
+};
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ order }: { order: Pick<CustomerOrder, 'status' | 'offer'> }) {
     const { t } = useTranslation();
+    const status = order.status;
     const cfg = STATUS_CONFIG[status] ?? { labelKey: status, color: 'bg-slate-100 text-slate-600', icon: Package };
     const Icon = cfg.icon;
+    // An open request with Kere's offer on it is waiting for the customer, not for Kere.
+    const label = status === 'pending_assignment' && order.offer ? t('offer.chip') : STATUS_CONFIG[status] ? t(cfg.labelKey) : status;
     return (
         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.color}`}>
             <Icon className="w-3 h-3" />
-            {STATUS_CONFIG[status] ? t(cfg.labelKey) : status}
+            {label}
         </span>
     );
 }
 
-function TailorOffers({ orderId, onChosen }: { orderId: number; onChosen: (tailorId: number, tailorName: string) => void }) {
+/**
+ * Kere's offer on an open request (terms §8). Tailors send Kere internal
+ * estimates; the customer sees only the one offer Kere makes, and never who
+ * would do the work (terms §3). Until it arrives, the panel says Kere is
+ * preparing it.
+ */
+function KereOffer({ order, onAccepted, onChanged }: { order: CustomerOrder; onAccepted: (due: PaymentDue | null) => void; onChanged: () => void }) {
     const { t } = useTranslation();
     const token = getAuthToken();
-    const [offers,   setOffers]   = useState<TailorOffer[]>([]);
-    const [loading,  setLoading]  = useState(true);
-    const [choosing, setChoosing] = useState<number | null>(null);
-    const [error,    setError]    = useState<string | null>(null);
+    const [busy,  setBusy]  = useState<'accept' | 'decline' | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const offer = order.offer;
+    const isRemodel = order.order_type === 'remodel';
 
-    useEffect(() => {
-        if (!token) return;
-        fetch(`/api/customer/orders/${orderId}/requests`, {
-            headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-        })
-            .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
-            .then(d => setOffers(d.requests ?? []))
-            .catch(() => setError(t('customerDashboard.offersLoadFailed')))
-            .finally(() => setLoading(false));
-    }, [token, orderId, t]);
-
-    const handleChoose = async (offer: TailorOffer) => {
-        if (!token || choosing) return;
-        setChoosing(offer.id);
+    const answer = async (action: 'accept' | 'decline') => {
+        if (!token || busy || !offer) return;
+        setBusy(action);
         setError(null);
         try {
-            const res = await fetch(`/api/customer/orders/${orderId}/choose-tailor`, {
+            // Names the offer on screen, so one Kere has since replaced is refused, not accepted unseen.
+            const res = await fetch(`/api/customer/orders/${order.id}/${action}-offer`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
-                body: JSON.stringify({ request_id: offer.id }),
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sent_at: offer.sent_at }),
             });
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error((data as { message?: string }).message ?? t('customerDashboard.chooseFailed'));
-            onChosen(offer.tailor.id, offer.tailor.name);
-        } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : t('customerDashboard.chooseFailed'));
+            if (!res.ok) {
+                setError(translateServerMessage(data, t, 'offer.errorAnswer'));
+                // The offer changed under us (withdrawn, or replaced): show what is there now.
+                if (res.status === 409) onChanged();
+                return;
+            }
+            if (action === 'accept') {
+                onAccepted((data as { order?: { payment_due?: PaymentDue | null } }).order?.payment_due ?? null);
+            } else {
+                onChanged();
+            }
+        } catch {
+            setError(t('offer.errorAnswer'));
         } finally {
-            setChoosing(null);
+            setBusy(null);
         }
     };
 
     return (
         <div className="bg-slate-50 rounded-none p-4">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('customerDashboard.offersTitle')}</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">{t('offer.title')}</p>
 
-            {loading ? (
-                <div className="flex justify-center py-6">
-                    <Loader2 className="w-5 h-5 text-slate-400 animate-spin" />
-                </div>
-            ) : offers.length === 0 ? (
-                <p className="text-sm text-slate-500">{t('customerDashboard.noOffersYet')}</p>
+            {!offer ? (
+                <p className="text-sm text-slate-500">{t('offer.preparing')}</p>
             ) : (
-                <div className="space-y-3">
-                    {offers.map(offer => (
-                        <div key={offer.id} className="bg-white rounded-none border border-slate-200 p-4">
-                            <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 flex items-center justify-center shrink-0">
-                                    {offer.tailor.profile_image ? (
-                                        <img src={offer.tailor.profile_image} alt={offer.tailor.name} className="w-full h-full object-cover" loading="lazy" />
-                                    ) : (
-                                        <User className="w-5 h-5 text-slate-500" />
-                                    )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <Link
-                                            to={`/tailor/${offer.tailor.id}`}
-                                            className="font-semibold text-slate-900 text-sm truncate hover:underline"
-                                        >
-                                            {offer.tailor.name}
-                                        </Link>
-                                        {offer.tailor.avg_rating !== null && (
-                                            <span className="flex items-center gap-1 text-xs text-slate-600 shrink-0">
-                                                <Star className="w-3 h-3 fill-slate-500 text-slate-500" />
-                                                <span className="font-semibold">{offer.tailor.avg_rating.toFixed(1)}</span>
-                                                <span className="text-slate-400">({offer.tailor.reviews_count})</span>
-                                            </span>
-                                        )}
-                                    </div>
-                                    <p className="text-xs text-slate-400 mt-0.5 truncate">
-                                        {[
-                                            offer.tailor.specialty,
-                                            offer.tailor.years_experience && t('customerDashboard.offerExperience', { n: offer.tailor.years_experience }),
-                                            offer.tailor.turnaround_days && t('customerDashboard.offerTurnaround', { n: offer.tailor.turnaround_days }),
-                                        ].filter(Boolean).join(' · ')}
-                                    </p>
-                                    {offer.offered_price != null && (
-                                        <p className="mt-2 text-sm font-semibold text-[#6F1D24]">
-                                            {t('customerDashboard.offerPriceLabel')}: ₾{offer.offered_price}
-                                        </p>
-                                    )}
-                                    {offer.message && (
-                                        <p className="text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 mt-2">
-                                            “{offer.message}”
-                                        </p>
-                                    )}
-                                    <div className="mt-2.5">
-                                        <Button
-                                            variant="default"
-                                            size="sm"
-                                            onClick={() => handleChoose(offer)}
-                                            disabled={choosing !== null}
-                                            className="text-xs"
-                                        >
-                                            {choosing === offer.id
-                                                ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />{t('customerDashboard.choosing')}</>
-                                                : t('customerDashboard.chooseTailorBtn')}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                <div className="bg-white rounded-none border border-slate-200 p-4">
+                    <dl className="space-y-1.5 text-sm">
+                        <div className="flex justify-between gap-4"><dt className="text-slate-500">{t('offer.price')}</dt><dd className="text-slate-900">₾{offer.price.toFixed(2)}</dd></div>
+                        <div className="flex justify-between gap-4"><dt className="text-slate-500">{t('offer.delivery')}</dt><dd className="text-slate-900">₾{offer.shipping.toFixed(2)}</dd></div>
+                        <div className="flex justify-between gap-4 border-t border-slate-100 pt-1.5 font-semibold"><dt className="text-slate-900">{t('offer.total')}</dt><dd className="text-slate-900">₾{offer.total.toFixed(2)}</dd></div>
+                        {offer.days != null && (
+                            <div className="flex justify-between gap-4"><dt className="text-slate-500">{t('offer.time')}</dt><dd className="text-right text-slate-900">{isRemodel ? t('orderCare.offerReadyIn', { count: offer.days }) : t('offer.readyInDays', { count: offer.days })}</dd></div>
+                        )}
+                    </dl>
+                    {offer.note && (
+                        <p className="mt-3 border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">{offer.note}</p>
+                    )}
+                    {isRemodel && offer.first_payment != null && (
+                        <p className="mt-3 text-xs leading-relaxed text-slate-500">{t('offer.firstPaymentNote', { amount: `₾${offer.first_payment.toFixed(2)}` })}</p>
+                    )}
+                    <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+                        <Button variant="default" size="sm" onClick={() => void answer('accept')} disabled={busy !== null} className="text-xs">
+                            {busy === 'accept'
+                                ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />{t('offer.accepting')}</>
+                                : isRemodel && offer.first_payment != null
+                                    ? t('offer.acceptAndPay', { amount: `₾${offer.first_payment.toFixed(2)}` })
+                                    : t('offer.accept')}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => void answer('decline')} disabled={busy !== null} className="text-xs">
+                            {busy === 'decline' ? t('offer.declining') : t('offer.decline')}
+                        </Button>
+                    </div>
                 </div>
             )}
 
-            {error && <p className="text-xs text-destructive mt-3">{error}</p>}
+            {error && <p role="alert" className="text-xs text-destructive mt-3">{error}</p>}
         </div>
     );
 }
 
-function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initialTab = 'details' }: { order: CustomerOrder; currentUserId: number; onClose: () => void; onTailorChosen: (orderId: number, tailorId: number, tailorName: string) => void; initialTab?: 'details' | 'messages' }) {
+function OrderDetailModal({ order, currentUserId, onClose, onOfferAccepted, onChanged, paying, payError, onPay, initialTab = 'details' }: {
+    order: CustomerOrder;
+    currentUserId: number;
+    onClose: () => void;
+    onOfferAccepted: (orderId: number, due: PaymentDue | null) => void;
+    /** Something about the order changed on the server: read it again. */
+    onChanged: () => void;
+    paying: boolean;
+    payError: string | null;
+    onPay: () => void;
+    initialTab?: 'details' | 'messages';
+}) {
     const { t } = useTranslation();
     const isCustom = order.order_type === 'custom';
     const isRemodel = order.order_type === 'remodel';
@@ -317,18 +293,20 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                 {/* Details tab */}
                 <div className={activeTab === 'details' ? 'block' : 'hidden'}>
                     <div className="p-5 space-y-5">
-                        <div className="flex items-center justify-between">
-                            <StatusBadge status={order.status} />
-                            {order.tailor_name && (
-                                <span className="text-xs text-slate-500">{t('customerDashboard.by')} <span className="font-medium text-slate-700">{order.tailor_name}</span></span>
-                            )}
-                        </div>
+                        <StatusBadge order={order} />
 
                         {order.status === 'pending_assignment' && (
-                            <TailorOffers
-                                orderId={order.id}
-                                onChosen={(tailorId, tailorName) => onTailorChosen(order.id, tailorId, tailorName)}
+                            <KereOffer
+                                order={order}
+                                onAccepted={due => onOfferAccepted(order.id, due)}
+                                onChanged={onChanged}
                             />
+                        )}
+
+                        <DueDateProposal order={order} onAnswered={onChanged} />
+
+                        {isPaidRemodel(order) && order.status !== 'pending_assignment' && order.status !== 'cancelled' && (
+                            <RemodelProgress order={order} paying={paying} onPay={onPay} />
                         )}
 
                         {isRemodel && design ? (
@@ -462,6 +440,10 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                             </div>
                         )}
 
+                        {order.measurements_purged && (
+                            <p className="text-xs text-slate-400">{t('orderCare.measurementsDeleted')}</p>
+                        )}
+
                         <div className="border-t border-slate-100 pt-4 flex justify-between items-center">
                             <span className="text-sm text-slate-500">{t('customerDashboard.totalLabel')}</span>
                             <span className="text-lg font-bold text-slate-900">
@@ -470,6 +452,19 @@ function OrderDetailModal({ order, currentUserId, onClose, onTailorChosen, initi
                                     : order.total > 0 ? `₾${order.total}` : t('customerDashboard.quotedByTailor')}
                             </span>
                         </div>
+                        {(order.refunded_total ?? 0) > 0 && (
+                            <p className="-mt-3 text-right text-xs text-slate-500">{t('orderCare.refunded', { amount: `₾${order.refunded_total!.toFixed(2)}` })}</p>
+                        )}
+                        {order.payment_due?.stage === 'full' && (
+                            <Button size="sm" disabled={paying} onClick={onPay} className="h-8 px-3 text-xs">
+                                {paying ? t('customerDashboard.payStarting') : t('orderCare.payAmount', { amount: `₾${order.payment_due.amount.toFixed(2)}` })}
+                            </Button>
+                        )}
+
+                        {payError && <p role="alert" className="text-xs text-destructive">{payError}</p>}
+
+                        <CancelOrder order={order} onCancelled={onChanged} />
+                        <ClaimsPanel order={order} onChanged={onChanged} />
                     </div>
                 </div>
 
@@ -598,7 +593,12 @@ export default function CustomerDashboard() {
             headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         })
             .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
-            .then(d => { setOrders(d.orders ?? []); setLoading(false); })
+            .then(d => {
+                const fresh: CustomerOrder[] = d.orders ?? [];
+                setOrders(fresh);
+                setSelected(s => (s ? fresh.find(o => o.id === s.id) ?? s : s));
+                setLoading(false);
+            })
             .catch(() => { setFetchError(true); setLoading(false); });
     }, [token, navigate, retryKey]);
 
@@ -612,21 +612,25 @@ export default function CustomerDashboard() {
             .catch(() => {});
     }, [token]);
 
-    const hasUnread = (orderId: number) => {
-        const total = msgCounts[orderId] ?? 0;
-        const seen  = parseInt(localStorage.getItem(`kere_chat_others_seen_${orderId}`) ?? '0', 10);
-        return total > seen;
-    };
+    const hasUnread = (orderId: number) => countOthersMessages(orderId, msgCounts[orderId] ?? 0) > 0;
 
     const handleCloseOrder = () => {
         setSelected(null);
         setMsgCounts(c => ({ ...c }));
     };
 
-    const handleTailorChosen = (orderId: number, tailorId: number, tailorName: string) => {
-        const patch = { status: 'pending', tailor_id: tailorId, tailor_name: tailorName };
+    const handleOfferAccepted = (orderId: number, due: PaymentDue | null) => {
+        const patch = { status: 'pending', offer: null, payment_due: due };
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...patch } : o));
         setSelected(s => s && s.id === orderId ? { ...s, ...patch } : s);
+
+        // A remodel's first half is due the moment the offer is accepted
+        // (terms §8), so go straight to paying it, as the product page does.
+        if (due) {
+            void startPayment(orderId);
+        } else {
+            setRetryKey(k => k + 1);
+        }
     };
 
     const handleSignOut = () => { clearAuth(); navigate('/'); };
@@ -807,7 +811,7 @@ export default function CustomerDashboard() {
                                         }
                                     </div>
 
-                                    {/* Info — name, date/tailor, status, review */}
+                                    {/* Info — name, date, status, review */}
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium text-slate-900 text-sm truncate">
                                             {order.order_type === 'remodel'
@@ -819,27 +823,13 @@ export default function CustomerDashboard() {
                                         </p>
                                         <p className="text-xs text-slate-400 mt-0.5 truncate">
                                             {new Date(order.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
-                                            {order.tailor_name && (
-                                                <>
-                                                    {' · '}
-                                                    {order.tailor_id ? (
-                                                        <Link
-                                                            to={`/tailor/${order.tailor_id}`}
-                                                            onClick={e => e.stopPropagation()}
-                                                            className="hover:text-slate-700 hover:underline transition-colors cursor-pointer"
-                                                        >
-                                                            {order.tailor_name}
-                                                        </Link>
-                                                    ) : order.tailor_name}
-                                                </>
-                                            )}
                                         </p>
                                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                            <StatusBadge status={order.status} />
-                                            {order.order_type === 'marketplace' && order.payment_status === 'unpaid' && PAYABLE_STATUSES.has(order.status) && (
+                                            <StatusBadge order={order} />
+                                            {order.payment_due && (
                                                 <>
                                                     <span className="inline-flex items-center gap-1 text-[10px] font-medium text-brand bg-brand/10 rounded-full px-2 py-0.5">
-                                                        {t('customerDashboard.awaitingPayment')}
+                                                        {t(DUE_LABEL[order.payment_due.stage])}
                                                     </span>
                                                     <Button
                                                         size="sm"
@@ -852,12 +842,6 @@ export default function CustomerDashboard() {
                                                             : t('customerDashboard.payNow')}
                                                     </Button>
                                                 </>
-                                            )}
-                                            {order.status === 'pending_assignment' && order.tailor_requests_count > 0 && (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-white bg-slate-900 rounded-full px-2 py-0.5">
-                                                    <Users className="w-3 h-3" />
-                                                    {t('customerDashboard.offersChip', { count: order.tailor_requests_count })}
-                                                </span>
                                             )}
                                             {order.status === 'delivered' && !order.has_review && (
                                                 <button
@@ -937,7 +921,11 @@ export default function CustomerDashboard() {
                         currentUserId={user?.id ?? 0}
                         initialTab={openTab}
                         onClose={handleCloseOrder}
-                        onTailorChosen={handleTailorChosen}
+                        onOfferAccepted={handleOfferAccepted}
+                        onChanged={() => setRetryKey(k => k + 1)}
+                        paying={payingOrderId === selectedOrder.id}
+                        payError={payError}
+                        onPay={() => void startPayment(selectedOrder.id)}
                     />
                 )}
             </AnimatePresence>

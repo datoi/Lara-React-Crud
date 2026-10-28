@@ -3,10 +3,12 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        {{-- Whether the design studio takes orders (config app.custom_orders_open). --}}
+        <meta name="kere-custom-orders" content="{{ config('app.custom_orders_open') ? 'open' : 'paused' }}">
 
         <!-- Default SEO -->
-        <title>Kere — Custom Clothing Marketplace | Tbilisi, Georgia</title>
-        <meta name="description" content="Connect with expert Georgian tailors for bespoke clothing. Design custom garments or browse our curated marketplace. Handcrafted in Tbilisi.">
+        <title>Kere — Made-to-Fit Clothing and Remodels | Tbilisi, Georgia</title>
+        <meta name="description" content="Kere makes clothing that fits: ready-made pieces and remodels of your own garments, made in Tbilisi. Pay online; a courier collects and delivers across Georgia.">
         <meta name="robots" content="index, follow">
         <link rel="canonical" href="https://kereforyou.com">
 
@@ -23,8 +25,8 @@
         <!-- Open Graph -->
         <meta property="og:type"             content="website">
         <meta property="og:site_name"        content="Kere">
-        <meta property="og:title"            content="Kere — Custom Clothing Marketplace | Tbilisi, Georgia">
-        <meta property="og:description"      content="Connect with expert Georgian tailors for bespoke clothing. Design custom garments or browse our curated marketplace. Handcrafted in Tbilisi.">
+        <meta property="og:title"            content="Kere — Made-to-Fit Clothing and Remodels | Tbilisi, Georgia">
+        <meta property="og:description"      content="Kere makes clothing that fits: ready-made pieces and remodels of your own garments, made in Tbilisi. Pay online; a courier collects and delivers across Georgia.">
         <meta property="og:url"              content="https://kereforyou.com">
         <meta property="og:locale"           content="ka_GE">
         <meta property="og:locale:alternate" content="en_US">
@@ -33,12 +35,12 @@
         <meta property="og:image:type"       content="image/jpeg">
         <meta property="og:image:width"      content="1200">
         <meta property="og:image:height"     content="630">
-        <meta property="og:image:alt"        content="Kere — Custom Clothing Marketplace">
+        <meta property="og:image:alt"        content="Kere — made-to-fit clothing, Tbilisi">
 
         <!-- Twitter Card -->
         <meta name="twitter:card"        content="summary_large_image">
-        <meta name="twitter:title"       content="Kere — Custom Clothing Marketplace | Tbilisi, Georgia">
-        <meta name="twitter:description" content="Connect with expert Georgian tailors for bespoke clothing. Handcrafted in Tbilisi.">
+        <meta name="twitter:title"       content="Kere — Made-to-Fit Clothing and Remodels | Tbilisi, Georgia">
+        <meta name="twitter:description" content="Kere makes clothing that fits: ready-made pieces and remodels of your own garments, made in Tbilisi. Pay online; a courier collects and delivers across Georgia.">
         <meta name="twitter:image"       content="https://kereforyou.com/assets/og-image.jpg?v=3">
 
         @viteReactRefresh

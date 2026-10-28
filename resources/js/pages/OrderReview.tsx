@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'motion/react';
-import { ArrowLeft, Loader2, Star, FileText, Shuffle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Shuffle, AlertCircle } from 'lucide-react';
 import { getDraft, clearDraft } from '../hooks/useCustomOrderDraft';
 import { getAuthUser, getAuthToken } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
@@ -11,16 +11,10 @@ import DesignSpecList, { readProductName, readSpec } from '../components/DesignS
 import { OrderMeasurements } from '../components/measurements/OrderMeasurements';
 import { useOrderMeasurements } from '../hooks/useOrderMeasurements';
 import { fieldsFor } from '../lib/measurements';
+import { customOrdersOpen } from '../lib/customOrders';
+import { translateServerMessage } from '../lib/serverMessage';
 
 const SHIPPING = 15;
-
-interface TailorSummary {
-    id: number;
-    name: string;
-    specialty: string | null;
-    avg_rating: number | null;
-    turnaround_days: string | null;
-}
 
 export default function OrderReview() {
     const navigate = useNavigate();
@@ -29,7 +23,6 @@ export default function OrderReview() {
     const user     = getAuthUser();
     const token    = getAuthToken();
 
-    const [tailor,      setTailor]      = useState<TailorSummary | null>(null);
     const [submitting,  setSubmitting]  = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const submitted = useRef(false);
@@ -37,20 +30,10 @@ export default function OrderReview() {
     const measurements = useOrderMeasurements(measurementFields);
 
     useEffect(() => {
+        if (!customOrdersOpen()) { navigate('/design', { replace: true }); return; }
         if (!user || !token) { navigate('/login/customer'); return; }
         if (!draft.garment_type) { navigate('/design'); return; }
     }, []);
-
-    useEffect(() => {
-        if (draft.tailor_id === null || draft.assignment_mode === 'random') return;
-        fetch(`/api/tailors/${draft.tailor_id}`)
-            .then(r => r.json())
-            .then(d => {
-                const t = d.tailor;
-                if (t) setTailor({ id: t.id, name: t.name, specialty: t.specialty ?? null, avg_rating: t.avg_rating ?? null, turnaround_days: t.turnaround_days ?? null });
-            })
-            .catch(() => {});
-    }, [draft.tailor_id]);
 
     const subtotal = draft.estimated_price ?? 0;
     const total    = subtotal + SHIPPING;
@@ -64,9 +47,7 @@ export default function OrderReview() {
         setSubmitError(null);
 
         const body: Record<string, unknown> = {
-            order_type:             'custom',
-            tailor_assignment_mode: draft.assignment_mode,
-            tailor_id:              draft.tailor_id,
+            order_type: 'custom',
             custom_design_data: {
                 garment_type:    draft.garment_type,
                 customization:   draft.customization,
@@ -92,28 +73,19 @@ export default function OrderReview() {
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
                 body: JSON.stringify(body),
             });
-            const data = await res.json();
+            const data = await res.json().catch(() => ({}));
 
-            if (res.status === 409) {
-                setSubmitError(data.message ?? t('orderReview.garment_coat')); // fallback unused
+            if (!res.ok) {
+                setSubmitError(translateServerMessage(data, t, 'orderReview.errorPlace'));
                 setSubmitting(false);
                 submitted.current = false;
-                navigate('/design/tailor-select');
                 return;
-            }
-            if (!res.ok) {
-                throw new Error(data.message ?? t('orderReview.placeOrder'));
             }
 
             clearDraft();
-            if (data.status === 'pending_assignment') {
-                navigate('/customer-dashboard', { state: { pendingAssignment: true, orderNumber: data.order_number } });
-            } else {
-                navigate('/customer-dashboard');
-            }
-        } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : t('orderReview.placeOrder');
-            setSubmitError(msg);
+            navigate('/customer-dashboard');
+        } catch {
+            setSubmitError(t('orderReview.errorPlace'));
             setSubmitting(false);
             submitted.current = false;
         }
@@ -135,7 +107,6 @@ export default function OrderReview() {
     // for upload-path orders and anything placed before the name was carried.
     const garmentLabel = readProductName(draft.customization)
         ?? (garmentKeyMap[draft.garment_type] ? t(garmentKeyMap[draft.garment_type]) : draft.garment_type);
-    const isAutoMatch  = draft.assignment_mode === 'random' || draft.tailor_id === null;
 
     return (
         <div className="kere-workflow-page min-h-screen bg-slate-50">
@@ -227,42 +198,17 @@ export default function OrderReview() {
                             <OrderMeasurements state={measurements} idPrefix="order-measure" />
                         </div>
 
-                        {/* Tailor section */}
+                        {/* Kere prices the design and makes the customer an offer (terms §8) */}
                         <div className="p-6 border-b border-slate-100">
-                            {isAutoMatch ? (
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center shrink-0">
-                                        <Shuffle className="w-5 h-5 text-slate-500" />
-                                    </div>
-                                    <div>
-                                        <p className="font-semibold text-slate-900">{t('orderReview.matchedByKere')}</p>
-                                        <p className="text-xs text-slate-500 mt-0.5">{t('orderReview.tailorAssignedOnOrder')}</p>
-                                    </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center shrink-0">
+                                    <Shuffle className="w-5 h-5 text-slate-500" />
                                 </div>
-                            ) : tailor ? (
                                 <div>
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <p className="font-semibold text-slate-900">{tailor.name}</p>
-                                            {tailor.specialty && <p className="text-xs text-slate-500 mt-0.5">{tailor.specialty}</p>}
-                                        </div>
-                                        {tailor.avg_rating !== null && (
-                                            <div className="flex items-center gap-1">
-                                                <Star className="w-3.5 h-3.5 fill-slate-500 text-slate-500" />
-                                                <span className="text-sm font-semibold text-slate-700">{tailor.avg_rating.toFixed(1)}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {tailor.turnaround_days && (
-                                        <p className="text-xs text-slate-500 mt-2">{t('orderReview.estDelivery', { n: tailor.turnaround_days })}</p>
-                                    )}
+                                    <p className="font-semibold text-slate-900">{t('orderReview.matchedByKere')}</p>
+                                    <p className="text-xs text-slate-500 mt-0.5">{t('orderReview.tailorAssignedOnOrder')}</p>
                                 </div>
-                            ) : (
-                                <div className="flex items-center gap-2">
-                                    <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
-                                    <span className="text-sm text-slate-500">{t('orderReview.loadingTailor')}</span>
-                                </div>
-                            )}
+                            </div>
                         </div>
 
                         {/* Price section */}

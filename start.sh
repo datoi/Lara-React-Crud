@@ -60,6 +60,11 @@ php artisan storage:link --force
 echo "==> Starting queue worker in background..."
 php artisan queue:work --daemon --sleep=3 --tries=3 --max-time=3600 &
 
+# Runs routes/console.php's schedule: privacy:purge every night, which keeps
+# the privacy policy's 90-day deletion promise.
+echo "==> Starting scheduler in background..."
+php artisan schedule:work &
+
 echo "==> Starting Laravel server on port ${PORT} with 8 workers..."
 export PHP_CLI_SERVER_WORKERS=8
 exec php artisan serve --host=0.0.0.0 --port=${PORT}

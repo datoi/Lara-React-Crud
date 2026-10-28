@@ -30,6 +30,8 @@ export default function PaymentComplete() {
     const { t } = useTranslation();
     const [params] = useSearchParams();
     const [state, setState] = useState<State>('checking');
+    /** Which payment this was: a remodel is paid in two halves. */
+    const [stage, setStage] = useState<'full' | 'deposit' | 'balance' | null>(null);
     const started = useRef(false);
     const inFlight = useRef(false);
 
@@ -67,7 +69,8 @@ export default function PaymentComplete() {
 
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.payment_status === 'paid') {
+                    if (data.settled) {
+                        setStage(data.stage ?? null);
                         setState('paid');
                         inFlight.current = false;
                         return;
@@ -108,7 +111,7 @@ export default function PaymentComplete() {
 
     const body = {
         checking: t('payment.checkingBody'),
-        paid: t('payment.paidBody'),
+        paid: stage === 'deposit' ? t('payment.paidBodyDeposit') : stage === 'balance' ? t('payment.paidBodyBalance') : t('payment.paidBody'),
         pending: t('payment.pendingBody'),
         unknown: t('payment.unknownBody'),
     }[state];

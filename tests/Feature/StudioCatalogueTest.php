@@ -1,6 +1,7 @@
 <?php
 
 use Database\Seeders\MensGarmentsSeeder;
+use Database\Seeders\SleevelessTankSeeder;
 
 /**
  * The design studio waits for the section's list before it shows any heading,
@@ -21,4 +22,13 @@ test('the studio list leaves each garment\'s attributes behind', function () {
     $this->getJson('/api/customizer/products/'.$products[0]['slug'])
         ->assertOk()
         ->assertJsonStructure(['product', 'layer_categories']);
+});
+
+test('the sleeveless tank, photographed on a man, is in the men\'s studio only', function () {
+    $this->seed(SleevelessTankSeeder::class);
+
+    $slugs = fn (string $gender) => collect($this->getJson("/api/customizer/products?gender={$gender}")->assertOk()->json('products'))->pluck('slug');
+
+    expect($slugs('men'))->toContain('sleeveless-tank')
+        ->and($slugs('women'))->not->toContain('sleeveless-tank');
 });

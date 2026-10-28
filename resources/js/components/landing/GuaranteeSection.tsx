@@ -2,50 +2,25 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { reviewSubject, type ReviewSubject } from '../../lib/reviewSubject';
 import { Button } from '../ui/button';
 
-interface Review {
+/**
+ * Reviews an admin has published (terms §20). They read as feedback on Kere's
+ * service, so neither the customer nor the tailor is named — only what was
+ * made. With nothing published the section does not render.
+ */
+interface Review extends ReviewSubject {
     id: number;
     comment: string;
     rating: number;
-    reviewer: string;
-    location?: string;
-    avatar?: string;
 }
 
 export function GuaranteeSection() {
     const { t } = useTranslation();
     const [active, setActive] = useState(0);
-    const [apiReviews, setApiReviews] = useState<Review[]>([]);
+    const [reviews, setReviews] = useState<Review[]>([]);
 
-    const staticReviews: Review[] = [
-        {
-            id: -1,
-            comment: t('guarantee.review1'),
-            reviewer: 'Nino Beridze',
-            location: 'Tbilisi, Georgia',
-            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=500&h=650&auto=format&fit=crop&crop=face',
-            rating: 5,
-        },
-        {
-            id: -2,
-            comment: t('guarantee.review2'),
-            reviewer: 'Davit Merabishvili',
-            location: 'Batumi, Georgia',
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=650&auto=format&fit=crop&crop=face',
-            rating: 5,
-        },
-        {
-            id: -3,
-            comment: t('guarantee.review3'),
-            reviewer: 'Nino Kvaratskhelia',
-            location: 'Kutaisi, Georgia',
-            avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=500&h=650&auto=format&fit=crop&crop=face',
-            rating: 5,
-        },
-    ];
-
-    const reviews = apiReviews.length > 0 ? apiReviews : staticReviews;
     const current = reviews[active] ?? reviews[0];
 
     useEffect(() => {
@@ -59,7 +34,7 @@ export function GuaranteeSection() {
             })
             .then((data) => {
                 if (data.reviews?.length) {
-                    setApiReviews(data.reviews);
+                    setReviews(data.reviews);
                     setActive(0);
                 }
             })
@@ -115,7 +90,8 @@ export function GuaranteeSection() {
                             >
                                 <div
                                     className="flex items-center justify-center gap-1"
-                                    aria-label={`${current.rating} star rating`}
+                                    role="img"
+                                    aria-label={t('guarantee.starRating', { count: current.rating })}
                                 >
                                         {Array.from({ length: Math.max(0, current.rating) }).map((_, index) => (
                                             <span
@@ -142,10 +118,7 @@ export function GuaranteeSection() {
                                 </blockquote>
 
                                 <div className="mt-7 text-center">
-                                    <p className="text-xs font-normal !text-[#6c625b]">{current.reviewer}</p>
-                                    {current.location && (
-                                        <p className="mt-1 text-[11px] !text-[#8a817b]">{current.location}</p>
-                                    )}
+                                    <p className="text-xs font-normal !text-[#6c625b]">{reviewSubject(current, t)}</p>
                                 </div>
                             </motion.div>
                         </AnimatePresence>

@@ -1,42 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>New Order Received</title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; padding: 40px 16px; color: #1e293b; }
-  .card { background: #fff; border-radius: 8px; max-width: 560px; margin: 0 auto; overflow: hidden; border: 1px solid #e2e8f0; }
-  .header { background: #0f172a; padding: 28px 32px; }
-  .logo { color: #fff; font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
-  .body { padding: 32px; }
-  h1 { font-size: 20px; font-weight: 700; margin: 0 0 8px; }
-  p { color: #475569; line-height: 1.6; margin: 0 0 16px; }
-  .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-  .row .label { color: #94a3b8; }
-  .row .value { font-weight: 500; color: #0f172a; }
-  .footer { padding: 24px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 13px; color: #94a3b8; }
-</style>
-</head>
-<body>
-<div class="card">
-  <div class="header">
-    <div class="logo">Kere</div>
-  </div>
-  <div class="body">
-    <h1>New Order Assigned!</h1>
-    <p>You have a new order waiting for your attention. Log in to your dashboard to review and accept it.</p>
+@extends('emails.layout')
 
-    <div class="row"><span class="label">Order #</span><span class="value">{{ $order->order_number }}</span></div>
-    <div class="row"><span class="label">Type</span><span class="value">{{ ucfirst($order->order_type) }}</span></div>
-    <div class="row"><span class="label">Customer</span><span class="value">{{ trim(($customer->first_name ?? '') . ' ' . ($customer->last_name ?? '')) ?: $customer->name }}</span></div>
-    @if($order->total > 0)
-    <div class="row"><span class="label">Order Total</span><span class="value">₾{{ number_format($order->total, 2) }}</span></div>
-    @endif
+@section('title', 'ახალი შეკვეთა')
 
-    <p style="margin-top:20px">Visit your <a href="{{ config('app.url') }}/tailor-dashboard" style="color:#0f172a">tailor dashboard</a> to manage this order.</p>
-  </div>
-  <div class="footer">Kere — Custom Clothing Marketplace · Tbilisi, Georgia</div>
-</div>
-</body>
-</html>
+@section('content')
+  <h1>ახალი შეკვეთა</h1>
+  @if($order->order_type === 'remodel')
+    <p>მომხმარებელმა გადაიხადა ფასის პირველი ნახევარი. სამოსს კურიერი მოგიტანთ — მიღებისას, მუშაობის დაწყებამდე, ატვირთეთ მისი ფოტოები თქვენს პანელზე.</p>
+  @elseif($order->order_type === 'marketplace')
+    <p>გადახდილი შეკვეთა გელოდებათ. შედით პანელზე, გადახედეთ დეტალებს და დაიწყეთ მუშაობა.</p>
+  @else
+    <p>ახალი შეკვეთა გელოდებათ. შედით პანელზე, გადახედეთ დეტალებს და მიიღეთ შეკვეთა.</p>
+  @endif
+
+  <div class="row"><span class="label">შეკვეთა</span><span class="value">{{ $order->order_number }}</span></div>
+  <div class="row"><span class="label">ტიპი</span><span class="value">{{ ['marketplace' => 'მარკეტპლეისი', 'custom' => 'ინდივიდუალური დიზაინი', 'remodel' => 'გადაკეთება'][$order->order_type] ?? $order->order_type }}</span></div>
+  <div class="row"><span class="label">მომხმარებელი</span><span class="value">{{ trim(($customer->first_name ?? '') . ' ' . ($customer->last_name ?? '')) ?: $customer->name }}</span></div>
+  @if($order->total > 0)
+  <div class="row"><span class="label">ჯამი</span><span class="value">₾{{ number_format($order->total, 2) }}</span></div>
+  @endif
+
+  <p style="margin-top:20px">შეკვეთის სამართავად გადადით <a href="{{ config('app.url') }}/tailor-dashboard">მკერავის პანელზე</a>.</p>
+@endsection

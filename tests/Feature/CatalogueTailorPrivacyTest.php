@@ -5,20 +5,21 @@ use App\Models\Product;
 use App\Models\User;
 
 /**
- * The catalogue is public and every product carries its tailor, so whatever the
- * tailor relation serializes is published to anyone who can reach /api/products.
- *
- * Registration now collects a phone number, a workspace address, a date of birth
- * and — for a tailor who is a minor — a guardian's name and contact details.
- * None of it belongs to a shopper. `$hidden` is the wrong lock here: these are
- * fields the account's own screens legitimately read, so the catalogue selects
- * an allowlist instead, which also makes a column added later private by default.
+ * Kere sells every product itself and publishes nothing about the tailors who
+ * make them: not their names, not their profiles, and certainly not what
+ * registration collects — a phone number, a workspace address, a date of
+ * birth, a guardian's details (terms §3, privacy policy §4.2). The catalogue
+ * is public, so the only safe tailor field on a product is none at all; the
+ * bare tailor_id is what the cart needs to split a bag into deliveries.
  */
 function tailorWithFullRegistration(): User
 {
     return User::factory()->create([
         'role'                  => 'tailor',
         'approval_status'       => 'approved',
+        'name'                  => 'Nino Privatadze',
+        'first_name'            => 'Nino',
+        'last_name'             => 'Privatadze',
         'email'                 => 'private-tailor@example.com',
         'phone'                 => '+995555100999',
         'workspace_address'     => '12 Private Workshop Lane, Tbilisi',
@@ -29,6 +30,8 @@ function tailorWithFullRegistration(): User
         'guardian_email'        => 'guardian@example.com',
         'guardian_phone'        => '+995555100888',
         'guardian_relationship' => 'parent',
+        'bio'                   => 'Bespoke tailoring since 2011.',
+        'specialty'             => 'Coats',
     ]);
 }
 
@@ -51,6 +54,8 @@ function productFor(User $tailor): Product
 }
 
 $private = [
+    'Privatadze',
+    'Bespoke tailoring since 2011.',
     'private-tailor@example.com',
     '+995555100999',
     '12 Private Workshop Lane, Tbilisi',
@@ -60,29 +65,32 @@ $private = [
     '+995555100888',
 ];
 
-it('does not publish a tailor\'s contact details on the public catalogue', function () use ($private) {
+it('publishes nothing about a product\'s tailor on the public catalogue', function () use ($private) {
     $tailor = tailorWithFullRegistration();
     productFor($tailor);
 
-    $body = $this->getJson('/api/products')->assertOk()->getContent();
+    $response = $this->getJson('/api/products')->assertOk();
 
     foreach ($private as $secret) {
-        expect($body)->not->toContain($secret);
+        expect($response->getContent())->not->toContain($secret);
     }
+    expect($response->json('data.0'))->not->toHaveKeys(['tailor', 'tailor_name']);
 });
 
-it('does not publish them on a single product or its related products', function () use ($private) {
+it('publishes nothing about it on a single product or its related products', function () use ($private) {
     $tailor = tailorWithFullRegistration();
     $product = productFor($tailor);
 
-    $body = $this->getJson("/api/products/{$product->id}")->assertOk()->getContent();
+    $response = $this->getJson("/api/products/{$product->id}")->assertOk();
 
     foreach ($private as $secret) {
-        expect($body)->not->toContain($secret);
+        expect($response->getContent())->not->toContain($secret);
     }
+    expect($response->json('product'))->not->toHaveKeys(['tailor', 'tailor_name'])
+        ->and($response->json('product.tailor_id'))->toBe($tailor->id);
 });
 
-it('does not publish them to a signed-in shopper reading their wishlist', function () use ($private) {
+it('publishes nothing about it to a signed-in shopper reading their wishlist', function () use ($private) {
     $tailor = tailorWithFullRegistration();
     $product = productFor($tailor);
 
@@ -103,20 +111,22 @@ it('does not publish them to a signed-in shopper reading their wishlist', functi
     }
 });
 
-it('still carries the tailor fields the storefront renders', function () {
-    $tailor = tailorWithFullRegistration();
-    $tailor->update([
-        'bio'              => 'Bespoke tailoring since 2011.',
-        'specialty'        => 'Coats',
-        'years_experience' => 12,
-    ]);
-    $product = productFor($tailor);
+it('does not find products by the name of the tailor who makes them', function () {
+    productFor(tailorWithFullRegistration());
 
-    $this->getJson("/api/products/{$product->id}")
-        ->assertOk()
-        ->assertJsonPath('product.tailor.id', $tailor->id)
-        ->assertJsonPath('product.tailor.bio', 'Bespoke tailoring since 2011.')
-        ->assertJsonPath('product.tailor.specialty', 'Coats')
-        ->assertJsonPath('product.tailor.years_experience', 12)
-        ->assertJsonPath('product.tailor_name', $tailor->getFullName());
+    expect($this->getJson('/api/products?search=Privatadze')->assertOk()->json('data'))->toBe([])
+        ->and($this->getJson('/api/products?search=Privacy')->json('data'))->toHaveCount(1);
+});
+
+it('has no public list or profile of tailors', function () {
+    $tailor = tailorWithFullRegistration();
+
+    // No API route answers these any more; the SPA's catch-all serves its
+    // shell, which carries no data.
+    foreach (['/api/tailors', "/api/tailors/{$tailor->id}"] as $url) {
+        $response = $this->getJson($url);
+
+        expect($response->headers->get('Content-Type'))->toContain('text/html')
+            ->and($response->getContent())->not->toContain('Privatadze');
+    }
 });

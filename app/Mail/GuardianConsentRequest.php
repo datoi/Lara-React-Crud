@@ -29,7 +29,7 @@ class GuardianConsentRequest extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Kere — consent needed for '.$this->customer->getFullName(),
+            subject: 'Kere — საჭიროა თქვენი თანხმობა: '.$this->customer->getFullName(),
         );
     }
 

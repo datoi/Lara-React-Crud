@@ -15,27 +15,34 @@ interface ChatMessage {
     created_at: string;
 }
 
+/**
+ * An order's chat. Each order has two conversations and Kere is in both: the
+ * customer talks to Kere, and the tailor talks to Kere, never to each other
+ * (terms §18). A customer or tailor sees their own conversation, with Kere's
+ * messages labelled "Kere"; an admin opens either one by `adminChannel`.
+ */
 interface Props {
     orderId: number;
     currentUserId: number;
     isVisible?: boolean;
     onUnreadCountChange?: (count: number) => void;
-    /** Overrides the messages fetch URL — e.g. the admin read-only endpoint. */
-    endpoint?: string;
-    /** Hides the input/send row — for viewers who aren't a participant in the chat. */
-    readOnly?: boolean;
-    /** Always show the sender's name on every bubble, instead of only on "other" messages. */
-    showSenderLabels?: boolean;
+    /** Kere's side: which conversation to read and answer. */
+    adminChannel?: 'customer' | 'tailor';
 }
 
 // ─── localStorage helpers ─────────────────────────────────────────────────────
 
+// How many of Kere's messages the caller has seen on an order. The key is new
+// with the two conversations: counts kept under the old one were of the other
+// party in a shared chat, and compared against Kere's would hide new messages.
+const seenKey = (orderId: number) => `kere_chat_seen_${orderId}`;
+
 function getSeenCount(orderId: number): number {
-    return parseInt(localStorage.getItem(`kere_chat_others_seen_${orderId}`) ?? '0', 10);
+    return parseInt(localStorage.getItem(seenKey(orderId)) ?? '0', 10);
 }
 
 function saveSeenCount(orderId: number, n: number): void {
-    localStorage.setItem(`kere_chat_others_seen_${orderId}`, String(n));
+    localStorage.setItem(seenKey(orderId), String(n));
 }
 
 export function countOthersMessages(orderId: number, totalFromOthers: number): number {
@@ -44,20 +51,20 @@ export function countOthersMessages(orderId: number, totalFromOthers: number): n
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function OrderChat({
-    orderId, currentUserId, isVisible = true, onUnreadCountChange,
-    endpoint, readOnly = false, showSenderLabels = false,
-}: Props) {
+export function OrderChat({ orderId, currentUserId, isVisible = true, onUnreadCountChange, adminChannel }: Props) {
     const { t } = useTranslation();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loading,  setLoading]  = useState(true);
     const [error,    setError]    = useState(false);
     const [text,     setText]     = useState('');
     const [sending,  setSending]  = useState(false);
+    const [sendFailed, setSendFailed] = useState(false);
     const bottomRef  = useRef<HTMLDivElement>(null);
     const prevLen    = useRef(0);
     const token      = getAuthToken();
-    const messagesUrl = endpoint ?? `/api/orders/${orderId}/messages`;
+    const messagesUrl = adminChannel
+        ? `/api/admin/orders/${orderId}/messages?channel=${adminChannel}`
+        : `/api/orders/${orderId}/messages`;
 
     const notifyUnread = useCallback((msgs: ChatMessage[]) => {
         const fromOthers = msgs.filter(m => m.sender_id !== currentUserId).length;
@@ -99,13 +106,14 @@ export function OrderChat({
         return () => clearInterval(id);
     }, [fetchMessages]);
 
-    // Mark messages as seen when chat becomes visible
+    // Mark messages as seen when chat becomes visible. Kere's side keeps no
+    // per-browser count: there are two conversations and several admins.
     useEffect(() => {
-        if (!isVisible || readOnly) return;
+        if (!isVisible || adminChannel) return;
         const fromOthers = messages.filter(m => m.sender_id !== currentUserId).length;
         saveSeenCount(orderId, fromOthers);
         onUnreadCountChange?.(0);
-    }, [isVisible, readOnly, messages, orderId, currentUserId, onUnreadCountChange]);
+    }, [isVisible, adminChannel, messages, orderId, currentUserId, onUnreadCountChange]);
 
     // Scroll to bottom on new messages (only when visible)
     useEffect(() => {
@@ -119,21 +127,26 @@ export function OrderChat({
         const trimmed = text.trim();
         if (!trimmed || sending || !token) return;
         setSending(true);
+        setSendFailed(false);
         try {
-            const r = await fetch(`/api/orders/${orderId}/messages`, {
+            const r = await fetch(adminChannel ? `/api/admin/orders/${orderId}/messages` : `/api/orders/${orderId}/messages`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                     Accept: 'application/json',
                 },
-                body: JSON.stringify({ message: trimmed }),
+                body: JSON.stringify(adminChannel ? { channel: adminChannel, message: trimmed } : { message: trimmed }),
             });
             if (r.ok) {
                 const data = await r.json();
                 setMessages(prev => [...prev, data.message]);
                 setText('');
+            } else {
+                setSendFailed(true);
             }
+        } catch {
+            setSendFailed(true);
         } finally {
             setSending(false);
         }
@@ -168,7 +181,7 @@ export function OrderChat({
                                 transition={{ duration: 0.5 }}
                                 className={`flex flex-col gap-0.5 ${isOwn ? 'items-end' : 'items-start'}`}
                             >
-                                {(showSenderLabels || !isOwn) && (
+                                {(adminChannel || !isOwn) && (
                                     <span className="text-[10px] text-slate-400 px-1">{msg.sender_name}</span>
                                 )}
                                 <div className={`max-w-[78%] px-3.5 py-2 rounded-2xl text-sm leading-snug break-words ${
@@ -188,8 +201,20 @@ export function OrderChat({
                 <div ref={bottomRef} />
             </div>
 
+            {/* What the terms (§18) keep out of the chat, said where people type. */}
+            {!adminChannel && (
+                <p className="border-t border-slate-200 bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-500">
+                    {t('chat.safetyNote')}
+                </p>
+            )}
+
+            {sendFailed && (
+                <p role="alert" className="border-t border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                    {t('chat.sendFailed')}
+                </p>
+            )}
+
             {/* Input row */}
-            {!readOnly && (
             <div className="flex items-center gap-2 p-3 border-t border-slate-200 bg-white">
                 <input
                     type="text"
@@ -219,7 +244,6 @@ export function OrderChat({
                     </span>
                 </Button>
             </div>
-            )}
         </div>
     );
 }

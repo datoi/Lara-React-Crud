@@ -35,8 +35,10 @@ const GARMENT_TYPES = definition.garmentTypes as Record<string, string>;
  * its tailor set one; otherwise the garment type decides, and anything
  * unrecognised — a remodel of an unnamed garment — asks for every body field.
  */
-export function fieldsFor(garmentType: string | null | undefined, required: string[] = []): MeasurementKey[] {
-    const own = knownKeys(required);
+export function fieldsFor(garmentType: string | null | undefined, required: readonly string[] | null = []): MeasurementKey[] {
+    // Products from before the column existed hold null, which a default
+    // parameter does not catch.
+    const own = knownKeys(required ?? []);
     if (own.length > 0) return own;
 
     const group = garmentType ? GARMENT_TYPES[garmentType] : undefined;

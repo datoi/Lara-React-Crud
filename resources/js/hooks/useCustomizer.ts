@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { COLOUR_SPEC_ATTRIBUTE, resolveEffectiveOption, resolveOptionColor } from '../components/customizer/designPhoto';
+import { COLOUR_SPEC_ATTRIBUTE, previewCategories, resolveEffectiveOption, resolveOptionColor } from '../components/customizer/designPhoto';
+import { garmentColors, type GarmentColor } from '../components/customizer/garmentColors';
 import type {
     LayerCategory,
     LayerOption,
@@ -108,8 +109,12 @@ interface UseCustomizerReturn {
     subSelections: Record<number, number>;
     /** Maps optionId → selected colour variant id */
     colorSelections: Record<number, number>;
-    /** The colour the customer chose, by name — see selectColorByName */
+    /** The garment's colour, by name: always one of `colors` when there are any */
     colorName: string | null;
+    /** The colours the garment as now specified was photographed in */
+    colors: GarmentColor[];
+    /** The options painting the canvas */
+    shownOptions: LayerOption[];
     fabricId: number | null;
     selectOption: (categoryId: number, optionId: number) => void;
     selectSubOption: (parentOptionId: number, childOptionId: number) => void;
@@ -198,7 +203,7 @@ export function useCustomizer({
     const [colorSelections, setColorSelections] = useState<Record<number, number>>(
         () => restoreColorSelections(restored?.colorSelections, buildColorDefaults(), layerCategories)
     );
-    const [colorName, setColorName] = useState<string | null>(
+    const [pickedColor, setPickedColor] = useState<string | null>(
         () => restored?.colorName ?? defaultColorName(layerCategories),
     );
     const [fabricId, setFabricId] = useState<number | null>(() => {
@@ -212,8 +217,8 @@ export function useCustomizer({
     // browser back, a re-visit, or a reload — restores the configuration.
     useEffect(() => {
         if (!persistKey) return;
-        storeSelections(persistKey, { selections, subSelections, colorSelections, fabricId, colorName });
-    }, [persistKey, selections, subSelections, colorSelections, fabricId, colorName]);
+        storeSelections(persistKey, { selections, subSelections, colorSelections, fabricId, colorName: pickedColor });
+    }, [persistKey, selections, subSelections, colorSelections, fabricId, pickedColor]);
 
     const selectOption = useCallback((categoryId: number, optionId: number) => {
         setSelections(prev => ({ ...prev, [categoryId]: optionId }));
@@ -235,11 +240,9 @@ export function useCustomizer({
     }, []);
 
     const selectColorByName = useCallback((name: string) => {
-        // The choice itself, held whether or not the garment as currently cut
-        // was ever photographed in it. Every colour is made to order, so the
-        // customer can have one no shoot covers — what they cannot have is the
-        // picture, and colorFor() below is what admits that.
-        setColorName(name);
+        // Kept across changes of sleeve even where the new one lacks it — see
+        // colorName below, which decides what the garment is actually in.
+        setPickedColor(name);
 
         setColorSelections(prev => {
             const next = { ...prev };
@@ -272,7 +275,7 @@ export function useCustomizer({
         setSelections(defaults);
         setSubSelections(buildSubDefaults());
         setColorSelections(buildColorDefaults());
-        setColorName(defaultColorName(layerCategories));
+        setPickedColor(defaultColorName(layerCategories));
         setFabricId(fabrics[0]?.id ?? null);
     }, [persistKey, buildDefaults, buildSubDefaults, buildColorDefaults, fabrics, layerCategories]);
 
@@ -291,6 +294,27 @@ export function useCustomizer({
         (option: LayerOption): OptionColor | null => resolveOptionColor(option, colorSelections),
         [colorSelections],
     );
+
+    const shownOptions = useMemo(
+        () => previewCategories(layerCategories)
+            .map(category => resolveEffectiveOption(category, selections, subSelections))
+            .filter((option): option is LayerOption => option !== null),
+        [layerCategories, selections, subSelections],
+    );
+
+    const colors = useMemo(() => garmentColors(shownOptions), [shownOptions]);
+
+    // What the garment is in: the colour picked, while the garment as now
+    // specified was photographed in it. A sleeve without it shows the colour its
+    // own photograph resolves to — the latest pick it carries, or its cover — so
+    // the picker, the photograph and the order agree, and the pick comes back
+    // if the customer returns to a sleeve that has it.
+    const colorName = useMemo((): string | null => {
+        if (colors.length === 0 || colors.some(c => c.name === pickedColor)) return pickedColor;
+        const photographed = shownOptions.find(option => option.colors?.length);
+        const resolved = photographed ? resolveOptionColor(photographed, colorSelections)?.name : undefined;
+        return colors.find(c => c.name === resolved)?.name ?? colors[0].name;
+    }, [colors, pickedColor, shownOptions, colorSelections]);
 
     /**
      * Readable snapshot of the current choices, taken at the moment the design
@@ -349,6 +373,8 @@ export function useCustomizer({
         subSelections,
         colorSelections,
         colorName,
+        colors,
+        shownOptions,
         fabricId,
         selectOption,
         selectSubOption,

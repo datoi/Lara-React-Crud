@@ -53,6 +53,11 @@ function customDesign(array $measurements): array
     ];
 }
 
+// Custom orders are paused until the terms cover them (config
+// app.custom_orders_open); the snapshot rules here are for when they reopen.
+// The pause itself is tested in KereOfferTest.
+beforeEach(fn () => config()->set('app.custom_orders_open', true));
+
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
 test('a customer starts with no measurements, saves them, and reads them back normalised', function () {

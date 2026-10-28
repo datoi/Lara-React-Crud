@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate, useSearchParams, useLocation } from 'react-router';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, ArrowRight, Loader2, Upload, X, FileText } from 'lucide-react';
 import { getAuthUser, getAuthToken, saveReturnTo } from '../hooks/useAuth';
@@ -14,6 +14,7 @@ import DesignerWizard, { type WizardProduct } from '../components/customizer/Des
 import { submitDesign } from '../components/customizer/submitDesign';
 import { useSectionGarments } from '../hooks/useSectionGarments';
 import { useProductData } from '../hooks/useProductData';
+import { customOrdersOpen } from '../lib/customOrders';
 import type { DesignConfiguration } from '../types/customizer';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf', 'image/svg+xml'];
@@ -29,6 +30,49 @@ type UploadStep =
     | { step: 'upload-file'; category: GarmentCategory };
 
 // ─── Step: Pick garment type for upload ───────────────────────────────────────
+
+/**
+ * The upload branch while custom orders are paused: an uploaded design has no
+ * use but to be ordered, so the page says when that opens and what Kere takes
+ * in the meantime.
+ */
+function UploadPaused({ onBack }: { onBack: () => void }) {
+    const { t } = useTranslation();
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="relative mx-auto max-w-[760px]"
+        >
+            <button
+                onClick={onBack}
+                className="mb-8 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#776158] transition-opacity hover:opacity-60"
+            >
+                <ArrowLeft className="w-4 h-4" />
+                {t('design.back')}
+            </button>
+
+            <div className="mx-auto max-w-[560px] text-center">
+                <h1 className="font-serif text-[clamp(2.05rem,4vw,3.45rem)] font-medium leading-[0.92] tracking-[-0.05em] text-[#111111]">
+                    {t('design.uploadPausedTitle')}
+                </h1>
+                <p className="mx-auto mt-4 max-w-[480px] text-sm leading-6 text-[#776158]">
+                    {t('design.uploadPausedBody')}
+                </p>
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+                    <Button asChild variant="default" className="rounded-none bg-brand text-white hover:bg-brand-dark">
+                        <Link to="/remodel">{t('design.uploadPausedRemodel')}</Link>
+                    </Button>
+                    <Link to="/design" className="text-sm text-[#111111] underline underline-offset-4 hover:text-brand">
+                        {t('design.uploadPausedStudio')}
+                    </Link>
+                </div>
+            </div>
+        </motion.div>
+    );
+}
 
 function UploadTypeStep({
     gender,
@@ -343,7 +387,7 @@ function UploadPanel({
                     })}
                     className="w-full rounded-none bg-brand text-white hover:bg-brand-dark"
                 >
-                    {t('design.continueToTailor')}
+                    {t('design.continueToReview')}
                     <ArrowRight className="w-4 h-4 ml-1.5" />
                 </Button>
             </div>
@@ -511,12 +555,12 @@ export default function DesignerApp() {
         });
 
         if (!getAuthUser()) {
-            saveReturnTo('/design/tailor-select');
+            saveReturnTo('/design/review');
             navigate('/login/customer');
             return;
         }
 
-        navigate('/design/tailor-select');
+        navigate('/design/review');
     };
 
     const handleOrder = (configuration: DesignConfiguration, totalPrice: number) => {
@@ -542,7 +586,14 @@ export default function DesignerApp() {
                 <Navigation />
                 <main className="relative overflow-hidden px-5 pb-8 pt-10 sm:px-8 sm:pt-12 md:pb-10 md:pt-14 lg:px-12">
                     <AnimatePresence mode="wait">
-                        {uploadStep.step === 'upload-type' && (
+                        {!customOrdersOpen() && (
+                            <UploadPaused
+                                key="upload-paused"
+                                onBack={() => searchParams.get('upload') === '1' ? navigate(-1) : setUploadStep(null)}
+                            />
+                        )}
+
+                        {customOrdersOpen() && uploadStep.step === 'upload-type' && (
                             <UploadTypeStep
                                 key="upload-type"
                                 gender={section}
@@ -551,7 +602,7 @@ export default function DesignerApp() {
                             />
                         )}
 
-                        {uploadStep.step === 'upload-file' && (
+                        {customOrdersOpen() && uploadStep.step === 'upload-file' && (
                             <UploadPanel
                                 key={`upload-${uploadStep.category.key}`}
                                 category={uploadStep.category}

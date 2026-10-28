@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\KereNotification;
 use App\Models\Order;
 use App\Models\Review;
 use Illuminate\Http\Request;
@@ -30,11 +31,11 @@ class ReviewController extends Controller
         }
 
         if ($order->status !== 'delivered') {
-            return response()->json(['message' => 'You can only review an order after it has been delivered.'], 422);
+            return response()->json(['message' => 'You can only review an order after it has been delivered.', 'code' => 'review_not_delivered'], 422);
         }
 
         if (Review::where('order_id', $order->id)->where('user_id', $user->id)->exists()) {
-            return response()->json(['message' => 'You have already reviewed this order.'], 409);
+            return response()->json(['message' => 'You have already reviewed this order.', 'code' => 'review_exists'], 409);
         }
 
         $productId = null;
@@ -51,8 +52,16 @@ class ReviewController extends Controller
                 'comment'    => $data['comment'],
             ]);
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-            return response()->json(['message' => 'You have already reviewed this order.'], 409);
+            return response()->json(['message' => 'You have already reviewed this order.', 'code' => 'review_exists'], 409);
         }
+
+        // Nothing is public until an admin has read it, so tell them it is waiting.
+        KereNotification::toAdmins(
+            $order,
+            'review_received',
+            'ახალი შეფასება',
+            "შეკვეთა #{$order->order_number}: {$review->rating}★. გამოქვეყნებამდე გადახედეთ „შეფასებების“ ჩანართში.",
+        );
 
         return response()->json(['review' => $review], 201);
     }
@@ -63,12 +72,14 @@ class ReviewController extends Controller
         // Major #8: paginated instead of hard-capped at 20
         $perPage = min((int) $request->get('per_page', 20), 50);
 
-        $paginator = Review::with('user')
+        // Only what an admin published, and never who wrote it (terms §20).
+        $paginator = Review::published()
             ->where('product_id', $productId)
             ->latest()
             ->paginate($perPage);
 
-        // Compute stats over the full set, not just the current page
+        // The average and count are anonymous, so they cover every review,
+        // computed over the full set rather than the current page.
         $stats = Review::where('product_id', $productId)
             ->selectRaw('COUNT(*) as total, AVG(rating) as avg_rating')
             ->first();
@@ -78,7 +89,6 @@ class ReviewController extends Controller
             'rating'     => $r->rating,
             'comment'    => $r->comment,
             'created_at' => $r->created_at->toISOString(),
-            'reviewer'   => $r->user->getFullName() ?: 'Customer',
         ]);
 
         return response()->json([
@@ -91,20 +101,20 @@ class ReviewController extends Controller
         ]);
     }
 
-    // GET /api/reviews/landing  — latest 5-star reviews for carousel
+    // GET /api/reviews/landing — the latest published reviews, for the home page
     public function landing()
     {
-        $reviews = Review::with('user')
-            ->where('rating', 5)
+        // Read as feedback on Kere's service: no customer and no tailor named.
+        $reviews = Review::published()
+            ->with('order.items')
             ->latest()
-            ->take(5)
+            ->take(6)
             ->get()
-            ->map(fn($r) => [
-                'id'       => $r->id,
-                'comment'  => $r->comment,
-                'rating'   => $r->rating,
-                'reviewer' => $r->user->getFullName() ?: 'Customer',
-            ]);
+            ->map(fn (Review $r) => [
+                'id'      => $r->id,
+                'comment' => $r->comment,
+                'rating'  => $r->rating,
+            ] + $r->publicSubject());
 
         return response()->json(['reviews' => $reviews]);
     }

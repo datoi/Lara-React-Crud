@@ -12,11 +12,13 @@ class TailorRequest extends Model
         'tailor_id',
         'message',
         'offered_price',
+        'ready_in_days',
         'status',
     ];
 
     protected $casts = [
         'offered_price' => 'float',
+        'ready_in_days' => 'integer',
     ];
 
     public function order(): BelongsTo

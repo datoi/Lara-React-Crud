@@ -17,13 +17,13 @@ export default function Landing() {
     return (
         <div className="kere-landing min-h-screen overflow-x-clip bg-[#E4E0D7]">
             <Helmet>
-                <title>Kere — Custom Clothing Marketplace | Tbilisi</title>
-                <meta name="description" content="Connect with expert Georgian tailors for bespoke clothing. Design custom garments or browse our curated marketplace. Handcrafted in Tbilisi." />
+                <title>Kere — Made-to-Fit Clothing and Remodels | Tbilisi</title>
+                <meta name="description" content="Kere makes clothing that fits: ready-made pieces and remodels of your own garments, made in Tbilisi. Pay online; a courier collects and delivers across Georgia." />
                 <script type="application/ld+json">{JSON.stringify({
                     "@context": "https://schema.org",
                     "@type": "LocalBusiness",
                     "name": "Kere",
-                    "description": "Custom clothing marketplace connecting customers with local Georgian tailors.",
+                    "description": "Made-to-fit clothing and remodels of your own garments, made in Tbilisi.",
                     "url": "https://kereforyou.com",
                     "address": {
                         "@type": "PostalAddress",

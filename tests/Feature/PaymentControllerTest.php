@@ -1,9 +1,13 @@
 <?php
 
+use App\Mail\NewOrderAlert;
+use App\Models\KereNotification;
 use App\Models\Order;
+use App\Models\OrderPayment;
 use App\Models\User;
 use App\Services\FlittService;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 /**
@@ -178,18 +182,43 @@ test('a signed callback cannot pay a custom order', function () {
     expect($order->fresh()->payment_status)->toBe('unpaid');
 });
 
-test('a signed callback cannot revive an expired order', function () {
+test('a signed callback cannot revive an expired order, but the money is kept for a refund', function () {
     [$user] = payer();
+    $admin = User::factory()->create(['role' => 'admin']);
     $order = placeOrder($user, ['status' => 'cancelled', 'payment_status' => 'expired']);
+    $payload = signed([
+        'order_id' => $order->order_number.'_late1234',
+        'order_status' => 'approved',
+        'amount' => 6000,
+        'currency' => 'GEL',
+        'payment_id' => '777',
+    ]);
+
+    // The callback and the client poll both report it; it is recorded once.
+    $this->postJson('/api/payments/flitt/callback', $payload)->assertStatus(200);
+    $this->postJson('/api/payments/flitt/callback', $payload)->assertStatus(200);
+
+    expect($order->fresh()->payment_status)->toBe('expired')
+        ->and(OrderPayment::where('order_id', $order->id)->sole()->amount)->toBe(60.0)
+        ->and(KereNotification::where('user_id', $admin->id)->where('type', 'refund_due')->count())->toBe(1);
+});
+
+test('a tailor notification that fails does not stop the payment being announced', function () {
+    Mail::fake();
+    [$user] = payer();
+    $tailor = User::factory()->create(['role' => 'tailor', 'approval_status' => 'approved', 'email' => 'maker@example.com']);
+    $order = placeOrder($user, ['tailor_id' => $tailor->id]);
+    KereNotification::creating(fn () => throw new RuntimeException('database went away'));
 
     $this->postJson('/api/payments/flitt/callback', signed([
-        'order_id' => $order->order_number,
+        'order_id' => $order->order_number.'_abc12345',
         'order_status' => 'approved',
         'amount' => 6000,
         'currency' => 'GEL',
     ]))->assertStatus(200);
 
-    expect($order->fresh()->payment_status)->toBe('expired');
+    expect($order->fresh()->payment_status)->toBe('paid');
+    Mail::assertSent(NewOrderAlert::class, fn ($mail) => $mail->hasTo('maker@example.com'));
 });
 
 test('crediting twice leaves the first payment untouched', function () {

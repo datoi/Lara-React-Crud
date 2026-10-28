@@ -4,12 +4,13 @@ import { X, Loader2, MessageCircle, Package } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import DesignSpecList, { readProductName, readSpec } from '../DesignSpecList';
 import { Button } from '../ui/button';
-import { OrderChat } from '../OrderChat';
+import { OrderChat, countOthersMessages } from '../OrderChat';
 import { getAuthUser, getAuthToken } from '../../hooks/useAuth';
 import { MeasurementList } from '../measurements/MeasurementList';
 import { measurementLabelKey } from '../../lib/measurements';
 import { ProductImage } from '../marketplace/ProductImage';
 import { formatCalendarDay } from '../../lib/dates';
+import { FinishWithPhotos, RemodelSteps } from './RemodelSteps';
 
 // ─── Module-level status label map ────────────────────────────────────────────
 
@@ -17,6 +18,7 @@ const STATUS_LABEL_KEYS: Record<string, string> = {
     pending:    'tailorComponents.statusPending',
     processing: 'tailorComponents.statusInProgress',
     finished:   'tailorComponents.statusFinished',
+    shipped:    'tailorComponents.statusShipped',
     delivered:  'tailorComponents.statusDelivered',
     cancelled:  'tailorComponents.statusCancelled',
 };
@@ -74,20 +76,36 @@ export interface TailorOrder {
     id: number;
     order_number: string;
     order_type: 'marketplace' | 'custom' | 'remodel';
-    status: 'pending' | 'processing' | 'finished' | 'delivered' | 'cancelled';
+    status: 'pending' | 'processing' | 'finished' | 'shipped' | 'delivered' | 'cancelled';
     subtotal: number;
     total: number;
     created_at: string;
     /** Calendar day (`YYYY-MM-DD`) the customer would like it ready by */
     needed_by: string | null;
+    payment_status: string;
+    /** A remodel paid online, following the courier and photo steps */
+    paid_remodel: boolean;
+    due_date: string | null;
+    proposed_due_date: string | null;
+    picked_up_at: string | null;
+    received_at: string | null;
+    intake_photos: string[];
+    intake_notes: string | null;
+    finished_photos: string[];
+    shipped_at: string | null;
+    measurements_purged: boolean;
     customer: { name: string };
     items: OrderItem[];
     custom_design_data: CustomDesign | null;
 }
 
+type StatusChange = (orderId: number, status: string, photos?: string[]) => Promise<void>;
+
 interface OrdersListProps {
     orders: TailorOrder[];
-    onStatusChange?: (orderId: number, status: string) => Promise<void>;
+    onStatusChange?: StatusChange;
+    /** The server sent back a fresher copy of an order. */
+    onOrderUpdated?: (order: TailorOrder) => void;
 }
 
 // ─── Status config ────────────────────────────────────────────────────────────
@@ -96,6 +114,7 @@ const STATUS_CLASSES: Record<string, string> = {
     pending:    'bg-slate-100 text-slate-600 border-slate-200',
     processing: 'bg-slate-100 text-slate-700 border-slate-200',
     finished:   'bg-slate-50 text-slate-900 border-slate-200',
+    shipped:    'bg-slate-100 text-slate-700 border-slate-200',
     delivered:  'bg-slate-900 text-white border-slate-900',
     cancelled:  'bg-slate-100 text-slate-500 border-slate-200',
 };
@@ -114,10 +133,11 @@ function SpecRow({ label, value }: { label: string; value?: string | null }) {
 
 // ─── Order detail modal ───────────────────────────────────────────────────────
 
-function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initialTab = 'details' }: {
+function OrderDetailModal({ order, onClose, onStatusChange, onOrderUpdated, currentUserId, initialTab = 'details' }: {
     order: TailorOrder;
     onClose: () => void;
-    onStatusChange?: (id: number, status: string) => Promise<void>;
+    onStatusChange?: StatusChange;
+    onOrderUpdated: (order: TailorOrder) => void;
     currentUserId: number;
     initialTab?: 'details' | 'messages';
 }) {
@@ -136,12 +156,12 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
     const [activeTab,  setActiveTab]  = useState<'details' | 'messages'>(initialTab);
     const [unreadCount, setUnreadCount] = useState(0);
 
-    const handleAction = async (newStatus: string) => {
+    const handleAction = async (newStatus: string, photos?: string[]) => {
         if (!onStatusChange || actioning) return;
         setActioning(newStatus);
         setActionErr(false);
         try {
-            await onStatusChange(order.id, newStatus);
+            await onStatusChange(order.id, newStatus, photos);
             onClose();
         } catch {
             setActionErr(true);
@@ -151,7 +171,9 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
         }
     };
 
-    const isFinal = order.status === 'finished' || order.status === 'delivered' || order.status === 'cancelled';
+    const isFinal = order.status !== 'pending' && order.status !== 'processing';
+    // A paid remodel starts once the garment has arrived and been photographed.
+    const awaitingGarment = order.paid_remodel && !order.received_at;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -311,6 +333,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                         <p className="text-sm font-medium text-slate-900">{formatCalendarDay(order.needed_by, t)}</p>
                                     </div>
                                 )}
+                                {order.paid_remodel && <RemodelSteps order={order} onUpdated={onOrderUpdated} />}
                                 {/* Only older remodels carry measurements; the form no longer asks. */}
                                 {Object.keys(cd.measurements ?? {}).length > 0 && (
                                     <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
@@ -428,6 +451,10 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                             </>
                         )}
 
+                        {order.measurements_purged && (
+                            <p className="text-xs text-slate-400">{t('orderCare.measurementsDeleted')}</p>
+                        )}
+
                         {/* Pricing */}
                         <div className="bg-slate-900 rounded-xl p-4 text-white">
                             <div className="space-y-1.5 text-sm">
@@ -444,12 +471,16 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                     {t('tailorComponents.orderActions')}
                                 </p>
                                 <div className="flex items-center gap-3 flex-wrap">
+                                    {order.status === 'pending' && awaitingGarment && (
+                                        <p className="w-full text-xs text-slate-500">{t('tailorCare.startAfterArrival')}</p>
+                                    )}
+
                                     {order.status === 'pending' && (
                                         <Button
                                             variant="default"
                                             size="sm"
                                             onClick={() => handleAction('processing')}
-                                            disabled={!!actioning}
+                                            disabled={!!actioning || awaitingGarment}
                                             className="flex items-center gap-2"
                                         >
                                             {actioning === 'processing'
@@ -459,7 +490,11 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
                                         </Button>
                                     )}
 
-                                    {order.status === 'processing' && (
+                                    {order.status === 'processing' && order.paid_remodel && (
+                                        <FinishWithPhotos busy={actioning === 'finished'} onFinish={(photos) => void handleAction('finished', photos)} />
+                                    )}
+
+                                    {order.status === 'processing' && !order.paid_remodel && (
                                         <Button
                                             variant="default"
                                             size="sm"
@@ -528,7 +563,7 @@ function OrderDetailModal({ order, onClose, onStatusChange, currentUserId, initi
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
+export function OrdersList({ orders, onStatusChange, onOrderUpdated }: OrdersListProps) {
     const { t, i18n } = useTranslation();
     const [viewing,  setViewing]  = useState<TailorOrder | null>(null);
     const [openTab,  setOpenTab]  = useState<'details' | 'messages'>('details');
@@ -551,11 +586,7 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
         setMsgCounts(c => ({ ...c }));
     };
 
-    const hasUnread = (orderId: number) => {
-        const total = msgCounts[orderId] ?? 0;
-        const seen  = parseInt(localStorage.getItem(`kere_chat_others_seen_${orderId}`) ?? '0', 10);
-        return total > seen;
-    };
+    const hasUnread = (orderId: number) => countOthersMessages(orderId, msgCounts[orderId] ?? 0) > 0;
 
     return (
         <>
@@ -736,9 +767,13 @@ export function OrdersList({ orders, onStatusChange }: OrdersListProps) {
                         currentUserId={currentUserId}
                         initialTab={openTab}
                         onClose={handleClose}
+                        onOrderUpdated={(updated) => {
+                            onOrderUpdated?.(updated);
+                            setViewing(updated);
+                        }}
                         onStatusChange={onStatusChange
-                            ? async (id, status) => {
-                                await onStatusChange(id, status);
+                            ? async (id, status, photos) => {
+                                await onStatusChange(id, status, photos);
                                 setViewing(v => v ? { ...v, status: status as TailorOrder['status'] } : null);
                               }
                             : undefined

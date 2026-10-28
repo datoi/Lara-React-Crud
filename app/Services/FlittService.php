@@ -55,10 +55,16 @@ class FlittService
         return $this->merchantId !== '' && $this->secret !== '';
     }
 
-    /** The amount Flitt should be asked for, in tetri. */
-    public function minorUnits(Order $order): int
+    /** An amount in lari as Flitt takes it, in tetri. */
+    public function toMinor(float $amount): int
     {
-        return (int) round($order->total * 100);
+        return (int) round($amount * 100);
+    }
+
+    /** The amount Flitt should be asked for at a payment stage, in tetri. */
+    public function minorUnits(Order $order, string $stage = 'full'): int
+    {
+        return $this->toMinor($order->amountDue($stage));
     }
 
     /**
@@ -68,10 +74,27 @@ class FlittService
      * Duplicate order"), so the order number cannot be the gateway's id — one
      * abandoned checkout would make the order unpayable forever. Every attempt
      * takes its own '<order_number>_<random>' instead.
+     *
+     * A remodel is paid in two halves, and a payment that lands late must be
+     * credited to the half it was for, not to whichever one is due by then. So
+     * those references carry their stage: '_d-' for the first half, '_b-' for
+     * the second. A full payment keeps the original form.
      */
-    public function newReference(Order $order): string
+    public function newReference(Order $order, string $stage = 'full'): string
     {
-        return $order->order_number.'_'.Str::lower(Str::random(8));
+        $marker = ['deposit' => 'd-', 'balance' => 'b-'][$stage] ?? '';
+
+        return $order->order_number.'_'.$marker.Str::lower(Str::random(8));
+    }
+
+    /** The payment stage a gateway reference was minted for. */
+    public function stageFor(string $reference): string
+    {
+        if (preg_match('/_([db])-[a-z0-9]+$/', $reference, $m)) {
+            return $m[1] === 'd' ? 'deposit' : 'balance';
+        }
+
+        return 'full';
     }
 
     /**
@@ -128,7 +151,7 @@ class FlittService
      * Create a checkout token for an order. Returns the token, or null if Flitt
      * refused or could not be reached — the caller turns that into a 502.
      */
-    public function createCheckoutToken(Order $order, ?string $lang = null): ?string
+    public function createCheckoutToken(Order $order, ?string $lang = null, string $stage = 'full'): ?string
     {
         if (! $this->isConfigured()) {
             Log::error('Flitt is not configured — set FLITT_MERCHANT_ID and FLITT_SECRET_KEY.');
@@ -136,13 +159,14 @@ class FlittService
             return null;
         }
 
-        $reference = $this->newReference($order);
+        $reference = $this->newReference($order, $stage);
+        $label = ['deposit' => ' (first 50%)', 'balance' => ' (second 50%)'][$stage] ?? '';
 
         $params = [
             'order_id'            => $reference,
             'merchant_id'         => $this->merchantId,
-            'order_desc'          => "Kere order {$order->order_number}",
-            'amount'              => $this->minorUnits($order),
+            'order_desc'          => "Kere order {$order->order_number}{$label}",
+            'amount'              => $this->minorUnits($order, $stage),
             'currency'            => 'GEL',
             'lang'                => $this->languageFor($lang),
             'server_callback_url' => url('/api/payments/flitt/callback'),
@@ -223,6 +247,52 @@ class FlittService
         }
 
         return $body;
+    }
+
+    /**
+     * Ask Flitt to give money back on a payment, fully or in part.
+     *
+     * Returns the response payload — reverse_status is 'approved' or
+     * 'processing' when the money is on its way back — or null when Flitt could
+     * not be reached, which leaves the outcome unknown: the reverse may have
+     * gone through with only the answer lost. The reverse_id is the idempotency
+     * key: a retry that sends the same one cannot refund twice.
+     */
+    public function reverse(string $reference, int $amountMinor, string $reverseId, ?string $comment = null): ?array
+    {
+        if (! $this->isConfigured()) {
+            Log::error('Flitt is not configured — cannot refund '.$reference);
+
+            return null;
+        }
+
+        $params = [
+            'order_id'    => $reference,
+            'merchant_id' => $this->merchantId,
+            'amount'      => $amountMinor,
+            'currency'    => 'GEL',
+            'reverse_id'  => $reverseId,
+            'comment'     => $comment ? mb_substr($comment, 0, 1000) : null,
+        ];
+        $params['signature'] = $this->signature($params);
+
+        try {
+            $response = Http::acceptJson()->timeout(30)->post("{$this->apiUrl}/reverse/order_id", [
+                'request' => array_filter($params, fn ($value) => $value !== null),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Flitt reverse request failed for {$reference}: ".$e->getMessage());
+
+            return null;
+        }
+
+        $body = $response->json('response', []);
+
+        if (($body['response_status'] ?? null) !== 'success') {
+            Log::error("Flitt reverse rejected for {$reference}: ".$response->body());
+        }
+
+        return is_array($body) ? $body : null;
     }
 
     /**

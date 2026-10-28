@@ -76,6 +76,9 @@ test('deleting an ordered product keeps the line on the customer\'s order', func
         ->assertJsonPath('orders.0.items.0.product_name', 'Linen Dress')
         ->assertJsonPath('orders.0.items.0.product_id', null);
 
+    // The tailor sees a marketplace order once it is paid.
+    $order->update(['payment_status' => 'paid']);
+
     $this->withToken($tailorToken)->getJson('/api/tailor/orders')
         ->assertJsonPath('orders.0.items.0.product_name', 'Linen Dress')
         ->assertJsonPath('orders.0.items.0.product_image', null);

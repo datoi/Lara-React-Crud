@@ -5,8 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Navigation } from '../components/landing/Navigation';
 import { Footer } from '../components/landing/Footer';
 import {
-    ArrowRight, CheckCircle, Star,
-    Scissors, ChevronDown, ChevronUp,
+    ArrowRight, Scissors, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { getAuthUser } from '../hooks/useAuth';
 import { isRestrictedTailor } from '../lib/tailorAccess';
@@ -22,18 +21,6 @@ function formatCount(n: number): string {
     if (n >= 1000) return (Math.floor(n / 100) / 10).toFixed(n % 1000 === 0 ? 0 : 1).replace('.', ' ') + 'k+';
     return n > 0 ? `${n}+` : '—';
 }
-
-type FeaturedTailor = {
-    id:               number;
-    name:             string;
-    bio:              string | null;
-    specialty:        string | null;
-    years_experience: number | null;
-    profile_image:    string | null;
-    products_count:   number;
-    reviews_count:    number;
-    avg_rating:       number | null;
-};
 
 // ─── FAQ item ─────────────────────────────────────────────────────────────────
 
@@ -238,17 +225,11 @@ export default function BecomePartner() {
     // so the links to them are not offered.
     const restricted = isRestrictedTailor(getAuthUser());
     const [platformStats,   setPlatformStats]   = useState<PlatformStats | null>(null);
-    const [featuredTailors, setFeaturedTailors] = useState<FeaturedTailor[]>([]);
 
     useEffect(() => {
         fetch('/api/platform/stats', { headers: { 'Accept': 'application/json' } })
             .then(r => r.ok ? r.json() : null)
             .then(d => d && setPlatformStats(d))
-            .catch(() => {});
-
-        fetch('/api/tailors', { headers: { 'Accept': 'application/json' } })
-            .then(r => r.ok ? r.json() : null)
-            .then(d => d?.tailors && setFeaturedTailors(d.tailors.slice(0, 3)))
             .catch(() => {});
     }, []);
 
@@ -319,16 +300,6 @@ export default function BecomePartner() {
                                     label={t('partners.becomePartner')}
                                     className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-[#6F1D24] px-7 text-sm font-semibold text-white shadow-[0_12px_34px_rgba(111,29,36,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#57161C]"
                                 />
-
-                                {!restricted && (
-                                    <Link
-                                        to="/our-tailors"
-                                        className="partners-secondary-cta inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full border border-[#111111] bg-transparent px-7 text-sm font-semibold text-[#111111] no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-[#111111] hover:bg-transparent hover:text-[#111111]"
-                                    >
-                                        {t('partners.seeTailors')}
-                                        <ArrowRight className="h-4 w-4" />
-                                    </Link>
-                                )}
                             </motion.div>
                         </motion.div>
 
@@ -491,128 +462,6 @@ export default function BecomePartner() {
                             className="group inline-flex min-h-[46px] items-center justify-center gap-3 rounded-full bg-brand px-7 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-dark"
                         />
                     </div>
-                </div>
-            </section>
-
-            {/* ── 5. Featured tailors ── */}
-            <section className="partners-tailors-section py-12 md:py-16 bg-[var(--store-paper)]">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.5 }}
-                        className="text-center mb-14"
-                    >
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-                            {t('partners.tailorsTitle')}
-                        </h2>
-                    </motion.div>
-
-                    <div className="grid md:grid-cols-3 gap-6">
-                        {featuredTailors.length === 0
-                            ? Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="partners-tailor-card p-5 border border-[#e5dfd8] animate-pulse">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-14 h-14 rounded-full bg-slate-200 shrink-0" />
-                                        <div className="flex-1 space-y-2">
-                                            <div className="h-3 bg-slate-200 rounded w-2/3" />
-                                            <div className="h-2.5 bg-slate-200 rounded w-1/2" />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="h-2.5 bg-slate-200 rounded w-full" />
-                                        <div className="h-2.5 bg-slate-200 rounded w-5/6" />
-                                        <div className="h-2.5 bg-slate-200 rounded w-4/6" />
-                                    </div>
-                                </div>
-                            ))
-                            : featuredTailors.map((tailor, i) => (
-                            <motion.div
-                                key={tailor.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.45, delay: i * 0.08 }}
-                                className="partners-tailor-card p-5 border border-[#e5dfd8] flex flex-col gap-4"
-                            >
-                                <div className="flex items-center gap-3">
-                                    {tailor.profile_image ? (
-                                        <img
-                                            src={tailor.profile_image}
-                                            alt={tailor.name}
-                                            className="w-14 h-14 rounded-full object-cover shrink-0 border border-slate-200"
-                                        />
-                                    ) : (
-                                        <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
-                                            <span className="text-slate-500 font-semibold text-lg">
-                                                {tailor.name.charAt(0)}
-                                            </span>
-                                        </div>
-                                    )}
-                                    <div className="min-w-0">
-                                        <p className="font-semibold text-slate-900 text-sm truncate">{tailor.name}</p>
-                                        {tailor.specialty && (
-                                            <p className="text-xs text-slate-500 truncate">{tailor.specialty}</p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {tailor.avg_rating !== null && (
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex gap-0.5">
-                                            {Array.from({ length: 5 }).map((_, j) => (
-                                                <Star
-                                                    key={j}
-                                                    className={`w-3.5 h-3.5 ${j < Math.round(tailor.avg_rating!) ? 'fill-slate-900 text-slate-900' : 'text-slate-300'}`}
-                                                />
-                                            ))}
-                                        </div>
-                                        <span className="text-xs font-semibold text-slate-700">{tailor.avg_rating.toFixed(1)}</span>
-                                        <span className="text-xs text-slate-400">({tailor.reviews_count} {t('partners.reviews')})</span>
-                                    </div>
-                                )}
-
-                                {tailor.bio ? (
-                                    <p className="text-sm text-slate-600 leading-relaxed flex-1 line-clamp-3">{tailor.bio}</p>
-                                ) : (
-                                    <p className="text-sm text-slate-400 italic flex-1">{t('partners.noBio')}</p>
-                                )}
-
-                                <div className="flex items-center gap-4 text-xs text-slate-500 pt-1 border-t border-slate-100">
-                                    {tailor.years_experience != null && (
-                                        <span className="flex items-center gap-1">
-                                            <CheckCircle className="w-3.5 h-3.5 text-slate-400" />
-                                            {tailor.years_experience} {t('partners.yrsExperience')}
-                                        </span>
-                                    )}
-                                    {tailor.products_count > 0 && (
-                                        <span className="flex items-center gap-1">
-                                            <Scissors className="w-3.5 h-3.5 text-slate-400" />
-                                            {tailor.products_count} {t('partners.reviews')}
-                                        </span>
-                                    )}
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.4, delay: 0.25 }}
-                        className="text-center mt-10"
-                    >
-                        {!restricted && (
-                            <Link
-                                to="/our-tailors"
-                                className="text-sm text-slate-500 hover:text-slate-900 transition-colors inline-flex items-center gap-1.5"
-                            >
-                                {t('partners.meetAllTailors')} <ArrowRight className="w-4 h-4" />
-                            </Link>
-                        )}
-                    </motion.div>
                 </div>
             </section>
 

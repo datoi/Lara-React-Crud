@@ -18,7 +18,7 @@ class TailorRejected extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Kere — Application Update',
+            subject: 'Kere — თქვენი განაცხადის შესახებ',
         );
     }
 

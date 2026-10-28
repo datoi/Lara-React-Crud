@@ -3,19 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Mail\NewOrderAlert;
 use App\Mail\OrderConfirmation;
 use App\Mail\OrderStatusUpdated;
-use App\Mail\TailorRequestReceived;
 use App\Models\KereNotification;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\TailorRequest;
 use App\Models\User;
-use App\Services\Notifier;
-use App\Services\SmsService;
 use App\Support\Measurements;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -109,8 +106,9 @@ class OrderController extends Controller
     private function storeMarketplaceOrder(Request $request, User $user)
     {
         // Two shapes reach this endpoint: a single product (product page) and a
-        // cart checkout, which posts one request per tailor carrying that tailor's
-        // lines. Both normalise into $lines so there is a single code path below.
+        // cart checkout, which posts one request per delivery, the lines one
+        // tailor makes. Both normalise into $lines so there is a single code
+        // path below.
         $isCart = $request->has('items');
 
         if ($isCart) {
@@ -120,7 +118,6 @@ class OrderController extends Controller
                 'items.*.color' => 'nullable|string|max:100',
                 'items.*.size' => 'nullable|string|max:50',
                 'items.*.quantity' => 'required|integer|min:1|max:1000',
-                'tailor_id' => 'nullable|integer|exists:users,id',
             ]);
 
             $lines = array_map(fn ($i) => [
@@ -139,7 +136,6 @@ class OrderController extends Controller
                 'quantity' => 'required|integer|min:1|max:1000',
                 ...Measurements::rules('cm_measurements'),
                 'customization_note' => ['nullable', 'string', 'max:1000'],
-                'tailor_id' => 'nullable|integer|exists:users,id',
             ]);
 
             $lines = [[
@@ -185,18 +181,12 @@ class OrderController extends Controller
 
         $shipping = (int) config('app.shipping_cost', 15);
 
-        // Customer-chosen tailor takes priority; fall back to product's tailor then random
-        if (! empty($data['tailor_id'])) {
-            $tailor = User::where('id', $data['tailor_id'])->where('role', 'tailor')->first();
-            if (! $tailor) {
-                return response()->json(['message' => 'Selected tailor is not available.'], 422);
-            }
-        } else {
-            $firstProduct = $products[$lines[0]['product_id']];
-            $tailor = $firstProduct->tailor_id
-                ? User::find($firstProduct->tailor_id)
-                : $this->randomTailor();
-        }
+        // Kere decides who makes it, never the customer (terms §3): the tailor
+        // who listed the product, or for a product nobody listed, any tailor.
+        $firstProduct = $products[$lines[0]['product_id']];
+        $tailor = $firstProduct->tailor_id
+            ? User::find($firstProduct->tailor_id)
+            : $this->randomTailor();
 
         // Critical #3: no tailor available
         if (! $tailor) {
@@ -295,14 +285,19 @@ class OrderController extends Controller
             'order_number' => $order->order_number,
             'total' => $order->total,
             'payment_status' => $order->payment_status,
-            'tailor_name' => $tailor->getFullName(),
         ], 201);
     }
 
     private function storeCustomOrder(Request $request, User $user)
     {
+        if (! config('app.custom_orders_open')) {
+            return response()->json([
+                'message' => 'Custom orders are not open yet.',
+                'code' => 'custom_orders_paused',
+            ], 409);
+        }
+
         $data = $request->validate([
-            'tailor_assignment_mode' => 'nullable|in:manual,random',
             'custom_design_data' => 'required|array|max:50',
             // Support old shape (clothingType) and new shape (garment_type)
             'custom_design_data.clothingType' => 'nullable|string|max:100',
@@ -350,7 +345,6 @@ class OrderController extends Controller
             'custom_design_data.designElements.*' => 'nullable|string|max:100',
             'custom_design_data.colorPalette' => 'nullable|array|max:10',
             'custom_design_data.colorPalette.*' => 'nullable|string|max:50',
-            'tailor_id' => 'nullable|integer|exists:users,id',
         ]);
 
         // Resolve the canonical garment identifier (new field takes priority)
@@ -362,40 +356,22 @@ class OrderController extends Controller
             return response()->json(['message' => 'Garment type is required.'], 422);
         }
 
-        $assignmentMode = $data['tailor_assignment_mode'] ?? 'manual';
         $shipping = (int) config('app.shipping_cost', 15);
-        $status = 'pending';
-        $tailor = null;
 
-        if ($assignmentMode === 'manual' && ! empty($data['tailor_id'])) {
-            $tailor = User::where('id', $data['tailor_id'])
-                ->where('role', 'tailor')
-                ->where(fn ($q) => $q->where('is_available', true)->orWhereNull('is_available'))
-                ->first();
-
-            if (! $tailor) {
-                // Tailor became unavailable between selection and submit
-                return response()->json([
-                    'message' => 'This tailor is no longer available. Please choose another.',
-                ], 409);
-            }
-        } else {
-            // No tailor chosen: the order goes to the open pool where tailors send offers
-            $status = 'pending_assignment';
-        }
-
-        $order = DB::transaction(function () use ($data, $user, $tailor, $shipping, $status, $assignmentMode, $garmentType) {
+        // The customer never picks a tailor (terms §3). The order goes to the
+        // open pool, tailors send Kere their estimates, and Kere makes the
+        // customer an offer based on one of them (AdminController::sendOffer).
+        $order = DB::transaction(function () use ($data, $user, $shipping, $garmentType) {
             $order = Order::create([
                 'user_id' => $user->id,
-                'tailor_id' => $tailor?->id,
+                'tailor_id' => null,
                 'order_number' => 'ORD-'.strtoupper(Str::random(8)),
                 'order_type' => 'custom',
-                // Priced and settled offline once a tailor takes the job — never
-                // card-paid here, so it must not sit at the 'unpaid' default that
-                // the payment path and the expiry job both read as "owes money".
+                // Not card-paid here, so it must not sit at the 'unpaid'
+                // default that the payment path reads as "owes money".
                 'payment_status' => 'not_required',
-                'tailor_assignment_mode' => $assignmentMode,
-                'status' => $status,
+                'tailor_assignment_mode' => 'random',
+                'status' => 'pending_assignment',
                 'subtotal' => 0,
                 'shipping' => $shipping,
                 'total' => $shipping,
@@ -410,30 +386,19 @@ class OrderController extends Controller
                 'country' => 'GE',
             ]);
 
-            if ($tailor) {
-                $this->notify(
-                    $tailor->id,
-                    'new_order',
-                    'New Custom Design Order!',
-                    "You received a custom {$garmentType} design from {$user->getFullName()}.",
+            // Open pool: every approved tailor can see the design and send Kere an estimate
+            User::where('role', 'tailor')
+                ->where(fn ($q) => $q->where('approval_status', 'approved')->orWhereNull('approval_status'))
+                ->where(fn ($q) => $q->where('is_suspended', false)->orWhereNull('is_suspended'))
+                ->pluck('id')
+                ->each(fn ($tailorId) => $this->notify(
+                    $tailorId,
+                    'open_order',
+                    'ახალი მოთხოვნა',
+                    "მომხმარებელმა შეუკვეთა ინდივიდუალური დიზაინი ({$garmentType}). თუ მისი შეკერვა გსურთ, გამოუგზავნეთ Kere-ს ფასის შეფასება თქვენი პანელიდან.",
                     $order->id,
                     ['clothing_type' => $garmentType]
-                );
-            } else {
-                // Open pool: every approved tailor can see the design and send an offer
-                User::where('role', 'tailor')
-                    ->where(fn ($q) => $q->where('approval_status', 'approved')->orWhereNull('approval_status'))
-                    ->where(fn ($q) => $q->where('is_suspended', false)->orWhereNull('is_suspended'))
-                    ->pluck('id')
-                    ->each(fn ($tailorId) => $this->notify(
-                        $tailorId,
-                        'open_order',
-                        'New Design Request Available',
-                        "A customer placed a custom {$garmentType} order. Send an offer from your dashboard if you want to make it.",
-                        $order->id,
-                        ['clothing_type' => $garmentType]
-                    ));
-            }
+                ));
 
             return $order;
         });
@@ -444,25 +409,17 @@ class OrderController extends Controller
             Log::error('OrderConfirmation email failed (custom): '.$e->getMessage());
         }
 
-        if ($tailor) {
-            (new Notifier)->dual(
-                $tailor,
-                "Kere: ახალი შეკვეთა #{$order->order_number} — იხილეთ დეტალები თქვენს პანელზე.",
-                new NewOrderAlert($order, $user)
-            );
-        }
-
         return response()->json([
             'order_number' => $order->order_number,
             'total' => $order->total,
-            'tailor_name' => $tailor?->getFullName(),
             'status' => $order->status,
         ], 201);
     }
 
     // ─── POST /api/orders (order_type=remodel) ────────────────────────────────
     // Customer sends an existing garment to be altered/remodeled. Broadcast to the
-    // open pool; tailors send a priced offer; the customer picks one (chooseTailor).
+    // open pool; tailors send Kere their estimates; Kere makes the customer one
+    // offer (AdminController::sendOffer), which the customer accepts or declines.
 
     private function storeRemodelOrder(Request $request, User $user)
     {
@@ -511,7 +468,7 @@ class OrderController extends Controller
                 'country' => 'GE',
             ]);
 
-            // Open pool: every approved, non-suspended tailor who takes remodel work is invited to offer
+            // Open pool: every approved, non-suspended tailor who takes remodel work is asked for an estimate
             User::where('role', 'tailor')
                 ->where('does_remodeling', true)
                 ->where(fn ($q) => $q->where('approval_status', 'approved')->orWhereNull('approval_status'))
@@ -520,8 +477,8 @@ class OrderController extends Controller
                 ->each(fn ($tailorId) => $this->notify(
                     $tailorId,
                     'open_order',
-                    'New Remodel Request Available',
-                    "A customer wants a garment altered. Send a priced offer from your dashboard if you want the job.",
+                    'ახალი გადაკეთების მოთხოვნა',
+                    'მომხმარებელს სამოსის გადაკეთება სურს. თუ სამუშაოს აიღებთ, გამოუგზავნეთ Kere-ს ფასისა და ვადის შეფასება თქვენი პანელიდან.',
                     $order->id,
                     ['order_type' => 'remodel']
                 ));
@@ -555,8 +512,12 @@ class OrderController extends Controller
             return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
         }
 
+        // A marketplace order becomes the tailor's once it is paid (terms §6):
+        // before that it is a basket the customer has not settled, and showing
+        // it let a tailor start work nobody had paid for.
         $orders = Order::with(['user', 'items.product'])
             ->where('tailor_id', $user->id)
+            ->releasedToTailor()
             ->latest()
             ->get()
             ->map(fn ($o) => $this->formatOrder($o));
@@ -618,7 +579,9 @@ class OrderController extends Controller
     }
 
     // ─── POST /api/tailor/orders/{id}/request ────────────────────────────────
-    // Tailor offers to make an open order; the customer picks the winner
+    // A tailor's estimate for an open order. It goes to Kere, not the customer:
+    // Kere bases its own offer on one estimate (terms §8), and the customer
+    // never sees who sent it (terms §3).
 
     public function requestOrder(Request $request, int $id)
     {
@@ -639,22 +602,20 @@ class OrderController extends Controller
             ->first();
 
         if (! $order) {
-            return response()->json(['message' => 'This order is no longer open for offers.'], 409);
+            return response()->json(['message' => 'This order is no longer open for estimates.'], 409);
         }
 
-        // A remodel is a priced job — the tailor must quote a price. Custom orders
-        // keep price optional (settled later), so the rule depends on the order type.
-        $priceRule = $order->order_type === 'remodel'
-            ? 'required|numeric|min:0|max:99999'
-            : 'nullable|numeric|min:0|max:99999';
-
+        // Kere's offer names a price and a completion time (terms §8), so an
+        // estimate it can be based on has to give both.
         $data = $request->validate([
             'message' => 'nullable|string|max:500',
-            'offered_price' => $priceRule,
+            'offered_price' => 'required|numeric|min:1|max:99999',
+            // How long the work takes once the garment arrives (terms §8, §17).
+            'ready_in_days' => 'required|integer|min:1|max:120',
         ]);
 
         if (TailorRequest::where('order_id', $order->id)->where('tailor_id', $user->id)->exists()) {
-            return response()->json(['message' => 'You already sent an offer for this order.'], 409);
+            return response()->json(['message' => 'You already sent an estimate for this order.'], 409);
         }
 
         try {
@@ -663,39 +624,20 @@ class OrderController extends Controller
                 'tailor_id' => $user->id,
                 'message' => $data['message'] ?? null,
                 'offered_price' => $data['offered_price'] ?? null,
+                'ready_in_days' => $data['ready_in_days'] ?? null,
                 'status' => 'pending',
             ]);
         } catch (QueryException) {
             // Unique (order_id, tailor_id) race — treat as duplicate
-            return response()->json(['message' => 'You already sent an offer for this order.'], 409);
+            return response()->json(['message' => 'You already sent an estimate for this order.'], 409);
         }
 
-        $isRemodel = $order->order_type === 'remodel';
-        $title = $isRemodel ? 'A Tailor Offered on Your Remodel!' : 'A Tailor Wants to Make Your Design!';
-        $verb = $isRemodel ? 'offered to remodel your garment for order' : 'offered to make your order';
-
-        $this->notify(
-            $order->user_id,
-            'tailor_request',
-            $title,
-            "{$user->getFullName()} {$verb} #{$order->order_number}. Compare offers on your dashboard and choose your tailor.",
-            $order->id,
-            ['tailor_id' => $user->id, 'tailor_request_id' => $tailorRequest->id]
+        KereNotification::toAdmins(
+            $order,
+            'estimate_received',
+            'ახალი შეფასება',
+            "{$user->getFullName()}: შეკვეთა #{$order->order_number} — ₾".number_format((float) $tailorRequest->offered_price, 2).", {$tailorRequest->ready_in_days} დღე. გაუგზავნეთ მომხმარებელს Kere-ის შეთავაზება."
         );
-
-        $smsBody = $isRemodel
-            ? "Kere: მკერავმა შემოგთავაზათ თქვენი სამოსის გადაკეთება — შეკვეთა #{$order->order_number}. აირჩიეთ მკერავი თქვენს პანელზე."
-            : "Kere: მკერავს სურს თქვენი დიზაინის შეკერვა — შეკვეთა #{$order->order_number}. აირჩიეთ მკერავი თქვენს პანელზე.";
-
-        try {
-            if ($order->user->email) {
-                Mail::to($order->user->email)->send(new TailorRequestReceived($order, $user));
-            } elseif ($order->user->phone) {
-                (new SmsService)->send($order->user->phone, $smsBody);
-            }
-        } catch (\Throwable $e) {
-            Log::error('TailorRequestReceived notification failed: '.$e->getMessage());
-        }
 
         return response()->json(['request' => [
             'id' => $tailorRequest->id,
@@ -709,21 +651,17 @@ class OrderController extends Controller
     public function updateStatus(Request $request, int $id)
     {
         $user = $request->user();
-        if ($user->role !== 'tailor') {
-            return response()->json(['message' => 'Unauthorized.'], 403);
-        }
+        $order = $this->tailorOrder($request, $id);
 
-        if ($user->approval_status === 'pending' || $user->approval_status === 'rejected') {
-            return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
+        if ($order instanceof JsonResponse) {
+            return $order;
         }
-
-        $order = Order::with(['user', 'items.product'])
-            ->where('id', $id)
-            ->where('tailor_id', $user->id)
-            ->firstOrFail();
 
         $data = $request->validate([
             'status' => 'required|in:pending,processing,finished,cancelled',
+            // A remodel is finished with photos of the altered garment (terms §12).
+            'photos' => 'nullable|array|min:1|max:10',
+            'photos.*' => 'required|url|max:2000',
         ]);
 
         $oldStatus = $order->status;
@@ -742,13 +680,45 @@ class OrderController extends Controller
             return response()->json(['message' => 'Invalid status transition.'], 422);
         }
 
-        // Cancelling closes the order to payment as well. Writing `status` alone
-        // would leave payment_status 'unpaid', which is what PaymentController
-        // reads to decide an order is payable — a cancelled order would keep
-        // offering a Pay button and keep minting checkout tokens.
-        $order->update($newStatus === 'cancelled' && $order->payment_status === 'unpaid'
-            ? ['status' => $newStatus, 'payment_status' => 'expired']
-            : ['status' => $newStatus]);
+        // A paid remodel follows the steps the terms describe: work starts once
+        // the garment has arrived and been photographed (§12), and it is
+        // finished with photos of the result before it goes back (§12.4).
+        if ($order->isPaidRemodel() && $newStatus === 'processing' && ! $order->received_at) {
+            return response()->json(['message' => 'Confirm the garment has arrived first.', 'code' => 'garment_not_received'], 409);
+        }
+
+        if ($order->isPaidRemodel() && $newStatus === 'finished' && $oldStatus !== 'finished' && empty($data['photos'])) {
+            return response()->json(['message' => 'Add photos of the finished garment.', 'code' => 'photos_required'], 422);
+        }
+
+        // Cancelling closes the order to payment, puts its stock back and tells
+        // the admins what has to go back; Order::cancel does all of it, once.
+        if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
+            if (! $order->cancel('tailor')) {
+                return response()->json(['message' => 'Invalid status transition.'], 422);
+            }
+        } else {
+            $update = ['status' => $newStatus];
+
+            if ($newStatus === 'finished') {
+                $update['proposed_due_date'] = null;
+                if (! empty($data['photos'])) {
+                    $update['finished_photos'] = array_values($data['photos']);
+                }
+            }
+
+            $order->update($update);
+        }
+
+        if ($order->isPaidRemodel() && $newStatus === 'finished' && $oldStatus !== 'finished') {
+            KereNotification::aboutOrder(
+                $order->user_id,
+                $order,
+                'order_status',
+                'სამოსი მზადაა',
+                "შეკვეთა #{$order->order_number} დასრულდა — ნახეთ ფოტოები და გადაიხადეთ დარჩენილი ₾".number_format($order->amountDue('balance'), 2).', რის შემდეგაც სამოსს კურიერი მოგიტანთ.'
+            );
+        }
 
         $notifyStatuses = ['processing', 'finished', 'cancelled'];
         $shouldNotify = in_array($data['status'], $notifyStatuses) && $data['status'] !== $oldStatus;
@@ -800,6 +770,102 @@ class OrderController extends Controller
         return response()->json(['order' => $this->formatOrder($order->fresh(['user', 'items.product']))]);
     }
 
+    // ─── POST /api/tailor/orders/{id}/received ───────────────────────────────
+    // The courier has brought the garment. Before any work, the tailor
+    // photographs it as it arrived and notes any damage already there (terms
+    // §12.2–12.3); the agreed completion time starts counting from here.
+
+    public function markReceived(Request $request, int $id)
+    {
+        $order = $this->tailorOrder($request, $id);
+
+        if ($order instanceof JsonResponse) {
+            return $order;
+        }
+
+        $data = $request->validate([
+            'photos' => 'required|array|min:1|max:10',
+            'photos.*' => 'required|url|max:2000',
+            'notes' => 'nullable|string|max:2000',
+        ]);
+
+        if (! $order->isPaidRemodel() || $order->status !== 'pending' || ! $order->picked_up_at || $order->received_at) {
+            return response()->json(['message' => 'This order is not waiting for the garment.', 'code' => 'not_awaiting_garment'], 409);
+        }
+
+        $order->update([
+            'received_at' => now(),
+            'intake_photos' => array_values($data['photos']),
+            'intake_notes' => $data['notes'] ?? null,
+            'due_date' => $order->turnaround_days ? today()->addDays($order->turnaround_days)->toDateString() : null,
+        ]);
+
+        $body = "მკერავმა მიიღო შეკვეთის #{$order->order_number} სამოსი და ატვირთა მისი ფოტოები.";
+        if (filled($data['notes'] ?? null)) {
+            $body .= ' მკერავმა აღნიშნა არსებული ხარვეზი — ნახეთ შეკვეთის გვერდზე.';
+        }
+        KereNotification::aboutOrder($order->user_id, $order, 'order_status', 'სამოსი მკერავთანაა', $body);
+
+        return response()->json(['order' => $this->formatOrder($order->fresh(['user', 'items.product']))]);
+    }
+
+    // ─── POST /api/tailor/orders/{id}/due-date ───────────────────────────────
+    // A later completion date is only a proposal until the customer agrees to it
+    // (terms §17).
+
+    public function proposeDueDate(Request $request, int $id)
+    {
+        $order = $this->tailorOrder($request, $id);
+
+        if ($order instanceof JsonResponse) {
+            return $order;
+        }
+
+        $data = $request->validate([
+            'due_date' => 'required|date_format:Y-m-d|after:today',
+            'reason' => 'nullable|string|max:300',
+        ]);
+
+        if (! $order->due_date || ! in_array($order->status, ['pending', 'processing'], true)) {
+            return response()->json(['message' => 'This order has no completion date to change.', 'code' => 'no_due_date'], 409);
+        }
+
+        $order->update(['proposed_due_date' => $data['due_date']]);
+
+        // The customer hears it from Kere, not from the tailor (terms §17, §18).
+        $body = "Kere გთავაზობთ შეკვეთის #{$order->order_number} ახალ ვადას: {$data['due_date']}. დაეთანხმეთ ან უარი თქვით შეკვეთის გვერდზე.";
+        if (filled($data['reason'] ?? null)) {
+            $body .= " მიზეზი: {$data['reason']}";
+        }
+        KereNotification::aboutOrder($order->user_id, $order, 'order_status', 'ახალი ვადის შეთავაზება', $body);
+
+        return response()->json(['order' => $this->formatOrder($order->fresh(['user', 'items.product']))]);
+    }
+
+    /**
+     * The calling tailor's own order, or the refusal to send back. An unpaid
+     * marketplace order is not the tailor's yet (terms §6), so it is not found
+     * here any more than it is listed.
+     */
+    private function tailorOrder(Request $request, int $id): Order|JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'tailor') {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        if ($user->approval_status === 'pending' || $user->approval_status === 'rejected') {
+            return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
+        }
+
+        return Order::with(['user', 'items.product'])
+            ->where('id', $id)
+            ->where('tailor_id', $user->id)
+            ->releasedToTailor()
+            ->firstOrFail();
+    }
+
     // ─── Shared formatter ────────────────────────────────────────────────────
 
     private function formatOrder(Order $order): array
@@ -814,6 +880,18 @@ class OrderController extends Controller
             'total' => $order->total,
             'created_at' => $order->created_at?->toDateString(),
             'needed_by' => $order->needed_by?->toDateString(),
+            'payment_status' => $order->payment_status,
+            'paid_remodel' => $order->isPaidRemodel(),
+            'turnaround_days' => $order->turnaround_days,
+            'due_date' => $order->due_date?->toDateString(),
+            'proposed_due_date' => $order->proposed_due_date?->toDateString(),
+            'picked_up_at' => $order->picked_up_at?->toISOString(),
+            'received_at' => $order->received_at?->toISOString(),
+            'intake_photos' => $order->intake_photos ?? [],
+            'intake_notes' => $order->intake_notes,
+            'finished_photos' => $order->finished_photos ?? [],
+            'shipped_at' => $order->shipped_at?->toISOString(),
+            'measurements_purged' => $order->measurements_purged_at !== null,
             'custom_design_data' => $order->custom_design_data,
             'customer' => [
                 'name' => $order->user->getFullName(),

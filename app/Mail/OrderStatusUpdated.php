@@ -13,24 +13,38 @@ class OrderStatusUpdated extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public string $statusLabel;
+
     public string $statusMessage;
 
     public function __construct(public Order $order, public string $newStatus)
     {
+        // The same words the customer's dashboard uses for each status.
+        $this->statusLabel = match ($newStatus) {
+            'processing' => 'პროცესშია',
+            'shipped'    => 'გაიგზავნა',
+            'finished'   => 'დამთავრდა',
+            'delivered'  => 'ჩამოვიდა',
+            'cancelled'  => 'გაუქმებულია',
+            default      => $newStatus,
+        };
+
         $this->statusMessage = match ($newStatus) {
-            'processing' => 'Your order is being carefully crafted by your tailor.',
-            'shipped'    => 'Your order has been shipped and is on its way to you!',
-            'finished'   => 'Your order is finished and ready for delivery.',
-            'delivered'  => 'Your order has been delivered. Enjoy your new garment!',
-            'cancelled'  => 'Unfortunately, your order has been cancelled. Please contact support if you have questions.',
-            default      => 'Your order status has been updated.',
+            'processing' => 'მკერავმა დაიწყო მუშაობა თქვენს შეკვეთაზე.',
+            'shipped'    => 'შეკვეთა კურიერს გადაეცა და მალე მოგიტანთ.',
+            'finished'   => $order->paymentStageDue() === 'balance'
+                ? 'სამოსი მზადაა. ნახეთ მისი ფოტოები და გადაიხადეთ დარჩენილი ₾'.number_format($order->amountDue('balance'), 2).' თქვენს პანელზე — ამის შემდეგ სამოსს კურიერი დაგიბრუნებთ.'
+                : 'შეკვეთა მზადაა და მალე კურიერს გადაეცემა.',
+            'delivered'  => 'შეკვეთა ჩაბარებულია. თუ რამე პრობლემაა, შეგვატყობინეთ შეკვეთის გვერდიდან 24 საათში, ფოტოებით. ასევე შეგიძლიათ დატოვოთ შეფასება.',
+            'cancelled'  => 'სამწუხაროდ, შეკვეთა გაუქმდა. თუ თანხა უკვე გადაიხადეთ, ის ბარათზე დაგიბრუნდებათ. კითხვების შემთხვევაში დაგვიკავშირდით.',
+            default      => 'შეკვეთის სტატუსი განახლდა.',
         };
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Order ' . $this->order->order_number . ' — Status Updated',
+            subject: 'შეკვეთის სტატუსი განახლდა — '.$this->order->order_number,
         );
     }
 

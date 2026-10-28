@@ -15,9 +15,12 @@ class ProductController extends Controller
 {
     // ─── GET /api/products ────────────────────────────────────────────────────
 
+    // A product never carries its tailor: Kere sells it and publishes nothing
+    // about who makes it (terms §3, privacy policy §4.2). Only tailor_id goes
+    // out, a bare number the cart uses to split the bag into deliveries.
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'tailor' => fn ($q) => $q->select(User::PUBLIC_TAILOR_COLUMNS)])
+        $query = Product::with('category')
             ->withCount('reviews')
             ->withAvg('reviews', 'rating');
 
@@ -65,10 +68,7 @@ class ProductController extends Controller
             $term = '%' . $request->search . '%';
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', $term)
-                  ->orWhereHas('category', fn($cq) => $cq->where('name', 'like', $term)->orWhere('slug', 'like', $term))
-                  ->orWhereHas('tailor', fn($tq) => $tq->where('name', 'like', $term)
-                      ->orWhere('first_name', 'like', $term)
-                      ->orWhere('last_name', 'like', $term));
+                  ->orWhereHas('category', fn($cq) => $cq->where('name', 'like', $term)->orWhere('slug', 'like', $term));
             });
         }
 
@@ -93,9 +93,8 @@ class ProductController extends Controller
         $page      = max(1, min((int) $request->get('page', 1), 500));
         $paginator = $query->paginate(24, ['*'], 'page', $page)->withQueryString();
 
-        // Append tailor_name and review summary to each product
+        // Append the review summary to each product
         $paginator->getCollection()->transform(function ($p) {
-            $p->tailor_name    = $p->tailor?->getFullName();
             $p->reviews_count  = (int) $p->reviews_count;
             $p->average_rating = $p->reviews_avg_rating ? round((float) $p->reviews_avg_rating, 1) : null;
             unset($p->reviews_avg_rating);
@@ -110,20 +109,15 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         $product->loadCount('reviews')->loadAvg('reviews', 'rating');
-        $product->load(['category', 'tailor' => fn ($q) => $q->select(User::PUBLIC_TAILOR_COLUMNS)]);
-        $product->tailor_name    = $product->tailor?->getFullName();
+        $product->load('category');
         $product->reviews_count  = (int) $product->reviews_count;
         $product->average_rating = $product->reviews_avg_rating ? round((float) $product->reviews_avg_rating, 1) : null;
         unset($product->reviews_avg_rating);
 
-        $related = Product::with(['tailor' => fn ($q) => $q->select(User::PUBLIC_TAILOR_COLUMNS)])
-            ->where('category_id', $product->category_id)
+        $related = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->take(4)
-            ->get()
-            ->each(function ($p) {
-                $p->tailor_name = $p->tailor?->getFullName();
-            });
+            ->get();
 
         return response()->json([
             'product'       => $product,
@@ -176,16 +170,13 @@ class ProductController extends Controller
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
-        $productIds = Product::where('tailor_id', $user->id)->pluck('id');
-
-        $reviewsCount = Review::whereIn('product_id', $productIds)->count();
-        $avgRating    = $reviewsCount > 0
-            ? round(Review::whereIn('product_id', $productIds)->avg('rating'), 1)
-            : null;
+        // Every order they made counts, remodels included — the same score the
+        // admins see, and seen by no customer.
+        $score = Review::scoresForTailors([$user->id])->get($user->id);
 
         return response()->json([
-            'avg_rating'      => $avgRating,
-            'reviews_count'   => $reviewsCount,
+            'avg_rating'      => $score['average'] ?? null,
+            'reviews_count'   => $score['count'] ?? 0,
             'profile_complete' => !empty($user->bio) && !empty($user->specialty),
         ]);
     }

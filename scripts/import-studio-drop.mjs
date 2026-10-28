@@ -49,6 +49,8 @@ const BACK = {
     'Puff Sleeve':       'normal',
     'Balloon':           'normal',
     'Bell':              'normal',
+    'Raglan':            'normal',
+    'Rolled':            'normal',
 };
 
 /**
@@ -63,6 +65,8 @@ const SLEEVES = {
     'Cap Sleeve/Puff Sleeve':       'puff',
     'Cap Sleeve/Balloon':           'balloon',
     'Cap Sleeve/Bell':              'bell',
+    'Cap Sleeve/Raglan':            'raglan',
+    'Cap Sleeve/Rolled':            'rolled',
 };
 
 const COLOURS = {

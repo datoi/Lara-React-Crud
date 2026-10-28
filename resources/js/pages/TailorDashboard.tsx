@@ -82,7 +82,7 @@ export default function TailorDashboard() {
     }, [fetchOrders, fetchProducts, token]);
 
     // ─── Status update ────────────────────────────────────────────────────────
-    const handleStatusChange = async (orderId: number, status: string): Promise<void> => {
+    const handleStatusChange = async (orderId: number, status: string, photos?: string[]): Promise<void> => {
         if (!token) return;
         const res = await fetch(`/api/tailor/orders/${orderId}/status`, {
             method: 'PATCH',
@@ -91,12 +91,17 @@ export default function TailorDashboard() {
                 'Authorization': `Bearer ${token}`,
                 'Accept': 'application/json',
             },
-            body: JSON.stringify({ status }),
+            body: JSON.stringify(photos ? { status, photos } : { status }),
         });
         if (!res.ok) throw new Error('Failed to update status');
+        const updated = (await res.json()).order as TailorOrder | undefined;
         setOrders(prev => prev.map(o =>
-            o.id === orderId ? { ...o, status: status as TailorOrder['status'] } : o
+            o.id === orderId ? (updated ?? { ...o, status: status as TailorOrder['status'] }) : o
         ));
+    };
+
+    const handleOrderUpdated = (updated: TailorOrder) => {
+        setOrders(prev => prev.map(o => (o.id === updated.id ? updated : o)));
     };
 
     // ─── Product added ────────────────────────────────────────────────────────
@@ -312,7 +317,7 @@ export default function TailorDashboard() {
                     {loadingOrders ? (
                         <DashboardSkeleton />
                     ) : (
-                        <OrdersList orders={orders} onStatusChange={handleStatusChange} />
+                        <OrdersList orders={orders} onStatusChange={handleStatusChange} onOrderUpdated={handleOrderUpdated} />
                     )}
                 </motion.div>
             </main>

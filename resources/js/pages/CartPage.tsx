@@ -9,11 +9,11 @@ import { Navigation } from '../components/landing/Navigation';
 import { PaymentMarks } from '../components/PaymentMarks';
 import { Button } from '../components/ui/button';
 import { getAuthToken, saveReturnTo } from '../hooks/useAuth';
-import { serverMessageKey } from '../lib/serverMessage';
+import { serverMessageKey, translateServerMessage } from '../lib/serverMessage';
 import {
     cartSubtotal,
     clearCart,
-    groupByTailor,
+    groupByDelivery,
     lineKey,
     removeCartItem,
     updateCartQuantity,
@@ -22,13 +22,13 @@ import {
 } from '../hooks/useCart';
 
 interface PlacedOrder {
+    id: number;
     orderNumber: string;
     total: number;
-    tailorName: string;
 }
 
 export default function CartPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const items = useCart();
 
@@ -39,6 +39,8 @@ export default function CartPage() {
     const [placing, setPlacing] = useState(false);
     const [error, setError] = useState('');
     const [placed, setPlaced] = useState<PlacedOrder[] | null>(null);
+    const [payingId, setPayingId] = useState<number | null>(null);
+    const [payError, setPayError] = useState('');
 
     // Cart prices are a snapshot from when the item was added, so re-check each
     // product on arrival: refresh stock and shipping, and surface anything that
@@ -85,7 +87,7 @@ export default function CartPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [items.length, placed]);
 
-    const groups = groupByTailor(items);
+    const groups = groupByDelivery(items);
     const subtotal = cartSubtotal(items);
     const shippingTotal = shipping * groups.length;
     const total = subtotal + shippingTotal;
@@ -110,7 +112,8 @@ export default function CartPage() {
         const results: PlacedOrder[] = [];
 
         try {
-            // One order per tailor: each request carries only that tailor's lines.
+            // One order per delivery: each request carries only that delivery's
+            // lines, and the server works out who makes them.
             for (const group of groups) {
                 const res = await fetch('/api/orders', {
                     method: 'POST',
@@ -121,7 +124,6 @@ export default function CartPage() {
                     },
                     body: JSON.stringify({
                         order_type: 'marketplace',
-                        tailor_id: group.tailorId,
                         items: group.items.map((i) => ({
                             product_id: i.productId,
                             color: i.color,
@@ -137,7 +139,7 @@ export default function CartPage() {
                     const reason =
                         res.status === 429
                             ? t('cart.errorThrottled')
-                            : known ? t(known) : (body.message ?? t('cart.errorGeneric'));
+                            : t(known ?? 'cart.errorGeneric');
                     // Groups already ordered were removed as they succeeded, so the
                     // cart now holds only what still needs buying — pressing Place
                     // order again retries exactly that and cannot double-order.
@@ -150,9 +152,9 @@ export default function CartPage() {
                 // if a later group fails.
                 for (const item of group.items) removeCartItem(item);
                 results.push({
+                    id: data.id,
                     orderNumber: data.order_number,
                     total: data.total,
-                    tailorName: data.tailor_name ?? group.tailorName ?? '',
                 });
             }
 
@@ -162,6 +164,30 @@ export default function CartPage() {
             setError(t('cart.errorNetwork'));
         } finally {
             setPlacing(false);
+        }
+    };
+
+    // An order counts once it is paid (terms §6), and only then reaches the
+    // tailor, so each one placed from the bag is paid from here.
+    const pay = async (orderId: number) => {
+        setPayingId(orderId);
+        setPayError('');
+        try {
+            const res = await fetch(`/api/orders/${orderId}/pay`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${getAuthToken()}`, Accept: 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lang: i18n.language }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.checkout_url) {
+                setPayError(translateServerMessage(data, t, 'customerDashboard.payFailed'));
+                setPayingId(null);
+                return;
+            }
+            window.location.href = data.checkout_url;
+        } catch {
+            setPayError(t('customerDashboard.payFailed'));
+            setPayingId(null);
         }
     };
 
@@ -187,15 +213,18 @@ export default function CartPage() {
 
                         <ul className="mt-6 space-y-3 text-left">
                             {placed.map((order) => (
-                                <li key={order.orderNumber} className="flex items-center justify-between border border-[#111111]/12 bg-[#F7F6F3] px-4 py-3">
-                                    <div className="min-w-0">
-                                        <p className="truncate text-sm font-semibold text-[#111111]">{order.orderNumber}</p>
-                                        {order.tailorName && <p className="truncate text-xs text-[#6c625b]">{order.tailorName}</p>}
-                                    </div>
-                                    <span className="shrink-0 text-sm font-semibold text-[#111111]">₾{Number(order.total).toFixed(2)}</span>
+                                <li key={order.orderNumber} className="flex flex-wrap items-center justify-between gap-3 border border-[#111111]/12 bg-[#F7F6F3] px-4 py-3">
+                                    <p className="min-w-0 truncate text-sm font-semibold text-[#111111]">{order.orderNumber}</p>
+                                    <Button size="sm" disabled={payingId !== null} onClick={() => void pay(order.id)} className="shrink-0">
+                                        {payingId === order.id
+                                            ? t('customerDashboard.payStarting')
+                                            : t('orderCare.payAmount', { amount: `₾${Number(order.total).toFixed(2)}` })}
+                                    </Button>
                                 </li>
                             ))}
                         </ul>
+                        {payError && <p role="alert" className="mt-3 text-sm text-destructive">{payError}</p>}
+                        <PaymentMarks label={t('footer.weAccept')} className="mt-4 justify-center" />
 
                         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
                             <Button onClick={() => navigate('/customer-dashboard')}>{t('cart.viewOrders')}</Button>
@@ -228,11 +257,11 @@ export default function CartPage() {
                 ) : (
                     <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px] lg:items-start">
                         <div className="space-y-8">
-                            {groups.map((group) => (
+                            {groups.map((group, index) => (
                                 <section key={group.tailorId ?? 'unassigned'} className="border border-[#111111]/12 bg-white">
                                     <header className="flex items-center justify-between border-b border-[#111111]/12 px-5 py-3">
                                         <p className="text-xs font-semibold tracking-[0.08em] text-[#6c625b] uppercase">
-                                            {group.tailorName ? t('cart.soldBy', { tailor: group.tailorName }) : t('cart.tailorAssignedLater')}
+                                            {groups.length > 1 ? t('cart.deliveryN', { n: index + 1 }) : t('cart.delivery')}
                                         </p>
                                         <span className="text-xs text-[#6c625b]">{t('cart.shippingPerTailor', { amount: shipping })}</span>
                                     </header>

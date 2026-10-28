@@ -37,8 +37,8 @@ interface ApiProduct {
     category: { id: number; name: string; slug: string };
     /** Fields the tailor cannot make this piece without */
     required_measurements?: string[];
+    /** Which delivery the bag puts it in; who that is, is never shown */
     tailor_id: number | null;
-    tailor_name: string | null;
 }
 
 /**
@@ -74,8 +74,6 @@ export default function ProductCustomization({ customize = false }: { customize?
     const [customizationNote, setCustomizationNote] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [shippingCost, setShippingCost] = useState(15);
-    const [assignedTailor, setAssignedTailor] = useState('');
-    const [selectedTailorId, setSelectedTailorId] = useState<number | null>(null);
     const [ordered, setOrdered] = useState(false);
     const [placing, setPlacing] = useState(false);
     const [orderError, setOrderError] = useState('');
@@ -101,7 +99,8 @@ export default function ProductCustomization({ customize = false }: { customize?
     // gallery strip shows is still needed. null means the call has not landed
     // (or failed) — distinct from a product that genuinely has no reviews, which
     // would otherwise be asserted on the strength of a failed request.
-    const [reviews, setReviews] = useState<{ id: number; reviewer: string; rating: number; comment: string }[]>([]);
+    // Published reviews only, and anonymous: they read as feedback on Kere (terms §20).
+    const [reviews, setReviews] = useState<{ id: number; rating: number; comment: string }[]>([]);
     const [rating, setRating] = useState<{ average: number | null; count: number } | null>(null);
     const [fetchError, setFetchError] = useState(false);
     const [retryKey, setRetryKey] = useState(0);
@@ -140,9 +139,6 @@ export default function ProductCustomization({ customize = false }: { customize?
                 setProduct(p);
                 setRelatedProducts(data.related ?? []);
                 if (typeof data.shipping_cost === 'number') setShippingCost(data.shipping_cost);
-
-                // Auto-assign the product's tailor for marketplace orders
-                if (p.tailor_id) setSelectedTailorId(p.tailor_id);
 
                 // ── Thaw: restore selections saved before login redirect ──
                 const pending = getPendingOrder();
@@ -229,7 +225,6 @@ export default function ProductCustomization({ customize = false }: { customize?
                 size: showSizePicker ? selectedSize : null,
                 color: selectedColor || null,
                 tailorId: product.tailor_id,
-                tailorName: product.tailor_name ?? null,
             },
             quantity
         );
@@ -285,18 +280,15 @@ export default function ProductCustomization({ customize = false }: { customize?
                     quantity,
                     cm_measurements: customize ? measurements.snapshot : {},
                     customization_note: customize ? customizationNote.trim() || null : null,
-                    tailor_id: selectedTailorId,
                 }),
             });
             if (!res.ok) {
                 const err = await res.json();
-                const known = serverMessageKey(err.code);
-                setOrderError(known ? t(known) : err.message ?? t('productCustomization.errorSomethingWrong'));
+                setOrderError(t(serverMessageKey(err.code) ?? 'productCustomization.errorSomethingWrong'));
                 return;
             }
             const data = await res.json();
             clearPendingOrder();
-            setAssignedTailor(data.tailor_name ?? product!.tailor_name ?? t('productCustomization.yourTailorFallback'));
 
             // The order exists but is unpaid, so payment is the next step rather
             // than a later errand: go straight to the gateway. Everything below
@@ -374,7 +366,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                     content={
                         product.description
                             ? product.description.slice(0, 160)
-                            : `Order a custom ${product.name.toLowerCase()} handcrafted by a local Georgian tailor on Kere.`
+                            : `${product.name} from Kere, made in Tbilisi.`
                     }
                 />
                 <script type="application/ld+json">
@@ -409,7 +401,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                         <h2 className="kd-display text-[clamp(28px,4vw,40px)] leading-tight text-[var(--kd-burgundy)]">
                             {t('productCustomization.orderSuccess')}
                         </h2>
-                        <p className="mt-3 text-[15px] text-[var(--kd-body)]">{t('productCustomization.orderSuccessSent', { tailor: assignedTailor })}</p>
+                        <p className="mt-3 text-[15px] text-[var(--kd-body)]">{t('productCustomization.orderSuccessSent')}</p>
                         {/* The order is placed either way; this says which of the
                             two things just happened rather than leaving the
                             customer to discover an unpaid order on their own. */}
@@ -660,7 +652,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                                     </Button>}
                                 </div>
 
-                                <p className="mt-3.5 text-[12px] text-[var(--kd-muted)]">{t('productCustomization.noPaymentNow')}</p>
+                                <p className="mt-3.5 text-[12px] text-[var(--kd-muted)]">{t('productCustomization.paymentNote')}</p>
                             </div> : (
                                 <div className="mt-6">
                                     {orderError && <p role="alert" className="mb-3 text-xs text-brand">{orderError}</p>}
@@ -687,7 +679,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                         <h2 className="text-sm uppercase">{t('productDetails.reviews')}</h2>
                         <p className="my-6 text-xs">{rating?.count ? `${rating.average?.toFixed(1)} / 5 · ${rating.count} ${t('productDetails.reviews')}` : t('productCustomization.noReviewsYet')}</p>
                         <div className="mx-auto max-w-2xl text-left">
-                            {reviews.map(review => <article key={review.id} className="mb-5 border-b border-[var(--kd-rule)] pb-5 text-xs"><p>{review.reviewer} · {review.rating}/5</p><p className="mt-2 leading-6">{review.comment}</p></article>)}
+                            {reviews.map(review => <article key={review.id} className="mb-5 border-b border-[var(--kd-rule)] pb-5 text-xs"><p>{review.rating}/5</p><p className="mt-2 leading-6">{review.comment}</p></article>)}
                         </div>
                         <Link to="/customer-dashboard" className="inline-flex min-h-10 items-center border border-[var(--kd-rule)] px-5 text-xs">{t('productDetails.writeReview')}</Link>
                     </section>

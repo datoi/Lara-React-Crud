@@ -9,6 +9,7 @@ import { Navigation } from '../components/landing/Navigation';
 import { Button } from '../components/ui/button';
 import { getAuthToken, getAuthUser, saveReturnTo } from '../hooks/useAuth';
 import { tomorrowCalendarDay } from '../lib/dates';
+import { uploadPhoto, type UploadResult } from '../lib/photoUpload';
 import { shrinkPhoto } from '../lib/shrinkPhoto';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -19,26 +20,6 @@ const MAX_IMAGES = 10;
 interface UploadedImage {
     url: string;
     preview: string;
-}
-
-interface UploadResult {
-    status: number;
-    /** Where the photo can be fetched, when the server kept it */
-    url?: string;
-}
-
-/** One photo sent to the server. Throws only when the request never got an answer. */
-async function uploadPhoto(file: File, token: string): Promise<UploadResult> {
-    const form = new FormData();
-    form.append('file', file);
-    const res = await fetch('/api/uploads', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-        body: form,
-    });
-    if (!res.ok) return { status: res.status };
-    const data = (await res.json()) as { file_url: string };
-    return { status: res.status, url: data.file_url };
 }
 
 const inputClass =

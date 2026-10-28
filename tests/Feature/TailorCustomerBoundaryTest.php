@@ -20,17 +20,19 @@ function signedIn(array $attributes): string
 
 beforeEach(function () {
     // The wishlist routes bind {product} before the role check runs, so they
-    // need a real product for the refusal to be the thing under test.
+    // need a real product for the refusal to be the thing under test. The id is
+    // forced: `id` is not fillable, and PostgreSQL does not restart its counter
+    // between tests the way SQLite's numbering does.
     $category = Category::create(['name' => 'Test', 'slug' => 'test']);
-    Product::create(['id' => 1, 'category_id' => $category->id, 'name' => 'Test Jacket', 'slug' => 'test-jacket', 'price' => 120, 'gender' => 'women', 'stock' => 1]);
+    Product::forceCreate(['id' => 1, 'category_id' => $category->id, 'name' => 'Test Jacket', 'slug' => 'test-jacket', 'price' => 120, 'gender' => 'women', 'stock' => 1]);
 });
 
 dataset('customer-only routes', [
     'place an order' => ['POST', '/api/orders'],
     'list orders' => ['GET', '/api/customer/orders'],
-    'order offers' => ['GET', '/api/customer/orders/1/requests'],
     'review status' => ['GET', '/api/customer/orders/1/review-status'],
-    'choose a tailor' => ['POST', '/api/customer/orders/1/choose-tailor'],
+    'accept an offer' => ['POST', '/api/customer/orders/1/accept-offer'],
+    'decline an offer' => ['POST', '/api/customer/orders/1/decline-offer'],
     'pay' => ['POST', '/api/orders/1/pay'],
     'verify payment' => ['POST', '/api/orders/1/verify-payment'],
     'review' => ['POST', '/api/reviews'],

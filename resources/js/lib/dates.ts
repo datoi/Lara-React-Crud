@@ -5,12 +5,21 @@ import type { TFunction } from 'i18next';
  * such as the day a customer needs an order by.
  */
 
+function calendarDayOf(date: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 /** Tomorrow as a calendar day: the earliest "needed by" date the API accepts. */
 export function tomorrowCalendarDay(): string {
     const date = new Date();
     date.setDate(date.getDate() + 1);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    return calendarDayOf(date);
+}
+
+/** The day a timestamp (an ISO string from the API) fell on where the reader is, written out. */
+export function formatTimestampDay(iso: string, t: TFunction): string {
+    return formatCalendarDay(calendarDayOf(new Date(iso)), t);
 }
 
 /**

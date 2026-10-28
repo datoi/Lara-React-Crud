@@ -18,7 +18,7 @@ class TailorApproved extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Welcome to Kere — Your Account is Approved!',
+            subject: 'მოგესალმებით Kere-ზე — თქვენი ანგარიში დადასტურდა',
         );
     }
 

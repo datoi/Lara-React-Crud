@@ -1,11 +1,11 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { ProductImage } from '../components/marketplace/ProductImage';
-import { BadgeCheck, ChevronDown, ImageOff, LayoutGrid, Search, Star, X } from 'lucide-react';
+import { ChevronDown, ImageOff, LayoutGrid, Search, Star, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { ErrorFallback } from '../components/ErrorFallback';
 import { Navigation } from '../components/landing/Navigation';
 import { ProductCardSkeleton } from '../components/marketplace/ProductCardSkeleton';
@@ -23,7 +23,6 @@ interface ApiProduct {
     description: string;
     is_customizable: boolean;
     tailor_id: number | null;
-    tailor_name: string | null;
     category: { id: number; name: string; slug: string };
     /** Non-empty for a piece made to the customer's measurements */
     required_measurements?: string[] | null;
@@ -251,7 +250,6 @@ export default function Marketplace() {
             // colour is chosen on the product page instead.
             color: null,
             tailorId: product.tailor_id,
-            tailorName: product.tailor_name,
         });
         openCart();
     };
@@ -403,7 +401,7 @@ export default function Marketplace() {
                 <title>{t('marketplace.pageTitle')}</title>
                 <meta
                     name="description"
-                    content="Browse handcrafted designs from local Georgian tailors. Find the perfect garment or customize one to your exact measurements."
+                    content="Ready-made clothing from Kere, made in Tbilisi. Find the perfect garment or have it made to your exact measurements."
                 />
             </Helmet>
             <Navigation />
@@ -695,28 +693,6 @@ export default function Marketplace() {
 
                                     <div className="px-0 py-3 sm:border-t sm:border-[#111111]/12 sm:px-3">
                                         <h3 className="market-product-name mb-1 text-[10px] leading-snug font-normal text-[#111111] sm:text-xs">{product.name}</h3>
-                                        <p className="mb-2 hidden flex-wrap items-center gap-1 text-[10px] text-[#6c625b] sm:flex">
-                                            <span>
-                                                {t('marketplace.by')}{' '}
-                                                {product.tailor_id ? (
-                                                    <Link
-                                                        to={`/tailor/${product.tailor_id}`}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="transition-colors hover:text-[#111111] hover:underline"
-                                                    >
-                                                        {product.tailor_name ?? ''}
-                                                    </Link>
-                                                ) : (
-                                                    (product.tailor_name ?? '')
-                                                )}
-                                            </span>
-                                            {product.reviews_count > 0 && (
-                                                <span className="inline-flex items-center gap-0.5 text-[#6c625b]">
-                                                    <BadgeCheck className="h-3.5 w-3.5" />
-                                                    <span className="text-[10px] font-medium">{t('marketplace.verified')}</span>
-                                                </span>
-                                            )}
-                                        </p>
                                         {product.reviews_count > 0 ? (
                                             <div className="mb-2 hidden items-center gap-1 sm:flex">
                                                 {[1, 2, 3, 4, 5].map((i) => (

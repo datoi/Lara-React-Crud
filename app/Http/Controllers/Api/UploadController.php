@@ -77,6 +77,21 @@ class UploadController extends Controller
         ], 201);
     }
 
+    /**
+     * A tailor's photo of a customer's garment: as it arrived, or finished
+     * (terms §12). The customer sees these on their order page.
+     */
+    public function orderPhoto(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,webp|max:10240',
+        ]);
+
+        return response()->json([
+            'url' => $this->storePublic($request->file('image'), 'order-photos'),
+        ], 201);
+    }
+
     public function profileImage(Request $request)
     {
         $user = $request->user();

@@ -98,6 +98,8 @@ class WomensTopsSeeder extends Seeder
             'options' => [
                 'sleeveless'    => ['Sleeveless', 0],
                 'cap'           => ['Cap', 4],
+                'raglan'        => ['Raglan', 5],
+                'rolled'        => ['Rolled Cuff', 5],
                 'short'         => ['Short', 0],
                 'elbow'         => ['Elbow', 5],
                 'three-quarter' => ['Three-quarter', 7],
@@ -117,7 +119,7 @@ class WomensTopsSeeder extends Seeder
     /**
      * The T-shirt photography, keyed by the sleeve each shoot depicts.
      *
-     * Two shoots stand behind these six sleeves, and they photograph different
+     * Two shoots stand behind these ten sleeves, and they photograph different
      * garments. Cap, Wide, Dropped Shoulder and Oversized come from the 2026
      * studio set, where the sleeve is the only thing that varies: scaled to a
      * common garment height their fronts measure 516-563px across, one body
@@ -125,16 +127,21 @@ class WomensTopsSeeder extends Seeder
      * body to a dropped shoulder ending at 71%. Fit, length and neckline stay
      * what the file names declare for every frame — body-fitting, cropped, crew.
      *
-     * Sleeveless and Puff come instead from the 'Fitted' drop (imported
-     * 2026-09-13, 23 colourways each, five views of which four are stored).
-     * That is a visibly trimmer garment: puff fronts measure 415-454px and
+     * The other six come from the 'Fitted' drop, delivered in three parts:
+     * Sleeveless and Puff (2026-09-13), Bell and Balloon (2026-09-22), Raglan
+     * and Rolled Cuff (2026-10-28), each in five views of which four are
+     * stored. Sleeveless and Puff are a visibly trimmer garment: puff fronts measure 415-454px and
      * sleeveless 297-403px against the studio set's 516-563. Changing sleeve
      * between the two groups therefore changes the body, not only the sleeve —
      * the one place this attribute does not hold its own invariant. It buys
      * Sleeveless a left view it never had and takes Puff from 13 colourways to
      * 23; reverting Puff to the studio shoot restores the invariant at that
      * price, and a Wide/Dropped/Oversized re-shoot in the Fitted drop's
-     * vocabulary is what settles it properly.
+     * vocabulary is what settles it properly. The later four do not share that
+     * trimness: measured across the hem, below the sleeves, Bell, Balloon,
+     * Raglan and Rolled Cuff come to a median of 274-283px against Cap's 286
+     * and Puff's 254, so moving between them and the studio four changes the
+     * sleeve and not the body.
      *
      * Within Sleeveless the spread is wider still — 297-403px, 35.7%, against
      * 0.5-1.6% inside each studio sleeve — because its neutrals (off-white,
@@ -208,6 +215,55 @@ class WomensTopsSeeder extends Seeder
             ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#3b6fec'],
             ['slug' => 'lavender',        'name' => 'Lavender',     'hex' => '#c38be3'],
             ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#620991'],
+        ],
+        'raglan' => [
+            ['slug' => 'black',           'name' => 'Black',        'hex' => '#131313'],
+            ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#403f43'],
+            ['slug' => 'navy',            'name' => 'Navy',         'hex' => '#102442'],
+            ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#5b3526'],
+            ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#9a6743'],
+            ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#c3a98e'],
+            ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#eeddc6'],
+            ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#dbd6d0'],
+            ['slug' => 'white',           'name' => 'White',        'hex' => '#d7d7dc'],
+            ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#bebfc2'],
+            ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#d68c93'],
+            ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#ed7590'],
+            ['slug' => 'red',             'name' => 'Red',          'hex' => '#9f0b14'],
+            ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#73141d'],
+            ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#f15713'],
+            ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#f5c60a'],
+            ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#646830'],
+            ['slug' => 'green',           'name' => 'Green',        'hex' => '#398a41'],
+            ['slug' => 'turquoise',       'name' => 'Turquoise',    'hex' => '#15a1a8'],
+            ['slug' => 'sky',             'name' => 'Sky',          'hex' => '#69b8e3'],
+            ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#306fca'],
+            ['slug' => 'lavender',        'name' => 'Lavender',     'hex' => '#a48ed2'],
+            ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#68408f'],
+        ],
+        'rolled' => [
+            ['slug' => 'black',           'name' => 'Black',        'hex' => '#151515'],
+            ['slug' => 'charcoal',        'name' => 'Charcoal',     'hex' => '#55565a'],
+            ['slug' => 'navy',            'name' => 'Navy',         'hex' => '#1f2a44'],
+            ['slug' => 'brown',           'name' => 'Brown',        'hex' => '#5f3a2d'],
+            ['slug' => 'camel',           'name' => 'Camel',        'hex' => '#bb8a64'],
+            ['slug' => 'beige',           'name' => 'Beige',        'hex' => '#d1bca7'],
+            ['slug' => 'cream',           'name' => 'Cream',        'hex' => '#ebdfcb'],
+            ['slug' => 'off-white',       'name' => 'Off-White',    'hex' => '#ddd8d2'],
+            ['slug' => 'white',           'name' => 'White',        'hex' => '#d7d7dd'],
+            ['slug' => 'light-gray',      'name' => 'Light Gray',   'hex' => '#c1c2c7'],
+            ['slug' => 'blush',           'name' => 'Blush',        'hex' => '#d29fa6'],
+            ['slug' => 'pink',            'name' => 'Pink',         'hex' => '#db6b8e'],
+            ['slug' => 'burgundy',        'name' => 'Burgundy',     'hex' => '#741e2e'],
+            ['slug' => 'orange',          'name' => 'Orange',       'hex' => '#dd5a11'],
+            ['slug' => 'yellow',          'name' => 'Yellow',       'hex' => '#f7c332'],
+            ['slug' => 'olive',           'name' => 'Olive',        'hex' => '#63663b'],
+            ['slug' => 'green',           'name' => 'Green',        'hex' => '#3c8f57'],
+            ['slug' => 'turquoise',       'name' => 'Turquoise',    'hex' => '#24bbc1'],
+            ['slug' => 'sky',             'name' => 'Sky',          'hex' => '#8dc3f2'],
+            ['slug' => 'blue',            'name' => 'Blue',         'hex' => '#3b73c2'],
+            ['slug' => 'lavender',        'name' => 'Lavender',     'hex' => '#a690cd'],
+            ['slug' => 'purple',          'name' => 'Purple',       'hex' => '#6a44a4'],
         ],
         'wide' => [
             ['slug' => 'black',           'name' => 'Black',        'hex' => '#1e1e1f'],
@@ -353,11 +409,11 @@ class WomensTopsSeeder extends Seeder
      * The palette's canonical order, and the source of every colour's
      * display_order.
      *
-     * The picker is the union of the shoots' colour sets (see garmentColors.ts),
-     * ordered by the lowest display_order a colour holds anywhere. That reads a
-     * colour's place in the palette off its position in a shoot only while every
-     * shoot covers the palette densely enough for the positions to agree — and
-     * they do not. Dropped carries 20 of the 24 and Emerald is unique to Cap,
+     * The picker offers the selected sleeve's colours in display_order (see
+     * garmentColors.ts), and a colour should hold the same place whichever
+     * sleeve is showing. Numbering colours by their position within a shoot
+     * would give that only if every shoot covered the palette densely enough
+     * for the positions to agree — and they do not. Dropped carries 20 of the 24 and Emerald is unique to Cap,
      * so a shoot's own indices would have renumbered most of the palette from
      * whatever it happened to skip. Ordering is a property of the palette, not
      * of whichever shoot included a colour, so it is stated here once and every
@@ -382,7 +438,7 @@ class WomensTopsSeeder extends Seeder
                 'sleeves'  => ['one-sleeve'],
             ],
             'photos' => [
-                // Sleeves is the attribute the shoot varies — eight constructions
+                // Sleeves is the attribute the shoot varies — ten constructions
                 // of one tee — so its options carry the photographs and the
                 // colourways, and it is the layer the canvas paints.
                 'attribute' => 'sleeves',
@@ -723,11 +779,11 @@ class WomensTopsSeeder extends Seeder
      * The colourways of one option, or none when it is not photographed.
      *
      * Colours hang off the option rather than the garment because each shoot
-     * has its own set — Dropped Shoulder carries 20 of the palette's 24 and the
-     * other five carry 23, but not the same 23: Emerald is unique to Cap, which
-     * is in turn the only sleeve without Green — and its own sampled hexes.
-     * Every sleeve leads with
-     * the same cover colour, so the dots do not move when the customer changes
+     * has its own set — most carry 23 of the palette's 24, but not the same 23:
+     * Emerald is unique to Cap, which is in turn the only sleeve without Green;
+     * Rolled Cuff has no Red, because the drop filed two Raglan frames under it;
+     * Dropped Shoulder carries 20 and Bell 14 — and its own sampled hexes.
+     * Every sleeve leads with the same cover colour, so the dots do not move when the customer changes
      * sleeve, and every shoot numbers a colour from TSHIRT_PALETTE rather than
      * from its own position, so a sparse set cannot renumber the picker.
      */

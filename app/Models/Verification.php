@@ -7,6 +7,9 @@ use Illuminate\Support\Str;
 
 class Verification extends Model
 {
+    /** How long a registration code stays valid. The email states it, so both read this. */
+    public const LIFETIME_MINUTES = 30;
+
     public $incrementing = false;
 
     protected $keyType = 'string';

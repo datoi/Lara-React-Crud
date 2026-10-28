@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { Button } from './ui/button';
 import { getAuthToken } from '../hooks/useAuth';
+import { translateServerMessage } from '../lib/serverMessage';
 
 interface Props {
     open: boolean;
@@ -24,8 +25,8 @@ export function ReviewModal({ open, orderId, orderLabel, onClose, onSubmitted }:
     const token = getAuthToken();
 
     const handleSubmit = async () => {
-        if (!rating) { setError('Please select a star rating.'); return; }
-        if (!comment.trim()) { setError('Please write a short comment.'); return; }
+        if (!rating) { setError(t('reviewModal.ratingRequired')); return; }
+        if (!comment.trim()) { setError(t('reviewModal.commentRequired')); return; }
 
         setSubmitting(true);
         setError('');
@@ -40,8 +41,8 @@ export function ReviewModal({ open, orderId, orderLabel, onClose, onSubmitted }:
                 body: JSON.stringify({ order_id: orderId, rating, comment }),
             });
             if (!res.ok) {
-                const d = await res.json();
-                setError(d.message ?? 'Something went wrong.');
+                const d = await res.json().catch(() => null);
+                setError(translateServerMessage(d, t, 'reviewModal.failed'));
                 return;
             }
             onSubmitted();
@@ -49,7 +50,7 @@ export function ReviewModal({ open, orderId, orderLabel, onClose, onSubmitted }:
             setRating(0);
             setComment('');
         } catch {
-            setError('Network error. Please try again.');
+            setError(t('reviewModal.network'));
         } finally {
             setSubmitting(false);
         }
@@ -115,13 +116,17 @@ export function ReviewModal({ open, orderId, orderLabel, onClose, onSubmitted }:
                                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide block mb-2">{t('reviewModal.commentLabel')}</label>
                                 <textarea
                                     rows={4}
-                                    placeholder="Tell us about your experience with the tailor and the garment quality…"
+                                    placeholder={t('reviewModal.placeholder')}
                                     value={comment}
                                     onChange={e => setComment(e.target.value)}
                                     maxLength={1000}
+                                    aria-describedby={`review-notice-${orderId}`}
                                     className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
                                 />
                                 <p className="text-xs text-slate-400 text-right mt-1">{comment.length}/1000</p>
+                                <p id={`review-notice-${orderId}`} className="mt-2 text-xs leading-relaxed text-slate-500">
+                                    {t('reviewModal.publicNotice')}
+                                </p>
                             </div>
 
                             {error && <p className="text-xs text-destructive">{error}</p>}

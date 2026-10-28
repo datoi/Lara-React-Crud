@@ -125,4 +125,10 @@ return [
 
     'shipping_cost' => (int) env('SHIPPING_COST', 15),
 
+    // Custom orders from the design studio. The terms (v1.1, §5) cover only
+    // remodels and ready-made clothing, so placing one is paused until they
+    // cover custom orders too; the studio itself stays open for designing and
+    // saving. The SPA reads the same switch from a meta tag in app.blade.php.
+    'custom_orders_open' => (bool) env('CUSTOM_ORDERS_OPEN', false),
+
 ];

@@ -12,7 +12,6 @@ interface WishlistProduct {
     name: string;
     price: number;
     images: string[];
-    tailor_name: string | null;
 }
 
 export default function WishlistPage() {
@@ -78,9 +77,7 @@ export default function WishlistPage() {
                                 </div>
                                 <div className="p-3">
                                     <Link to={`/product/${product.id}`} className="text-sm font-normal">{product.name}</Link>
-                                    <div className="mt-2 flex justify-between text-xs text-black/60">
-                                        <span>{product.tailor_name}</span><span>₾{product.price}</span>
-                                    </div>
+                                    <p className="mt-2 text-right text-xs text-black/60">₾{product.price}</p>
                                 </div>
                             </article>
                         ))}

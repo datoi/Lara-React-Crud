@@ -21,8 +21,8 @@ export interface CartItem {
     size: string | null;
     color: string | null;
     quantity: number;
+    /** Who makes it. Never shown: it only decides which delivery a line joins. */
     tailorId: number | null;
-    tailorName: string | null;
 }
 
 /** Same product in a different size or colour is a separate line, as everywhere else. */
@@ -165,14 +165,18 @@ export function cartSubtotal(list: CartItem[]): number {
     return list.reduce((sum, i) => sum + i.price * i.quantity, 0);
 }
 
-/** Checkout creates one order per tailor, so the cart is grouped before it is sent. */
-export function groupByTailor(list: CartItem[]): { tailorId: number | null; tailorName: string | null; items: CartItem[] }[] {
-    const groups = new Map<string, { tailorId: number | null; tailorName: string | null; items: CartItem[] }>();
+/**
+ * Checkout creates one order, and one delivery, per workshop, so the cart is
+ * grouped before it is sent. The customer sees deliveries, never who makes
+ * them: Kere is the seller (terms §3).
+ */
+export function groupByDelivery(list: CartItem[]): { tailorId: number | null; items: CartItem[] }[] {
+    const groups = new Map<string, { tailorId: number | null; items: CartItem[] }>();
     for (const i of list) {
         const key = String(i.tailorId ?? 'unassigned');
         const group = groups.get(key);
         if (group) group.items.push(i);
-        else groups.set(key, { tailorId: i.tailorId, tailorName: i.tailorName, items: [i] });
+        else groups.set(key, { tailorId: i.tailorId, items: [i] });
     }
     return [...groups.values()];
 }

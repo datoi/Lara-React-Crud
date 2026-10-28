@@ -183,7 +183,7 @@ class AuthController extends Controller
                 'legal_status' => $data['legal_status'],
                 'national_id' => $data['national_id'],
             ] : []),
-            'expires_at' => now()->addMinutes(30),
+            'expires_at' => now()->addMinutes(Verification::LIFETIME_MINUTES),
         ]);
 
         if ($viaSms) {

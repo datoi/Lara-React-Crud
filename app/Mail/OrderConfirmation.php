@@ -18,7 +18,11 @@ class OrderConfirmation extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Order Confirmed — ' . $this->order->order_number,
+            subject: match ($this->order->order_type) {
+                'marketplace' => 'შეკვეთა დადასტურებულია — ',
+                'remodel' => 'გადაკეთების მოთხოვნა მიღებულია — ',
+                default => 'შეკვეთა მიღებულია — ',
+            }.$this->order->order_number,
         );
     }
 

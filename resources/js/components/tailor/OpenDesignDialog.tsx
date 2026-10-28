@@ -70,6 +70,7 @@ function OpenDesignDetails({ order, product, title, dateLabel, onRequested }: {
     const token = getAuthToken();
     const [message, setMessage] = useState('');
     const [price, setPrice] = useState('');
+    const [days, setDays] = useState('');
     const [sending, setSending] = useState(false);
     const [sendError, setSendError] = useState<string | null>(null);
 
@@ -79,10 +80,14 @@ function OpenDesignDetails({ order, product, title, dateLabel, onRequested }: {
     const fileUrl = design?.design_file_url;
     const spec = readSpec(design?.customization);
     const alreadyRequested = order.my_request_status === 'pending';
-    const priceMissing = isRemodel && price.trim() === '';
+    // Kere's offer names a price and how long the work takes (terms §8), so
+    // every estimate gives both, within the limits the server holds it to.
+    const priceValue = Number(price);
+    const daysValue = Number(days);
+    const estimateIncomplete = !(priceValue >= 1 && priceValue <= 99999) || !(Number.isInteger(daysValue) && daysValue >= 1 && daysValue <= 120);
 
     const handleSend = async () => {
-        if (!token || sending) return;
+        if (!token || sending || estimateIncomplete) return;
         setSending(true);
         setSendError(null);
         try {
@@ -91,7 +96,8 @@ function OpenDesignDetails({ order, product, title, dateLabel, onRequested }: {
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
                 body: JSON.stringify({
                     message: message.trim() || null,
-                    offered_price: price.trim() !== '' ? Number(price) : null,
+                    offered_price: priceValue,
+                    ready_in_days: daysValue,
                 }),
             });
             if (!res.ok) throw new Error();
@@ -172,26 +178,40 @@ function OpenDesignDetails({ order, product, title, dateLabel, onRequested }: {
                         </p>
                     ) : (
                         <div className="space-y-2">
-                            {isRemodel && (
-                                <div>
-                                    <label htmlFor={`offer-price-${order.id}`} className="mb-1 block text-xs font-medium text-slate-600">
-                                        {t('tailorComponents.offerPriceLabel')}
-                                    </label>
-                                    <div className="relative max-w-[180px]">
-                                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">₾</span>
-                                        <input
-                                            id={`offer-price-${order.id}`}
-                                            type="number"
-                                            min="0"
-                                            inputMode="decimal"
-                                            value={price}
-                                            onChange={e => setPrice(e.target.value)}
-                                            placeholder={t('tailorComponents.offerPricePlaceholder')}
-                                            className="w-full border border-slate-200 bg-white py-2 pl-7 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900"
-                                        />
-                                    </div>
+                            <div>
+                                <label htmlFor={`offer-price-${order.id}`} className="mb-1 block text-xs font-medium text-slate-600">
+                                    {t('tailorComponents.offerPriceLabel')}
+                                </label>
+                                <div className="relative max-w-[180px]">
+                                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">₾</span>
+                                    <input
+                                        id={`offer-price-${order.id}`}
+                                        type="number"
+                                        min="1"
+                                        max="99999"
+                                        inputMode="decimal"
+                                        value={price}
+                                        onChange={e => setPrice(e.target.value)}
+                                        placeholder={t('tailorComponents.offerPricePlaceholder')}
+                                        className="w-full border border-slate-200 bg-white py-2 pl-7 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                                    />
                                 </div>
-                            )}
+                                <label htmlFor={`offer-days-${order.id}`} className="mb-1 mt-3 block text-xs font-medium text-slate-600">
+                                    {/* A remodel's clock starts when the garment arrives; a new piece's when it is ordered. */}
+                                    {t(isRemodel ? 'tailorCare.offerDaysLabel' : 'tailorCare.offerDaysLabelNew')}
+                                </label>
+                                <input
+                                    id={`offer-days-${order.id}`}
+                                    type="number"
+                                    min="1"
+                                    max="120"
+                                    inputMode="numeric"
+                                    value={days}
+                                    onChange={e => setDays(e.target.value)}
+                                    className="w-full max-w-[180px] border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                                />
+                                <p className="mt-1 text-xs text-slate-400">{t('tailorCare.offerPaymentNote')}</p>
+                            </div>
                             <label htmlFor={`offer-message-${order.id}`} className="block text-xs font-medium text-slate-600">
                                 {t('tailorComponents.offerMessageLabel')}
                             </label>
@@ -205,8 +225,8 @@ function OpenDesignDetails({ order, product, title, dateLabel, onRequested }: {
                                 className="w-full resize-none border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900"
                             />
                             {sendError && <p role="alert" className="text-xs text-destructive">{sendError}</p>}
-                            {priceMissing && <p className="text-xs text-slate-400">{t('tailorComponents.offerPriceRequired')}</p>}
-                            <Button variant="default" size="sm" onClick={handleSend} disabled={sending || priceMissing} className="text-xs">
+                            {estimateIncomplete && <p className="text-xs text-slate-400">{t('tailorComponents.offerPriceRequired')}</p>}
+                            <Button variant="default" size="sm" onClick={handleSend} disabled={sending || estimateIncomplete} className="text-xs">
                                 {sending
                                     ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />{t('tailorComponents.offerSending')}</>
                                     : t('tailorComponents.offerSendBtn')}

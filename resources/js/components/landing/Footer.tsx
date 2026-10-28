@@ -42,7 +42,6 @@ export function Footer() {
             title: t('footer.company'),
             links: [
                 { label: t('footer.aboutUs'), type: 'router', to: '/about' },
-                { label: t('footer.ourTailors'), type: 'router', to: '/our-tailors' },
                 { label: t('footer.tailorDashboard'), type: 'router', to: '/tailor-dashboard' },
                 { label: t('footer.helpCenter'), type: 'router', to: '/help' },
             ],
@@ -83,7 +82,7 @@ export function Footer() {
                             {legalLinks.map(item => <FooterItem key={item.label} item={item} onModalOpen={handleModalOpen} />)}
                         </nav>
                     </div>
-                    <p className="kere-footer-location"><MapPin aria-hidden="true" /><span>{t('footer.streetAddress')}</span></p>
+                    <p className="kere-footer-location"><MapPin aria-hidden="true" /><span>{t('company.address')}</span></p>
                     <p className="kere-footer-copyright">© {new Date().getFullYear()} {t('footer.registeredName')} · {t('footer.companyId')}</p>
                 </div>
             </footer>

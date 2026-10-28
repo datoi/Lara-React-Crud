@@ -21,10 +21,10 @@ import StagePanel from './StagePanel';
 import StepRail from './StepRail';
 import { ColorFigure, OptionTile, TileGroup } from './WizardTiles';
 import { GarmentMark } from './GarmentIcons';
-import { previewCategories, showsDesign } from './designPhoto';
-import { garmentColors } from './garmentColors';
+import { showsDesign } from './designPhoto';
 import { money } from './money';
 import { useCustomizer } from '../../hooks/useCustomizer';
+import { customOrdersOpen } from '../../lib/customOrders';
 import type { GarmentCategory } from '../../data/garmentTaxonomy';
 import type { Section } from '../../hooks/useSection';
 import type {
@@ -162,6 +162,8 @@ export default function DesignerWizard({
     const {
         selections,
         colorName,
+        colors,
+        shownOptions,
         fabricId,
         selectOption,
         selectColorByName,
@@ -236,16 +238,8 @@ export default function DesignerWizard({
         c.slug !== 'collar' && c.is_preview_layer !== false && c.options.some(o => o.image_url),
     );
 
-    const shownOptions = useMemo(
-        () => previewCategories(layerCategories)
-            .map(c => resolveOption(c))
-            .filter((o): o is NonNullable<typeof o> => o !== null),
-        [layerCategories, resolveOption],
-    );
-
-    // A colour never photographed withholds the photo, but the colour itself
-    // still stands: it is made to order, and the review and the tailor both
-    // get the one they picked.
+    // Only photographed colours are offered (see garmentColors), so this
+    // withholds the photo only for a garment or cut that was never shot.
     const showPhoto = showsDesign(layerCategories, selections, resolveOption, resolveColor, colorName);
 
     const renderedSources = useMemo(
@@ -268,9 +262,8 @@ export default function DesignerWizard({
     }, [availableViews, view]);
 
     // ── Colour ──────────────────────────────────────────────────────────────
-    // One colour for the garment, drawn from every option photographed in it.
+    // One colour for the garment, from the colours its shown options were shot in.
 
-    const colors = useMemo(() => garmentColors(layerCategories, shownOptions), [layerCategories, shownOptions]);
     const currentColor = colorName;
 
     // ── Attributes per step ─────────────────────────────────────────────────
@@ -689,18 +682,26 @@ export default function DesignerWizard({
                     </Button>
                 )}
 
-                <Button
-                    variant="default"
-                    size="default"
-                    disabled={!canAdvance}
-                    onClick={advance}
-                    className="h-10 rounded-none bg-brand px-4 text-xs font-medium text-white hover:bg-brand-dark min-[900px]:h-11 min-[900px]:px-5 min-[900px]:text-sm"
-                >
-                    {continueTo === null
-                        ? t('designer.chooseTailor')
-                        : t('designer.continueTo', { step: t(STEP_KEYS[continueTo]) })}
-                    <ArrowRight className="h-4 w-4" />
-                </Button>
+                {/* Ordering a custom design is paused until the terms cover it;
+                    the design can still be saved from the review step. */}
+                {continueTo === null && !customOrdersOpen() ? (
+                    <p role="status" className="min-w-0 flex-1 text-[11px] leading-snug text-[var(--kd-body)] min-[900px]:max-w-[36ch] min-[900px]:flex-none min-[900px]:text-right min-[900px]:text-sm">
+                        {t('designer.ordersPaused')}
+                    </p>
+                ) : (
+                    <Button
+                        variant="default"
+                        size="default"
+                        disabled={!canAdvance}
+                        onClick={advance}
+                        className="h-10 rounded-none bg-brand px-4 text-xs font-medium text-white hover:bg-brand-dark min-[900px]:h-11 min-[900px]:px-5 min-[900px]:text-sm"
+                    >
+                        {continueTo === null
+                            ? t('designer.toOrder')
+                            : t('designer.continueTo', { step: t(STEP_KEYS[continueTo]) })}
+                        <ArrowRight className="h-4 w-4" />
+                    </Button>
+                )}
             </div>
 
             {product && (

@@ -5,7 +5,7 @@ import type { CustomizerProduct, DesignConfiguration } from '../../types/customi
 
 interface SubmitDesignArgs {
     product: CustomizerProduct;
-    /** The heading the garment is filed under — drives tailor matching */
+    /** The heading the garment is filed under — names the order's garment type */
     category?: GarmentCategory;
     configuration: DesignConfiguration;
     /** The total the customer was actually shown, modifiers included */
@@ -14,7 +14,7 @@ interface SubmitDesignArgs {
 }
 
 /**
- * Hands a finished design to the tailor-selection step.
+ * Hands a finished design to the order review step.
  *
  * Shared by both ways into the designer so the draft is written identically
  * whichever door the customer came through. estimated_price is the configured
@@ -38,10 +38,10 @@ export function submitDesign({ product, category, configuration, totalPrice, nav
     });
 
     if (!getAuthUser()) {
-        saveReturnTo('/design/tailor-select');
+        saveReturnTo('/design/review');
         navigate('/login/customer');
         return;
     }
 
-    navigate('/design/tailor-select');
+    navigate('/design/review');
 }
