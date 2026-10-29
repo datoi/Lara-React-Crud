@@ -39,6 +39,11 @@ return [
         'email' => env('SUPPORT_EMAIL'),
     ],
 
+    // Who hears that someone has registered. Unset: nobody is emailed.
+    'registrations' => [
+        'notify_email' => env('REGISTRATION_ALERT_EMAIL'),
+    ],
+
     'smsoffice' => [
         'key' => env('SMSOFFICE_KEY'),
         'sender' => env('SMSOFFICE_SENDER', 'Kere'),

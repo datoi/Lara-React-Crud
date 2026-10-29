@@ -6,6 +6,31 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-10-29 — Kere is emailed whenever someone registers
+
+**What was done:** The owner asked to be told by email of every new registration.
+- **When it goes out:** once an account exists, after the customer's email or SMS code, or the tailor's SMS code, is verified. Both places call `AuthController::announceRegistration()`, which queues the new `NewRegistration` mail to the address in `REGISTRATION_ALERT_EMAIL`. It is queued like the support email, so it never slows the registration. A failure is logged and never shown to the person registering. With the variable blank, nothing is sent.
+- **The address lives in Railway, not in the code.** The repository is public, so a personal inbox does not belong in it. `.env.example` and the README list the variable empty.
+- **What it says, in Georgian:**
+  - The subject names the role and the person.
+  - The body gives the name, the role and the time in Tbilisi, and links to the admin panel. For a tailor it adds that the application is waiting for approval.
+  - It leaves out the email address and phone number, which stay in the admin panel.
+  - It uses the shared email layout, with its own footer explaining why the reader gets it.
+
+**Verified:**
+- `php artisan test`: 239 passed (1,120 assertions). The new `RegistrationAlertTest` covers:
+  - a customer is announced once, only after the code is verified;
+  - a tailor is announced by the SMS route;
+  - nothing goes out without an address;
+  - the rendered mail is Georgian, names the person and role, and contains neither their email nor their phone.
+- Both versions were rendered and looked at in headless Edge: the tailor's at 390px and the customer's at 900px. There is no horizontal overflow. A first render had the button sitting against the last row; it now has space. The time shown was checked against the clock: 16:03 UTC appeared as 20:03 in Tbilisi.
+- No real email was sent: the tests fake the mailer, and the renders used unsaved users.
+
+**Not covered / Noticed:**
+- Sent through Resend from `noreply@kereforyou.com`, the first alerts may land in Gmail's spam folder until they are marked as not spam.
+- One email goes out per registration, with no daily digest. That suits today's numbers; a digest would be the next step if registrations grow.
+- A registration abandoned before the code is verified creates no account and sends no alert.
+
 ## 2026-10-29 — The header's Marketplace menu gets its categories back on the live site
 
 **What was done:** While the deploy of `54d304a` was being checked, `GET /api/categories` answered 500 on kereforyou.com. The header's Marketplace menu reads that endpoint on every page, so its category links were missing. The cause predates the deploy: `CategoryController` picked a sample picture with `where('images', '!=', '[]')`, and PostgreSQL has no `<>` operator for a `json` column. SQLite allows the comparison, so it failed only in production, most likely since the move to PostgreSQL in April. The comparison is now `CAST(images AS TEXT) <> '[]'`, which both databases accept.

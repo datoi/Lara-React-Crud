@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\NewRegistration;
 use App\Models\User;
 use App\Models\Verification;
 use App\Services\OtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 
@@ -264,6 +266,7 @@ class AuthController extends Controller
         $user = User::create(self::attributesFor($reg, $token));
 
         $record->delete();
+        $this->announceRegistration($user);
 
         return response()->json([
             'token' => $token,
@@ -322,6 +325,7 @@ class AuthController extends Controller
         $user = User::create(self::attributesFor($reg, $token));
 
         $record->delete();
+        $this->announceRegistration($user);
 
         return response()->json([
             'token' => $token,
@@ -531,6 +535,27 @@ class AuthController extends Controller
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     /** Find a user by email or phone number (tolerant of spacing and missing +995 prefix). */
+    /**
+     * Tell Kere someone has joined, at the address REGISTRATION_ALERT_EMAIL
+     * names. Queued, like the support email, so a slow mail server never holds
+     * up the new account; a failure is logged, never shown to the person
+     * registering.
+     */
+    private function announceRegistration(User $user): void
+    {
+        $address = config('services.registrations.notify_email');
+
+        if (! $address) {
+            return;
+        }
+
+        try {
+            Mail::to($address)->queue(new NewRegistration($user));
+        } catch (\Throwable $e) {
+            Log::error("Registration alert for user {$user->id} failed: ".$e->getMessage());
+        }
+    }
+
     private function findByLogin(string $login): ?User
     {
         $login = trim($login);

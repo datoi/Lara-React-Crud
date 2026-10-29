@@ -180,6 +180,7 @@ All settings come from `.env`. See [`.env.example`](.env.example) for the full l
 | `ADMIN_PASSWORD` | Password for `admin@kere.ge`, re-applied on every deploy |
 | `MAIL_MAILER`, `RESEND_KEY`, `MAIL_FROM_ADDRESS` | Outgoing email |
 | `SUPPORT_EMAIL` | Recipient of the support form |
+| `REGISTRATION_ALERT_EMAIL` | Emailed whenever someone registers, customer or tailor (blank: nobody) |
 | `SMSOFFICE_KEY`, `SMSOFFICE_SENDER` | SMS gateway (sender name `Kere`) |
 | `FLITT_MERCHANT_ID`, `FLITT_SECRET_KEY`, `FLITT_API_URL` | Card payments |
 | `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_PUBLIC_URL` | Object storage for uploads. Without `R2_BUCKET`, files stay on the local disk. |
