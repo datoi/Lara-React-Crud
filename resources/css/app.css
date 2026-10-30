@@ -559,7 +559,7 @@
     font-size: 12px;
   }
 
-  .kere-button-remodel {
+  .kere-button-text {
     width: 100%;
   }
 
@@ -752,7 +752,7 @@
   color: #111111;
 }
 
-.kere-landing .kere-button-remodel {
+.kere-landing .kere-button-text {
   min-height: 34px;
   width: auto;
   border: 0;
@@ -764,7 +764,7 @@
 }
 
 .kere-landing .kere-button-secondary:hover,
-.kere-landing .kere-button-remodel:hover {
+.kere-landing .kere-button-text:hover {
   border-color: #111111;
   background: transparent;
   color: #111111;
@@ -803,7 +803,7 @@
     color: #111111;
   }
 
-  .kere-landing .kere-button-remodel {
+  .kere-landing .kere-button-text {
     min-height: 32px;
     width: auto;
     border: 0;
@@ -814,7 +814,7 @@
   }
 
   .kere-landing .kere-button-secondary:hover,
-  .kere-landing .kere-button-remodel:hover {
+  .kere-landing .kere-button-text:hover {
     border-color: #111111;
     background: transparent;
     color: #111111;
@@ -1838,6 +1838,17 @@ select:not([aria-invalid="true"]):focus,
   opacity: 1;
 }
 
+/* "For Tailors" stands apart from the shopping links so tailors spot it. */
+.store-desktop-nav > a.store-nav-tailors { position: relative; padding-left: 24px; color: var(--color-brand); font-weight: 600; }
+.store-desktop-nav > a.store-nav-tailors::before { content: ''; position: absolute; left: 0; top: 50%; width: 1px; height: 16px; background: var(--store-rule); transform: translateY(-50%); }
+.store-desktop-nav > a.store-nav-tailors:hover { text-decoration-color: var(--color-brand); }
+.store-menu nav > a.store-nav-tailors { margin-top: 8px; border-top: 1px solid var(--store-rule); color: var(--color-brand); }
+
+/* A signed-in visitor sees who they are signed in as; phones keep the icon only. */
+.store-account { gap: 6px; }
+.store-account-name { max-width: 14ch; padding-right: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+@media (max-width: 767px) { .store-account-name { display: none; } }
+
 .product-detail-controls h1 { font-size: clamp(20px, 2.2vw, 28px); }
 .product-detail-controls [class*="text-[28px]"] { font-size: 20px; }
 .product-detail-controls :is(p, label, button, a, input) { font-size: 11px; }
@@ -1943,7 +1954,7 @@ button[type="submit"],
 }
 [data-kere-button]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="link"]):not([data-size="icon"]),
 .partners-secondary-cta,
-.kere-button-remodel {
+.kere-button-text {
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
@@ -1957,7 +1968,7 @@ button[type="submit"],
 }
 [data-kere-button]:is([data-variant="outline"], [data-variant="secondary"], [data-variant="link"]):not([data-size="icon"]):hover,
 .partners-secondary-cta:hover,
-.kere-button-remodel:hover {
+.kere-button-text:hover {
   background: transparent !important;
   color: #631e26 !important;
   transform: none;
@@ -2000,7 +2011,7 @@ button[type="submit"],
 }
 
 /* Center standalone actions without stretching their width. */
-.kere-landing .kere-actions > .kere-button-remodel {
+.kere-landing .kere-actions > .kere-button-text {
   align-self: center;
   margin-inline: auto;
 }

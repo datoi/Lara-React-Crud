@@ -76,6 +76,8 @@ export function Navigation() {
               ? '/tailor-dashboard'
               : '/customer-dashboard'
         : '/signin';
+    // The seeded admin has no first name, so an admin is labelled by role.
+    const accountName = user ? (user.role === 'admin' ? t('nav.admin') : user.first_name || user.name) : null;
     // A tailor is offered only the pages they may open; the storefront — the
     // marketplace menu, search and the bag — is not shown to them at all.
     const shops = !isRestrictedTailor(user);
@@ -83,7 +85,7 @@ export function Navigation() {
         { to: '/design', label: t('nav.startDesigning') },
         { to: '/remodel', label: t('nav.remodel') },
         { to: '/about', label: t('footer.aboutUs') },
-        { to: '/partners', label: t('nav.forTailors') },
+        { to: '/partners', label: t('nav.forTailors'), className: 'store-nav-tailors' },
     ].filter(link => shops || tailorMayVisit(link.to));
     useEffect(() => {
         if (!searchOpen || !query.trim()) {
@@ -166,6 +168,7 @@ export function Navigation() {
                                             <Link
                                                 key={link.to}
                                                 to={link.to}
+                                                className={link.className}
                                                 onClick={() => setMobileOpen(false)}
                                                 aria-current={pathname === link.to ? 'page' : undefined}
                                             >
@@ -226,7 +229,7 @@ export function Navigation() {
                             </Dialog.Portal>
                         </Dialog.Root>}
                         {links.map((link) => (
-                            <Link key={link.to} to={link.to} aria-current={pathname === link.to ? 'page' : undefined}>
+                            <Link key={link.to} to={link.to} className={link.className} aria-current={pathname === link.to ? 'page' : undefined}>
                                 {link.label}
                             </Link>
                         ))}
@@ -281,8 +284,9 @@ export function Navigation() {
                                 </Dialog.Content>
                             </Dialog.Portal>
                         </Dialog.Root>}
-                        <Link to={account} className="store-icon" aria-label={user ? `${user.first_name} ${user.last_name}` : t('nav.signIn')}>
+                        <Link to={account} className="store-icon store-account" aria-label={accountName ? `${t('nav.myAccount')}: ${accountName}` : t('nav.signIn')}>
                             <User size={19} />
+                            {accountName && <span className="store-account-name">{accountName}</span>}
                         </Link>
                         {user && <NotificationBell />}
                         {shops && (

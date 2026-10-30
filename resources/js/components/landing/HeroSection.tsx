@@ -169,8 +169,8 @@ export function HeroSection() {
 
         <div className="kere-actions">
           <div className="kere-actions-row">
-            <Link to="/design" className="kere-button kere-button-primary">
-              {t('hero.startYourDesign')}
+            <Link to="/remodel" className="kere-button kere-button-primary">
+              {t('hero.remodelGarment')}
             </Link>
 
             <Link to="/design?upload=1" className="kere-button kere-button-secondary">
@@ -179,8 +179,8 @@ export function HeroSection() {
             </Link>
           </div>
 
-          <Link to="/remodel" className="kere-button kere-button-primary kere-button-remodel">
-            {t('hero.remodelGarment')}
+          <Link to="/design" className="kere-button kere-button-primary kere-button-text">
+            {t('hero.startYourDesign')}
           </Link>
         </div>
       </div>

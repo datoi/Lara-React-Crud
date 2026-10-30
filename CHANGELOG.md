@@ -6,6 +6,23 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-10-30 — Remodel leads the home page, For Tailors stands out, and the header names who is signed in
+
+**What was done:** Three changes the owner asked for.
+- **Remodel is the home page's main button.** Remodelling is the only service customers can order right now, so "Remodel a garment" now sits in the filled wine button and "Create a design" takes its place as the underlined text link below. "Upload a design" stays where it was. The link style's class was renamed from `kere-button-remodel` to `kere-button-text`, because it no longer belongs to the remodel link.
+- **"For Tailors" stands apart in the header**, so tailors notice it. On desktop a thin vertical rule separates it from the shopping links, and it is set in the brand wine at a heavier weight. In the phone menu it has a rule above it and the same colour.
+- **The header names who is signed in.** Since Mariami's redesign the account link had been a bare person icon, whether or not anyone was signed in. Now a signed-in customer or tailor sees their first name beside the icon, and an admin sees "Admin" / "ადმინი" (new key `nav.admin`). Admins are labelled by role because the production admin has no first name. Below 768px the header has no room for a name, so phones show the icon only; their menu already has "My account". The link's screen-reader label used to read "null null" for that admin. It now reads "My account: <name>".
+
+**Verified:**
+- `npm run typecheck` is clean. `npx eslint` on `HeroSection.tsx` and `Navigation.tsx` reports nothing. `npm run build` succeeds. The locales have 1,663 keys each and match.
+- Drove the built site in headless Chrome, in Georgian and English. The hero was checked at 390px and 1440px. The header was checked at 390px, 900px and 1440px, signed out and as a customer (Georgian first name), an approved tailor and an admin without a first name.
+- Each link points where it should, and the name shows from 900px and is hidden at 390px. There is no horizontal overflow and there are no console errors.
+- The three QA accounts were created with tokens for the check and deleted afterwards. No notifications were attached to them.
+
+**Not covered / Noticed:**
+- The home page's "Upload a design" button still leads to the "opens soon" page while custom orders are paused (CLAUDE.md §15).
+- A very long first name is cut off with an ellipsis at 14 characters.
+
 ## 2026-10-29 — Kere is emailed whenever someone registers
 
 **What was done:** The owner asked to be told by email of every new registration.
