@@ -11,6 +11,7 @@ use App\Models\KereNotification;
 use App\Models\Message;
 use App\Models\Order;
 use App\Models\OrderClaim;
+use App\Models\OrderNote;
 use App\Models\Review;
 use App\Models\TailorRequest;
 use App\Models\User;
@@ -27,7 +28,7 @@ class AdminController extends Controller
     // GET /api/admin/orders
     public function orders()
     {
-        $orders = Order::with(['user', 'tailor', 'items', 'payments', 'refunds', 'tailorRequests.tailor', 'review'])
+        $orders = Order::with(['user', 'tailor', 'items', 'payments', 'refunds', 'tailorRequests.tailor', 'review', 'adminNotes.admin'])
             ->withCount(['messages', 'claims as open_claims_count' => fn ($q) => $q->where('status', 'open')])
             ->latest()
             ->get();
@@ -39,13 +40,32 @@ class AdminController extends Controller
                 'order_number' => $o->order_number,
                 'order_type' => $o->order_type,
                 'status' => $o->status,
+                'subtotal' => $o->subtotal,
+                'shipping' => $o->shipping,
                 'total' => $o->total,
+                'expected_price' => $o->expected_price,
+                'needed_by' => $o->needed_by?->toDateString(),
                 'created_at' => $o->created_at?->toDateString(),
+                'offer_sent_at' => $o->offer_sent_at?->toDateString(),
+                'paid_at' => $o->paid_at?->toDateString(),
+                'deposit_paid_at' => $o->deposit_paid_at?->toDateString(),
                 'customer' => $o->user ? [
                     'id' => $o->user->id,
                     'name' => $o->user->getFullName(),
                     'email' => $o->user->email,
+                    'phone' => $o->user->phone,
                 ] : null,
+                // Only a remodel collects a real pickup and return address; the
+                // other kinds carry placeholders (CLAUDE.md §6).
+                'return_address' => $o->order_type === 'remodel' ? [
+                    'name' => trim($o->first_name.' '.$o->last_name),
+                    'phone' => $o->phone,
+                    'address' => $o->address,
+                    'city' => $o->city,
+                    'zip' => $o->zip,
+                ] : null,
+                'custom_design_data' => $o->custom_design_data,
+                'customer_note' => $o->notes,
                 'tailor_assignment_mode' => $o->tailor_assignment_mode ?? 'manual',
                 'tailor' => $o->tailor ? [
                     'id' => $o->tailor->id,
@@ -97,9 +117,37 @@ class AdminController extends Controller
                 ]),
                 'offer' => $o->hasOpenOffer() ? $o->offerSummary() + ['request_id' => $o->offer_request_id] : null,
                 'review' => $o->review ? ['rating' => $o->review->rating, 'status' => $o->review->status] : null,
+                'admin_notes' => $o->adminNotes->sortByDesc('id')->values()->map(fn ($n) => $this->formatNote($n)),
             ]);
 
         return response()->json(['orders' => $orders]);
+    }
+
+    // POST /api/admin/orders/{id}/notes
+    public function addNote(Request $request, int $id)
+    {
+        $order = Order::findOrFail($id);
+
+        $data = $request->validate([
+            'body' => 'required|string|min:3|max:500',
+        ]);
+
+        $note = $order->adminNotes()->create([
+            'admin_id' => $request->user()->id,
+            'body' => trim($data['body']),
+        ]);
+
+        return response()->json(['note' => $this->formatNote($note->load('admin'))], 201);
+    }
+
+    private function formatNote(OrderNote $note): array
+    {
+        return [
+            'id' => $note->id,
+            'body' => $note->body,
+            'author' => $note->admin?->getFullName(),
+            'created_at' => $note->created_at?->toDateString(),
+        ];
     }
 
     /**
@@ -558,6 +606,13 @@ class AdminController extends Controller
                 'email' => $u->email,
                 'phone' => $u->phone,
                 'created_at' => $u->created_at?->toDateString(),
+                // The registration answers an approval rests on. The national
+                // ID stays out of this list.
+                'business_type' => $u->business_type,
+                'does_remodeling' => $u->does_remodeling,
+                'workspace_address' => $u->workspace_address,
+                'years_experience' => $u->years_experience,
+                'legal_status' => $u->legal_status,
             ]);
 
         return response()->json(['tailors' => $tailors]);

@@ -1,806 +1,434 @@
-import { useState, useEffect, useCallback, Fragment } from 'react';
+import { Banknote, Clock, LogOut, MessageCircle, Scissors, ShieldCheck, Star, TriangleAlert, Truck, Users } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link, useNavigate } from 'react-router';
-import { motion } from 'motion/react';
-import { Users, Package, ShieldAlert, LogOut, CheckCircle, Scissors, Clock, X, MessageCircle } from 'lucide-react';
-import { getAuthUser, getAuthToken, clearAuth } from '../hooks/useAuth';
-import { Button } from '../components/ui/button';
-import { NotificationBell } from '../components/NotificationBell';
-import { ClaimsTab, OrderOperations, type AdminOrderMoney } from '../components/admin/OrderOperations';
-import { AdminOrderChat, KereOfferForm, type OfferableOrder } from '../components/admin/KereOffer';
-import { ReviewsTab, TailorScore, type TailorScoreValue } from '../components/admin/ReviewsTab';
-import { translateServerMessage } from '../lib/serverMessage';
 import { useTranslation } from 'react-i18next';
+import { Link, useNavigate } from 'react-router';
+import { OrderPanel, type OrderTab } from '../components/admin/OrderPanel';
+import { OrdersSection, type Attention, type OrderPreset } from '../components/admin/OrdersSection';
+import { ApplicationPanel, PeopleSection, PersonPanel } from '../components/admin/PeopleSection';
+import { ReviewPanel, ReviewsSection } from '../components/admin/ReviewsSection';
+import { DeskProvider } from '../components/admin/WorkspaceUi';
+import {
+    api,
+    daysSince,
+    markRead,
+    money,
+    refundDue,
+    todayLine,
+    unreadCounts,
+    type AdminClaim,
+    type AdminOrder,
+    type AdminReview,
+    type AdminUser,
+    type PendingTailor,
+} from '../components/admin/workspace';
+import { NotificationBell } from '../components/NotificationBell';
+import { clearAuth, getAuthToken, getAuthUser } from '../hooks/useAuth';
+import { formatTimestampDay } from '../lib/dates';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+/**
+ * Kere's admin workspace: orders (with what needs attention first), people
+ * (customers, tailors and applications) and reviews. Each record opens in a
+ * side panel where its actions live.
+ */
 
-interface AdminOrder extends AdminOrderMoney, OfferableOrder {
-    order_type: 'marketplace' | 'custom' | 'remodel';
-    total: number;
-    created_at: string;
-    tailor_assignment_mode: string;
-    customer: { id: number; name: string; email: string } | null;
-    tailor:   { id: number; name: string } | null;
-    items:    { id: number; product_name: string; quantity: number; price: number }[];
-    message_count: number;
-    delivered_at: string | null;
-    review: { rating: number; status: 'pending' | 'published' | 'hidden' } | null;
+type Section = 'orders' | 'people' | 'reviews';
+
+type Panel = { kind: 'order'; id: number; tab: OrderTab } | { kind: 'person' | 'app' | 'review'; id: number };
+
+interface Loaded<T> {
+    items: T[];
+    loading: boolean;
+    failed: boolean;
 }
 
-interface AdminUser {
-    id: number;
-    name: string;
-    email: string | null;
-    phone: string | null;
-    role: string;
-    is_suspended: boolean;
-    /** A 16-17 year old whose guardian has not confirmed; they cannot order. */
-    guardian_consent_pending?: boolean;
-    /** A tailor's internal review score; null for everyone else and for tailors not yet reviewed. */
-    score: TailorScoreValue | null;
-    created_at: string;
+const fresh = <T,>(): Loaded<T> => ({ items: [], loading: true, failed: false });
+
+function useAdminList<T>(url: string, key: string) {
+    const [state, setState] = useState<Loaded<T>>(fresh<T>());
+
+    const load = useCallback(async () => {
+        try {
+            const { ok, data } = await api<Record<string, T[]>>(url);
+            if (!ok) throw new Error();
+            setState({ items: (data[key] as T[] | undefined) ?? [], loading: false, failed: false });
+        } catch {
+            setState((s) => ({ ...s, loading: false, failed: true }));
+        }
+    }, [url, key]);
+
+    const retry = useCallback(() => {
+        setState((s) => ({ ...s, loading: true, failed: false }));
+        void load();
+    }, [load]);
+
+    return { ...state, load, retry, setItems: (update: (items: T[]) => T[]) => setState((s) => ({ ...s, items: update(s.items) })) };
 }
-
-interface AssignSlot {
-    tailorId: string;
-    saving:   boolean;
-    saved:    boolean;
-    error?:   string;
-}
-
-interface PendingTailor {
-    id: number;
-    name: string;
-    email: string | null;
-    phone: string | null;
-    created_at: string;
-}
-
-// ─── Status badge ─────────────────────────────────────────────────────────────
-
-const STATUS_CLASSES: Record<string, string> = {
-    pending:    'bg-slate-100 text-slate-600 border-slate-200',
-    processing: 'bg-slate-100 text-slate-700 border-slate-200',
-    shipped:    'bg-slate-50 text-slate-700 border-slate-200',
-    finished:   'bg-slate-900 text-white border-slate-900',
-    delivered:  'bg-slate-900 text-white border-slate-900',
-    cancelled:  'bg-slate-200 text-slate-600 border-slate-300',
-};
-
-const STATUS_LABEL_KEYS: Record<string, string> = {
-    pending:    'adminDashboard.statusPending',
-    processing: 'adminDashboard.statusProcessing',
-    shipped:    'adminDashboard.statusShipped',
-    finished:   'adminDashboard.statusFinished',
-    delivered:  'adminDashboard.statusDelivered',
-    cancelled:  'adminDashboard.statusCancelled',
-};
-
-function StatusBadge({ status }: { status: string }) {
-    const { t } = useTranslation();
-    const cls = STATUS_CLASSES[status] ?? 'bg-slate-50 text-slate-600 border-slate-200';
-    const labelKey = STATUS_LABEL_KEYS[status];
-    return (
-        <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border ${cls}`}>
-            {labelKey ? t(labelKey) : status.charAt(0).toUpperCase() + status.slice(1)}
-        </span>
-    );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
-    const { t }  = useTranslation();
+    const { t } = useTranslation();
     const navigate = useNavigate();
-    const user     = getAuthUser();
-    const token    = getAuthToken();
+    const user = getAuthUser();
+    const token = getAuthToken();
+    const isAdmin = !!token && user?.role === 'admin';
 
-    const [tab,     setTab]     = useState<'orders' | 'users' | 'unassigned' | 'pending_tailors' | 'claims' | 'reviews'>('orders');
-    const [orders,  setOrders]  = useState<AdminOrder[]>([]);
-    const [users,   setUsers]   = useState<AdminUser[]>([]);
-    const [loadingOrders, setLoadingOrders] = useState(true);
-    const [loadingUsers,  setLoadingUsers]  = useState(true);
+    const orders = useAdminList<AdminOrder>('/api/admin/orders', 'orders');
+    const users = useAdminList<AdminUser>('/api/admin/users', 'users');
+    const pending = useAdminList<PendingTailor>('/api/admin/tailors/pending', 'tailors');
+    const claims = useAdminList<AdminClaim>('/api/admin/claims', 'claims');
+    const reviews = useAdminList<AdminReview>('/api/admin/reviews', 'reviews');
 
-    const [assignMap, setAssignMap] = useState<Record<number, AssignSlot>>({});
-    const [suspendingId, setSuspendingId] = useState<number | null>(null);
-    const [openChatOrderId, setOpenChatOrderId] = useState<number | null>(null);
-
-    const [pendingTailors,   setPendingTailors]   = useState<PendingTailor[]>([]);
-    const [loadingPending,   setLoadingPending]   = useState(true);
-    const [approvingId,      setApprovingId]      = useState<number | null>(null);
-    const [rejectingId,      setRejectingId]      = useState<number | null>(null);
-    const [rejectReasons,    setRejectReasons]    = useState<Record<number, string>>({});
-    const [rejectOpen,       setRejectOpen]       = useState<number | null>(null);
-
-    const tailors = users.filter(u => u.role === 'tailor');
+    const [section, setSection] = useState<Section>('orders');
+    const [panel, setPanel] = useState<Panel | null>(null);
+    const [preset, setPreset] = useState<OrderPreset | null>(null);
+    const [unread, setUnread] = useState<Record<number, number>>({});
 
     useEffect(() => {
-        if (!token || user?.role !== 'admin') navigate('/admin/login', { replace: true });
-    }, [token, user, navigate]);
+        if (!isAdmin) navigate('/admin/login', { replace: true });
+    }, [isAdmin, navigate]);
 
-    const fetchOrders = useCallback(async () => {
-        if (!token) return;
-        try {
-            const res = await fetch('/api/admin/orders', {
-                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-            });
-            if (!res.ok) return;
-            const data = await res.json();
-            const list: AdminOrder[] = data.orders ?? [];
-            setOrders(list);
-            setAssignMap(prev => {
-                const next = { ...prev };
-                list.forEach(o => {
-                    if (!next[o.id]) {
-                        next[o.id] = { tailorId: String(o.tailor?.id ?? ''), saving: false, saved: false };
-                    }
-                });
-                return next;
-            });
-        } finally {
-            setLoadingOrders(false);
-        }
-    }, [token]);
-
-    const fetchUsers = useCallback(async () => {
-        if (!token) return;
-        try {
-            const res = await fetch('/api/admin/users', {
-                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-            });
-            if (res.ok) setUsers((await res.json()).users ?? []);
-        } finally {
-            setLoadingUsers(false);
-        }
-    }, [token]);
-
-    const fetchPendingTailors = useCallback(async () => {
-        if (!token) return;
-        try {
-            const res = await fetch('/api/admin/tailors/pending', {
-                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-            });
-            if (res.ok) setPendingTailors((await res.json()).tailors ?? []);
-        } finally {
-            setLoadingPending(false);
-        }
-    }, [token]);
+    const { load: loadOrders } = orders;
+    const { load: loadUsers } = users;
+    const { load: loadPending } = pending;
+    const { load: loadClaims } = claims;
+    const { load: loadReviews } = reviews;
 
     useEffect(() => {
-        fetchOrders();
-        fetchUsers();
-        fetchPendingTailors();
-    }, [fetchOrders, fetchUsers, fetchPendingTailors]);
+        if (!isAdmin) return;
+        void loadOrders();
+        void loadUsers();
+        void loadPending();
+        void loadClaims();
+        void loadReviews();
+    }, [isAdmin, loadOrders, loadUsers, loadPending, loadClaims, loadReviews]);
 
-    const handleApprove = async (id: number) => {
-        if (!token) return;
-        setApprovingId(id);
-        try {
-            const res = await fetch(`/api/admin/tailors/${id}/approve`, {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    useEffect(() => {
+        if (!orders.loading && !orders.failed) setUnread(unreadCounts(orders.items));
+    }, [orders.items, orders.loading, orders.failed]);
+
+    const orderList = orders.items;
+    const openOrder = useCallback((id: number, tab: OrderTab = 'details') => setPanel({ kind: 'order', id, tab }), []);
+    const showOrders = useCallback((next: Omit<OrderPreset, 'nonce'>) => {
+        setPanel(null);
+        setSection('orders');
+        setPreset({ ...next, nonce: Date.now() });
+    }, []);
+
+    const panelOrder = panel?.kind === 'order' ? orderList.find((o) => o.id === panel.id) ?? null : null;
+    const onRead = useCallback(() => {
+        if (!panelOrder) return;
+        markRead(panelOrder);
+        setUnread(unreadCounts(orderList));
+    }, [panelOrder, orderList]);
+
+    const tailors = useMemo(() => users.items.filter((u) => u.role === 'tailor' && u.approval_status !== 'pending' && u.approval_status !== 'rejected'), [users.items]);
+    const openClaims = useMemo(() => claims.items.filter((c) => c.status === 'open' && c.order), [claims.items]);
+    const problemOrderIds = useMemo(() => new Set(openClaims.map((c) => c.order?.id ?? 0)), [openClaims]);
+    const waitingReviews = reviews.items.filter((r) => r.status === 'pending').length;
+
+    // ─── What needs attention, most pressing first ───────────────────────────
+    const attention = useMemo<Attention[]>(() => {
+        const items: Attention[] = [];
+        const byId = new Map(orderList.map((o) => [o.id, o]));
+        const who = (o?: AdminOrder | null) => o?.customer?.name ?? '';
+
+        openClaims.forEach((c) => {
+            const o = byId.get(c.order?.id ?? 0);
+            items.push({
+                key: `claim-${c.id}`,
+                icon: TriangleAlert,
+                tone: 'red',
+                title: t('adminDesk.att.claim', { kind: t(c.type === 'return' ? 'orderCare.claimReturn' : 'orderCare.claimProblem'), order: c.order?.order_number }),
+                meta: [who(o), t('adminDesk.openedOn', { date: formatTimestampDay(c.created_at, t) })].filter(Boolean).join(' · '),
+                action: t('adminDesk.review'),
+                onGo: () => openOrder(c.order?.id ?? 0),
             });
-            if (res.ok) setPendingTailors(prev => prev.filter(t => t.id !== id));
-        } finally {
-            setApprovingId(null);
-        }
-    };
+        });
 
-    const handleReject = async (id: number) => {
-        if (!token) return;
-        setRejectingId(id);
-        try {
-            const res = await fetch(`/api/admin/tailors/${id}/reject`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
-                body: JSON.stringify({ reason: rejectReasons[id] ?? '' }),
+        orderList.filter(refundDue).forEach((o) =>
+            items.push({
+                key: `refund-${o.id}`,
+                icon: Banknote,
+                tone: 'red',
+                title: t('adminDesk.att.refund', { order: o.order_number }),
+                meta: [who(o), t('adminDesk.att.refundMeta', { amount: money(o.paid_total - o.refunded_total) })].filter(Boolean).join(' · '),
+                action: t('adminDesk.att.refundAction'),
+                onGo: () => openOrder(o.id),
+            }),
+        );
+
+        const waiting = orderList
+            .filter((o) => o.status === 'pending_assignment' && !o.offer && (o.order_type === 'marketplace' || o.estimates.some((e) => e.status === 'pending')))
+            .sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
+        waiting.slice(0, 3).forEach((o) => {
+            const estimates = o.estimates.filter((e) => e.status === 'pending').length;
+            items.push({
+                key: `assign-${o.id}`,
+                icon: Clock,
+                tone: 'amber',
+                title: o.order_type === 'marketplace' ? t('adminDesk.att.needsTailor', { order: o.order_number }) : t('adminDesk.att.estimatesIn', { order: o.order_number, count: estimates }),
+                meta: [who(o), daysSince(o.created_at) ? t('adminDesk.att.waitingDays', { count: daysSince(o.created_at) }) : t('adminDesk.att.placedToday')].filter(Boolean).join(' · '),
+                action: o.order_type === 'marketplace' ? t('adminDesk.att.assign') : t('adminDesk.att.makeOffer'),
+                onGo: () => openOrder(o.id),
             });
-            if (res.ok) {
-                setPendingTailors(prev => prev.filter(t => t.id !== id));
-                setRejectOpen(null);
-            }
-        } finally {
-            setRejectingId(null);
-        }
-    };
-
-    const handleAssign = async (orderId: number) => {
-        const slot = assignMap[orderId];
-        if (!slot?.tailorId || !token) return;
-
-        setAssignMap(prev => ({ ...prev, [orderId]: { ...prev[orderId], saving: true, saved: false, error: undefined } }));
-
-        try {
-            const res = await fetch(`/api/admin/orders/${orderId}/assign`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                    Accept: 'application/json',
-                },
-                body: JSON.stringify({ tailor_id: Number(slot.tailorId) }),
+        });
+        if (waiting.length > 3) {
+            items.push({
+                key: 'assign-more',
+                icon: Clock,
+                tone: 'amber',
+                title: t('adminDesk.att.moreWaiting', { count: waiting.length - 3 }),
+                meta: t('adminDesk.att.oldestFirst'),
+                action: t('adminDesk.view'),
+                onGo: () => showOrders({ view: 'needs' }),
             });
-            if (!res.ok) {
-                const failure = await res.json().catch(() => ({}));
-                setAssignMap(prev => ({ ...prev, [orderId]: { ...prev[orderId], saving: false, error: translateServerMessage(failure, t, 'adminDashboard.assignFailed') } }));
-                return;
-            }
-            const data = await res.json();
-            setOrders(prev => prev.map(o => o.id === orderId ? {
-                ...o,
-                tailor:  data.tailor,
-                status:  data.status ?? o.status,
-            } : o));
-            setAssignMap(prev => ({ ...prev, [orderId]: { ...prev[orderId], saving: false, saved: true } }));
-            setTimeout(() => {
-                setAssignMap(prev => ({ ...prev, [orderId]: { ...prev[orderId], saved: false } }));
-            }, 3000);
-        } catch {
-            setAssignMap(prev => ({ ...prev, [orderId]: { ...prev[orderId], saving: false, error: t('adminDashboard.assignFailed') } }));
         }
-    };
 
-    const handleSuspend = async (userId: number) => {
-        if (!token) return;
-        setSuspendingId(userId);
-        try {
-            const res = await fetch(`/api/admin/users/${userId}/suspend`, {
-                method: 'PATCH',
-                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        orderList
+            .filter((o) => o.next_courier_step)
+            .forEach((o) =>
+                items.push({
+                    key: `courier-${o.id}`,
+                    icon: Truck,
+                    tone: 'amber',
+                    title: t(`adminDesk.att.courier.${o.next_courier_step}`, { order: o.order_number }),
+                    meta: [who(o), o.tailor?.name].filter(Boolean).join(' · '),
+                    action: t('adminDesk.open'),
+                    onGo: () => openOrder(o.id),
+                }),
+            );
+
+        const unreadIds = Object.keys(unread).map(Number);
+        const unreadTotal = unreadIds.reduce((n, id) => n + unread[id], 0);
+        if (unreadTotal) {
+            items.push({
+                key: 'unread',
+                icon: MessageCircle,
+                tone: 'sand',
+                title: t('adminDesk.att.unread', { count: unreadTotal }),
+                meta: unreadIds.map((id) => byId.get(id)?.order_number).filter(Boolean).join(' · '),
+                action: t('adminDesk.read'),
+                onGo: () => (unreadIds.length === 1 ? openOrder(unreadIds[0], 'messages') : showOrders({ unread: true })),
             });
-            if (!res.ok) return;
-            const data = await res.json();
-            setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_suspended: data.is_suspended } : u));
-        } finally {
-            setSuspendingId(null);
         }
+
+        if (pending.items.length) {
+            items.push({
+                key: 'applications',
+                icon: Users,
+                tone: 'slate',
+                title: t('adminDesk.att.applications', { count: pending.items.length }),
+                meta: pending.items.map((a) => a.name).join(' · '),
+                action: t('adminDesk.review'),
+                onGo: () => { setPanel(null); setSection('people'); },
+            });
+        }
+
+        if (waitingReviews) {
+            items.push({
+                key: 'reviews',
+                icon: Star,
+                tone: 'sand',
+                title: t('adminDesk.att.reviews', { count: waitingReviews }),
+                meta: t('adminDesk.att.reviewsMeta'),
+                action: t('adminDesk.review'),
+                onGo: () => { setPanel(null); setSection('reviews'); },
+            });
+        }
+
+        return items;
+    }, [orderList, openClaims, unread, pending.items, waitingReviews, openOrder, showOrders, t]);
+
+    // ─── Summary line under the section names ────────────────────────────────
+    const customersCount = users.items.filter((u) => u.role === 'customer').length;
+    const tailorsCount = users.items.filter((u) => u.role === 'tailor' && u.approval_status !== 'pending').length;
+    const ratings = reviews.items.map((r) => r.rating);
+    const summary =
+        section === 'orders'
+            ? `${todayLine(t)} — ${attention.length ? t('adminDesk.summaryOrders', { count: attention.length }) : t('adminDesk.summaryClear')}`
+            : section === 'people'
+              ? [t('adminDesk.summaryPeople', { customers: t('adminDesk.customersCount', { count: customersCount }), tailors: t('adminDesk.tailorsCount', { count: tailorsCount }) }), pending.items.length ? t('adminDesk.appsWaiting', { count: pending.items.length }) : '']
+                    .filter(Boolean)
+                    .join(' · ') + '.'
+              : ratings.length
+                ? [
+                      t('adminDesk.reviewsCount', { count: ratings.length }),
+                      t('adminDesk.average', { average: (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) }),
+                      ratings.filter((r) => r <= 2).length ? t('adminDesk.lowRatings', { count: ratings.filter((r) => r <= 2).length }) : '',
+                      waitingReviews ? t('adminDesk.reviewsWaiting', { count: waitingReviews }) : '',
+                  ]
+                      .filter(Boolean)
+                      .join(' · ') + '.'
+                : t('adminDesk.noReviewsYet');
+
+    const dots: Record<Section, boolean> = {
+        orders: attention.some((a) => a.key !== 'applications' && a.key !== 'reviews'),
+        people: pending.items.length > 0,
+        reviews: waitingReviews > 0,
     };
 
-    const handleSignOut = () => { clearAuth(); navigate('/'); };
+    if (!isAdmin) return null;
 
-    const unassignedOrders = orders.filter(o => o.status === 'pending_assignment');
-    const openClaims = orders.reduce((n, o) => n + o.open_claims_count, 0);
-    const reviewsWaiting = orders.filter(o => o.review?.status === 'pending').length;
-
-    const stats = [
-        { labelKey: 'adminDashboard.statTotalOrders', value: orders.length,                            icon: Package },
-        { labelKey: 'adminDashboard.statUnassigned',  value: unassignedOrders.length,                  icon: Package },
-        { labelKey: 'adminDashboard.statTailors',     value: tailors.length,                           icon: Users },
-        { labelKey: 'adminDashboard.statSuspended',   value: users.filter(u => u.is_suspended).length, icon: ShieldAlert },
-    ];
-
-    const tabs = (['orders', 'unassigned', 'claims', 'reviews', 'pending_tailors', 'users'] as const);
-    const tabLabels: Record<string, string> = {
-        orders:          t('adminDashboard.tabOrders'),
-        claims:          t('adminCare.tabClaims'),
-        reviews:         t('adminReviews.tab'),
-        unassigned:      t('adminDashboard.tabUnassigned'),
-        pending_tailors: t('adminDashboard.tabPendingTailors'),
-        users:           t('adminDashboard.tabUsers'),
+    const reloadOrderData = () => {
+        void loadOrders();
+        void loadClaims();
     };
+
+    const panelPerson = panel?.kind === 'person' ? users.items.find((u) => u.id === panel.id) ?? null : null;
+    const panelApp = panel?.kind === 'app' ? pending.items.find((a) => a.id === panel.id) ?? null : null;
+    const panelReview = panel?.kind === 'review' ? reviews.items.find((r) => r.id === panel.id) ?? null : null;
 
     return (
-        <div className="kere-workflow-page min-h-screen bg-slate-50">
-            <Helmet>
-                <title>{t('adminDashboard.pageTitle')}</title>
-                <meta name="robots" content="noindex" />
-            </Helmet>
+        <DeskProvider>
+            <div className="ka-scope ka-page">
+                <Helmet>
+                    <title>{t('adminDashboard.pageTitle')}</title>
+                    <meta name="robots" content="noindex" />
+                    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Instrument+Serif&display=swap" />
+                </Helmet>
 
-            {/* ── Navbar ── */}
-            <nav className="sticky top-0 z-40 bg-white border-b border-slate-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Link to="/" className="text-xl font-bold text-slate-900 hover:text-slate-700 transition-colors">
-                            Kere
+                <header className="ka-header">
+                    <div className="ka-wrap ka-header-bar">
+                        <Link to="/" aria-label={t('adminDesk.homeLabel')} className="ka-brand">
+                            <b>Kere</b>
+                            <span>{t('adminDashboard.adminBadge').toUpperCase()}</span>
                         </Link>
-                        <span className="text-[10px] font-bold bg-slate-900 text-white px-2 py-0.5 rounded-full tracking-wide uppercase">
-                            {t('adminDashboard.adminBadge')}
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <Link
-                            to="/admin/customizer"
-                            className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-                        >
-                            <Scissors className="w-4 h-4" />
-                            <span className="hidden sm:inline">{t('adminDashboard.designStudio')}</span>
-                        </Link>
-                        <NotificationBell />
-                        <div className="flex items-center gap-2 text-sm text-slate-700">
-                            <ShieldAlert className="w-4 h-4 text-slate-400" />
-                            <span className="hidden sm:inline font-medium">
-                                {user?.first_name} {user?.last_name}
+                        <nav aria-label={t('adminDesk.accountNav')} className="ka-nav">
+                            <Link to="/admin/customizer" className="ka-nav-a" aria-label={t('adminDashboard.designStudio')}>
+                                <Scissors size={16} aria-hidden="true" />
+                                <span className="ka-hide-sm">{t('adminDashboard.designStudio')}</span>
+                            </Link>
+                            <NotificationBell />
+                            <span className="ka-nav-a ka-tip" tabIndex={0} style={{ color: '#90A1B9', cursor: 'default' }} data-tip={t('adminDesk.signedInAs', { name: user?.name ?? '' })} aria-label={t('adminDesk.signedInAs', { name: user?.name ?? '' })}>
+                                <ShieldCheck size={16} aria-hidden="true" />
                             </span>
-                        </div>
-                        <button
-                            onClick={handleSignOut}
-                            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-                        >
-                            <LogOut className="w-4 h-4" />
-                            <span className="hidden sm:inline">{t('adminDashboard.signOut')}</span>
-                        </button>
-                    </div>
-                </div>
-            </nav>
-
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-
-                {/* ── Header ── */}
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900">{t('adminDashboard.platformControl')}</h1>
-                </div>
-
-                {/* ── Stats ── */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {stats.map(stat => {
-                        const Icon = stat.icon;
-                        return (
-                            <motion.div
-                                key={stat.labelKey}
-                                initial={{ opacity: 0, y: 8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="bg-white rounded-2xl border border-slate-100 p-4"
+                            <button
+                                type="button"
+                                className="ka-nav-a"
+                                onClick={() => {
+                                    clearAuth();
+                                    navigate('/');
+                                }}
                             >
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Icon className="w-4 h-4 text-slate-400" />
-                                    <span className="text-xs text-slate-500">{t(stat.labelKey)}</span>
-                                </div>
-                                <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                            </motion.div>
-                        );
-                    })}
-                </div>
+                                <LogOut size={16} aria-hidden="true" />
+                                <span className="ka-hide-sm">{t('adminDashboard.signOut')}</span>
+                            </button>
+                        </nav>
+                    </div>
+                </header>
 
-                {/* ── Tabs ── */}
-                <div className="flex flex-wrap gap-2">
-                    {tabs.map(tabKey => (
-                        <button
-                            key={tabKey}
-                            onClick={() => setTab(tabKey)}
-                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                                tab === tabKey
-                                    ? 'bg-brand text-white'
-                                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                            }`}
-                        >
-                            {tabLabels[tabKey]}
-                            {tabKey === 'unassigned' && unassignedOrders.length > 0 && (
-                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === 'unassigned' ? 'bg-white text-slate-900' : 'bg-slate-200 text-slate-700'}`}>
-                                    {unassignedOrders.length}
-                                </span>
-                            )}
-                            {tabKey === 'claims' && openClaims > 0 && (
-                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === 'claims' ? 'bg-white text-slate-900' : 'bg-brand text-white'}`}>
-                                    {openClaims}
-                                </span>
-                            )}
-                            {tabKey === 'reviews' && reviewsWaiting > 0 && (
-                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === 'reviews' ? 'bg-white text-slate-900' : 'bg-brand text-white'}`}>
-                                    {reviewsWaiting}
-                                </span>
-                            )}
-                            {tabKey === 'pending_tailors' && pendingTailors.length > 0 && (
-                                <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${tab === 'pending_tailors' ? 'bg-white text-slate-900' : 'bg-brand text-white'}`}>
-                                    {pendingTailors.length}
-                                </span>
-                            )}
-                        </button>
-                    ))}
-                </div>
-
-                {/* ── Orders table ── */}
-                {tab === 'orders' && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
-                    >
-                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                            <h2 className="font-bold text-slate-900">{t('adminDashboard.allOrders')}</h2>
-                            <span className="text-xs text-slate-400">{t('adminDashboard.total', { n: orders.length })}</span>
+                <main className="ka-main">
+                    <div className="ka-wrap">
+                        <div role="tablist" aria-label={t('adminDesk.sectionsLabel')} className="ka-sections">
+                            {(['orders', 'people', 'reviews'] as const).map((s) => (
+                                <button key={s} type="button" role="tab" className="ka-sec" aria-selected={section === s} onClick={() => { setSection(s); setPanel(null); }}>
+                                    {t(`adminDesk.sections.${s}`)}
+                                    {dots[s] && section !== s && (
+                                        <>
+                                            <span className="ka-sr">{t('adminDesk.needsAttentionSr')}</span>
+                                            <span aria-hidden="true" className="ka-sec-dot" />
+                                        </>
+                                    )}
+                                </button>
+                            ))}
                         </div>
+                        <p className="ka-summary">{summary}</p>
 
-                        {loadingOrders ? (
-                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.loading')}</div>
-                        ) : orders.length === 0 ? (
-                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.noOrders')}</div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
-                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colOrderNum')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold hidden sm:table-cell">{t('adminDashboard.colCustomer')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold hidden md:table-cell">{t('adminDashboard.colItems')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colStatus')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colAssignTailor')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colChat')}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {orders.map((order, i) => {
-                                            const slot    = assignMap[order.id] ?? { tailorId: '', saving: false, saved: false };
-                                            const changed = slot.tailorId !== String(order.tailor?.id ?? '');
-                                            const chatOpen = openChatOrderId === order.id;
-                                            // A remodel goes to a tailor through Kere's offer (terms §8), never straight.
-                                            const viaOffer = order.status === 'pending_assignment' && order.order_type === 'remodel';
-
-                                            return (
-                                                <Fragment key={order.id}>
-                                                <motion.tr
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    transition={{ delay: i * 0.025 }}
-                                                    className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
-                                                >
-                                                    <td className="px-6 py-4">
-                                                        <p className="text-xs font-mono text-slate-500">{order.order_number}</p>
-                                                        <p className="text-xs text-slate-400 mt-0.5">{order.created_at}</p>
-                                                    </td>
-                                                    <td className="px-6 py-4 hidden sm:table-cell">
-                                                        <p className="text-sm font-medium text-slate-900">{order.customer?.name ?? '—'}</p>
-                                                        <p className="text-xs text-slate-400">{order.customer?.email}</p>
-                                                    </td>
-                                                    <td className="px-6 py-4 hidden md:table-cell">
-                                                        <p className="text-xs text-slate-600 max-w-[200px] truncate">
-                                                            {order.items.length > 0
-                                                                ? order.items.map(it => `${it.product_name} ×${it.quantity}`).join(', ')
-                                                                : order.order_type === 'custom' ? t('adminDashboard.customDesign') : '—'
-                                                            }
-                                                        </p>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <StatusBadge status={order.status} />
-                                                        <OrderOperations order={order} onChanged={() => void fetchOrders()} />
-                                                        {order.status === 'delivered' && order.delivered_at && (
-                                                            <p className="text-[11px] text-slate-400 mt-1">
-                                                                {t('adminDashboard.deliveredOn', { date: order.delivered_at })}
-                                                            </p>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        {viaOffer ? (
-                                                            <p className="text-xs text-slate-400">{t('adminOffer.viaOffer')}</p>
-                                                        ) : (
-                                                        <div className="flex items-center gap-2 flex-wrap">
-                                                            <select
-                                                                value={slot.tailorId}
-                                                                onChange={e => setAssignMap(prev => ({
-                                                                    ...prev,
-                                                                    [order.id]: { ...prev[order.id], tailorId: e.target.value, saved: false },
-                                                                }))}
-                                                                disabled={slot.saving || tailors.length === 0}
-                                                                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 disabled:opacity-50"
-                                                            >
-                                                                <option value="">{t('adminDashboard.selectTailor')}</option>
-                                                                {tailors.map(tl => (
-                                                                    <option key={tl.id} value={String(tl.id)}>{tl.name}</option>
-                                                                ))}
-                                                            </select>
-
-                                                            <Button
-                                                                variant="default"
-                                                                size="sm"
-                                                                onClick={() => handleAssign(order.id)}
-                                                                disabled={!changed || !slot.tailorId || slot.saving}
-                                                                className="h-7 px-3 text-xs"
-                                                            >
-                                                                {slot.saving ? t('adminDashboard.saving') : t('adminDashboard.assign')}
-                                                            </Button>
-
-                                                            {slot.saved && (
-                                                                <span className="flex items-center gap-1 text-xs text-slate-900 font-medium">
-                                                                    <CheckCircle className="w-3.5 h-3.5" />
-                                                                    {t('adminDashboard.saved')}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        )}
-                                                        {slot.error && <p role="alert" className="text-xs text-destructive mt-1">{slot.error}</p>}
-                                                        {order.tailor && (
-                                                            <p className="text-xs text-slate-400 mt-1">
-                                                                {t('adminDashboard.current', { name: order.tailor.name })}
-                                                            </p>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => setOpenChatOrderId(chatOpen ? null : order.id)}
-                                                            className="h-7 px-2 text-xs text-slate-600 hover:text-slate-900"
-                                                        >
-                                                            <MessageCircle className="w-3.5 h-3.5" />
-                                                            {order.message_count > 0 ? t('adminDashboard.viewChat', { n: order.message_count }) : t('adminDashboard.openChat')}
-                                                        </Button>
-                                                    </td>
-                                                </motion.tr>
-                                                {chatOpen && (
-                                                    <tr className="border-b border-slate-50 bg-slate-50/60">
-                                                        <td colSpan={6} className="px-6 py-4">
-                                                            <AdminOrderChat orderId={order.id} adminId={user?.id ?? 0} hasTailor={!!order.tailor} />
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                                </Fragment>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
+                        {section === 'orders' && (
+                            <OrdersSection
+                                orders={orderList}
+                                loading={orders.loading}
+                                failed={orders.failed}
+                                onRetry={orders.retry}
+                                attention={attention}
+                                unread={unread}
+                                problemOrderIds={problemOrderIds}
+                                tailors={tailors}
+                                openOrderId={panelOrder?.id ?? null}
+                                onOpenOrder={(id) => openOrder(id)}
+                                preset={preset}
+                            />
                         )}
-                    </motion.div>
+                        {section === 'people' && (
+                            <PeopleSection
+                                users={users.items}
+                                pending={pending.items}
+                                orders={orderList}
+                                loading={users.loading}
+                                failed={users.failed}
+                                onRetry={users.retry}
+                                openId={panelPerson?.id ?? null}
+                                onOpenPerson={(id) => setPanel({ kind: 'person', id })}
+                                onOpenApplication={(id) => setPanel({ kind: 'app', id })}
+                            />
+                        )}
+                        {section === 'reviews' && (
+                            <ReviewsSection
+                                reviews={reviews.items}
+                                loading={reviews.loading}
+                                failed={reviews.failed}
+                                onRetry={reviews.retry}
+                                openId={panelReview?.id ?? null}
+                                onOpen={(id) => setPanel({ kind: 'review', id })}
+                            />
+                        )}
+                    </div>
+                </main>
+
+                {panelOrder && panel?.kind === 'order' && (
+                    <OrderPanel
+                        key={panelOrder.id}
+                        order={panelOrder}
+                        claims={claims.items.filter((c) => c.order?.id === panelOrder.id)}
+                        orders={orderList}
+                        tailors={tailors}
+                        me={user?.id ?? 0}
+                        unread={unread[panelOrder.id] ?? 0}
+                        initialTab={panel.tab}
+                        onClose={() => setPanel(null)}
+                        onChanged={reloadOrderData}
+                        onRead={onRead}
+                        onCustomerOrders={(customerId) => showOrders({ customerId })}
+                        onOpenPerson={(id) => {
+                            setSection('people');
+                            setPanel({ kind: 'person', id });
+                        }}
+                    />
                 )}
-
-                {tab === 'claims' && <ClaimsTab onChanged={() => void fetchOrders()} />}
-
-                {tab === 'reviews' && <ReviewsTab onChanged={() => void fetchOrders()} />}
-
-                {/* ── Unassigned orders ── */}
-                {tab === 'unassigned' && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
-                    >
-                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                            <div>
-                                <h2 className="font-bold text-slate-900">{t('adminDashboard.unassignedOrders')}</h2>
-                            </div>
-                            <span className="text-xs text-slate-400">{t('adminDashboard.total', { n: unassignedOrders.length })}</span>
-                        </div>
-
-                        {loadingOrders ? (
-                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.loading')}</div>
-                        ) : unassignedOrders.length === 0 ? (
-                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.noUnassigned')}</div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
-                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colOrderNum')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold hidden sm:table-cell">{t('adminDashboard.colCustomer')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold hidden md:table-cell">{t('adminDashboard.colDesign')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold">{t('adminOffer.colOffer')}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {unassignedOrders.map((order, i) => {
-                                            return (
-                                                <motion.tr
-                                                    key={order.id}
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    transition={{ delay: i * 0.025 }}
-                                                    className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
-                                                >
-                                                    <td className="px-6 py-4">
-                                                        <p className="text-xs font-mono text-slate-500">{order.order_number}</p>
-                                                        <p className="text-xs text-slate-400 mt-0.5">{order.created_at}</p>
-                                                    </td>
-                                                    <td className="px-6 py-4 hidden sm:table-cell">
-                                                        <p className="text-sm font-medium text-slate-900">{order.customer?.name ?? '—'}</p>
-                                                        <p className="text-xs text-slate-400">{order.customer?.email}</p>
-                                                    </td>
-                                                    <td className="px-6 py-4 hidden md:table-cell">
-                                                        <p className="text-xs text-slate-600 max-w-[200px] truncate">
-                                                            {order.order_type === 'remodel' ? t('adminOffer.remodel') : t('adminDashboard.customDesign')}
-                                                        </p>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <KereOfferForm order={order} onSent={() => void fetchOrders()} />
-                                                    </td>
-                                                </motion.tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </motion.div>
+                {panelPerson && (
+                    <PersonPanel
+                        key={panelPerson.id}
+                        user={panelPerson}
+                        orders={orderList}
+                        onClose={() => setPanel(null)}
+                        onChanged={(updated) => users.setItems((list) => list.map((u) => (u.id === updated.id ? updated : u)))}
+                        onOpenOrder={(id) => openOrder(id)}
+                        onShowOrders={showOrders}
+                    />
                 )}
-
-                {/* ── Pending tailors ── */}
-                {tab === 'pending_tailors' && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
-                    >
-                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                            <div>
-                                <h2 className="font-bold text-slate-900">{t('adminDashboard.pendingTailors')}</h2>
-                            </div>
-                            <span className="text-xs text-slate-400">{t('adminDashboard.total', { n: pendingTailors.length })}</span>
-                        </div>
-
-                        {loadingPending ? (
-                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.loading')}</div>
-                        ) : pendingTailors.length === 0 ? (
-                            <div className="px-6 py-14 text-center">
-                                <Clock className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-                                <p className="text-sm text-slate-400">{t('adminDashboard.noPendingTailors')}</p>
-                            </div>
-                        ) : (
-                            <div className="divide-y divide-slate-50">
-                                {pendingTailors.map((tailor, i) => (
-                                    <motion.div
-                                        key={tailor.id}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: i * 0.04 }}
-                                        className="px-6 py-4"
-                                    >
-                                        <div className="flex items-start justify-between gap-4 flex-wrap">
-                                            <div>
-                                                <p className="text-sm font-medium text-slate-900">{tailor.name}</p>
-                                                <p className="text-xs text-slate-400 mt-0.5">{tailor.email ?? tailor.phone}</p>
-                                                <p className="text-xs text-slate-400 mt-0.5">{t('adminDashboard.colApplied')}: {tailor.created_at}</p>
-                                            </div>
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                {rejectOpen !== tailor.id ? (
-                                                    <>
-                                                        <Button
-                                                            variant="default"
-                                                            size="sm"
-                                                            onClick={() => handleApprove(tailor.id)}
-                                                            disabled={approvingId === tailor.id || rejectingId === tailor.id}
-                                                            className="h-8 px-4 text-xs"
-                                                        >
-                                                            {approvingId === tailor.id ? t('adminDashboard.approving') : t('adminDashboard.approve')}
-                                                        </Button>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => setRejectOpen(tailor.id)}
-                                                            disabled={approvingId === tailor.id}
-                                                            className="h-8 px-4 text-xs text-slate-600"
-                                                        >
-                                                            {t('adminDashboard.reject')}
-                                                        </Button>
-                                                    </>
-                                                ) : (
-                                                    <div className="flex items-center gap-2">
-                                                        <button
-                                                            onClick={() => setRejectOpen(null)}
-                                                            className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
-                                                        >
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {rejectOpen === tailor.id && (
-                                            <div className="mt-3 space-y-2">
-                                                <textarea
-                                                    rows={2}
-                                                    placeholder={t('adminDashboard.rejectReasonPlaceholder')}
-                                                    value={rejectReasons[tailor.id] ?? ''}
-                                                    onChange={e => setRejectReasons(prev => ({ ...prev, [tailor.id]: e.target.value }))}
-                                                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
-                                                />
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() => handleReject(tailor.id)}
-                                                    disabled={rejectingId === tailor.id}
-                                                    className="h-8 px-4 text-xs"
-                                                >
-                                                    {rejectingId === tailor.id ? t('adminDashboard.rejecting') : t('adminDashboard.confirmReject')}
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                ))}
-                            </div>
-                        )}
-                    </motion.div>
+                {panelApp && (
+                    <ApplicationPanel
+                        key={panelApp.id}
+                        application={panelApp}
+                        onClose={() => setPanel(null)}
+                        onDecided={() => {
+                            setPanel(null);
+                            void loadPending();
+                            void loadUsers();
+                        }}
+                    />
                 )}
-
-                {/* ── Users table ── */}
-                {tab === 'users' && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
-                    >
-                        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-                            <h2 className="font-bold text-slate-900">{t('adminDashboard.allUsers')}</h2>
-                            <span className="text-xs text-slate-400">{t('adminDashboard.total', { n: users.length })}</span>
-                        </div>
-
-                        {loadingUsers ? (
-                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.loading')}</div>
-                        ) : users.length === 0 ? (
-                            <div className="px-6 py-14 text-center text-sm text-slate-400">{t('adminDashboard.noUsers')}</div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="text-xs text-slate-500 uppercase tracking-wide border-b border-slate-100">
-                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colName')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold hidden sm:table-cell">{t('adminDashboard.colEmail')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold hidden md:table-cell">{t('adminDashboard.colJoined')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colRole')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colUserStatus')}</th>
-                                            <th className="text-left px-6 py-3 font-semibold">{t('adminDashboard.colAction')}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {users.map((u, i) => (
-                                            <motion.tr
-                                                key={u.id}
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                transition={{ delay: i * 0.025 }}
-                                                className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
-                                            >
-                                                <td className="px-6 py-4 text-sm font-medium text-slate-900">{u.name}</td>
-                                                <td className="px-6 py-4 text-sm text-slate-500 hidden sm:table-cell">{u.email ?? u.phone}</td>
-                                                <td className="px-6 py-4 text-xs text-slate-400 hidden md:table-cell">{u.created_at}</td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border ${
-                                                        u.role === 'tailor'  ? 'bg-slate-800 text-white border-slate-700' :
-                                                        u.role === 'admin'   ? 'bg-slate-900 text-white border-slate-900' :
-                                                                               'bg-slate-50 text-slate-600 border-slate-200'
-                                                    }`}>
-                                                        {t(`adminDashboard.role${u.role.charAt(0).toUpperCase()}${u.role.slice(1)}`) || u.role}
-                                                    </span>
-                                                    {/* Nothing else in this row would show that the
-                                                        account is held: it is not suspended, and the
-                                                        approval status belongs to tailors. */}
-                                                    {u.guardian_consent_pending && (
-                                                        <span className="ml-1.5 inline-flex items-center rounded-full border border-brand/20 bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand">
-                                                            {t('adminDashboard.awaitingGuardian')}
-                                                        </span>
-                                                    )}
-                                                    {u.role === 'tailor' && (
-                                                        <span className="mt-1 block text-xs">
-                                                            <TailorScore score={u.score} />
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {u.is_suspended ? (
-                                                        <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border bg-slate-200 text-slate-700 border-slate-300">
-                                                            {t('adminDashboard.suspended')}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border bg-slate-50 text-slate-900 border-slate-200">
-                                                            {t('adminDashboard.active')}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {u.role !== 'admin' && (
-                                                        <Button
-                                                            variant={u.is_suspended ? 'outline' : 'destructive'}
-                                                            size="sm"
-                                                            onClick={() => handleSuspend(u.id)}
-                                                            disabled={suspendingId === u.id}
-                                                            className="text-xs h-7"
-                                                        >
-                                                            {suspendingId === u.id
-                                                                ? t('adminDashboard.saving')
-                                                                : u.is_suspended ? t('adminDashboard.reinstate') : t('adminDashboard.suspend')}
-                                                        </Button>
-                                                    )}
-                                                </td>
-                                            </motion.tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </motion.div>
+                {panelReview && (
+                    <ReviewPanel
+                        key={panelReview.id}
+                        review={panelReview}
+                        problemOpen={!!panelReview.order && problemOrderIds.has(panelReview.order.id)}
+                        onClose={() => setPanel(null)}
+                        onChanged={(updated) => reviews.setItems((list) => list.map((r) => (r.id === updated.id ? updated : r)))}
+                        onOpenOrder={(id) => openOrder(id)}
+                    />
                 )}
             </div>
-        </div>
+        </DeskProvider>
     );
 }

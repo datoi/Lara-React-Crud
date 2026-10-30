@@ -309,6 +309,12 @@ class Order extends Model
         return $this->hasMany(OrderClaim::class);
     }
 
+    /** Admins' internal notes; `notes` is the customer's own note column. */
+    public function adminNotes(): HasMany
+    {
+        return $this->hasMany(OrderNote::class);
+    }
+
     public function review(): HasOne
     {
         return $this->hasOne(Review::class);

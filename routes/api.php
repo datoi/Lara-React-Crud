@@ -176,6 +176,7 @@ Route::middleware(['auth.bearer', 'auth.admin', 'throttle:30,1,api-admin'])->pre
     Route::get('/orders/{orderId}/messages', [AdminController::class, 'orderMessages']);
     Route::post('/orders/{orderId}/messages', [AdminController::class, 'postMessage']);
     Route::post('/orders/{id}/offer', [AdminController::class, 'sendOffer']);
+    Route::post('/orders/{id}/notes', [AdminController::class, 'addNote']);
     Route::get('/users', [AdminController::class, 'users']);
     Route::patch('/orders/{id}/assign', [AdminController::class, 'assignTailor']);
     Route::patch('/orders/{id}/deliver', [AdminController::class, 'deliverOrder']);

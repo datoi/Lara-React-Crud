@@ -6,6 +6,62 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-10-30 — The admin panel becomes the "Platform Control" workspace
+
+**What was done:** The owner supplied a design for the admin panel ("Kere Admin Panel – Platform Control", a prototype with sample data). It is now the real admin panel at `/admin-dashboard`. As with design imports, the design decides layout and styling, and every function the old panel had is kept.
+- **Three sections instead of six tabs.**
+  - **Orders**: "Needs your attention" comes first. It lists open returns and problem reports, refunds due on cancelled orders, requests whose estimates are in (or orders with no tailor), courier steps, unread messages, tailor applications and reviews waiting. Then the order list: views (all, needs a tailor, in progress, completed), search, a filter popover (status, tailor, dates, unread, open problem), sortable columns, "show more" and CSV export.
+  - **People**: applications waiting for approval, then customers and tailors.
+  - **Reviews**: waiting, all, low ratings and hidden.
+  - A dot on a section name says something there is waiting.
+- **Every record opens in a side panel.**
+  - An order has three tabs.
+    - **Details**: open problems, answered with a note the customer is told. The next step: Kere's offer from the tailors' estimates; a tailor picker for an order without one, or "Change tailor"; or the courier step. Then the customer, the items or remodel request with photos, and delivery and payment with the refund form.
+    - **Messages**: both conversations.
+    - **Activity**: a timeline from the order's own dates, plus internal notes.
+  - People can be suspended (with Undo) or reactivated.
+  - Applications can be approved, or declined with a reason that is sent to the applicant.
+  - Reviews can be published or hidden, with Undo between those two.
+- **Statuses are in plain words.** These are "Needs a tailor", "Offer sent", "Awaiting payment", "Waiting to start", "In progress", "Ready to ship", "With courier", "Delivered" and "Cancelled". They are worked out from the order's status, payment and offer.
+- **New: internal notes on an order.** The new `order_notes` table and `POST /api/admin/orders/{id}/notes` (3–500 characters) store them. They come back in `/api/admin/orders` as `admin_notes`, and only admins ever see them. The relation is `Order::adminNotes()`, because `notes` is already the customer's own note column.
+- **More detail for the panel.** `/api/admin/orders` now also sends the amounts, payment dates, the customer's phone, `custom_design_data`, a remodel's return address and the customer's note. `/api/admin/tailors/pending` now sends the registration answers an approval rests on (business type, remodel work, workspace, experience band, legal status), but never the national ID.
+- **Unread messages are counted per browser** (`kere_admin_chat_seen`), because the API keeps no read state for Kere. The first visit takes everything as read.
+- **Left out on purpose:**
+  - The design's admin buttons to start, finish, cancel and reopen an order. Those steps belong to the customer and the tailor.
+  - Its outcome list and priorities for problems, and its portfolio pictures. Nothing stores them.
+  - Its Undo on assigning or courier steps. The API cannot reverse those.
+  - The design's sample notifications. The real notification bell is used instead.
+- **Clean-up:** `OrderOperations`, `KereOffer` and `ReviewsTab` were replaced and removed. `OrderChat` lost its admin-only branch. 85 translation keys that only the old panel used were removed. The new `adminDesk` namespace (391 keys) is in both languages, Georgian using მომხმარებელი and შეთავაზება.
+- The page loads DM Sans and Instrument Serif from Google Fonts itself; no other page loads them. The brand wine `#631e26` stands in for the design's `#6B1D2A`, and its animations were trimmed to 0.2 s.
+
+**Verified:**
+- `php artisan test`: 245 passed (1,158 assertions). The new `AdminWorkspaceTest` (6) covers:
+  - notes: newest first, admins only, validation, and never shown to the customer;
+  - the detail the order panel reads;
+  - an application's answers, without the national ID.
+- `npm run typecheck` is clean. `npx eslint .` reports 0 errors and the 4 old warnings. `npm run build` succeeds. The locales have 1,969 keys each and match.
+- Drove the built page in headless Chrome, in Georgian and English, at 1440px and 390px. Every section and panel was checked: there is no horizontal overflow and there are no console errors.
+- Then, as a QA admin against QA fixtures, every action was run in Chrome and confirmed in the database:
+  - a note;
+  - Kere's offer from an estimate (₾85, 6 days);
+  - the courier pickup on a paid remodel;
+  - answering a problem report;
+  - a message to the customer;
+  - search, the filter and the CSV file;
+  - publish, hide and Undo on a review;
+  - approving an applicant;
+  - suspend and Undo on a customer.
+- The server ran with `MAIL_MAILER=log SMSOFFICE_KEY=`, so the offer email went to the log. All QA users, orders and notifications were deleted afterwards (19 orders and 14 users, as before).
+- Found and fixed during QA:
+  - a reset rule that overrode the section titles' serif font and the buttons' colours;
+  - clicking a toast's Undo closed the open panel;
+  - on phones, attention rows were squeezed by their action label, and the offer form's fields did not line up.
+
+**Not covered / Noticed:**
+- The design's suspension reason is not stored (the API has no column for it), so suspending asks only for confirmation.
+- The admin API's limit is 30 requests a minute per admin. Opening the page makes 5, each action reloads orders and claims, and an open conversation polls every 6 seconds. During the fast scripted QA run the limit was hit once; the page then shows "Couldn't load the orders" with a retry button. Raise `api-admin` if real use hits it.
+- Not run on PostgreSQL this time; the new table and queries use nothing specific to either database.
+
 ## 2026-10-30 — Remodel leads the home page, For Tailors stands out, and the header names who is signed in
 
 **What was done:** Three changes the owner asked for.
