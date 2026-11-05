@@ -915,7 +915,7 @@ export default function CustomerDashboard() {
                     </Link>
                 </div>
 
-                <ChangePassword className="mt-8 bg-white rounded-lg border border-slate-200 p-5 sm:p-6" />
+                <ChangePassword />
             </div>
 
             {/* Order detail modal */}

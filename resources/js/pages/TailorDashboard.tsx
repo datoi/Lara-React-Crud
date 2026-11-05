@@ -322,7 +322,7 @@ export default function TailorDashboard() {
                     )}
                 </motion.div>
 
-                <ChangePassword className="border border-[#dfd8cf] bg-[#fbf8f4] p-5 sm:p-6" />
+                <ChangePassword />
             </main>
         </div>
     );

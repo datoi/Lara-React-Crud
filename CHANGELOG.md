@@ -6,6 +6,17 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-11-05 — Make "change password" a quiet link instead of a card
+
+**What was done:** The owner found the dashboards' "Password" card too prominent. `ChangePassword` is now a small, muted "Change password" text link at the very bottom of the customer and tailor dashboards. It opens the same form (current password, new one twice) in a dialog (`kere-modal`, Radix). After a change the dialog closes and "Your password has been changed." shows under the link.
+
+**Verified:**
+- `npm run typecheck` clean, ESLint on the three files clean.
+- In Chrome with mail and SMS logged only, on both dashboards in Georgian at 390 px and English at 1440 px: the link is the last thing on the page; the dialog refused a wrong current password; the change went through and the confirmation showed.
+- No horizontal overflow. The only console error was the deliberate 422. The QA accounts were deleted.
+
+**Not covered / Noticed:** On the tailor dashboard the link is 16px, not 12px, because that page sets all text and buttons to 16px for readability (`.tailor-dashboard-page button`). It was left matching the page.
+
 ## 2026-11-05 — Let people reset a forgotten password and change it, and preview links in Georgian
 
 **What was done:** The owner asked for a "forgot password" option on the sign-in page, a way to change the password from the profile, and Georgian text when a kereforyou.com link is shared on Facebook, WhatsApp or elsewhere. Until now an account whose password was lost could not be recovered at all (CLAUDE.md §15 item 8).
