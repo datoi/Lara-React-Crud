@@ -6,13 +6,14 @@
  * long legal document. TermsOfService.tsx renders the active language.
  */
 import type { LegalDocument } from '../types/legal';
+import legalVersions from './legalVersions.json';
 
 const ka: LegalDocument = {
     title: 'ვებსაიტისა და აპლიკაციის გამოყენების წესები და პირობები',
     subtitle: 'მომხმარებლებისთვის',
     lead: 'ეს დოკუმენტი განმარტავს, როგორ იქმნება და სრულდება შეკვეთა, როგორ მოქმედებს გადახდა, მიწოდება, გაუქმება, დაბრუნება და პასუხისმგებლობა KereForYou-ის პლატფორმაზე.',
     meta: [
-        { label: 'ვერსია', value: '1.1' },
+        { label: 'ვერსია', value: legalVersions.terms },
         { label: 'ძალაში შესვლის თარიღი', value: '20 სექტემბერი 2026' },
         { label: 'ოპერატორი', value: 'შპს „კერე შენთვის“' },
     ],
@@ -394,7 +395,7 @@ const en: LegalDocument = {
     subtitle: 'For customers',
     lead: 'This document explains how an order is created and fulfilled, and how payment, delivery, cancellation, returns and liability work on the KereForYou platform.',
     meta: [
-        { label: 'Version', value: '1.1' },
+        { label: 'Version', value: legalVersions.terms },
         { label: 'Effective date', value: '20 September 2026' },
         { label: 'Operator', value: 'KereForYou LLC' },
     ],

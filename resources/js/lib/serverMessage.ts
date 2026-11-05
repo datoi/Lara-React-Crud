@@ -23,6 +23,10 @@ const CODES: Record<string, string> = {
     email_taken: 'register.errorEmailTaken',
     guardian_contact_is_own: 'register.errorGuardianIsOwn',
 
+    // Terms that changed since the customer last agreed
+    legal_acceptance_required: 'legalConsent.errorAcceptFirst',
+    legal_version_changed: 'legalConsent.errorVersionChanged',
+
     // Ordering
     measurements_required: 'measurements.orderFromPage',
     custom_orders_paused: 'designer.ordersPaused',

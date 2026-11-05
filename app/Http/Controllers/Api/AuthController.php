@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Mail\NewRegistration;
+use App\Models\KereNotification;
 use App\Models\User;
 use App\Models\Verification;
 use App\Services\OtpService;
+use App\Support\LegalDocuments;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -67,6 +70,28 @@ class AuthController extends Controller
             // reaching here at all is the acceptance this timestamps.
             'terms_accepted_at' => now(),
         ] : []);
+    }
+
+    /**
+     * Create the account a checked code confirms, with a tailor's three boxes
+     * written to the record of acceptance alongside it. A customer answers the
+     * terms in the next step (CustomerOnboardingController::completeProfile).
+     */
+    private static function createAccount(array $reg, string $token): User
+    {
+        return DB::transaction(function () use ($reg, $token) {
+            $user = User::create(self::attributesFor($reg, $token));
+
+            if ($user->role === 'tailor') {
+                LegalDocuments::record($user, [
+                    'partnership_terms' => true,
+                    'privacy' => true,
+                    'information_correct' => true,
+                ], 'registration', $reg['consent'] ?? []);
+            }
+
+            return $user;
+        });
     }
 
     // ─── POST /api/register/availability ──────────────────────────────────────
@@ -145,6 +170,8 @@ class AuthController extends Controller
             'accept_partnership_terms' => ['exclude_unless:role,tailor', 'accepted'],
             'accept_data_processing' => ['exclude_unless:role,tailor', 'accepted'],
             'confirm_information_correct' => ['exclude_unless:role,tailor', 'accepted'],
+            // The language the boxes were read in, for the record of acceptance.
+            'locale' => ['nullable', 'in:ka,en'],
         ], [
             // The two failures a careful person still hits — the form cannot know
             // a phone is taken until it asks. Laravel's own wording is English
@@ -184,6 +211,9 @@ class AuthController extends Controller
                 'years_experience' => self::EXPERIENCE_YEARS[$data['experience_band']],
                 'legal_status' => $data['legal_status'],
                 'national_id' => $data['national_id'],
+                // Taken now, when the boxes were ticked, and written to the
+                // record of acceptance once the code confirms the account.
+                'consent' => LegalDocuments::evidenceFrom($request, $data['locale'] ?? null),
             ] : []),
             'expires_at' => now()->addMinutes(Verification::LIFETIME_MINUTES),
         ]);
@@ -263,7 +293,7 @@ class AuthController extends Controller
         $reg = $record->registration_data;
         $token = Str::random(60);
 
-        $user = User::create(self::attributesFor($reg, $token));
+        $user = self::createAccount($reg, $token);
 
         $record->delete();
         $this->announceRegistration($user);
@@ -322,7 +352,7 @@ class AuthController extends Controller
         $reg = $record->registration_data;
         $token = Str::random(60);
 
-        $user = User::create(self::attributesFor($reg, $token));
+        $user = self::createAccount($reg, $token);
 
         $record->delete();
         $this->announceRegistration($user);
@@ -528,6 +558,9 @@ class AuthController extends Controller
                 'registration_complete' => $user->registrationComplete(),
                 'guardian_consent_pending' => $user->needsGuardianConsent() && $user->guardian_consent_at === null,
                 'guardian_email' => $user->needsGuardianConsent() ? $user->guardian_email : null,
+                // Documents changed since this person last agreed; the site asks
+                // for them before anything else (LegalUpdateGate).
+                'legal_pending' => LegalDocuments::pendingFor($user),
             ],
         ]);
     }
@@ -537,12 +570,16 @@ class AuthController extends Controller
     /** Find a user by email or phone number (tolerant of spacing and missing +995 prefix). */
     /**
      * Tell Kere someone has joined, at the address REGISTRATION_ALERT_EMAIL
-     * names. Queued, like the support email, so a slow mail server never holds
-     * up the new account; a failure is logged, never shown to the person
-     * registering.
+     * names, and a new tailor in the admins' bell as well. The email is
+     * queued, like the support email, so a slow mail server never holds up the
+     * new account; a failure is logged, never shown to the person registering.
      */
     private function announceRegistration(User $user): void
     {
+        if ($user->role === 'tailor') {
+            KereNotification::tailorApplied($user);
+        }
+
         $address = config('services.registrations.notify_email');
 
         if (! $address) {

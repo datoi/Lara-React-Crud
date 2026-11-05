@@ -9,6 +9,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { getAuthToken, getAuthUser, clearAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
+import { OrderTermsNotice } from '../components/LegalConsent';
 import { NotificationBell } from '../components/NotificationBell';
 import { ReviewModal } from '../components/ReviewModal';
 import { OrderChat, countOthersMessages } from '../components/OrderChat';
@@ -205,6 +206,7 @@ function KereOffer({ order, onAccepted, onChanged }: { order: CustomerOrder; onA
                             {busy === 'decline' ? t('offer.declining') : t('offer.decline')}
                         </Button>
                     </div>
+                    <OrderTermsNotice action="offer" className="mt-3 text-slate-500" />
                 </div>
             )}
 

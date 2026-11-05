@@ -9,7 +9,9 @@ use App\Models\Order;
 use App\Models\OrderClaim;
 use App\Models\Review;
 use App\Models\TailorRequest;
+use App\Models\User;
 use App\Services\Notifier;
+use App\Support\LegalDocuments;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -124,6 +126,12 @@ class CustomerOrderController extends Controller
             return $refusal;
         }
 
+        // Accepting the offer is what makes a request an order (terms §8), so
+        // it waits on the same things placing one does.
+        if ($code = $user->orderRefusal()) {
+            return response()->json(['message' => User::ORDER_REFUSALS[$code], 'code' => $code], 403);
+        }
+
         $estimate = $order->offerRequest;
         $tailor = $estimate?->tailor;
 
@@ -147,6 +155,7 @@ class CustomerOrderController extends Controller
                 'subtotal' => $price,
                 'total' => $price + $order->shipping,
                 'turnaround_days' => $order->offer_days,
+                'terms_version_id' => LegalDocuments::current('terms')->id,
             ];
 
             // A remodel is paid online from here on (terms §7, §8). A custom

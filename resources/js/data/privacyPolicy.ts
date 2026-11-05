@@ -8,12 +8,13 @@
  * document. PrivacyPolicy.tsx renders the active language.
  */
 import type { LegalDocument } from '../types/legal';
+import legalVersions from './legalVersions.json';
 
 const ka: LegalDocument = {
     title: 'პერსონალურ მონაცემთა დაცვისა და კონფიდენციალურობის პოლიტიკა',
     lead: 'ვრცელდება KereForYou-ის ვებგვერდზე, აპლიკაციასა და მასთან დაკავშირებულ მომსახურებებზე',
     meta: [
-        { label: 'ვერსია', value: '1.2' },
+        { label: 'ვერსია', value: legalVersions.privacy },
         { label: 'ძალაში შესვლის თარიღი', value: '20 სექტემბერი 2026' },
         { label: 'ბოლო განახლება', value: '26 ოქტომბერი 2026' },
     ],
@@ -330,7 +331,7 @@ const en: LegalDocument = {
     title: 'Personal Data Protection and Privacy Policy',
     lead: 'Applies to the KereForYou website, app and related services.',
     meta: [
-        { label: 'Version', value: '1.2' },
+        { label: 'Version', value: legalVersions.privacy },
         { label: 'Effective date', value: '20 September 2026' },
         { label: 'Last updated', value: '26 October 2026' },
     ],

@@ -15,7 +15,7 @@ class Order extends Model
     protected $fillable = [
         'user_id', 'tailor_id', 'order_number', 'order_type', 'status', 'delivered_at',
         'tailor_assignment_mode', 'offer_request_id', 'offer_price', 'offer_days', 'offer_note', 'offer_sent_at',
-        'payment_status', 'payment_id', 'payment_reference', 'paid_at',
+        'terms_version_id', 'payment_status', 'payment_id', 'payment_reference', 'paid_at',
         'subtotal', 'shipping', 'total', 'expected_price', 'needed_by',
         'custom_design_data',
         'deposit_amount', 'deposit_paid_at', 'turnaround_days', 'due_date', 'proposed_due_date',
@@ -302,6 +302,12 @@ class Order extends Model
     public function offerRequest(): BelongsTo
     {
         return $this->belongsTo(TailorRequest::class, 'offer_request_id');
+    }
+
+    /** The terms the order was placed under, or, for a request, those in force when Kere's offer was accepted. */
+    public function termsVersion(): BelongsTo
+    {
+        return $this->belongsTo(LegalDocumentVersion::class, 'terms_version_id');
     }
 
     public function claims(): HasMany

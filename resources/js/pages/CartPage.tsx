@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import { isHex } from '../components/CartDrawer';
 import { Navigation } from '../components/landing/Navigation';
+import { OrderTermsNotice } from '../components/LegalConsent';
 import { PaymentMarks } from '../components/PaymentMarks';
 import { Button } from '../components/ui/button';
 import { getAuthToken, saveReturnTo } from '../hooks/useAuth';
@@ -386,6 +387,8 @@ export default function CartPage() {
                             </Button>
 
                             {hasBlockers && <p className="mt-2 text-xs text-red-700">{t('cart.fixStockFirst')}</p>}
+
+                            <OrderTermsNotice action="order" className="mt-3 text-[#6c625b]" />
 
                             <button
                                 type="button"

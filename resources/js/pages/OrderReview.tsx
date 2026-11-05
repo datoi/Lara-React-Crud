@@ -8,6 +8,7 @@ import { getAuthUser, getAuthToken } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
 import { useTranslation } from 'react-i18next';
 import DesignSpecList, { readProductName, readSpec } from '../components/DesignSpecList';
+import { OrderTermsNotice } from '../components/LegalConsent';
 import { OrderMeasurements } from '../components/measurements/OrderMeasurements';
 import { useOrderMeasurements } from '../hooks/useOrderMeasurements';
 import { fieldsFor } from '../lib/measurements';
@@ -261,6 +262,8 @@ export default function OrderReview() {
                                     ) : t('orderReview.placeOrder')}
                                 </Button>
                             </div>
+                            {/* Kere prices a design afterwards, so this sends a request, like a remodel. */}
+                            <OrderTermsNotice action="request" className="mt-3 text-slate-500" />
                         </div>
                     </div>
                 </motion.div>

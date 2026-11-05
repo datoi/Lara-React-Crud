@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
+import { OrderTermsNotice } from '../components/LegalConsent';
 import { Footer } from '../components/landing/Footer';
 import { Navigation } from '../components/landing/Navigation';
 import { Button } from '../components/ui/button';
@@ -393,6 +394,7 @@ export default function RemodelRequest() {
                                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                                 {t('remodel.submit')}
                             </Button>
+                            <OrderTermsNotice action="request" className="mx-auto mt-3 max-w-md text-center text-[#4F463E]" />
                         </div>
                     </div>
 

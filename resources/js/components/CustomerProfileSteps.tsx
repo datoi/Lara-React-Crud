@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { Loader2, MailCheck } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { Button } from './ui/button';
+import { legalLink } from './LegalConsent';
 import { getAuthToken } from '../hooks/useAuth';
 import { serverMessageKey } from '../lib/serverMessage';
 
@@ -66,7 +67,7 @@ function ageFrom(day: string, month: string, year: string): number | null {
 }
 
 export function CustomerProfileSteps({ onDone }: Props) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     const [screen, setScreen] = useState<Screen>('age');
     const [dob, setDob] = useState({ day: '', month: '', year: '' });
@@ -144,6 +145,8 @@ export function CustomerProfileSteps({ onDone }: Props) {
                     accept_terms: true,
                     accept_privacy: true,
                     marketing_opt_in: consent.marketing,
+                    // Recorded with the acceptance: the language the terms were read in.
+                    locale: i18n.language === 'en' ? 'en' : 'ka',
                     ...(needsGuardian ? guardian : {}),
                 }),
             });
@@ -225,7 +228,7 @@ export function CustomerProfileSteps({ onDone }: Props) {
     if (screen === 'terms') {
         const box = (
             key: keyof typeof consent,
-            text: string,
+            text: ReactNode,
             required: boolean,
         ) => (
             <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-[#2a1418]">
@@ -253,8 +256,8 @@ export function CustomerProfileSteps({ onDone }: Props) {
                 <p className="mt-2 text-xs leading-5 text-[#2a1418]">{t('register.termsSubtitle')}</p>
 
                 <div className="mt-6 space-y-3.5">
-                    {box('terms', t('register.consentTerms'), true)}
-                    {box('privacy', t('register.consentPrivacy'), true)}
+                    {box('terms', <Trans t={t} i18nKey="register.consentTerms" components={{ terms: legalLink('/terms') }} />, true)}
+                    {box('privacy', <Trans t={t} i18nKey="register.consentPrivacy" components={{ privacy: legalLink('/privacy') }} />, true)}
                     {box('marketing', t('register.consentMarketing'), false)}
                 </div>
 

@@ -541,7 +541,7 @@
         "nationalIdPlaceholder": "01001012345",
         "nationalIdHint": "Protected information — customers never see this.",
         "consentPartnership": "I agree to Kere's partnership terms",
-        "consentData": "I agree to the personal data processing rules",
+        "consentData": "I agree to the <privacy>personal data processing rules</privacy>",
         "consentAccurate": "I confirm that the information provided is correct",
         "errorPhoneTaken": "This phone number is already registered.",
         "errorEmailTaken": "This email address is already registered.",
@@ -567,8 +567,8 @@
         "relationshipLegalGuardian": "Legal guardian",
         "termsTitle": "Terms and privacy",
         "termsSubtitle": "Please read and agree before we create your account.",
-        "consentTerms": "I have read and agree to Kere's Terms and Conditions.",
-        "consentPrivacy": "I acknowledge Kere's Privacy Policy and understand how my personal data will be processed.",
+        "consentTerms": "I have read and agree to Kere's <terms>Terms and Conditions</terms>.",
+        "consentPrivacy": "I acknowledge Kere's <privacy>Privacy Policy</privacy> and understand how my personal data will be processed.",
         "consentMarketing": "I would like to receive news, offers, and style inspiration from Kere.",
         "guardianSentTitle": "We've emailed your guardian",
         "guardianSentBody": "We sent a confirmation link to {{email}}. You can look around, but ordering stays locked until they confirm.",
@@ -2165,5 +2165,20 @@
         "reviewPublished": "Review published on the site",
         "reviewHidden": "Review hidden from the site",
         "reviewHasProblem": "There is an open return or problem report on this order."
+    },
+    "legalConsent": {
+        "updateTitle": "Kere's terms have been updated",
+        "updateBody": "To keep using your account, please read the current versions and agree to them.",
+        "acceptTerms": "I have read and agree to Kere's <doc>Terms and Conditions</doc> (version {{version}}).",
+        "acceptPrivacy": "I have read Kere's <doc>Privacy Policy</doc> (version {{version}}) and understand how my personal data is processed.",
+        "agree": "Agree and continue",
+        "saving": "Saving…",
+        "signOut": "Sign out",
+        "errorSave": "Your answer could not be saved. Please try again.",
+        "errorVersionChanged": "These documents were updated a moment ago. Please read the new versions.",
+        "errorAcceptFirst": "Kere's terms have been updated. Reload the page to read and accept them, then try again.",
+        "noticeOrder": "By placing the order you agree to Kere's <terms>Terms and Conditions</terms> (version {{version}}) and <refund>Refund Policy</refund>.",
+        "noticeRequest": "By sending the request you agree to Kere's <terms>Terms and Conditions</terms> (version {{version}}).",
+        "noticeOffer": "By accepting the offer you agree to Kere's <terms>Terms and Conditions</terms> (version {{version}}) and <refund>Refund Policy</refund>."
     }
 }

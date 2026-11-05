@@ -6,6 +6,71 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-11-04 — Keep proof of what each person agreed to, and ask again when the terms change
+
+**What was done:** The owner asked how Kere could prove, in a legal dispute, that someone agreed to the terms and policies. Until now a ticked box left only `users.terms_accepted_at`. That timestamp recorded no version and no text. It covered several boxes at once. It was overwritten in place. For customers who signed up before the terms step existed, it was invented by a 2026-09 migration. The owner chose the fix: a permanent record, links in the boxes, asking again when a document changes, and a notice at checkout.
+- **One place for version numbers.** `resources/js/data/legalVersions.json` (`terms` 1.1, `privacy` 1.2) is read by PHP (`App\Support\LegalDocuments`) and by the terms and privacy pages, whose "Version" line now comes from it. Raising a number there is how a change is announced.
+- **The exact text is kept.** The first time a version is accepted, `legal_document_versions` stores the document's source file (both languages) and its SHA-256 fingerprint. The fingerprint matches the file in git at that version.
+- **An append-only record.** `legal_acceptances` gets one row per box, holding:
+  - the user and the document;
+  - the version and its stored text (no version for marketing, the tailor's partnership terms and the tailor's accuracy declaration, which have no document behind them);
+  - whether the box was ticked (only marketing can be "no");
+  - `registration` or `update`;
+  - the language the page was in, the IP address, the browser, and when the box was ticked.
+
+  The model refuses edits and deletes, and a user with acceptances cannot be deleted (`restrictOnDelete`). The privacy policy already lists IP, device and "consent record" (§4.1, §6) and keeps account records for five years after an account closes (§13).
+- **At registration.** A customer's last step records terms, privacy and the marketing choice, in the same transaction as `terms_accepted_at`. A tailor's three boxes are timestamped when they are ticked (`register/initiate`), kept with the pending registration, and written when the code creates the account.
+- **Links in the boxes.** The customer's terms and privacy boxes, and the tailor's "personal data processing rules" box, link to `/terms` and `/privacy` in a new tab (`legalLink` in `components/LegalConsent.tsx`). Clicking a link does not tick its box.
+- **Asking again.** `/api/me` now returns `legal_pending`: each required document with no acceptance at its current version. Customers must have terms and privacy; tailors privacy. Admins, and customers still signing up, are never asked. `LegalUpdateGate` is mounted on every route and shows a dialog that can only be answered or left by signing out. It is hidden on the legal pages so they stay readable. It asks the server once per sign-in, not on every page. `POST /api/legal/accept` takes the versions the dialog showed, and answers 409 `legal_version_changed` if one changed meanwhile. Every account on the live site has no acceptances yet, so everyone, the backfilled customers included, will be asked on their next visit.
+- **Ordering waits on it.** `User::orderRefusal()` replaces the inline check in `OrderController::store`. Terms not accepted at the current version answer 403 `legal_acceptance_required`, and accepting Kere's offer now passes the same gate.
+- **The order names its terms.** `orders.terms_version_id` is set when an order is placed, and set again when Kere's offer is accepted, the moment a request becomes an order (terms §8).
+- **The notice.** `OrderTermsNotice` names the terms version, linking the terms (and the refund policy where money changes hands), beside:
+  - "Place order" on the product page's customize view;
+  - "Place order" in the bag;
+  - "Post remodel request";
+  - Kere's offer;
+  - the paused design-review page.
+
+**Verified:**
+- `php artisan test`: 256 passed (1,225 assertions). `LegalAcceptanceTest` (10) covers:
+  - each registration box recorded with version, exact text, fingerprint, IP, browser and language;
+  - a tailor's boxes dated from when they were ticked, ten minutes before the code;
+  - an account with no record refused an order until it accepts;
+  - an older version not counting;
+  - a stale version refused, with nothing written;
+  - only a role's own documents accepted;
+  - nobody asked while signing up, and admins never;
+  - an order and an accepted offer naming their terms;
+  - the record refusing edits, deletes and the account's deletion.
+- The same 256 passed on PostgreSQL (a scratch database on the local install, dropped afterwards). The first run caught a test that kept querying after the refused account deletion, which PostgreSQL does not allow inside the same transaction; the deletion now runs in a savepoint.
+- `npm run typecheck` is clean. `npx eslint .` shows 0 errors and the 4 old warnings. `npm run build` succeeds. Locales: 1,982 keys each, in parity.
+- In Chrome, against a local server with mail and SMS to the log and the Flitt key blanked:
+  - **The dialog**, for a customer with no record, in Georgian at 390 px and English at 1440 px: it opens after sign-in, and Esc or an outside click does not close it. Agree stays disabled until both boxes are ticked. The terms link opens `/terms` (showing 1.1) in a new tab without ticking its box, and no dialog appears there. Agreeing closes it and writes two `update` rows with language, IP and browser. A later page load asked `/api/me` once and showed nothing. "Sign out" clears the session and returns home.
+  - **A real customer sign-up**, in Georgian at 390 px and English at 1440 px: both required boxes link to their documents, and the privacy link opens in a new tab without ticking. The account was created with terms 1.1, privacy 1.2 and marketing "no" recorded in the page's language, and no dialog appeared afterwards.
+  - **The notices** in the bag, on the remodel form, on the product page's customize view and in Kere's offer, in both languages and widths, with working links. The terms and privacy pages show 1.1 and 1.2 from the shared file.
+  - No horizontal overflow and no console errors anywhere.
+- The QA accounts, order, estimate and stored texts were deleted afterwards; the local database is back to its 14 users.
+
+**Not covered / Noticed:**
+- **There are no tailor partnership terms to agree to.** Tailors tick "I agree to Kere's partnership terms", but no such document exists. The box is recorded with no version, so the record shows what was ticked and that nothing stood behind it. Once the owner supplies the text, add it to `SOURCES` and `REQUIRED['tailor']` in `LegalDocuments`, and to `DOCUMENTS` in `LegalUpdateGate`, and every tailor will be asked.
+- The refund policy is locale strings, not a versioned document, so the notice links it but only the terms version is recorded.
+- The record is evidence, not a legal opinion. A Georgian lawyer should confirm it is what a court here would expect.
+- No order was placed from the browser, because that starts a real Flitt checkout; feature tests cover the order gate and the recorded version. The design-review page is paused, so its notice was only typechecked.
+- If the terms change while a tab is open, an order is refused with "reload the page"; the dialog does not reopen by itself.
+- A `<Trans>` tag named `link` renders an empty link, because react-i18next treats `link` as a void HTML element. The dialog's tag is `<doc>` for that reason.
+- On the sign-up terms screen the "Back" button sits clipped beside "Create account" in Georgian at 390 px. That markup is unchanged since 2026-10-11 and was left alone.
+- No admin screen shows the record yet; a dispute means querying `legal_acceptances`.
+
+## 2026-10-30 — Admins hear about each new tailor application in the bell
+
+**What was done:**
+- A new tailor's application now reaches every admin's notification bell (type `tailor_application`, in Georgian, naming the applicant) as soon as the SMS code is verified and the account exists. Until now only the `REGISTRATION_ALERT_EMAIL` email and the admin panel's "Needs your attention" list said so, and the email depends on that variable being set.
+- `KereNotification::tailorApplied()` sends it and never throws, like the order notifications, so a failure cannot break the registration. It is called from `AuthController::announceRegistration()`, which both verification routes already use. Customers who register do not notify the bell.
+
+**Verified:** `php artisan test`: 246 passed (1,166 assertions). The new test registers a customer (no notification), then a tailor, and checks that every admin, including the migration-seeded one, got one notification naming the tailor with `{tailor_id}` as its data, without an alert address set. Pint reports the same style findings on both PHP files as before the change, and none new.
+
+**Not covered / Noticed:** The bell's items are not links, so the notification cannot open the application; it names the People section instead. Not checked in a browser: the bell renders stored titles and bodies as it does for every other admin notification.
+
 ## 2026-10-30 — The admin panel becomes the "Platform Control" workspace
 
 **What was done:** The owner supplied a design for the admin panel ("Kere Admin Panel – Platform Control", a prototype with sample data). It is now the real admin panel at `/admin-dashboard`. As with design imports, the design decides layout and styling, and every function the old panel had is kept.

@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\TailorRequest;
 use App\Models\User;
+use App\Support\LegalDocuments;
 use App\Support\Measurements;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -75,19 +76,13 @@ class OrderController extends Controller
         //
         // An account exists from the moment its one-time code checks out, which
         // is before date of birth and the terms are asked for — and a sixteen-
-        // or seventeen-year-old's account waits on an adult besides. Neither is
-        // a state that may buy anything, and putting the check here rather than
-        // in each of the three branches means a fourth kind of order cannot
-        // quietly miss it.
-        if (! $user->mayPlaceOrders()) {
-            return response()->json([
-                'message' => $user->registrationComplete()
-                    ? 'This account is waiting for a parent or guardian to confirm.'
-                    : 'Please finish setting up your account first.',
-                'code' => $user->registrationComplete()
-                    ? 'guardian_consent_pending'
-                    : 'registration_incomplete',
-            ], 403);
+        // or seventeen-year-old's account waits on an adult besides; and terms
+        // that changed since the customer last agreed must be accepted first.
+        // None of these is a state that may buy anything, and putting the check
+        // here rather than in each of the three branches means a fourth kind of
+        // order cannot quietly miss it.
+        if ($refusal = $user->orderRefusal()) {
+            return response()->json(['message' => User::ORDER_REFUSALS[$refusal], 'code' => $refusal], 403);
         }
 
         $type = $request->input('order_type', 'marketplace');
@@ -225,6 +220,7 @@ class OrderController extends Controller
                     'tailor_id' => $tailor->id,
                     'order_number' => 'ORD-'.strtoupper(Str::random(8)),
                     'order_type' => 'marketplace',
+                    'terms_version_id' => LegalDocuments::current('terms')->id,
                     'status' => 'pending',
                     // Stated rather than left to the column default, so the
                     // response carries it and the order is explicitly owed.
@@ -367,6 +363,7 @@ class OrderController extends Controller
                 'tailor_id' => null,
                 'order_number' => 'ORD-'.strtoupper(Str::random(8)),
                 'order_type' => 'custom',
+                'terms_version_id' => LegalDocuments::current('terms')->id,
                 // Not card-paid here, so it must not sit at the 'unpaid'
                 // default that the payment path reads as "owes money".
                 'payment_status' => 'not_required',
@@ -448,6 +445,7 @@ class OrderController extends Controller
                 'tailor_id' => null,
                 'order_number' => 'RMD-'.strtoupper(Str::random(8)),
                 'order_type' => 'remodel',
+                'terms_version_id' => LegalDocuments::current('terms')->id,
                 // As with custom: priced and settled offline, never card-paid here.
                 'payment_status' => 'not_required',
                 'tailor_assignment_mode' => 'manual',

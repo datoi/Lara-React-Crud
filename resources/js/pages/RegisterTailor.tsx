@@ -14,7 +14,8 @@ import {
 import { PhoneInput } from '../components/PhoneInput';
 import { OtpStep } from '../components/OtpStep';
 import { saveAuth, type AuthUser } from '../hooks/useAuth';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
+import { legalLink } from '../components/LegalConsent';
 import { serverMessageKey } from '../lib/serverMessage';
 import { TAILOR_HOME } from '../lib/tailorAccess';
 
@@ -82,7 +83,7 @@ type Step = 'form' | 'email-otp' | 'phone-otp';
 
 export default function RegisterTailor() {
     const navigate = useNavigate();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     const [step, setStep] = useState<Step>('form');
     const [page, setPage] = useState(1);
@@ -291,6 +292,8 @@ export default function RegisterTailor() {
                     email: form.email.trim() || null,
                     does_remodeling: form.does_remodeling === 'yes',
                     role: 'tailor',
+                    // Recorded with the three boxes: the language they were read in.
+                    locale: i18n.language === 'en' ? 'en' : 'ka',
                 }),
             });
 
@@ -901,7 +904,7 @@ export default function RegisterTailor() {
                                                 onChange={(e) => setConsentBox('accept_data_processing', e.target.checked)}
                                                 className="mt-0.5 h-4 w-4 shrink-0 accent-[#6F1D24]"
                                             />
-                                            <span>{t('register.consentData')}</span>
+                                            <span><Trans t={t} i18nKey="register.consentData" components={{ privacy: legalLink('/privacy') }} /></span>
                                         </label>
                                         <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed">
                                             <input

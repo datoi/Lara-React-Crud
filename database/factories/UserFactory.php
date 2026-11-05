@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
+use App\Support\LegalDocuments;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -30,6 +32,21 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * A customer made with terms_accepted_at has finished registering, and
+     * finishing registration records the terms and privacy policy it accepted
+     * (CustomerOnboardingController::completeProfile). To make an account from
+     * before that record existed, set terms_accepted_at after creating it.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            if (($user->role ?? 'customer') === 'customer' && $user->terms_accepted_at !== null) {
+                LegalDocuments::record($user, ['terms' => true, 'privacy' => true], 'registration', []);
+            }
+        });
     }
 
     /**

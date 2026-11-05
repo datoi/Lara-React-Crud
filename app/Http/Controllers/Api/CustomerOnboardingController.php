@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Mail\GuardianConsentRequest;
 use App\Models\User;
+use App\Support\LegalDocuments;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -53,6 +55,8 @@ class CustomerOnboardingController extends Controller
             'accept_terms' => ['accepted'],
             'accept_privacy' => ['accepted'],
             'marketing_opt_in' => ['nullable', 'boolean'],
+            // The language the terms were read in, for the record of acceptance.
+            'locale' => ['nullable', 'in:ka,en'],
         ], [
             'date_of_birth.before' => 'date_of_birth_invalid',
         ]);
@@ -91,13 +95,19 @@ class CustomerOnboardingController extends Controller
             ])
             : [];
 
+        $marketing = (bool) ($data['marketing_opt_in'] ?? false);
+
         $user->fill([
             'date_of_birth' => $birthDate->toDateString(),
-            'marketing_opt_in' => (bool) ($data['marketing_opt_in'] ?? false),
+            'marketing_opt_in' => $marketing,
             'terms_accepted_at' => now(),
         ] + $guardian);
 
-        $user->save();
+        // Together or not at all: a finished registration always has its proof.
+        DB::transaction(function () use ($user, $marketing, $request, $data) {
+            $user->save();
+            LegalDocuments::record($user, ['terms' => true, 'privacy' => true, 'marketing' => $marketing], 'registration', LegalDocuments::evidenceFrom($request, $data['locale'] ?? null));
+        });
 
         if ($needsGuardian) {
             $this->issueConsentLink($user);

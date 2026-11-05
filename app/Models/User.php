@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Support\LegalDocuments;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -177,20 +178,42 @@ class User extends Authenticatable
         return $this->terms_accepted_at !== null;
     }
 
+    /** Why a customer may not order, by the code the API answers with. */
+    public const ORDER_REFUSALS = [
+        'registration_incomplete' => 'Please finish setting up your account first.',
+        'guardian_consent_pending' => 'This account is waiting for a parent or guardian to confirm.',
+        'legal_acceptance_required' => 'Please read and accept the current terms first.',
+    ];
+
     /**
-     * Whether this customer may place an order.
+     * Why this customer may not place an order now (a key of ORDER_REFUSALS),
+     * or null when they may.
      *
      * Derived, not stored: a flag alongside these fields could disagree with
      * them, and the version that says "yes" while consent is missing is the one
-     * that matters.
+     * that matters. An order is a contract under the terms in force, so terms
+     * that changed since the customer last agreed are accepted first.
      */
-    public function mayPlaceOrders(): bool
+    public function orderRefusal(): ?string
     {
         if (! $this->registrationComplete()) {
-            return false;
+            return 'registration_incomplete';
         }
 
-        return ! $this->needsGuardianConsent() || $this->guardian_consent_at !== null;
+        if ($this->needsGuardianConsent() && $this->guardian_consent_at === null) {
+            return 'guardian_consent_pending';
+        }
+
+        if (LegalDocuments::pendingFor($this) !== []) {
+            return 'legal_acceptance_required';
+        }
+
+        return null;
+    }
+
+    public function mayPlaceOrders(): bool
+    {
+        return $this->orderRefusal() === null;
     }
 
     /** Whether Kere can give this tailor work: approved (or from before approval existed) and not suspended. */

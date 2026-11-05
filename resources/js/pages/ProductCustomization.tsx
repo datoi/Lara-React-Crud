@@ -5,6 +5,7 @@ import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ErrorFallback } from '../components/ErrorFallback';
+import { OrderTermsNotice } from '../components/LegalConsent';
 import { MeasurementGuideModal, type MeasurementKey } from '../components/MeasurementGuideModal';
 import { Footer } from '../components/landing/Footer';
 import { Navigation } from '../components/landing/Navigation';
@@ -653,6 +654,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                                 </div>
 
                                 <p className="mt-3.5 text-[12px] text-[var(--kd-muted)]">{t('productCustomization.paymentNote')}</p>
+                                <OrderTermsNotice action="order" className="mt-1.5 text-[var(--kd-muted)]" />
                             </div> : (
                                 <div className="mt-6">
                                     {orderError && <p role="alert" className="mb-3 text-xs text-brand">{orderError}</p>}

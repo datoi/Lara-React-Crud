@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\CustomerOnboardingController;
 use App\Http\Controllers\Api\CustomerOrderController;
 use App\Http\Controllers\Api\CustomizerAdminController;
 use App\Http\Controllers\Api\CustomizerProductController;
+use App\Http\Controllers\Api\LegalAcceptanceController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PaymentController;
@@ -113,6 +114,8 @@ Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function (
     // Own tight bucket: it sends an email each time it is called.
     Route::post('/register/guardian-consent/resend', [CustomerOnboardingController::class, 'resendConsent'])
         ->middleware('throttle:3,10,api-consent-resend');
+    // Agreeing to terms or a privacy policy that changed since the last time.
+    Route::post('/legal/accept', [LegalAcceptanceController::class, 'store']);
 
     // Customer — buying, and everything that follows from having bought
     Route::middleware('role:customer')->group(function () {
