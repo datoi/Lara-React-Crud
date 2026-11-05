@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SavedDesignController;
 use App\Http\Controllers\Api\SupportEmailController;
@@ -37,6 +38,11 @@ Route::post('/guardian-consent/{token}', [CustomerOnboardingController::class, '
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('/admin/auth', [AuthController::class, 'adminLogin'])->middleware('throttle:admin-login');
+
+// Forgotten password: a code by email or SMS, then a new password. Each code
+// is also limited per account inside the controller.
+Route::post('/password/forgot', [PasswordController::class, 'forgot'])->middleware('throttle:5,1,password-forgot');
+Route::post('/password/reset', [PasswordController::class, 'reset'])->middleware('throttle:20,1,password-reset');
 
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{product}', [ProductController::class, 'show']);
@@ -116,6 +122,9 @@ Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function (
         ->middleware('throttle:3,10,api-consent-resend');
     // Agreeing to terms or a privacy policy that changed since the last time.
     Route::post('/legal/accept', [LegalAcceptanceController::class, 'store']);
+    // Changing one's own password; its own bucket bounds guesses at the current one.
+    Route::patch('/me/password', [PasswordController::class, 'change'])
+        ->middleware(['role:customer,tailor', 'throttle:5,10,api-password']);
 
     // Customer — buying, and everything that follows from having bought
     Route::middleware('role:customer')->group(function () {

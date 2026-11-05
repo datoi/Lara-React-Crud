@@ -12,13 +12,16 @@ import { FAQSection } from '../components/landing/FAQSection';
 import { Footer } from '../components/landing/Footer';
 import { NewsletterPopup } from '../components/landing/NewsletterPopup';
 import { JoinSection } from '../components/landing/JoinSection';
+import { useTranslation } from 'react-i18next';
 
 export default function Landing() {
+    const { t } = useTranslation();
+
     return (
         <div className="kere-landing min-h-screen overflow-x-clip bg-[#E4E0D7]">
             <Helmet>
-                <title>Kere — Made-to-Fit Clothing and Remodels | Tbilisi</title>
-                <meta name="description" content="Kere makes clothing that fits: ready-made pieces and remodels of your own garments, made in Tbilisi. Pay online; a courier collects and delivers across Georgia." />
+                <title>{t('seo.homeTitle')}</title>
+                <meta name="description" content={t('seo.homeDescription')} />
                 <script type="application/ld+json">{JSON.stringify({
                     "@context": "https://schema.org",
                     "@type": "LocalBusiness",

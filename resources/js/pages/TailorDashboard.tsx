@@ -9,6 +9,7 @@ import { AvailableDesigns } from '../components/tailor/AvailableDesigns';
 import { ProductManager, type TailorProductFull } from '../components/tailor/ProductManager';
 import { TailorProfileEditor } from '../components/tailor/TailorProfileEditor';
 import { OnboardingPanel } from '../components/tailor/OnboardingPanel';
+import { ChangePassword } from '../components/ChangePassword';
 import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
 import { getAuthUser, getAuthToken, clearAuth, updateAuthUser } from '../hooks/useAuth';
 import { Link, useNavigate } from 'react-router';
@@ -320,6 +321,8 @@ export default function TailorDashboard() {
                         <OrdersList orders={orders} onStatusChange={handleStatusChange} onOrderUpdated={handleOrderUpdated} />
                     )}
                 </motion.div>
+
+                <ChangePassword className="border border-[#dfd8cf] bg-[#fbf8f4] p-5 sm:p-6" />
             </main>
         </div>
     );

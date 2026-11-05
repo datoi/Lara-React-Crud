@@ -1043,6 +1043,44 @@
         "emailOrPhonePlaceholder": "you@example.com or 555 123 456",
         "errorInvalidCredentials": "Incorrect login or password."
     },
+    "password": {
+        "pageTitle": "Reset your password | Kere",
+        "forgotLink": "Forgot password?",
+        "forgotTitle": "Reset your password",
+        "forgotIntro": "Enter the email or phone number you sign in with. We'll send you a 6-digit code.",
+        "sendCode": "Send code",
+        "sendingCode": "Sending…",
+        "codeSentEmail": "If an account uses {{login}}, we've emailed it a 6-digit code. It works for 15 minutes. If you can't see it, check your spam folder.",
+        "codeSentPhone": "If an account uses {{login}}, we've sent it a 6-digit code by SMS. It works for 15 minutes.",
+        "codeLabel": "Code",
+        "newPasswordLabel": "New password",
+        "confirmPasswordLabel": "Repeat new password",
+        "currentPasswordLabel": "Current password",
+        "passwordHint": "At least 8 characters, including a number.",
+        "showPassword": "Show password",
+        "setPassword": "Set new password",
+        "saving": "Saving…",
+        "resend": "Send a new code",
+        "resendIn": "Send a new code in {{s}} s",
+        "resent": "A new code is on its way.",
+        "changeLogin": "Use a different email or phone",
+        "backToSignIn": "Back to sign in",
+        "resetDone": "Your password has been changed. Sign in with the new one.",
+        "changeTitle": "Password",
+        "changeHint": "Change the password you sign in with.",
+        "changeButton": "Change password",
+        "cancel": "Cancel",
+        "changed": "Your password has been changed.",
+        "errorCodeFormat": "Enter the 6 digits from the message.",
+        "errorCodeInvalid": "That code isn't right. Check it and try again.",
+        "errorExpired": "This code no longer works. Ask for a new one.",
+        "errorTooMany": "Too many codes asked for. Wait 15 minutes and try again.",
+        "errorPasswordRule": "At least 8 characters, including a number.",
+        "errorPasswordMismatch": "The passwords don't match.",
+        "errorCurrentWrong": "Your current password isn't right.",
+        "errorThrottled": "Too many attempts. Wait a few minutes and try again.",
+        "errorFailed": "Something went wrong. Please try again."
+    },
     "legal": {
         "contents": "Contents"
     },
@@ -2180,5 +2218,9 @@
         "noticeOrder": "By placing the order you agree to Kere's <terms>Terms and Conditions</terms> (version {{version}}) and <refund>Refund Policy</refund>.",
         "noticeRequest": "By sending the request you agree to Kere's <terms>Terms and Conditions</terms> (version {{version}}).",
         "noticeOffer": "By accepting the offer you agree to Kere's <terms>Terms and Conditions</terms> (version {{version}}) and <refund>Refund Policy</refund>."
+    },
+    "seo": {
+        "homeTitle": "Kere — Made-to-Fit Clothing and Remodels | Tbilisi",
+        "homeDescription": "Kere makes clothing that fits: ready-made pieces and remodels of your own garments, made in Tbilisi. Pay online; a courier collects and delivers across Georgia."
     }
 }

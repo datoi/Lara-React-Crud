@@ -6,6 +6,37 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-11-05 — Let people reset a forgotten password and change it, and preview links in Georgian
+
+**What was done:** The owner asked for a "forgot password" option on the sign-in page, a way to change the password from the profile, and Georgian text when a kereforyou.com link is shared on Facebook, WhatsApp or elsewhere. Until now an account whose password was lost could not be recovered at all (CLAUDE.md §15 item 8).
+- **Forgot password.** The sign-in page links to `/forgot-password` (`ForgotPassword.tsx`), carrying the login already typed. The person enters the email or phone they sign in with:
+  - `POST /api/password/forgot` sends a six-digit code to that email (`PasswordResetCodeMail`, Georgian, on the shared layout), or by SMS to that phone (`OtpService::sendPasswordResetSms`). A tailor with no email resets by phone.
+  - The answer is the same whether or not an account exists, so the form cannot be used to find out who has one. Admins are never sent a code: `start.sh` resets the admin password from `ADMIN_PASSWORD` on every deploy.
+  - Codes live in the new `password_reset_codes` table (SHA-256 hash only, 15 minutes, five wrong guesses). Laravel's `password_reset_tokens` is keyed by email, which phone-only tailors lack. Asking again replaces the code. An account, or an unknown login, gets at most three codes in 15 minutes (`reset_too_many`), and the route allows five requests a minute per IP.
+  - `POST /api/password/reset` sets the new password (at least 8 characters with a digit, as at registration) and clears `api_token`, signing the account out everywhere. The person lands back on the sign-in page for their role, told the password changed, with their login filled in.
+- **Change password.** A "Password" card at the bottom of the customer and tailor dashboards (`ChangePassword.tsx`) asks for the current password and the new one twice. `PATCH /api/me/password` is for customers and tailors only, has its own bucket (`api-password`, five per ten minutes) to bound guesses at the current password, and keeps the session signed in. A wrong current password answers 422 `current_password_wrong`.
+- **Shared pieces.** `PasswordField` (input with a show/hide toggle) is used by the sign-in page and both new forms. `User::findByLogin()` moved from `AuthController` to the model so sign-in and reset find accounts the same way.
+- **Link previews in Georgian.** Facebook, WhatsApp and Messenger read the page's built-in tags without running the app, and those were English. `app.blade.php`'s title, description, Open Graph and Twitter tags are now Georgian. The home page's own title and description, which were hardcoded English, now come from `seo.homeTitle` and `seo.homeDescription` in both locales.
+
+**Verified:**
+- `php artisan test`: 264 passed (1,293 assertions), 8 of them new in `PasswordResetTest`. They cover a reset by email and by SMS, the same answer for unknown accounts and admins, five wrong codes, expiry, the per-account limit, the password rules, and changing the password (wrong current password, staying signed in, no session, admins refused).
+- `npm run typecheck` clean. ESLint on the changed files: no problems. `npm run build` succeeded. Locales: 2,020 keys each, in parity.
+- The migration ran locally.
+- In Chrome with mail and SMS sent only to the log (`MAIL_MAILER=log SMSOFFICE_KEY=`), Georgian at 390 px and English at 1440 px:
+  - the sign-in link carried the typed email over;
+  - the code arrived by mail;
+  - a wrong code and mismatched passwords each showed their translated error;
+  - the reset landed on sign-in with the notice and the login kept;
+  - signing in with the new password worked;
+  - on the dashboard a wrong current password was refused, and the change held (the API signed in with it).
+- A phone-only QA tailor reset by SMS at 390 px in Georgian and reached the dashboard, where the card shows.
+- No horizontal overflow anywhere. The only console errors were the two deliberate 422s. The QA accounts were deleted.
+
+**Not covered / Noticed:**
+- The link preview needs a deploy, and Facebook keeps its old preview until someone presses "Scrape Again" in its Sharing Debugger. WhatsApp refreshes on its own after a while.
+- Email lookup is case-sensitive, at sign-in as well as here: `Nino@…` does not find `nino@…`.
+- There is still no way to change one's email or phone, or to delete an account.
+
 ## 2026-11-04 — Keep proof of what each person agreed to, and ask again when the terms change
 
 **What was done:** The owner asked how Kere could prove, in a legal dispute, that someone agreed to the terms and policies. Until now a ticked box left only `users.terms_accepted_at`. That timestamp recorded no version and no text. It covered several boxes at once. It was overwritten in place. For customers who signed up before the terms step existed, it was invented by a 2026-09 migration. The owner chose the fix: a permanent record, links in the boxes, asking again when a document changes, and a notice at checkout.

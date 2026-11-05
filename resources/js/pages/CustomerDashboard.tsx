@@ -16,6 +16,7 @@ import { OrderChat, countOthersMessages } from '../components/OrderChat';
 import { OrderCardSkeleton } from '../components/skeletons/OrderCardSkeleton';
 import { translateServerMessage } from '../lib/serverMessage';
 import { MyMeasurements } from '../components/measurements/MyMeasurements';
+import { ChangePassword } from '../components/ChangePassword';
 import { MeasurementList } from '../components/measurements/MeasurementList';
 import { formatCalendarDay } from '../lib/dates';
 import {
@@ -913,6 +914,8 @@ export default function CustomerDashboard() {
                         <ChevronRight className="w-4 h-4 text-slate-300 ml-auto" />
                     </Link>
                 </div>
+
+                <ChangePassword className="mt-8 bg-white rounded-lg border border-slate-200 p-5 sm:p-6" />
             </div>
 
             {/* Order detail modal */}

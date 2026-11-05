@@ -18,6 +18,12 @@ const CODES: Record<string, string> = {
     // Signing in (wrong_role depends on which sign-in page asked, so Login maps it)
     account_suspended: 'signIn.errorSuspended',
 
+    // A forgotten or changed password
+    reset_code_invalid: 'password.errorCodeInvalid',
+    reset_expired: 'password.errorExpired',
+    reset_too_many: 'password.errorTooMany',
+    current_password_wrong: 'password.errorCurrentWrong',
+
     // Registration
     phone_taken: 'register.errorPhoneTaken',
     email_taken: 'register.errorEmailTaken',

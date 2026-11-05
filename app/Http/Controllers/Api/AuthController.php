@@ -492,7 +492,7 @@ class AuthController extends Controller
             'role' => ['required', 'in:customer,tailor,admin'],
         ]);
 
-        $user = $this->findByLogin($data['login']);
+        $user = User::findByLogin($data['login']);
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
             return response()->json(['message' => 'Invalid credentials.'], 401);
@@ -567,7 +567,6 @@ class AuthController extends Controller
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    /** Find a user by email or phone number (tolerant of spacing and missing +995 prefix). */
     /**
      * Tell Kere someone has joined, at the address REGISTRATION_ALERT_EMAIL
      * names, and a new tailor in the admins' bell as well. The email is
@@ -593,26 +592,6 @@ class AuthController extends Controller
         }
     }
 
-    private function findByLogin(string $login): ?User
-    {
-        $login = trim($login);
-
-        if (str_contains($login, '@')) {
-            return User::where('email', $login)->first();
-        }
-
-        $digits = preg_replace('/\D+/', '', $login);
-        if ($digits === '') {
-            return null;
-        }
-
-        $candidates = [$login, '+'.$digits];
-        if (strlen($digits) === 9) {
-            $candidates[] = '+995'.$digits; // local Georgian number without country code
-        }
-
-        return User::whereIn('phone', array_unique($candidates))->first();
-    }
 
     private function maskPhone(string $phone): string
     {

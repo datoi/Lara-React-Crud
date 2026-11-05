@@ -1,25 +1,28 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { saveAuth, getReturnTo, clearReturnTo, type AuthUser } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { Navigation } from '../components/landing/Navigation';
 import { serverMessageKey } from '../lib/serverMessage';
+import { PasswordField } from '../components/PasswordField';
 
 type Role = 'customer' | 'tailor';
 
 export default function Login() {
     const { role } = useParams<{ role: Role }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const { t } = useTranslation();
+    // Arriving from a password reset: say so, and keep the login they used.
+    const arrival = location.state as { passwordReset?: boolean; login?: string } | null;
 
     const isCustomer = role !== 'tailor';
 
-    const [login, setLogin] = useState('');
+    const [login, setLogin] = useState(arrival?.login ?? '');
     const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
     // `credentials` is the server refusing the pair, so it marks both fields.
     const [errors, setErrors] = useState<{ login?: string; password?: string; credentials?: string; general?: string }>({});
     const [loading, setLoading] = useState(false);
@@ -93,6 +96,11 @@ export default function Login() {
                 >
                     <h1 className="kere-login-title">{t('signIn.signIn')}</h1>
                     <div className="kere-login-form">
+                    {arrival?.passwordReset && !errors.credentials && !errors.general && (
+                        <div role="status" className="mb-6 border border-[#d8d0c7] bg-white/60 px-4 py-3">
+                            <p className="text-xs leading-5 text-[#2a1418]">{t('password.resetDone')}</p>
+                        </div>
+                    )}
                     {(errors.credentials || errors.general) && (
                         <div role="alert" className="mb-6 border border-destructive/30 bg-destructive/10 px-4 py-3">
                             <p className="text-xs leading-5 text-destructive">{errors.credentials ?? errors.general}</p>
@@ -117,30 +125,25 @@ export default function Login() {
                         </div>
 
                         <div>
-                            <label htmlFor="login-password" className="block text-[10px] font-semibold leading-none text-[#2a1418]">
-                                {t('signIn.passwordLabel')}
-                            </label>
-                            <div className="relative">
-                                <input
-                                    id="login-password"
-                                    autoComplete="current-password"
-                                    aria-invalid={!!(errors.password || errors.credentials)}
-                                    type={showPassword ? 'text' : 'password'}
-                                    value={password}
-                                    onChange={e => { setPassword(e.target.value); setErrors(er => ({ ...er, password: undefined, credentials: undefined, general: undefined })); }}
-                                    className="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 pr-8 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"
-                                />
-                                <button
-                                    type="button"
-                                    aria-label={t('signIn.passwordLabel')}
-                                    aria-pressed={showPassword}
-                                    onClick={() => setShowPassword(v => !v)}
-                                    className="absolute right-0 top-1/2 -translate-y-1/2 text-[#2a1418] transition-colors hover:text-[#2a1418]"
-                                >
-                                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                </button>
-                            </div>
-                            {errors.password && <p className="mt-2 text-[10px] font-medium text-destructive">{errors.password}</p>}
+                            <PasswordField
+                                id="login-password"
+                                label={t('signIn.passwordLabel')}
+                                value={password}
+                                onChange={v => { setPassword(v); setErrors(er => ({ ...er, password: undefined, credentials: undefined, general: undefined })); }}
+                                autoComplete="current-password"
+                                error={errors.password}
+                                invalid={!!errors.credentials}
+                                labelClassName="block text-[10px] font-semibold leading-none text-[#2a1418]"
+                                inputClassName="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"
+                                errorClassName="mt-2 text-[10px] font-medium text-destructive"
+                            />
+                            <Link
+                                to={`/forgot-password?role=${isCustomer ? 'customer' : 'tailor'}`}
+                                state={{ login }}
+                                className="mt-3 inline-block text-[11px] text-[#2a1418] underline underline-offset-4"
+                            >
+                                {t('password.forgotLink')}
+                            </Link>
                         </div>
 
                         <Button

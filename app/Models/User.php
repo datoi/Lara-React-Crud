@@ -233,4 +233,26 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Product::class, 'wishlist_items')->withTimestamps();
     }
+
+    /** The account an email or phone number signs in as (tolerant of spacing and a missing +995). */
+    public static function findByLogin(string $login): ?self
+    {
+        $login = trim($login);
+
+        if (str_contains($login, '@')) {
+            return self::where('email', $login)->first();
+        }
+
+        $digits = preg_replace('/\D+/', '', $login);
+        if ($digits === '') {
+            return null;
+        }
+
+        $candidates = [$login, '+'.$digits];
+        if (strlen($digits) === 9) {
+            $candidates[] = '+995'.$digits; // local Georgian number without country code
+        }
+
+        return self::whereIn('phone', array_unique($candidates))->first();
+    }
 }

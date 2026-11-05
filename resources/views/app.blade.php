@@ -6,9 +6,10 @@
         {{-- Whether the design studio takes orders (config app.custom_orders_open). --}}
         <meta name="kere-custom-orders" content="{{ config('app.custom_orders_open') ? 'open' : 'paused' }}">
 
-        <!-- Default SEO -->
-        <title>Kere — Made-to-Fit Clothing and Remodels | Tbilisi, Georgia</title>
-        <meta name="description" content="Kere makes clothing that fits: ready-made pieces and remodels of your own garments, made in Tbilisi. Pay online; a courier collects and delivers across Georgia.">
+        <!-- Default SEO. Georgian, because link previews (Facebook, WhatsApp, Messenger)
+             read these tags without running the app. -->
+        <title>Kere — მორგებული ტანსაცმელი და სამოსის გადაკეთება | თბილისი</title>
+        <meta name="description" content="Kere ქმნის ტანსაცმელს, რომელიც გერგება: მზა სამოსი და შენი ტანსაცმლის გადაკეთება, შექმნილი თბილისში. გადაიხადე ონლაინ — კურიერი წაიღებს და მოგიტანს მთელ საქართველოში.">
         <meta name="robots" content="index, follow">
         <link rel="canonical" href="https://kereforyou.com">
 
@@ -25,8 +26,8 @@
         <!-- Open Graph -->
         <meta property="og:type"             content="website">
         <meta property="og:site_name"        content="Kere">
-        <meta property="og:title"            content="Kere — Made-to-Fit Clothing and Remodels | Tbilisi, Georgia">
-        <meta property="og:description"      content="Kere makes clothing that fits: ready-made pieces and remodels of your own garments, made in Tbilisi. Pay online; a courier collects and delivers across Georgia.">
+        <meta property="og:title"            content="Kere — მორგებული ტანსაცმელი და სამოსის გადაკეთება | თბილისი">
+        <meta property="og:description"      content="Kere ქმნის ტანსაცმელს, რომელიც გერგება: მზა სამოსი და შენი ტანსაცმლის გადაკეთება, შექმნილი თბილისში. გადაიხადე ონლაინ — კურიერი წაიღებს და მოგიტანს მთელ საქართველოში.">
         <meta property="og:url"              content="https://kereforyou.com">
         <meta property="og:locale"           content="ka_GE">
         <meta property="og:locale:alternate" content="en_US">
@@ -35,12 +36,12 @@
         <meta property="og:image:type"       content="image/jpeg">
         <meta property="og:image:width"      content="1200">
         <meta property="og:image:height"     content="630">
-        <meta property="og:image:alt"        content="Kere — made-to-fit clothing, Tbilisi">
+        <meta property="og:image:alt"        content="Kere — მორგებული ტანსაცმელი, თბილისი">
 
         <!-- Twitter Card -->
         <meta name="twitter:card"        content="summary_large_image">
-        <meta name="twitter:title"       content="Kere — Made-to-Fit Clothing and Remodels | Tbilisi, Georgia">
-        <meta name="twitter:description" content="Kere makes clothing that fits: ready-made pieces and remodels of your own garments, made in Tbilisi. Pay online; a courier collects and delivers across Georgia.">
+        <meta name="twitter:title"       content="Kere — მორგებული ტანსაცმელი და სამოსის გადაკეთება | თბილისი">
+        <meta name="twitter:description" content="Kere ქმნის ტანსაცმელს, რომელიც გერგება: მზა სამოსი და შენი ტანსაცმლის გადაკეთება, შექმნილი თბილისში. გადაიხადე ონლაინ — კურიერი წაიღებს და მოგიტანს მთელ საქართველოში.">
         <meta name="twitter:image"       content="https://kereforyou.com/assets/og-image.jpg?v=3">
 
         @viteReactRefresh

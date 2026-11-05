@@ -24,4 +24,10 @@ class OtpService
     {
         (new SmsService)->send($phone, "Kere: თქვენი დამადასტურებელი კოდია {$code}");
     }
+
+    /** Send a password reset code via SMS */
+    public function sendPasswordResetSms(string $phone, string $code): void
+    {
+        (new SmsService)->send($phone, "Kere: პაროლის აღდგენის კოდია {$code}");
+    }
 }

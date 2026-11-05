@@ -12,6 +12,7 @@ import RoleSelection from './pages/RoleSelection';
 import RegisterCustomer from './pages/RegisterCustomer';
 import RegisterTailor from './pages/RegisterTailor';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
 import TailorDashboard from './pages/TailorDashboard';
 import CustomerDashboard from './pages/CustomerDashboard';
 import NotFound from './pages/NotFound';
@@ -67,6 +68,7 @@ export const router = createBrowserRouter([
     { path: '/product/:id/customize', element: wrap(<ProductCustomization customize />) },
     { path: '/signin',              element: wrap(<RoleSelection />) },
     { path: '/login/:role',         element: wrap(<Login />) },
+    { path: '/forgot-password',     element: wrap(<ForgotPassword />) },
     { path: '/register/customer',   element: wrap(<RegisterCustomer />) },
     { path: '/register/tailor',     element: wrap(<RegisterTailor />) },
     { path: '/tailor-dashboard',    element: guard(<TailorDashboard />, 'tailor') },
