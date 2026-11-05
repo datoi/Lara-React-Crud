@@ -6,6 +6,24 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-11-05 — Set the admin sign-in from Railway, with no password in the code
+
+**What was done:** The owner wanted to change the admin's email and password and asked for the safest way. The admin account was `admin@kere.ge`, and on every deploy `start.sh` set its password from `ADMIN_PASSWORD`, or, when that was unset, from a short password written in `start.sh` itself, which anyone can read in the public repository.
+- **`php artisan admin:sync`** (`SyncAdminAccount`) replaces the inline tinker block in `start.sh`. It reads `ADMIN_EMAIL` and `ADMIN_PASSWORD` (`config('services.admin')`):
+  - a new email renames the existing admin, so the old address stops working and there is still one admin;
+  - the password must be at least 12 characters; a change signs the admin out everywhere; the same password leaves the session alone;
+  - with no password set it creates nothing and keeps the current password; there is no fallback any more;
+  - an email that already belongs to a customer or tailor is refused, so the variable can never make someone else an admin;
+  - problems are printed to the deploy log and never stop the deploy.
+- The admin sign-in page no longer shows `admin@kere.ge` as its placeholder.
+
+**Verified:** `php artisan test`: 270 passed (1,316 assertions), 6 of them new in `AdminAccountSyncTest`, including signing in through `/api/admin/auth` with the new email and being refused with the old one. `npm run typecheck` clean; ESLint on `AdminLogin.tsx` clean. `start.sh` itself was not run (it only runs on Railway).
+
+**Not covered / Noticed:**
+- If `ADMIN_PASSWORD` was ever unset in Railway, the live admin password is the one that was in `start.sh`, and it stays in git history. Setting a new `ADMIN_PASSWORD` before this deploy replaces it.
+- There is still no second factor (a code by email or SMS) on the admin sign-in.
+- Admin emails are matched exactly; `admin:sync` stores the address in lower case, so sign in with it in lower case.
+
 ## 2026-11-05 — Make "change password" a quiet link instead of a card
 
 **What was done:** The owner found the dashboards' "Password" card too prominent. `ChangePassword` is now a small, muted "Change password" text link at the very bottom of the customer and tailor dashboards. It opens the same form (current password, new one twice) in a dialog (`kere-modal`, Radix). After a change the dialog closes and "Your password has been changed." shows under the link.

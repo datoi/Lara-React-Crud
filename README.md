@@ -101,7 +101,7 @@ DB_DATABASE=/absolute/path/to/kere/database/database.sqlite
 ADMIN_PASSWORD=choose-a-password
 ```
 
-`DB_DATABASE` must be an absolute path. Set `ADMIN_PASSWORD` **before** migrating: a migration creates the admin account with it, and falls back to a random password when it is missing.
+`DB_DATABASE` must be an absolute path. Set `ADMIN_PASSWORD` (at least 12 characters) **before** migrating: a migration creates the admin account `admin@kere.ge` with it, and falls back to a random password when it is missing. `php artisan admin:sync` applies `ADMIN_EMAIL` and `ADMIN_PASSWORD` to that account at any time.
 
 Then create the database and link public storage:
 
@@ -125,7 +125,7 @@ The support form sends its email through the queue. To deliver those emails loca
 
 ### Accounts for local testing
 
-- **Admin**: sign in at `/admin/login` as `admin@kere.ge` with your `ADMIN_PASSWORD`.
+- **Admin**: sign in at `/admin/login` as `admin@kere.ge` (or your `ADMIN_EMAIL`, after `php artisan admin:sync`) with your `ADMIN_PASSWORD`.
 - **Customer and tailor**: register through `/register/customer` and `/register/tailor`. Verification codes are written to the logs (see below). A new tailor sees a waiting screen until you approve them from the admin dashboard.
 - The seeded `test@example.com` (password `password`) has not completed onboarding, so it cannot place orders. Register a fresh customer instead.
 
@@ -177,7 +177,7 @@ All settings come from `.env`. See [`.env.example`](.env.example) for the full l
 |---|---|
 | `APP_URL` | Base URL, used in emails, guardian consent links and payment return links |
 | `DB_CONNECTION`, `DB_DATABASE` | Local database. Production sets `DATABASE_URL` instead. |
-| `ADMIN_PASSWORD` | Password for `admin@kere.ge`, re-applied on every deploy |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | The admin sign-in, applied on every deploy by `php artisan admin:sync`. The email defaults to `admin@kere.ge`; changing it renames the admin account. The password must be at least 12 characters; without one, nothing is created and the current password is kept. Set both in Railway only, never in the repository. |
 | `MAIL_MAILER`, `RESEND_KEY`, `MAIL_FROM_ADDRESS` | Outgoing email |
 | `SUPPORT_EMAIL` | Recipient of the support form |
 | `REGISTRATION_ALERT_EMAIL` | Emailed whenever someone registers, customer or tailor (blank: nobody) |

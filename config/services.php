@@ -40,6 +40,12 @@ return [
     ],
 
     // Who hears that someone has registered. Unset: nobody is emailed.
+    // The admin sign-in, applied on every deploy by `php artisan admin:sync`.
+    'admin' => [
+        'email' => env('ADMIN_EMAIL'),
+        'password' => env('ADMIN_PASSWORD'),
+    ],
+
     'registrations' => [
         'notify_email' => env('REGISTRATION_ALERT_EMAIL'),
     ],

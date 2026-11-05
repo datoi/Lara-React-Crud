@@ -84,7 +84,6 @@ export default function AdminLogin() {
                             onChange={e => setEmail(e.target.value)}
                             autoComplete="email"
                             className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition"
-                            placeholder="admin@kere.ge"
                         />
                     </div>
 
