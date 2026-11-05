@@ -162,6 +162,7 @@ export default function RegisterCustomer() {
                                                     type="text"
                                                     value={form.first_name}
                                                     onChange={setField('first_name')}
+                                                    autoComplete="given-name"
                                                     placeholder={t('register.firstNamePlaceholder')}
                                                     aria-invalid={!!formErrors.first_name}
                                                     className="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"
@@ -174,6 +175,7 @@ export default function RegisterCustomer() {
                                                     type="text"
                                                     value={form.last_name}
                                                     onChange={setField('last_name')}
+                                                    autoComplete="family-name"
                                                     placeholder={t('register.lastNamePlaceholder')}
                                                     aria-invalid={!!formErrors.last_name}
                                                     className="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"
@@ -188,6 +190,7 @@ export default function RegisterCustomer() {
                                                 type="email"
                                                 value={form.email}
                                                 onChange={setField('email')}
+                                                autoComplete="username"
                                                 placeholder={t('register.emailPlaceholder')}
                                                 aria-invalid={!!formErrors.email}
                                                 className="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"
@@ -242,6 +245,7 @@ export default function RegisterCustomer() {
                                                     type={showPassword ? 'text' : 'password'}
                                                     value={form.password}
                                                     onChange={setField('password')}
+                                                    autoComplete="new-password"
                                                     placeholder={t('register.passwordPlaceholder')}
                                                     aria-invalid={!!formErrors.password}
                                                     className="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 pr-8 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"
@@ -260,6 +264,7 @@ export default function RegisterCustomer() {
                                                     type={showConfirm ? 'text' : 'password'}
                                                     value={form.password_confirmation}
                                                     onChange={setField('password_confirmation')}
+                                                    autoComplete="new-password"
                                                     placeholder={t('register.confirmPasswordPlaceholder')}
                                                     aria-invalid={!!formErrors.password_confirmation}
                                                     className="mt-2 w-full border-0 border-b border-[#d8d0c7] bg-transparent px-0 pb-2 pr-8 text-xs font-medium text-[#2a1418] placeholder:text-[#8a8179] focus:outline-none focus:ring-0"

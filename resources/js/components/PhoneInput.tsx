@@ -8,6 +8,11 @@ interface Props {
     onChange: (value: string) => void;
     error?: boolean;
     placeholder?: string;
+    /**
+     * The browser's autofill hint. 'username' where the phone is what the person
+     * signs in with (tailors), so a saved password is filed under it.
+     */
+    autoComplete?: 'username' | 'tel-national';
 }
 
 const DEFAULT_COUNTRY = COUNTRIES[0]; // Georgia
@@ -25,7 +30,7 @@ function splitValue(value: string): { country: Country; localNumber: string } {
     return { country: DEFAULT_COUNTRY, localNumber: value.replace(/^\+/, '') };
 }
 
-export function PhoneInput({ value, onChange, error, placeholder }: Props) {
+export function PhoneInput({ value, onChange, error, placeholder, autoComplete = 'tel-national' }: Props) {
     const { t } = useTranslation();
     const initial = useMemo(() => splitValue(value), []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -122,6 +127,7 @@ export function PhoneInput({ value, onChange, error, placeholder }: Props) {
 
             <input
                 type="tel"
+                autoComplete={autoComplete}
                 value={localNumber}
                 onChange={handleLocalNumberChange}
                 placeholder={placeholder ?? t('register.phoneNumberPlaceholder')}

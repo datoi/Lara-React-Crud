@@ -601,6 +601,7 @@ export default function RegisterTailor() {
                                     </label>
 
                                     <PhoneInput
+                                        autoComplete="username"
                                         value={form.phone}
                                         onChange={(phone) => {
                                             setForm((current) => ({

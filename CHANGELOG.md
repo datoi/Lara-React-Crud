@@ -6,6 +6,16 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-11-06 — Tell phones which registration field is the sign-in name
+
+**What was done:** A tailor registering on an iPhone was shown Safari's yellow "Strong Password" suggestion and found it confusing. The suggestion is the iPhone's own: it appears on any field marked as a new password. But the forms did not say which field is the sign-in name, so a password the iPhone saved could be filed without the phone number the tailor signs in with, and not offered on the sign-in page later. The customer form did not mark its password fields at all.
+- `PhoneInput` takes an `autoComplete` hint: `username` on the tailor form (tailors sign in by phone), `tel-national` elsewhere (the field holds the number without the country code).
+- The customer form marks the email as `username`, both password fields as `new-password`, and the names as `given-name` and `family-name`.
+
+**Verified:** `npm run typecheck` clean; ESLint on the three files clean. In Chrome at 390 px in Georgian, both registration pages carry the hints (customer: given-name, family-name, username, tel-national, new-password ×2; tailor: given-name, family-name, email, username, new-password ×2), with no console errors and no horizontal overflow. Safari's password saving itself could not be tested here.
+
+**Not covered / Noticed:** The suggestion cannot and should not be switched off from the site. A tailor who does not want it taps the field and chooses their own password from the iPhone's options.
+
 ## 2026-11-05 — Set the admin sign-in from Railway, with no password in the code
 
 **What was done:** The owner wanted to change the admin's email and password and asked for the safest way. The admin account was `admin@kere.ge`, and on every deploy `start.sh` set its password from `ADMIN_PASSWORD`, or, when that was unset, from a short password written in `start.sh` itself, which anyone can read in the public repository.
