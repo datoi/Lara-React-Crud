@@ -35,13 +35,26 @@ php artisan db:seed --force --class=WomensTopsSeeder
 echo "==> Creating storage symlink..."
 php artisan storage:link --force
 
+# Nothing else restarts the background processes: Railway watches only the
+# web server. The queue worker stops on purpose every hour (--max-time, which
+# frees leaked memory) and either process can crash, so each runs in a loop.
+# "|| echo" keeps set -e from ending the loop when the command fails.
+keep_running() {
+    while true; do
+        "$@" || echo "==> '$*' exited with status $?"
+        echo "==> Restarting '$*' in 5 seconds..."
+        sleep 5
+    done
+}
+
+# Sends queued mail: support requests and new-registration alerts.
 echo "==> Starting queue worker in background..."
-php artisan queue:work --daemon --sleep=3 --tries=3 --max-time=3600 &
+keep_running php artisan queue:work --sleep=3 --tries=3 --max-time=3600 &
 
 # Runs routes/console.php's schedule: privacy:purge every night, which keeps
 # the privacy policy's 90-day deletion promise.
 echo "==> Starting scheduler in background..."
-php artisan schedule:work &
+keep_running php artisan schedule:work &
 
 echo "==> Starting Laravel server on port ${PORT} with 8 workers..."
 export PHP_CLI_SERVER_WORKERS=8
