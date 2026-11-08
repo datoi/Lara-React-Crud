@@ -614,7 +614,7 @@ Most newer UI uses hairline borders, square corners (`rounded-none`), uppercase 
 | Service | Use | Configuration |
 |---|---|---|
 | **Railway** | Hosting: PHP server, PostgreSQL, and a queue worker started from `start.sh` | Nixpacks; `DATABASE_URL` is parsed into `DB_*` by `start.sh` |
-| **Cloudflare** | Registrar, DNS and proxy for kereforyou.com, plus Resend DNS records | A long edge TTL for `/assets/*` was suggested but not confirmed |
+| **Cloudflare** | Registrar, DNS and proxy for kereforyou.com, plus Resend DNS records. `www` is a proxied CNAME, and the Redirect Rule "Redirect from WWW to root" sends it to the apex with a 301, keeping the path and query (2026-11-08) | A long edge TTL for `/assets/*` was suggested but not confirmed |
 | **Cloudflare R2** (S3 API) | User uploads. Disk `uploads` (public, served from `R2_PUBLIC_URL`) and `documents` (private, `private/` prefix). Without `R2_BUCKET`, the code falls back to the local `public` and `local` disks. | `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`, `R2_PUBLIC_URL`, `R2_REGION` (default auto). The 2026-09-24 changelog entry treats production as already on R2. |
 | **Resend** | Production email over HTTP (Railway blocks SMTP), from `noreply@kereforyou.com` | `MAIL_MAILER=resend`, `RESEND_KEY`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` |
 | Gmail SMTP | **Local** `.env` mailer (real mail) | `MAIL_*` |
