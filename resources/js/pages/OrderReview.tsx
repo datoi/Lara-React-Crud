@@ -13,9 +13,9 @@ import { OrderMeasurements } from '../components/measurements/OrderMeasurements'
 import { useOrderMeasurements } from '../hooks/useOrderMeasurements';
 import { fieldsFor } from '../lib/measurements';
 import { customOrdersOpen } from '../lib/customOrders';
+import { deliveryFee } from '../lib/delivery';
 import { translateServerMessage } from '../lib/serverMessage';
 
-const SHIPPING = 15;
 
 export default function OrderReview() {
     const navigate = useNavigate();
@@ -37,7 +37,8 @@ export default function OrderReview() {
     }, []);
 
     const subtotal = draft.estimated_price ?? 0;
-    const total    = subtotal + SHIPPING;
+    const shipping = deliveryFee();
+    const total    = subtotal + shipping;
 
     const handlePlaceOrder = async () => {
         if (submitted.current || submitting) return;
@@ -222,7 +223,7 @@ export default function OrderReview() {
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-slate-500">{t('orderReview.shipping')}</span>
-                                        <span className="text-slate-900">₾{SHIPPING}</span>
+                                        <span className="text-slate-900">{shipping > 0 ? `₾${shipping}` : t('cart.deliveryFree')}</span>
                                     </div>
                                     <div className="border-t border-slate-100 pt-2 flex justify-between font-semibold">
                                         <span className="text-slate-900">{t('orderReview.total')}</span>
@@ -237,7 +238,7 @@ export default function OrderReview() {
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-slate-500">{t('orderReview.shipping')}</span>
-                                        <span className="text-slate-900">₾{SHIPPING}</span>
+                                        <span className="text-slate-900">{shipping > 0 ? `₾${shipping}` : t('cart.deliveryFree')}</span>
                                     </div>
                                 </div>
                             )}

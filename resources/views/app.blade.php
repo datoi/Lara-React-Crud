@@ -7,6 +7,8 @@
         <meta name="kere-custom-orders" content="{{ config('app.custom_orders_open') ? 'open' : 'paused' }}">
         {{-- Whether the ready-made shop has anything on sale (Product::shopIsOpen). --}}
         <meta name="kere-shop" content="{{ \App\Models\Product::shopIsOpen() ? 'open' : 'closed' }}">
+        {{-- The delivery fee for new orders, in lari (config app.shipping_cost). --}}
+        <meta name="kere-delivery-fee" content="{{ (int) config('app.shipping_cost') }}">
 
         <!-- Default SEO. Georgian, because link previews (Facebook, WhatsApp, Messenger)
              read these tags without running the app. -->

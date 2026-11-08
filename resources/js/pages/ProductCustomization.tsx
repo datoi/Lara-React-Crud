@@ -23,6 +23,7 @@ import { OrderMeasurements } from '../components/measurements/OrderMeasurements'
 import { useOrderMeasurements } from '../hooks/useOrderMeasurements';
 import { fieldsFor, knownKeys } from '../lib/measurements';
 import { serverMessageKey } from '../lib/serverMessage';
+import { deliveryFee } from '../lib/delivery';
 
 interface ApiProduct {
     id: number;
@@ -74,7 +75,7 @@ export default function ProductCustomization({ customize = false }: { customize?
     const [selectedSize, setSelectedSize] = useState('');
     const [customizationNote, setCustomizationNote] = useState('');
     const [quantity, setQuantity] = useState(1);
-    const [shippingCost, setShippingCost] = useState(15);
+    const [shippingCost, setShippingCost] = useState(deliveryFee);
     const [ordered, setOrdered] = useState(false);
     const [placing, setPlacing] = useState(false);
     const [orderError, setOrderError] = useState('');
@@ -621,7 +622,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                                     </div>
                                     <div className="flex justify-between text-[14px] text-[var(--kd-body)]">
                                         <span>{t('productCustomization.delivery')}</span>
-                                        <span className="tabular-nums">₾{shipping}</span>
+                                        <span className="tabular-nums">{shipping > 0 ? `₾${shipping}` : t('cart.deliveryFree')}</span>
                                     </div>
                                     <div className="mt-1 flex items-baseline justify-between border-t border-[var(--kd-rule)] pt-3">
                                         <span className="text-[15px] font-semibold text-[var(--kd-ink)]">{t('productCustomization.total')}</span>
@@ -666,7 +667,7 @@ export default function ProductCustomization({ customize = false }: { customize?
                             <a href="#product-reviews" className="mt-4 block text-right text-xs">{t('productDetails.reviews')} ({rating?.count ?? '—'})</a>
                             <div className="product-detail-accordions mt-10">
                                 <details open><summary>{t('productDetails.description')}</summary><p>{product.description || product.name}</p></details>
-                                <details><summary>{t('productDetails.shipping')}</summary><p>{t('productCustomization.delivery')}: ₾{shipping}</p></details>
+                                <details><summary>{t('productDetails.shipping')}</summary><p>{t('productCustomization.delivery')}: {shipping > 0 ? `₾${shipping}` : t('cart.deliveryFree')}</p></details>
                                 <details><summary>{t('productDetails.returns')}</summary><Link to="/refund-policy">{t('productDetails.returnPolicy')} ↗</Link></details>
                                 <details><summary>{t('productDetails.features')}</summary><p>{product.category?.name}{product.texture ? ` · ${product.texture}` : ''}</p></details>
                                 <details><summary>{t('productDetails.care')}</summary><p>{product.fabric || t('productDetails.askTailor')}</p></details>

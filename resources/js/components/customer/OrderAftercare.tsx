@@ -36,6 +36,7 @@ export interface AftercareOrder {
     status: string;
     payment_status?: string;
     deposit_amount?: number | null;
+    shipping?: number;
     payment_due?: PaymentDue | null;
     paid_total?: number;
     refunded_total?: number;
@@ -94,7 +95,7 @@ export function RemodelProgress({ order, paying, onPay }: { order: AftercareOrde
             done: !!order.deposit_paid_at,
             when: order.deposit_paid_at,
             body: due?.stage === 'deposit'
-                ? <><p>{t('orderCare.firstPaymentDue', { amount: money(due.amount) })}</p><PayButton due={due} paying={paying} onPay={onPay} /></>
+                ? <><p>{t(order.shipping === 0 ? 'orderCare.firstPaymentDueFree' : 'orderCare.firstPaymentDue', { amount: money(due.amount) })}</p><PayButton due={due} paying={paying} onPay={onPay} /></>
                 : order.deposit_amount ? <p>{money(order.deposit_amount)}</p> : null,
         },
         { key: 'pickup', done: !!order.picked_up_at, when: order.picked_up_at },

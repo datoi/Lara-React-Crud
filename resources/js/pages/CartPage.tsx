@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { shopOpen } from '../lib/shop';
+import { deliveryFee } from '../lib/delivery';
 import { Link, useNavigate } from 'react-router';
 import { isHex } from '../components/CartDrawer';
 import { Navigation } from '../components/landing/Navigation';
@@ -34,7 +35,7 @@ export default function CartPage() {
     const navigate = useNavigate();
     const items = useCart();
 
-    const [shipping, setShipping] = useState(15);
+    const [shipping, setShipping] = useState(deliveryFee);
     const [stock, setStock] = useState<Record<number, number>>({});
     const [missing, setMissing] = useState<number[]>([]);
     const [checking, setChecking] = useState(true);
@@ -267,7 +268,7 @@ export default function CartPage() {
                                         <p className="text-xs font-semibold tracking-[0.08em] text-[#6c625b] uppercase">
                                             {groups.length > 1 ? t('cart.deliveryN', { n: index + 1 }) : t('cart.delivery')}
                                         </p>
-                                        <span className="text-xs text-[#6c625b]">{t('cart.shippingPerTailor', { amount: shipping })}</span>
+                                        <span className="text-xs text-[#6c625b]">{shipping > 0 ? t('cart.shippingPerTailor', { amount: shipping }) : t('cart.shippingPerTailorFree')}</span>
                                     </header>
 
                                     <ul>
@@ -369,7 +370,7 @@ export default function CartPage() {
                                         {t('cart.shipping')}
                                         {groups.length > 1 && <span className="ml-1 text-xs">({t('cart.shippingGroups', { n: groups.length })})</span>}
                                     </dt>
-                                    <dd className="text-[#111111]">₾{shippingTotal.toFixed(2)}</dd>
+                                    <dd className="text-[#111111]">{shippingTotal > 0 ? `₾${shippingTotal.toFixed(2)}` : t('cart.deliveryFree')}</dd>
                                 </div>
                                 <div className="flex justify-between border-t border-[#111111]/12 pt-3 text-base font-semibold">
                                     <dt>{t('cart.total')}</dt>
@@ -377,7 +378,7 @@ export default function CartPage() {
                                 </div>
                             </dl>
 
-                            {groups.length > 1 && <p className="mt-3 text-xs leading-5 text-[#6c625b]">{t('cart.splitNotice', { n: groups.length })}</p>}
+                            {groups.length > 1 && <p className="mt-3 text-xs leading-5 text-[#6c625b]">{t(shipping > 0 ? 'cart.splitNotice' : 'cart.splitNoticeFree', { n: groups.length })}</p>}
 
                             {error && (
                                 <p role="alert" className="mt-4 border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-700">

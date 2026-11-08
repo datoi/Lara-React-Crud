@@ -186,7 +186,7 @@ function KereOffer({ order, onAccepted, onChanged }: { order: CustomerOrder; onA
                 <div className="bg-white rounded-none border border-slate-200 p-4">
                     <dl className="space-y-1.5 text-sm">
                         <div className="flex justify-between gap-4"><dt className="text-slate-500">{t('offer.price')}</dt><dd className="text-slate-900">₾{offer.price.toFixed(2)}</dd></div>
-                        <div className="flex justify-between gap-4"><dt className="text-slate-500">{t('offer.delivery')}</dt><dd className="text-slate-900">₾{offer.shipping.toFixed(2)}</dd></div>
+                        <div className="flex justify-between gap-4"><dt className="text-slate-500">{t('offer.delivery')}</dt><dd className="text-slate-900">{offer.shipping > 0 ? `₾${offer.shipping.toFixed(2)}` : t('cart.deliveryFree')}</dd></div>
                         <div className="flex justify-between gap-4 border-t border-slate-100 pt-1.5 font-semibold"><dt className="text-slate-900">{t('offer.total')}</dt><dd className="text-slate-900">₾{offer.total.toFixed(2)}</dd></div>
                         {offer.days != null && (
                             <div className="flex justify-between gap-4"><dt className="text-slate-500">{t('offer.time')}</dt><dd className="text-right text-slate-900">{isRemodel ? t('orderCare.offerReadyIn', { count: offer.days }) : t('offer.readyInDays', { count: offer.days })}</dd></div>
@@ -196,7 +196,7 @@ function KereOffer({ order, onAccepted, onChanged }: { order: CustomerOrder; onA
                         <p className="mt-3 border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">{offer.note}</p>
                     )}
                     {isRemodel && offer.first_payment != null && (
-                        <p className="mt-3 text-xs leading-relaxed text-slate-500">{t('offer.firstPaymentNote', { amount: `₾${offer.first_payment.toFixed(2)}` })}</p>
+                        <p className="mt-3 text-xs leading-relaxed text-slate-500">{t(offer.shipping > 0 ? 'offer.firstPaymentNote' : 'offer.firstPaymentNoteFree', { amount: `₾${offer.first_payment.toFixed(2)}` })}</p>
                     )}
                     <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
                         <Button variant="default" size="sm" onClick={() => void answer('accept')} disabled={busy !== null} className="text-xs">
