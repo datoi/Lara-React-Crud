@@ -6,6 +6,15 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-11-08 — What tailors want to work on, their sent estimates, and two answers in the tailor FAQ
+
+**What was done** (the CEO's requests, passed on by the owner):
+- **Two new questions at the top of the tailor FAQ on /partners**: "როგორ არის Kere-სთან თანამშრომლობა?" (how working with Kere goes, from a shared order to Kere settling with the tailor) and "შეკვეთის დეტალების დაზუსტება" (questions go in the order's chat, and Kere asks the customer). The Georgian is the CEO's text as given; the English is a translation. An answer can now hold paragraphs, split on a blank line (`partners.faqWorkingA`).
+
+**Verified:** /partners in headless Chrome, Georgian and English, 390 and 1280 px: the two questions come first (7 in all), the first opens into its two paragraphs, no console errors, no horizontal overflow.
+
+**Not covered / Noticed:** Two older answers no longer fit the model where Kere is the only seller: `partners.faq3a` tells tailors to publish clothing they make, and `partners.faq4a` says a full profile and three products bring the first request sooner. They were left for the owner to decide.
+
 ## 2026-11-08 — Fixes from the pre-launch security and readiness review
 
 **What was done:** The owner asked for a full pre-launch review (QA_REPORT.md, issues QA-01 to QA-59) and approved its list. The Blockers and Criticals are fixed here, one commit each, each with a regression test.

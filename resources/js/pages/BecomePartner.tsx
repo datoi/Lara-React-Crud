@@ -46,7 +46,12 @@ function FaqItem({ q, a }: { q: string; a: string }) {
                     exit={{ opacity: 0, height: 0 }}
                     className="overflow-hidden"
                 >
-                    <p className="text-slate-500 pb-5 leading-relaxed">{a}</p>
+                    {/* A blank line in the answer starts a new paragraph. */}
+                    <div className="pb-5 space-y-3">
+                        {a.split('\n\n').map((paragraph) => (
+                            <p key={paragraph} className="text-slate-500 leading-relaxed">{paragraph}</p>
+                        ))}
+                    </div>
                 </motion.div>
             )}
         </div>
@@ -243,6 +248,8 @@ export default function BecomePartner() {
     ];
 
     const FAQS = [
+        { q: t('partners.faqWorkingQ'), a: t('partners.faqWorkingA') },
+        { q: t('partners.faqDetailsQ'), a: t('partners.faqDetailsA') },
         { q: t('partners.faq1q'), a: t('partners.faq1a') },
         { q: t('partners.faq2q'), a: t('partners.faq2a') },
         { q: t('partners.faq3q'), a: t('partners.faq3a') },
