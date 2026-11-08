@@ -240,7 +240,9 @@ class Order extends Model
 
         $owed = round($this->paidTotal() - $this->refundedTotal(), 2);
 
-        if ($owed > 0 || $this->picked_up_at) {
+        // A tailor walking away always reaches Kere, money or not: the customer
+        // accepted Kere's offer, and only Kere can find them someone else.
+        if ($owed > 0 || $this->picked_up_at || $by === 'tailor') {
             $body = ($by === 'tailor' ? 'მკერავმა' : 'მომხმარებელმა')." შეკვეთა #{$this->order_number} გააუქმა.";
             if ($owed > 0) {
                 $body .= ' მომხმარებელს დასაბრუნებელია ₾'.number_format($owed, 2).'.';
@@ -248,7 +250,10 @@ class Order extends Model
             if ($this->picked_up_at) {
                 $body .= ' სამოსი მომხმარებელს უნდა დაუბრუნდეს.';
             }
-            KereNotification::toAdmins($this, 'refund_due', 'გაუქმებული შეკვეთა', $body);
+            if ($by === 'tailor') {
+                $body .= ' დაუკავშირდით მომხმარებელს.';
+            }
+            KereNotification::toAdmins($this, $owed > 0 || $this->picked_up_at ? 'refund_due' : 'order_cancelled', 'გაუქმებული შეკვეთა', $body);
         }
 
         return true;

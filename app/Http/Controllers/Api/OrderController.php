@@ -722,22 +722,21 @@ class OrderController extends Controller
         $shouldNotify = in_array($data['status'], $notifyStatuses) && $data['status'] !== $oldStatus;
 
         if ($shouldNotify) {
-            $statusLabel = match ($data['status']) {
-                'processing' => 'Accepted — In Progress',
-                'finished' => 'Completed',
-                'cancelled' => 'Cancelled',
-                default => ucfirst($data['status']),
+            $number = $order->order_number;
+            $statusBody = match ($data['status']) {
+                'processing' => "შეკვეთაზე #{$number} მუშაობა დაიწყო.",
+                'finished' => "შეკვეთა #{$number} მზადაა.",
+                default => "შეკვეთა #{$number} გაუქმდა. Kere დაგიკავშირდებათ.",
             };
 
+            // A paid remodel's finish already told the customer, with the
+            // second payment it now asks for (above).
+            $alreadyTold = $order->isPaidRemodel() && $data['status'] === 'finished';
+
             try {
-                $this->notify(
-                    $order->user_id,
-                    'order_status',
-                    'Order #'.$order->id.' Status Updated',
-                    "Your order #{$order->id} status has been updated to: {$statusLabel}.",
-                    $order->id,
-                    ['status' => $data['status']]
-                );
+                if (! $alreadyTold) {
+                    $this->notify($order->user_id, 'order_status', 'შეკვეთის სტატუსი განახლდა', $statusBody, $order->id, ['status' => $data['status']]);
+                }
             } catch (\Throwable $e) {
                 Log::error('OrderStatusNotification failed: '.$e->getMessage());
             }
@@ -754,8 +753,10 @@ class OrderController extends Controller
                         fn ($adminId) => $this->notify(
                             $adminId,
                             'order_finished',
-                            'Order #'.$order->id.' Ready for Delivery',
-                            "{$user->getFullName()} finished order #{$order->id} — it's ready to be delivered to the customer.",
+                            'შეკვეთა დასრულდა',
+                            $order->isPaidRemodel()
+                                ? "{$user->getFullName()}: შეკვეთა #{$order->order_number} დასრულდა — მომხმარებელი იხდის მეორე ნახევარს, რის შემდეგაც საჭიროა კურიერი."
+                                : "{$user->getFullName()}: შეკვეთა #{$order->order_number} დასრულდა და მზადაა მომხმარებლისთვის მისატანად.",
                             $order->id
                         )
                     );

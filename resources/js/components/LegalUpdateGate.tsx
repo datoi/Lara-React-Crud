@@ -1,7 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router';
+import { Navigate, useLocation, useNavigate } from 'react-router';
 import { Trans, useTranslation } from 'react-i18next';
 import { Button } from './ui/button';
 import { legalLink } from './LegalConsent';
@@ -23,44 +23,73 @@ const DOCUMENTS: Record<string, { key: string; href: '/terms' | '/privacy' }> = 
 /** The pages the question links to stay readable while it is open. */
 const READING_PATHS = ['/terms', '/privacy', '/refund-policy'];
 
+/** Where a customer who verified their code but never answered age and terms finishes signing up. */
+export const FINISH_REGISTRATION_PATH = '/register/customer?finish=1';
+
 /**
- * The last answer, per sign-in. Every route mounts its own gate, so without this
- * each page change would ask the server again.
+ * The last answer, per sign-in, so a page change does not ask the server again.
+ * The gate reads it on every render rather than copying it into state: React
+ * keeps one gate across page changes, and a copy would outlive forgetAccountCheck().
  */
-let lastAnswer: { token: string; pending: PendingDocument[] } | null = null;
+let lastAnswer: { token: string; pending: PendingDocument[]; unfinished: boolean } | null = null;
+
+/** Ask the server again on the next page: the account has just changed (registration finished). */
+export function forgetAccountCheck(): void {
+    lastAnswer = null;
+}
 
 /**
  * Asks a signed-in customer or tailor to agree to terms or a privacy policy that
  * changed since they last did (App\Support\LegalDocuments). It cannot be
  * dismissed, only answered or left by signing out. The server enforces the part
  * that matters: a customer cannot order until they have agreed.
+ *
+ * It also brings back a customer whose registration stopped after the one-time
+ * code (the tab closed, the phone reloaded it): the account exists, but date of
+ * birth and the terms were never answered, and until they are every order is
+ * refused. Without this nothing would ever ask them again.
  */
 export function LegalUpdateGate() {
     const token = getAuthToken();
     const role = getAuthUser()?.role;
-    const { pathname } = useLocation();
+    const { pathname, search } = useLocation();
     const navigate = useNavigate();
-    const [pending, setPending] = useState<PendingDocument[]>(() => (lastAnswer && lastAnswer.token === token ? lastAnswer.pending : []));
+    // Re-renders the gate once lastAnswer changes.
+    const [, setAnswered] = useState(0);
+    const answer = token && lastAnswer?.token === token ? lastAnswer : null;
+    const pending = answer?.pending ?? [];
+
+    const remember = useCallback((next: typeof lastAnswer) => {
+        lastAnswer = next;
+        setAnswered((n) => n + 1);
+    }, []);
 
     const check = useCallback(() => {
         if (!token) return;
         fetch('/api/me', { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } })
             .then((res) => (res.ok ? res.json() : null))
-            .then((data: { user?: { legal_pending?: PendingDocument[] } } | null) => {
+            .then((data: { user?: { role?: string; legal_pending?: PendingDocument[]; registration_complete?: boolean } } | null) => {
                 // A failed check is not remembered, so the next page asks again.
                 // Until then the server still refuses an order under terms not agreed to.
                 if (!data) return;
-                const next = data.user?.legal_pending ?? [];
-                lastAnswer = { token, pending: next };
-                setPending(next);
+                remember({
+                    token,
+                    pending: data.user?.legal_pending ?? [],
+                    unfinished: data.user?.role === 'customer' && data.user.registration_complete === false,
+                });
             })
             .catch(() => undefined);
-    }, [token]);
+    }, [token, remember]);
 
+    // Every page change asks again while nothing is remembered for this sign-in.
     useEffect(() => {
         if (!token || !role || role === 'admin' || lastAnswer?.token === token) return;
         check();
-    }, [token, role, check]);
+    }, [token, role, check, pathname]);
+
+    if (answer?.unfinished && `${pathname}${search}` !== FINISH_REGISTRATION_PATH && !READING_PATHS.includes(pathname)) {
+        return <Navigate to={FINISH_REGISTRATION_PATH} replace />;
+    }
 
     if (!token || pending.length === 0 || READING_PATHS.includes(pathname)) return null;
 
@@ -68,18 +97,14 @@ export function LegalUpdateGate() {
         <LegalUpdateDialog
             token={token}
             pending={pending}
-            onAnswered={(next) => {
-                lastAnswer = { token, pending: next };
-                setPending(next);
-            }}
+            onAnswered={(next) => remember({ token, pending: next, unfinished: false })}
             onStale={() => {
-                lastAnswer = null;
+                remember(null);
                 check();
             }}
             onSignOut={() => {
                 clearAuth();
-                lastAnswer = null;
-                setPending([]);
+                remember(null);
                 navigate('/');
             }}
         />

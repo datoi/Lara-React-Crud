@@ -34,6 +34,8 @@ const CODES: Record<string, string> = {
     legal_version_changed: 'legalConsent.errorVersionChanged',
 
     // Ordering
+    registration_incomplete: 'register.errorFinishFirst',
+    guardian_consent_pending: 'customerDashboard.guardianPendingBodyNoEmail',
     measurements_required: 'measurements.orderFromPage',
     custom_orders_paused: 'designer.ordersPaused',
 

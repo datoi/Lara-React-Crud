@@ -92,8 +92,15 @@ export function OtpStep({ icon, title, description, verificationId, otpType, end
                 setTimeout(() => onBack(), 2000);
                 return;
             }
+            // Never data.message: the server answers in English.
+            if (data.code === 'code_expired' || data.code === 'too_many_attempts') {
+                // The server has dropped this attempt; only starting again helps.
+                setError(t(data.code === 'code_expired' ? 'register.sessionExpired' : 'register.tooManyAttempts'));
+                setTimeout(() => onBack(), 2500);
+                return;
+            }
             if (!res.ok) {
-                setError(data.message ?? t('register.incorrectCode'));
+                setError(t('register.incorrectCode'));
                 setCodeRejected(true);
                 setDigits(['', '', '', '', '', '']);
                 inputRefs.current[0]?.focus();
@@ -118,8 +125,10 @@ export function OtpStep({ icon, title, description, verificationId, otpType, end
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
                 body: JSON.stringify({ verification_id: verificationId, type: otpType }),
             });
-            const data = await res.json();
-            if (!res.ok) { setError(data.message ?? t('register.resendFailed')); return; }
+            if (!res.ok) {
+                setError(t(res.status === 429 ? 'register.resendLimit' : res.status === 410 ? 'register.sessionExpired' : 'register.resendFailed'));
+                return;
+            }
             setDigits(['', '', '', '', '', '']);
             inputRefs.current[0]?.focus();
             startCooldown();

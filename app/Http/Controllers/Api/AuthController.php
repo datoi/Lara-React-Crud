@@ -117,7 +117,7 @@ class AuthController extends Controller
 
         return response()->json([
             'email_taken' => ! empty($data['email'])
-                && User::where('email', $data['email'])->exists(),
+                && User::whereEmail($data['email'])->exists(),
             'phone_taken' => ! empty($data['phone'])
                 && User::where('phone', $data['phone'])->exists(),
         ]);
@@ -136,10 +136,19 @@ class AuthController extends Controller
      */
     public function registerInitiate(Request $request)
     {
+        // One address whatever the case it was typed in (User::whereEmail).
+        if (is_string($request->input('email'))) {
+            $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
+        }
+
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
-            'email' => ['nullable', 'required_if:role,customer', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['nullable', 'required_if:role,customer', 'email', 'max:255', function ($attribute, $value, $fail) {
+                if (User::whereEmail($value)->exists()) {
+                    $fail('email_taken');
+                }
+            }],
             'phone' => ['required', 'string', 'max:30', 'regex:/^\+\d{8,15}$/', 'unique:users,phone'],
             // A digit as well as the length — checked here too, because the form
             // is not the only thing that can post to this endpoint.
@@ -178,7 +187,6 @@ class AuthController extends Controller
             // and the interface is Georgian, so these answer with a code the
             // client translates instead of a sentence it would have to print.
             'phone.unique' => 'phone_taken',
-            'email.unique' => 'email_taken',
         ]);
 
         $email = $data['email'] ?? null;
@@ -269,13 +277,13 @@ class AuthController extends Controller
         if ($record->isExpired()) {
             $record->delete();
 
-            return response()->json(['message' => 'Verification code expired. Please request a new one.'], 422);
+            return response()->json(['message' => 'Verification code expired. Please request a new one.', 'code' => 'code_expired'], 422);
         }
 
         if ($record->email_attempts >= 5) {
             $record->delete();
 
-            return response()->json(['message' => 'Too many incorrect attempts. Please register again.'], 422);
+            return response()->json(['message' => 'Too many incorrect attempts. Please register again.', 'code' => 'too_many_attempts'], 422);
         }
 
         if ($record->otp_email !== $data['code']) {
@@ -283,10 +291,10 @@ class AuthController extends Controller
             if ($record->email_attempts >= 5) {
                 $record->delete();
 
-                return response()->json(['message' => 'Too many incorrect attempts. Please register again.'], 422);
+                return response()->json(['message' => 'Too many incorrect attempts. Please register again.', 'code' => 'too_many_attempts'], 422);
             }
 
-            return response()->json(['message' => 'Incorrect code. Please try again.'], 422);
+            return response()->json(['message' => 'Incorrect code. Please try again.', 'code' => 'code_incorrect'], 422);
         }
 
         // Email verified — create the user immediately
@@ -334,7 +342,7 @@ class AuthController extends Controller
         if ($record->phone_attempts >= 5) {
             $record->delete();
 
-            return response()->json(['message' => 'Too many incorrect attempts. Please register again.'], 422);
+            return response()->json(['message' => 'Too many incorrect attempts. Please register again.', 'code' => 'too_many_attempts'], 422);
         }
 
         if ($record->otp_phone !== $data['code']) {
@@ -342,10 +350,10 @@ class AuthController extends Controller
             if ($record->phone_attempts >= 5) {
                 $record->delete();
 
-                return response()->json(['message' => 'Too many incorrect attempts. Please register again.'], 422);
+                return response()->json(['message' => 'Too many incorrect attempts. Please register again.', 'code' => 'too_many_attempts'], 422);
             }
 
-            return response()->json(['message' => 'Incorrect code. Please try again.'], 422);
+            return response()->json(['message' => 'Incorrect code. Please try again.', 'code' => 'code_incorrect'], 422);
         }
 
         // Create the user

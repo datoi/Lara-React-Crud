@@ -72,6 +72,8 @@ interface CustomerOrder extends AftercareOrder {
      * when an unpaid order is cancelled, which closes it to payment.
      */
     payment_status?: 'unpaid' | 'deposit_paid' | 'paid' | 'expired' | 'not_required';
+    /** The number customers see in every email and notification (RMD-…, ORD-…). */
+    order_number: string;
     total: number;
     measurements_purged?: boolean;
     expected_price?: number | null;
@@ -254,7 +256,7 @@ function OrderDetailModal({ order, currentUserId, onClose, onOfferAccepted, onCh
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-slate-100">
                     <div>
-                        <h3 className="font-semibold text-slate-900">{t('customerDashboard.orderHash', { id: order.id })}</h3>
+                        <h3 className="font-semibold text-slate-900">{t('customerDashboard.orderHash', { id: order.order_number })}</h3>
                         <p className="text-xs text-slate-400 mt-0.5">
                             {new Date(order.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
                         </p>
@@ -842,7 +844,7 @@ export default function CustomerDashboard() {
                                                     >
                                                         {payingOrderId === order.id
                                                             ? t('customerDashboard.payStarting')
-                                                            : t('customerDashboard.payNow')}
+                                                            : t('orderCare.payAmount', { amount: `₾${order.payment_due.amount.toFixed(2)}` })}
                                                     </Button>
                                                 </>
                                             )}

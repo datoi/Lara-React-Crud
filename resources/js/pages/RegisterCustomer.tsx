@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, Loader2, Mail, Smartphone, CheckCircle2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { PhoneInput } from '../components/PhoneInput';
 import { OtpStep } from '../components/OtpStep';
-import { saveAuth, type AuthUser } from '../hooks/useAuth';
+import { getAuthToken, getAuthUser, saveAuth, type AuthUser } from '../hooks/useAuth';
+import { forgetAccountCheck } from '../components/LegalUpdateGate';
 import { useTranslation } from 'react-i18next';
 import { Navigation } from '../components/landing/Navigation';
 import { CustomerProfileSteps } from '../components/CustomerProfileSteps';
@@ -42,7 +43,15 @@ const EMPTY: FormState = {
 export default function RegisterCustomer() {
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const [step, setStep] = useState<Step>('form');
+    const [params] = useSearchParams();
+    // A signed-in customer sent back to finish (LegalUpdateGate): the account
+    // exists, only age and the terms are missing, so start there.
+    const resuming = params.get('finish') === '1' && !!getAuthToken() && getAuthUser()?.role === 'customer';
+    const [step, setStep] = useState<Step>(resuming ? 'profile' : 'form');
+    // The gate can send someone here while this page is already open (a reload mid-sign-up).
+    useEffect(() => {
+        if (resuming) setStep('profile');
+    }, [resuming]);
 
     const [form, setForm] = useState<FormState>(EMPTY);
     const [formErrors, setFormErrors] = useState<Partial<FormState & { general: string }>>({});
@@ -339,7 +348,15 @@ export default function RegisterCustomer() {
                                 className="mx-auto w-full max-w-[460px] bg-transparent px-5 py-6 backdrop-blur-[2px] sm:px-6"
                             >
                                 <StepProgress current={3} />
-                                <CustomerProfileSteps onDone={() => navigate('/customer-dashboard')} />
+                                {resuming && (
+                                    <p className="mb-6 border border-[#d8d0c7] px-4 py-3 text-xs leading-5 text-[#2a1418]">{t('register.finishIntro')}</p>
+                                )}
+                                <CustomerProfileSteps
+                                    onDone={() => {
+                                        forgetAccountCheck();
+                                        navigate('/customer-dashboard');
+                                    }}
+                                />
                             </motion.div>
                         )}
                     </AnimatePresence>

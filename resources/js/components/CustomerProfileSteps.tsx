@@ -153,6 +153,13 @@ export function CustomerProfileSteps({ onDone }: Props) {
 
             const data = await response.json();
 
+            // Finished already, in another tab: nothing is left to ask.
+            if (response.status === 409 && data.code === 'already_complete') {
+                onDone();
+
+                return;
+            }
+
             if (!response.ok) {
                 // A rejected field belongs to the screen that asked it, and the
                 // fields on this step all live on the age screen. Without this

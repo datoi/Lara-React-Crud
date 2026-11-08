@@ -5,11 +5,13 @@ import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import { OrderTermsNotice } from '../components/LegalConsent';
+import { FINISH_REGISTRATION_PATH } from '../components/LegalUpdateGate';
 import { Footer } from '../components/landing/Footer';
 import { Navigation } from '../components/landing/Navigation';
 import { Button } from '../components/ui/button';
 import { getAuthToken, getAuthUser, saveReturnTo } from '../hooks/useAuth';
 import { tomorrowCalendarDay } from '../lib/dates';
+import { translateServerMessage } from '../lib/serverMessage';
 import { uploadPhoto, type UploadResult } from '../lib/photoUpload';
 import { shrinkPhoto } from '../lib/shrinkPhoto';
 
@@ -170,13 +172,25 @@ export default function RemodelRequest() {
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, Accept: 'application/json' },
                 body: JSON.stringify(body),
             });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-                throw new Error((data as { message?: string }).message ?? t('remodel.errorSubmit'));
+            const data = (await res.json().catch(() => ({}))) as { code?: string; order_number?: string };
+            if (res.status === 401) {
+                saveReturnTo('/remodel');
+                navigate('/login/customer');
+                return;
             }
-            navigate('/customer-dashboard', { state: { pendingAssignment: true, orderNumber: (data as { order_number?: string }).order_number } });
-        } catch (err: unknown) {
-            setSubmitError(err instanceof Error ? err.message : t('remodel.errorSubmit'));
+            if (data.code === 'registration_incomplete') {
+                navigate(FINISH_REGISTRATION_PATH);
+                return;
+            }
+            if (!res.ok) {
+                // Never the server's wording: it is English.
+                setSubmitError(translateServerMessage(data, t, 'remodel.errorSubmit'));
+                setSubmitting(false);
+                return;
+            }
+            navigate('/customer-dashboard', { state: { pendingAssignment: true, orderNumber: data.order_number } });
+        } catch {
+            setSubmitError(t('remodel.errorSubmit'));
             setSubmitting(false);
         }
     };

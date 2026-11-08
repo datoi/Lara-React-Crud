@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Support\LegalDocuments;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -234,13 +235,24 @@ class User extends Authenticatable
         return $this->belongsToMany(Product::class, 'wishlist_items')->withTimestamps();
     }
 
-    /** The account an email or phone number signs in as (tolerant of spacing and a missing +995). */
+    /**
+     * Accounts with this email, whatever its letter case. Phones capitalise the
+     * first letter people type, and PostgreSQL compares case-sensitively, so
+     * "Nino@gmail.com" at sign-up and "nino@gmail.com" at sign-in are one
+     * address. New addresses are stored lower-case; older ones may not be.
+     */
+    public static function whereEmail(string $email): Builder
+    {
+        return self::query()->whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))]);
+    }
+
+    /** The account an email or phone number signs in as (tolerant of spacing, letter case and a missing +995). */
     public static function findByLogin(string $login): ?self
     {
         $login = trim($login);
 
         if (str_contains($login, '@')) {
-            return self::where('email', $login)->first();
+            return self::whereEmail($login)->first();
         }
 
         $digits = preg_replace('/\D+/', '', $login);
