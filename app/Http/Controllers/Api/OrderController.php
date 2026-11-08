@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendSms;
 use App\Mail\OrderConfirmation;
 use App\Mail\OrderStatusUpdated;
 use App\Models\KereNotification;
@@ -12,6 +13,7 @@ use App\Models\TailorRequest;
 use App\Models\User;
 use App\Support\LegalDocuments;
 use App\Support\Measurements;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -52,6 +54,31 @@ class OrderController extends Controller
         unset($design['measurements']);
 
         return $measurements === null ? $design : $design + ['measurements' => $measurements];
+    }
+
+    /**
+     * The SMS that tells a tailor a request is waiting for their estimate. One
+     * Georgian SMS segment holds 70 characters, so these stay under it, and
+     * they name no customer and no detail of the order.
+     */
+    private const OPEN_REMODEL_SMS = 'Kere: ახალი გადაკეთების მოთხოვნა — kereforyou.com/tailor-dashboard';
+
+    private const OPEN_DESIGN_SMS = 'Kere: ახალი ინდივიდუალური დიზაინი — kereforyou.com/tailor-dashboard';
+
+    /**
+     * Tell every tailor who could take an open request: in the bell, and by an
+     * SMS that the queue sends after the order is saved, so the customer does
+     * not wait for each message and a failed one is tried again.
+     */
+    private function announceOpenOrder(Builder $tailors, Order $order, string $title, string $body, string $sms, array $extra): void
+    {
+        $tailors->get(['id', 'phone'])->each(function (User $tailor) use ($order, $title, $body, $sms, $extra) {
+            $this->notify($tailor->id, 'open_order', $title, $body, $order->id, $extra);
+
+            if ($tailor->phone) {
+                SendSms::dispatch($tailor->phone, $sms)->afterCommit();
+            }
+        });
     }
 
     private function notify(int $userId, string $type, string $title, string $body, int $orderId, array $extra = []): void
@@ -389,18 +416,14 @@ class OrderController extends Controller
             ]);
 
             // Open pool: every approved tailor can see the design and send Kere an estimate
-            User::where('role', 'tailor')
-                ->where(fn ($q) => $q->where('approval_status', 'approved')->orWhereNull('approval_status'))
-                ->where(fn ($q) => $q->where('is_suspended', false)->orWhereNull('is_suspended'))
-                ->pluck('id')
-                ->each(fn ($tailorId) => $this->notify(
-                    $tailorId,
-                    'open_order',
-                    'ახალი მოთხოვნა',
-                    "მომხმარებელმა შეუკვეთა ინდივიდუალური დიზაინი ({$garmentType}). თუ მისი შეკერვა გსურთ, გამოუგზავნეთ Kere-ს ფასის შეფასება თქვენი პანელიდან.",
-                    $order->id,
-                    ['clothing_type' => $garmentType]
-                ));
+            $this->announceOpenOrder(
+                User::ableToTakeWork(),
+                $order,
+                'ახალი მოთხოვნა',
+                "მომხმარებელმა შეუკვეთა ინდივიდუალური დიზაინი ({$garmentType}). თუ მისი შეკერვა გსურთ, გამოუგზავნეთ Kere-ს ფასის შეფასება თქვენი პანელიდან.",
+                self::OPEN_DESIGN_SMS,
+                ['clothing_type' => $garmentType]
+            );
 
             return $order;
         });
@@ -472,19 +495,14 @@ class OrderController extends Controller
             ]);
 
             // Open pool: every approved, non-suspended tailor who takes remodel work is asked for an estimate
-            User::where('role', 'tailor')
-                ->where('does_remodeling', true)
-                ->where(fn ($q) => $q->where('approval_status', 'approved')->orWhereNull('approval_status'))
-                ->where(fn ($q) => $q->where('is_suspended', false)->orWhereNull('is_suspended'))
-                ->pluck('id')
-                ->each(fn ($tailorId) => $this->notify(
-                    $tailorId,
-                    'open_order',
-                    'ახალი გადაკეთების მოთხოვნა',
-                    'მომხმარებელს სამოსის გადაკეთება სურს. თუ სამუშაოს აიღებთ, გამოუგზავნეთ Kere-ს ფასისა და ვადის შეფასება თქვენი პანელიდან.',
-                    $order->id,
-                    ['order_type' => 'remodel']
-                ));
+            $this->announceOpenOrder(
+                User::ableToTakeWork()->where('does_remodeling', true),
+                $order,
+                'ახალი გადაკეთების მოთხოვნა',
+                'მომხმარებელს სამოსის გადაკეთება სურს. თუ სამუშაოს აიღებთ, გამოუგზავნეთ Kere-ს ფასისა და ვადის შეფასება თქვენი პანელიდან.',
+                self::OPEN_REMODEL_SMS,
+                ['order_type' => 'remodel']
+            );
 
             return $order;
         });
