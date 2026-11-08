@@ -6,6 +6,8 @@ import { DashboardHeader } from '../components/tailor/DashboardHeader';
 import { StatsCards } from '../components/tailor/StatsCards';
 import { OrdersList, type TailorOrder } from '../components/tailor/OrdersList';
 import { AvailableDesigns } from '../components/tailor/AvailableDesigns';
+import { SentEstimates } from '../components/tailor/SentEstimates';
+import { OrderTabs, type OrderTab } from '../components/tailor/OrderTabs';
 import { ProductManager, type TailorProductFull } from '../components/tailor/ProductManager';
 import { TailorProfileEditor } from '../components/tailor/TailorProfileEditor';
 import { WorkPreferencesCard } from '../components/tailor/WorkPreferencesCard';
@@ -23,6 +25,9 @@ export default function TailorDashboard() {
     const token = getAuthToken();
 
     const [orders,   setOrders]   = useState<TailorOrder[]>([]);
+    const [orderTab, setOrderTab] = useState<OrderTab>('new');
+    const [newCount, setNewCount] = useState<number | null>(null);
+    const [sentCount, setSentCount] = useState<number | null>(null);
     const [products, setProducts] = useState<TailorProductFull[]>([]);
     const [loadingOrders,   setLoadingOrders]   = useState(true);
     const [loadingProducts, setLoadingProducts] = useState(true);
@@ -304,26 +309,28 @@ export default function TailorDashboard() {
                     </motion.div>
                 )}
 
-                {/* ── Available design requests (open pool) ── */}
+                {/* ── Work: new requests, sent estimates, my orders ── */}
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
                 >
-                    <AvailableDesigns />
-                </motion.div>
-
-                {/* ── Orders ── */}
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.15 }}
-                >
-                    {loadingOrders ? (
-                        <DashboardSkeleton />
-                    ) : (
-                        <OrdersList orders={orders} onStatusChange={handleStatusChange} onOrderUpdated={handleOrderUpdated} />
-                    )}
+                    <OrderTabs
+                        active={orderTab}
+                        onChange={setOrderTab}
+                        counts={{
+                            new: newCount,
+                            sent: sentCount,
+                            mine: loadingOrders ? null : orders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled').length,
+                        }}
+                        panels={{
+                            new: <AvailableDesigns onCount={setNewCount} />,
+                            sent: <SentEstimates active={orderTab === 'sent'} onCount={setSentCount} onShowMine={() => setOrderTab('mine')} />,
+                            mine: loadingOrders
+                                ? <DashboardSkeleton />
+                                : <OrdersList orders={orders} onStatusChange={handleStatusChange} onOrderUpdated={handleOrderUpdated} />,
+                        }}
+                    />
                 </motion.div>
 
                 <ChangePassword />

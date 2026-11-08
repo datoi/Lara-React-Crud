@@ -4,12 +4,12 @@ import { Check, Loader2, Scissors } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/button';
 import { getAuthToken } from '../../hooks/useAuth';
-import { readProductName } from '../DesignSpecList';
 import { OpenDesignDialog } from './OpenDesignDialog';
 import { OpenDesignPicture } from './OpenDesignPicture';
-import { GARMENT_KEYS, readStudioChoices, type OpenOrder, type StudioProduct } from './openOrders';
+import { openOrderTitle, readStudioChoices, type OpenOrder, type StudioProduct } from './openOrders';
 
-export function AvailableDesigns() {
+/** `onCount` reports how many requests are open, for the dashboard's tab. */
+export function AvailableDesigns({ onCount }: { onCount?: (count: number) => void }) {
     const { t, i18n } = useTranslation();
     const token = getAuthToken();
     const [orders,    setOrders]    = useState<OpenOrder[]>([]);
@@ -41,6 +41,10 @@ export function AvailableDesigns() {
     useEffect(() => { fetchOpenOrders(); }, [fetchOpenOrders]);
 
     useEffect(() => {
+        if (!loading && !loadError) onCount?.(orders.filter(o => o.my_request_status === null).length);
+    }, [orders, loading, loadError, onCount]);
+
+    useEffect(() => {
         const missing = [...new Set(orders
             .map(o => readStudioChoices(o.custom_design_data?.customization)?.product_slug)
             .filter((slug): slug is string => !!slug && !(slug in products)))];
@@ -66,13 +70,7 @@ export function AvailableDesigns() {
         ));
     };
 
-    const titleOf = (order: OpenOrder) => {
-        if (order.order_type === 'remodel') return t('tailorComponents.remodelBadge');
-        const design = order.custom_design_data;
-        const garmentKey = design?.garment_type ?? design?.clothingType ?? '';
-        return readProductName(design?.customization)
-            ?? ((GARMENT_KEYS[garmentKey] ? t(GARMENT_KEYS[garmentKey]) : garmentKey) || t('tailorComponents.customDesignBadge'));
-    };
+    const titleOf = (order: OpenOrder) => openOrderTitle(order, t);
     const dateOf = (order: OpenOrder) =>
         new Date(order.created_at).toLocaleDateString(i18n.language === 'ka' ? 'ka-GE' : 'en-GB');
     const productOf = (order: OpenOrder) => {

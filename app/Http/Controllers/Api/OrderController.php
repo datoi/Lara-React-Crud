@@ -577,31 +577,102 @@ class OrderController extends Controller
             ->whereIn('order_id', $orders->pluck('id'))
             ->pluck('status', 'order_id');
 
-        // Every approved tailor reads this feed, and the privacy policy promises
-        // the customer's name and measurements to the tailor they select — not to
-        // everyone who might bid. So the feed carries a first name, and only how
-        // many measurements were given, enough to price the job; the values
-        // reach the tailor once the order is theirs (formatOrder).
-        return response()->json(['orders' => $orders->map(function ($o) use ($myRequests) {
-            $design = $o->custom_design_data ?? [];
-            $measurementsCount = count($design['measurements'] ?? []);
-            unset($design['measurements']);
+        return response()->json(['orders' => $orders->map(fn ($o) => $this->unassignedOrderView($o) + [
+            'requests_count' => $o->tailor_requests_count,
+            'my_request_status' => $myRequests[$o->id] ?? null,
+        ])->values()]);
+    }
 
-            return [
-                'id' => $o->id,
-                'order_number' => $o->order_number,
-                'order_type' => $o->order_type,
-                'created_at' => $o->created_at?->toISOString(),
-                'custom_design_data' => $design,
-                'measurements_count' => $measurementsCount,
-                'expected_price' => $o->expected_price,
-                'needed_by' => $o->needed_by?->toDateString(),
-                // An older account may have only `name`, which holds the full name.
-                'customer' => ['name' => $o->user->first_name ?: Str::before($o->user->getFullName(), ' ')],
-                'requests_count' => $o->tailor_requests_count,
-                'my_request_status' => $myRequests[$o->id] ?? null,
-            ];
-        })->values()]);
+    /**
+     * An order as a tailor sees it before it is theirs. Every approved tailor
+     * reads the open feed, and the privacy policy promises the customer's name
+     * and measurements to the tailor Kere chooses, not to everyone who sends an
+     * estimate. So it carries a first name, and only how many measurements were
+     * given, enough to price the job; the values reach the tailor once the order
+     * is theirs (formatOrder).
+     */
+    private function unassignedOrderView(Order $o): array
+    {
+        $design = $o->custom_design_data ?? [];
+        $measurementsCount = count($design['measurements'] ?? []);
+        unset($design['measurements']);
+
+        return [
+            'id' => $o->id,
+            'order_number' => $o->order_number,
+            'order_type' => $o->order_type,
+            'created_at' => $o->created_at?->toISOString(),
+            'custom_design_data' => $design,
+            'measurements_count' => $measurementsCount,
+            'expected_price' => $o->expected_price,
+            'needed_by' => $o->needed_by?->toDateString(),
+            // An older account may have only `name`, which holds the full name.
+            'customer' => ['name' => $o->user->first_name ?: Str::before($o->user->getFullName(), ' ')],
+        ];
+    }
+
+    // ─── GET /api/tailor/requests ────────────────────────────────────────────
+    // The estimates this tailor sent Kere, newest first, and what became of
+    // each ("გაშვებული შეთავაზებები" in the dashboard; the CEO's request,
+    // 2026-11-08). Open requests disappear from the feed once Kere chooses a
+    // tailor, so without this a tailor never learns how an estimate ended.
+
+    public function sentEstimates(Request $request)
+    {
+        $user = $request->user();
+        if ($user->role !== 'tailor') {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        if ($user->approval_status === 'pending' || $user->approval_status === 'rejected') {
+            return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
+        }
+
+        $estimates = TailorRequest::with('order.user')
+            ->where('tailor_id', $user->id)
+            ->latest()
+            ->orderByDesc('id')
+            ->limit(100)
+            ->get()
+            ->filter(fn ($r) => $r->order !== null);
+
+        return response()->json(['estimates' => $estimates->map(fn (TailorRequest $r) => [
+            'id' => $r->id,
+            'offered_price' => $r->offered_price,
+            'ready_in_days' => $r->ready_in_days,
+            'message' => $r->message,
+            'sent_at' => $r->created_at?->toISOString(),
+            'state' => $this->estimateState($r, $user),
+            // Once the order is theirs it is in "My orders" with its details;
+            // until then, and for an order another tailor makes, this view only.
+            'order' => $this->unassignedOrderView($r->order),
+        ])->values()]);
+    }
+
+    /**
+     * What became of an estimate, for the tailor who sent it:
+     * waiting (Kere has not chosen), offered (Kere sent the customer an offer
+     * based on it), chosen (the order is theirs), not_chosen (another tailor
+     * makes it), or closed (the request was cancelled).
+     */
+    private function estimateState(TailorRequest $r, User $tailor): string
+    {
+        $order = $r->order;
+
+        if ($r->status === 'accepted' || $order->tailor_id === $tailor->id) {
+            return 'chosen';
+        }
+        if ($order->status === 'cancelled') {
+            return 'closed';
+        }
+        if ($r->status === 'declined' || $order->tailor_id !== null) {
+            return 'not_chosen';
+        }
+        if ($order->hasOpenOffer() && (int) $order->offer_request_id === $r->id) {
+            return 'offered';
+        }
+
+        return 'waiting';
     }
 
     // ─── POST /api/tailor/orders/{id}/request ────────────────────────────────

@@ -1,6 +1,7 @@
+import type { TFunction } from 'i18next';
 import type { Fabric, LayerCategory } from '../../types/customizer';
 import { COLOUR_SPEC_ATTRIBUTE } from '../customizer/designPhoto';
-import { readSpec } from '../DesignSpecList';
+import { readProductName, readSpec } from '../DesignSpecList';
 
 /** What a studio design is photographed from: the garment's layers and fabrics. */
 export interface StudioProduct {
@@ -84,6 +85,26 @@ export const GARMENT_KEYS: Record<string, string> = {
     'skirt':      'orderReview.garment_skirt',
     'coat':       'orderReview.garment_coat',
 };
+
+/** A request named for a tailor: a remodel, the studio garment, or the garment heading. */
+export function openOrderTitle(order: Pick<OpenOrder, 'order_type' | 'custom_design_data'>, t: TFunction): string {
+    if (order.order_type === 'remodel') return t('tailorComponents.remodelBadge');
+    const design = order.custom_design_data;
+    const garmentKey = design?.garment_type ?? design?.clothingType ?? '';
+    return readProductName(design?.customization)
+        ?? ((GARMENT_KEYS[garmentKey] ? t(GARMENT_KEYS[garmentKey]) : garmentKey) || t('tailorComponents.customDesignBadge'));
+}
+
+/** An estimate the tailor sent Kere, as `GET /api/tailor/requests` returns it. */
+export interface SentEstimate {
+    id: number;
+    offered_price: number | null;
+    ready_in_days: number | null;
+    message: string | null;
+    sent_at: string;
+    state: 'waiting' | 'offered' | 'chosen' | 'not_chosen' | 'closed';
+    order: Omit<OpenOrder, 'requests_count' | 'my_request_status'>;
+}
 
 export const isImageUrl = (url: string | null | undefined): url is string =>
     !!url && /\.(jpe?g|png|webp|svg)$/i.test(url);
