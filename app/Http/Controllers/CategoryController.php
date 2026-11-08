@@ -9,13 +9,13 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $categories = Category::withCount('products')->get();
+        $categories = Category::withCount(['products' => fn ($q) => $q->onSale()])->get();
 
         return response()->json(
             $categories->map(function ($cat) {
                 // One random product with an actual image for the category card.
                 // Compared as text: PostgreSQL has no `<>` for a json column.
-                $product = Product::where('category_id', $cat->id)
+                $product = Product::onSale()->where('category_id', $cat->id)
                     ->whereNotNull('images')
                     ->whereRaw("CAST(images AS TEXT) <> '[]'")
                     ->inRandomOrder()

@@ -37,6 +37,7 @@ const CODES: Record<string, string> = {
     registration_incomplete: 'register.errorFinishFirst',
     guardian_consent_pending: 'customerDashboard.guardianPendingBodyNoEmail',
     measurements_required: 'measurements.orderFromPage',
+    product_unavailable: 'productCustomization.errorNoLongerAvailable',
     custom_orders_paused: 'designer.ordersPaused',
 
     // Kere's offer

@@ -45,7 +45,7 @@ Route::post('/password/forgot', [PasswordController::class, 'forgot'])->middlewa
 Route::post('/password/reset', [PasswordController::class, 'reset'])->middleware('throttle:20,1,password-reset');
 
 Route::get('/products', [ProductController::class, 'index']);
-Route::get('/products/{product}', [ProductController::class, 'show']);
+Route::get('/products/{product}', [ProductController::class, 'show'])->whereNumber('product');
 Route::get('/products/{id}/meta', [ProductController::class, 'meta']);
 Route::get('/products/{productId}/reviews', [ReviewController::class, 'productReviews']);
 Route::get('/categories', [CategoryController::class, 'index']);
@@ -109,7 +109,7 @@ Route::middleware(['auth.bearer', 'role:customer', 'throttle:20,1,api-uploads', 
 
 // A tailor photographs a remodel's garment on arrival and when finished, up to
 // ten photos each, so these get the same kind of bucket as customer uploads.
-Route::middleware(['auth.bearer', 'role:tailor', 'throttle:20,1,api-tailor-uploads', 'throttle:100,1440,api-tailor-uploads-daily'])->group(function () {
+Route::middleware(['auth.bearer', 'tailor.active', 'throttle:20,1,api-tailor-uploads', 'throttle:100,1440,api-tailor-uploads-daily'])->group(function () {
     Route::post('/upload/order-photo', [UploadController::class, 'orderPhoto']);
 });
 
@@ -148,18 +148,21 @@ Route::middleware(['auth.bearer', 'throttle:10,1,api-writes'])->group(function (
 
     // Tailor
     Route::patch('/tailor/profile', [TailorController::class, 'updateProfile']);
-    Route::post('/tailor/products', [ProductController::class, 'store']);
-    Route::patch('/tailor/products/{id}', [ProductController::class, 'update']);
-    Route::patch('/tailor/products/{id}/status', [ProductController::class, 'updateStatus']);
-    Route::delete('/tailor/products/{id}', [ProductController::class, 'destroy']);
+    // Listing products and public uploads: approved, unsuspended tailors only.
+    Route::middleware('tailor.active')->group(function () {
+        Route::post('/tailor/products', [ProductController::class, 'store']);
+        Route::patch('/tailor/products/{id}', [ProductController::class, 'update']);
+        Route::patch('/tailor/products/{id}/status', [ProductController::class, 'updateStatus']);
+        Route::delete('/tailor/products/{id}', [ProductController::class, 'destroy']);
+        Route::post('/upload/image', [UploadController::class, 'image']);
+        Route::post('/upload/profile-image', [UploadController::class, 'profileImage']);
+    });
 
     // Support
     Route::post('/support-email', [SupportEmailController::class, 'store']);
 
-    // Upload
-    Route::post('/upload/image', [UploadController::class, 'image']);
-    Route::post('/upload/profile-image', [UploadController::class, 'profileImage']);
     // Private: stored off the web root, never served back. See the controller.
+    // Open to a pending tailor, since it is part of being vetted.
     Route::post('/tailor/id-document', [UploadController::class, 'tailorIdDocument']);
 
     // Chat writes

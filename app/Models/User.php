@@ -225,6 +225,14 @@ class User extends Authenticatable
             && ! $this->is_suspended;
     }
 
+    /** canTakeWork() as a query. */
+    public function scopeAbleToTakeWork(Builder $query): Builder
+    {
+        return $query->where('role', 'tailor')
+            ->where(fn (Builder $q) => $q->whereNull('approval_status')->orWhere('approval_status', 'approved'))
+            ->where(fn (Builder $q) => $q->whereNull('is_suspended')->orWhere('is_suspended', false));
+    }
+
     public function getFullName(): string
     {
         return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? '')) ?: ($this->name ?? '');

@@ -31,7 +31,7 @@ Route::get('/sitemap.xml', function () {
         ['loc' => $base . '/signin',      'changefreq' => 'yearly',  'priority' => '0.4'],
     ];
 
-    $products = Product::select('id', 'updated_at')->get();
+    $products = Product::onSale()->select('id', 'updated_at')->get();
 
     $xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
@@ -63,7 +63,7 @@ Route::get('/sitemap.xml', function () {
 // that keeps stale/deleted product URLs indexed. Serve the same app shell but
 // with a 404 status when the product is gone so crawlers drop the URL.
 Route::get('/product/{id}', function (string $id) {
-    return response()->view('app', [], Product::whereKey($id)->exists() ? 200 : 404);
+    return response()->view('app', [], Product::onSale()->whereKey($id)->exists() ? 200 : 404);
 })->where('id', '[0-9]+');
 
 // ─── Gateway return ──────────────────────────────────────────────────────────

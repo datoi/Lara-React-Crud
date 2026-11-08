@@ -63,11 +63,6 @@ class UploadController extends Controller
 
     public function image(Request $request)
     {
-        $user = $request->user();
-        if ($user->role !== 'tailor') {
-            return response()->json(['message' => 'Unauthorized.'], 403);
-        }
-
         $request->validate([
             'image' => 'required|image|mimes:jpeg,png,webp|max:5120', // 5 MB
         ]);
@@ -94,11 +89,6 @@ class UploadController extends Controller
 
     public function profileImage(Request $request)
     {
-        $user = $request->user();
-        if ($user->role !== 'tailor') {
-            return response()->json(['message' => 'Unauthorized.'], 403);
-        }
-
         $request->validate([
             'image' => 'required|image|mimes:jpeg,png,webp|max:5120', // 5 MB
         ]);

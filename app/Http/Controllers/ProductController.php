@@ -20,7 +20,7 @@ class ProductController extends Controller
     // out, a bare number the cart uses to split the bag into deliveries.
     public function index(Request $request)
     {
-        $query = Product::with('category')
+        $query = Product::onSale()->with('category')
             ->withCount('reviews')
             ->withAvg('reviews', 'rating');
 
@@ -106,15 +106,16 @@ class ProductController extends Controller
 
     // ─── GET /api/products/{product} ─────────────────────────────────────────
 
-    public function show(Product $product)
+    public function show(int $product)
     {
+        $product = Product::onSale()->findOrFail($product);
         $product->loadCount('reviews')->loadAvg('reviews', 'rating');
         $product->load('category');
         $product->reviews_count  = (int) $product->reviews_count;
         $product->average_rating = $product->reviews_avg_rating ? round((float) $product->reviews_avg_rating, 1) : null;
         unset($product->reviews_avg_rating);
 
-        $related = Product::where('category_id', $product->category_id)
+        $related = Product::onSale()->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->take(4)
             ->get();
@@ -130,7 +131,7 @@ class ProductController extends Controller
 
     public function meta(int $id)
     {
-        $product = Product::with('category')->findOrFail($id);
+        $product = Product::onSale()->with('category')->findOrFail($id);
         $image   = is_array($product->images) && count($product->images) ? $product->images[0] : null;
 
         return response()->json([
@@ -204,9 +205,6 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-        if ($user->role !== 'tailor') {
-            return response()->json(['message' => 'Unauthorized.'], 403);
-        }
 
         $data = $request->validate([
             'name'                  => 'required|string|max:200',

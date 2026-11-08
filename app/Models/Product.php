@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -34,6 +35,18 @@ class Product extends Model
     public function tailor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'tailor_id');
+    }
+
+    /**
+     * Products a customer can see and buy: Kere's own (no tailor) or a tailor's
+     * who can take work, the same rule as User::canTakeWork(). A pending,
+     * rejected or suspended tailor's products are off sale, since nobody would
+     * ever make the order (QA_REPORT.md QA-04).
+     */
+    public function scopeOnSale(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q->whereNull('tailor_id')
+            ->orWhereHas('tailor', fn (Builder $t) => $t->ableToTakeWork()));
     }
 
     public function reviews(): HasMany

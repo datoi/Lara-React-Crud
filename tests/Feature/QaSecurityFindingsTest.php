@@ -423,37 +423,78 @@ it('proves SEC-5: an email with a CR/LF inside a quoted local part passes valida
     expect($raw)->toContain("\r\nbcc: attacker@evil.test");
 });
 
-it('proves SEC-6: a pending tailor can list products, which customers can buy and pay for, but the tailor can never see the order', function () {
+it('guards SEC-6: a pending or rejected tailor can neither list, change nor upload, and their old products are off sale', function (string $status) {
     Http::fake();
     Mail::fake();
-    [$pending, $pendingToken] = qasfTailor(['approval_status' => 'pending']);
+    [$tailor, $token] = qasfTailor(['approval_status' => $status]);
+    [, $customerToken] = qasfUser();
+    $category = Category::firstOrCreate(['slug' => 'shirts'], ['name' => 'Shirts']);
+    $existing = qasfProduct($tailor, ['name' => 'Listed before review']);
+
+    $refused = fn ($response) => $response->assertForbidden()->assertJsonPath('code', 'pending_approval');
+    $refused($this->withToken($token)->postJson('/api/tailor/products', ['name' => 'Unvetted shirt', 'price' => 30, 'category_id' => $category->id]));
+    $refused($this->withToken($token)->patchJson("/api/tailor/products/{$existing->id}", ['price' => 1]));
+    $refused($this->withToken($token)->patchJson("/api/tailor/products/{$existing->id}/status", ['status' => 'active']));
+    $refused($this->withToken($token)->deleteJson("/api/tailor/products/{$existing->id}"));
+    $refused($this->withToken($token)->postJson('/api/upload/image'));
+    $refused($this->withToken($token)->postJson('/api/upload/profile-image'));
+    $refused($this->withToken($token)->postJson('/api/upload/order-photo'));
+
+    expect(Product::count())->toBe(1)->and($existing->fresh()->price)->toBe(50.0);
+    $this->getJson('/api/products')->assertJsonMissing(['name' => 'Listed before review']);
+    $this->getJson("/api/products/{$existing->id}")->assertNotFound();
+    $this->get("/product/{$existing->id}")->assertNotFound();
+    $this->get('/sitemap.xml')->assertDontSee("/product/{$existing->id}<", false);
+    expect(collect($this->getJson('/api/categories')->json())->firstWhere('slug', 'shirts')['products_count'])->toBe(0);
+    $this->withToken($customerToken)->postJson('/api/orders', ['product_id' => $existing->id, 'quantity' => 1])
+        ->assertStatus(409)->assertJsonPath('code', 'product_unavailable');
+})->with(['pending', 'rejected']);
+
+it('guards SEC-6: an approved tailor still lists products and uploads, and their products sell', function () {
+    Http::fake();
+    Mail::fake();
+    [, $token] = qasfTailor();
     [, $customerToken] = qasfUser();
     $category = Category::firstOrCreate(['slug' => 'shirts'], ['name' => 'Shirts']);
 
-    $productId = $this->withToken($pendingToken)->postJson('/api/tailor/products', [
-        'name' => 'Unvetted shirt', 'price' => 30, 'category_id' => $category->id, 'is_customizable' => false,
-    ])->assertCreated()->json('product.id');
-
-    $this->getJson('/api/products')->assertJsonFragment(['name' => 'Unvetted shirt']);
-    $orderId = $this->withToken($customerToken)->postJson('/api/orders', ['product_id' => $productId, 'quantity' => 1])->assertCreated()->json('id');
-
-    expect(Order::find($orderId)->tailor_id)->toBe($pending->id);
-    $this->withToken($pendingToken)->getJson('/api/tailor/orders')->assertForbidden();
-    // The same pending tailor may also push files into the public bucket.
-    $this->withToken($pendingToken)->postJson('/api/upload/image')->assertStatus(422);
-    $this->withToken($pendingToken)->postJson('/api/upload/order-photo')->assertStatus(422);
+    $id = $this->withToken($token)->postJson('/api/tailor/products', ['name' => 'Vetted shirt', 'price' => 30, 'category_id' => $category->id, 'is_customizable' => false])
+        ->assertCreated()->json('product.id');
+    $this->withToken($token)->postJson('/api/upload/image')->assertStatus(422); // reached validation
+    $this->getJson("/api/products/{$id}")->assertOk();
+    $this->withToken($customerToken)->postJson('/api/orders', ['product_id' => $id, 'quantity' => 1])->assertCreated();
 });
 
-it('proves SEC-7: a suspended tailor\'s products stay on sale and new orders go to them', function () {
+it('guards SEC-7: a suspended tailor\'s products leave sale and orders for them are refused, also in a bag', function () {
     Http::fake();
     Mail::fake();
     [$tailor] = qasfTailor(['is_suspended' => true]);
     [, $customerToken] = qasfUser();
     $product = qasfProduct($tailor);
 
+    $this->getJson("/api/products/{$product->id}")->assertNotFound();
+    $this->withToken($customerToken)->postJson('/api/orders', ['product_id' => $product->id, 'quantity' => 1])
+        ->assertStatus(409)->assertJsonPath('code', 'product_unavailable');
+    $this->withToken($customerToken)->postJson('/api/orders', ['order_type' => 'marketplace', 'items' => [['product_id' => $product->id, 'quantity' => 1]]])
+        ->assertStatus(409);
+
+    expect(Order::count())->toBe(0)->and($product->fresh()->stock)->toBe(10);
+
+    $tailor->update(['is_suspended' => false]);
     $this->getJson("/api/products/{$product->id}")->assertOk();
+});
+
+it('guards SEC-20: a product without a tailor never goes to a tailor who cannot take work', function () {
+    Http::fake();
+    Mail::fake();
+    User::where('role', 'tailor')->delete();
+    qasfTailor(['approval_status' => 'pending']);
+    qasfTailor(['is_suspended' => true]);
+    [$approved] = qasfTailor();
+    [, $customerToken] = qasfUser();
+    $product = qasfProduct(null);
+
     $id = $this->withToken($customerToken)->postJson('/api/orders', ['product_id' => $product->id, 'quantity' => 1])->assertCreated()->json('id');
-    expect(Order::find($id)->tailor_id)->toBe($tailor->id);
+    expect(Order::find($id)->tailor_id)->toBe($approved->id);
 });
 
 it('proves SEC-8: one customer can hold a product\'s whole stock in unpaid orders that never expire', function () {

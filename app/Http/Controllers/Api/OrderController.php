@@ -24,7 +24,7 @@ class OrderController extends Controller
 {
     private function randomTailor(): ?User
     {
-        return User::where('role', 'tailor')
+        return User::ableToTakeWork()
             ->where(fn ($q) => $q->where('is_available', true)->orWhereNull('is_available'))
             ->inRandomOrder()
             ->first();
@@ -143,7 +143,12 @@ class OrderController extends Controller
             ]];
         }
 
-        $products = Product::whereIn('id', array_column($lines, 'product_id'))->get()->keyBy('id');
+        // Only products on sale: one whose tailor was suspended or is not yet
+        // approved would be paid for and never made.
+        $products = Product::onSale()->whereIn('id', array_column($lines, 'product_id'))->get()->keyBy('id');
+        if ($products->count() !== count(array_unique(array_column($lines, 'product_id')))) {
+            return response()->json(['message' => 'This product is no longer available.', 'code' => 'product_unavailable'], 409);
+        }
 
         // A product its tailor cannot make without measurements cannot be ordered
         // without them. Cart lines carry none, so such a product is bought from

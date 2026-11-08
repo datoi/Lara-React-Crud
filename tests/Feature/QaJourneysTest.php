@@ -206,7 +206,7 @@ test('JRN a rejected tailor is shut out of the tailor endpoints', function () {
     $this->withToken($tailorToken)->getJson('/api/tailor/open-orders')->assertStatus(403);
 });
 
-test('BUG JRN-1: a pending or rejected tailor can still publish products to the public catalogue (known §15 #7)', function () {
+test('JRN-1: a pending or rejected tailor cannot publish products to the public catalogue', function () {
     [, $tailorToken] = qaj_tailor(['approval_status' => 'rejected']);
     $categoryId = DB::table('categories')->insertGetId(['name' => 'Shirts', 'slug' => 'shirts-qa2', 'created_at' => now(), 'updated_at' => now()]);
 
@@ -460,17 +460,18 @@ test('JRN an admin cannot suspend another admin', function () {
     $this->withToken($adminToken)->patchJson("/api/admin/users/{$other->id}/suspend")->assertStatus(422);
 });
 
-test('BUG JRN-3: a suspended tailor\'s products stay on sale and new paid orders are routed to them', function () {
+test('JRN-3: a suspended tailor\'s products leave sale, and an order for one is refused', function () {
     [, $customerToken] = qaj_user();
     [$tailor] = qaj_tailor(['is_suspended' => true]);
     $product = qaj_product($tailor);
+    $stock = $product->stock;
 
-    // The catalogue still lists it…
-    $this->getJson('/api/products')->assertOk()->assertJsonPath('data.0.id', $product->id);
+    $this->getJson('/api/products')->assertOk()->assertJsonPath('total', 0);
+    $this->getJson("/api/products/{$product->id}")->assertNotFound();
 
-    // …and ordering it should not hand work to an account Kere has shut out.
-    $status = $this->withToken($customerToken)->postJson('/api/orders', [
+    $this->withToken($customerToken)->postJson('/api/orders', [
         'order_type' => 'marketplace', 'product_id' => $product->id, 'quantity' => 1,
-    ])->status();
-    expect($status)->not->toBe(201);
+    ])->assertStatus(409)->assertJsonPath('code', 'product_unavailable');
+
+    expect(Order::count())->toBe(0)->and($product->fresh()->stock)->toBe($stock);
 });

@@ -922,6 +922,7 @@
         "createAccount": "Create an Account",
         "cancel": "Cancel",
         "errorSomethingWrong": "Something went wrong.",
+        "errorNoLongerAvailable": "This piece is no longer available.",
         "errorConnection": "Connection lost. Please try again.",
         "paymentDeferred": "We couldn't open the payment page. Your order is saved — you can pay it from your orders.",
         "paymentNote": "You pay by card through Kere when you place the order."
