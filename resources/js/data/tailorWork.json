@@ -1,0 +1,9 @@
+{
+    "_comment": "What a tailor wants to work on (the questionnaire on registration and in the dashboard). Read by App\\Support\\TailorWork and lib/tailorWork.ts, so both sides offer and accept the same choices. Labels are tailorWork.* in the locales.",
+    "remodelTypes": ["length", "fit", "fasteners", "repair", "complex"],
+    "newGarments": ["yes", "not_now", "no"],
+    "garmentTypes": ["everyday_dresses", "evening_dresses", "tops", "trousers", "jackets_suits", "coats"],
+    "complexity": ["simple", "medium", "complex", "any"],
+    "otherMax": 200,
+    "commentMax": 1000
+}

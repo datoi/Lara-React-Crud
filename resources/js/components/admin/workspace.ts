@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import type { StoredWorkAnswers } from '../../lib/tailorWork';
 import { getAuthToken } from '../../hooks/useAuth';
 import { formatCalendarDay } from '../../lib/dates';
 
@@ -93,6 +94,8 @@ export interface AdminUser {
     /** A 16-17 year old whose guardian has not confirmed; they cannot order. */
     guardian_consent_pending?: boolean;
     score: TailorScoreValue | null;
+    /** A tailor's answers to the work questionnaire; null until they answer. */
+    work_preferences?: StoredWorkAnswers | null;
     created_at: string;
 }
 
@@ -104,6 +107,7 @@ export interface PendingTailor {
     created_at: string;
     business_type: string | null;
     does_remodeling: boolean | null;
+    work_preferences: StoredWorkAnswers | null;
     workspace_address: string | null;
     years_experience: number | null;
     legal_status: string | null;

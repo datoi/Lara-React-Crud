@@ -20,7 +20,7 @@ test('a tailor must answer every trade question', function () {
         'password_confirmation' => 'password123',
         'role' => 'tailor',
     ])->assertStatus(422)->assertJsonValidationErrors([
-        'business_type', 'does_remodeling', 'workspace_address', 'experience_band',
+        'business_type', 'work_preferences', 'workspace_address', 'experience_band',
         'legal_status', 'national_id',
     ]);
 });

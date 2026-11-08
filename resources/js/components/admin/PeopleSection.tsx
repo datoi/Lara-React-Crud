@@ -3,6 +3,7 @@ import { ChevronRight, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { OrderPreset } from './OrdersSection';
+import { workAnswerFacts } from '../../lib/tailorWork';
 import { DeskStatusLabel, Facts, SidePanel, useDesk } from './WorkspaceUi';
 import { ago, api, daysSince, deskStatus, initials, isActive, itemsText, longDay, scoreText, shortDay, type AdminOrder, type AdminUser, type PendingTailor } from './workspace';
 
@@ -229,6 +230,10 @@ export function PersonPanel({
         isCustomer ? t('adminDesk.ordersCount', { count: theirs.length }) : `${t('adminDesk.activeOrders', { count: active })} · ${t('adminDesk.deliveredCount', { count: delivered })}`,
     ]);
     if (!isCustomer) facts.push([t('adminDesk.score'), scoreText(user.score, t)]);
+    if (user.role === 'tailor') {
+        if (user.work_preferences) facts.push(...workAnswerFacts(t, user.work_preferences));
+        else facts.push([t('adminDesk.workPreferences'), t('adminDesk.workNotAnswered')]);
+    }
     if (user.approval_status === 'rejected') facts.push([t('adminDesk.approval'), t('adminDesk.rejected')]);
     if (user.guardian_consent_pending) facts.push([t('adminDesk.guardian'), t('adminDashboard.awaitingGuardian')]);
 
@@ -311,7 +316,9 @@ export function ApplicationPanel({ application, onClose, onDecided }: { applicat
     if (a.workspace_address) facts.push([t('adminDesk.worksFrom'), a.workspace_address]);
     if (a.years_experience !== null) facts.push([t('adminDesk.experience'), experience(a, t)]);
     if (a.legal_status) facts.push([t('adminDesk.legalStatus'), t(`register.legal_status_${a.legal_status}`)]);
-    if (a.does_remodeling !== null) facts.push([t('adminDesk.remodels'), t(a.does_remodeling ? 'adminDesk.yes' : 'adminDesk.no')]);
+    // The work questionnaire; an application begun before it asked only about remodels.
+    if (a.work_preferences) facts.push(...workAnswerFacts(t, a.work_preferences));
+    else if (a.does_remodeling !== null) facts.push([t('adminDesk.remodels'), t(a.does_remodeling ? 'adminDesk.yes' : 'adminDesk.no')]);
 
     return (
         <SidePanel

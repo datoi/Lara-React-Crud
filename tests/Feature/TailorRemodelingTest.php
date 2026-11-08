@@ -53,7 +53,8 @@ function openOrder(string $type): Order
 test('the answer is carried to the account, either way', function (bool $answer) {
     $phone = $answer ? '+995555600601' : '+995555600602';
 
-    $this->postJson('/api/register/initiate', tailorPayload(['phone' => $phone, 'does_remodeling' => $answer]))
+    $answers = workAnswers(['remodel_none' => ! $answer, 'remodel_types' => $answer ? ['repair'] : []]);
+    $this->postJson('/api/register/initiate', tailorPayload(['phone' => $phone, 'work_preferences' => $answers]))
         ->assertStatus(200);
 
     $record = Verification::where('phone', $phone)->firstOrFail();
@@ -224,7 +225,7 @@ test('a studio order keeps every choice it was placed with, colour included', fu
 test('a tailor can change the answer from their profile', function () {
     [$tailor, $token] = tailorWithToken(true);
 
-    $this->withToken($token)->patchJson('/api/tailor/profile', ['does_remodeling' => false])
+    $this->withToken($token)->patchJson('/api/tailor/profile', ['work_preferences' => workAnswers(['remodel_none' => true, 'remodel_types' => []])])
         ->assertOk()->assertJsonPath('tailor.does_remodeling', false);
 
     expect($tailor->fresh()->does_remodeling)->toBeFalse();

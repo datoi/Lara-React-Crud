@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\TailorWork;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The tailor's own profile. Kere publishes nothing about its tailors and
@@ -27,6 +29,8 @@ class TailorController extends Controller
             'is_available'     => (bool) ($tailor->is_available ?? true),
             'turnaround_days'  => $tailor->turnaround_days,
             'does_remodeling'  => (bool) $tailor->does_remodeling,
+            // Null until they have answered the questionnaire.
+            'work_preferences' => $tailor->work_preferences,
         ];
     }
 
@@ -73,8 +77,20 @@ class TailorController extends Controller
             'specialty'        => 'nullable|string|max:200',
             'years_experience' => "nullable|integer|min:0|max:{$maxExperience}",
             'profile_image'    => 'nullable|string|max:2000',
-            'does_remodeling'  => 'sometimes|boolean',
+            // Whether they take remodel or design work follows these answers;
+            // it is not set on its own any more. Checked only when sent, so the
+            // profile editor can save without them.
+            ...($request->has('work_preferences') ? TailorWork::rules('work_preferences') : []),
         ]);
+
+        if (array_key_exists('work_preferences', $data)) {
+            [$answers, $incomplete] = TailorWork::normalize($data['work_preferences']);
+            if ($incomplete) {
+                throw ValidationException::withMessages(["work_preferences.{$incomplete}" => 'work_answer_required']);
+            }
+            unset($data['work_preferences']);
+            $data += TailorWork::attributes($answers);
+        }
 
         $user->update($data);
 

@@ -18,6 +18,8 @@ import { Trans, useTranslation } from 'react-i18next';
 import { legalLink } from '../components/LegalConsent';
 import { serverMessageKey } from '../lib/serverMessage';
 import { TAILOR_HOME } from '../lib/tailorAccess';
+import { WorkPreferencesForm } from '../components/tailor/WorkPreferencesForm';
+import { EMPTY_WORK_ANSWERS, toPayload, validateWorkAnswers, type WorkAnswerErrors, type WorkAnswers } from '../lib/tailorWork';
 
 interface FormState {
     first_name: string;
@@ -27,7 +29,6 @@ interface FormState {
     password: string;
     password_confirmation: string;
     business_type: string;
-    does_remodeling: '' | 'yes' | 'no';
     workspace_address: string;
     experience_band: string;
     legal_status: string;
@@ -42,7 +43,6 @@ const EMPTY: FormState = {
     password: '',
     password_confirmation: '',
     business_type: '',
-    does_remodeling: '',
     workspace_address: '',
     experience_band: '',
     legal_status: '',
@@ -67,17 +67,26 @@ const BUSINESS_TYPES = ['independent', 'atelier', 'workshop', 'designer'] as con
 const EXPERIENCE_BANDS = ['under_1', '1_3', '3_5', '5_10', 'over_10'] as const;
 const LEGAL_STATUSES = ['individual', 'sole_trader', 'llc', 'other'] as const;
 
-/** Which questions live on which page of the form. */
+/** Which questions live on which page of the form. Page 3 is the work questionnaire. */
 const PAGE_FIELDS: Record<number, (keyof FormState)[]> = {
     1: ['first_name', 'last_name', 'email', 'phone', 'password', 'password_confirmation'],
-    2: ['business_type', 'does_remodeling', 'workspace_address', 'experience_band'],
-    3: ['legal_status', 'national_id'],
+    2: ['business_type', 'workspace_address', 'experience_band'],
+    4: ['legal_status', 'national_id'],
+};
+
+const WORK_PAGE = 3;
+
+const PAGE_TITLES: Record<number, string> = {
+    1: 'register.stepTitle1',
+    2: 'register.stepTitle2',
+    3: 'register.stepTitleWork',
+    4: 'register.stepTitle3',
 };
 
 /** A message per field, not a value: errors are strings whatever the field holds. */
 type FormErrors = Partial<Record<keyof FormState | 'general', string>>;
 
-const LAST_PAGE = 3;
+const LAST_PAGE = 4;
 
 type Step = 'form' | 'email-otp' | 'phone-otp';
 
@@ -90,6 +99,8 @@ export default function RegisterTailor() {
     const [form, setForm] = useState<FormState>(EMPTY);
     const [consent, setConsent] = useState<ConsentState>(NO_CONSENT);
     const [consentError, setConsentError] = useState('');
+    const [work, setWork] = useState<WorkAnswers>(EMPTY_WORK_ANSWERS);
+    const [workErrors, setWorkErrors] = useState<WorkAnswerErrors>({});
     const [checkingContact, setCheckingContact] = useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
     const [loading, setLoading] = useState(false);
@@ -138,7 +149,6 @@ export default function RegisterTailor() {
 
         if (target === 2) {
             if (!form.business_type) nextErrors.business_type = t('register.errorRequired');
-            if (!form.does_remodeling) nextErrors.does_remodeling = t('register.errorRequired');
             if (!form.workspace_address.trim()) nextErrors.workspace_address = t('register.errorRequired');
             if (!form.experience_band) nextErrors.experience_band = t('register.errorRequired');
 
@@ -147,7 +157,14 @@ export default function RegisterTailor() {
             return Object.keys(nextErrors).length === 0;
         }
 
-        if (target === 3) {
+        if (target === WORK_PAGE) {
+            const missing = validateWorkAnswers(work);
+            setWorkErrors(missing);
+
+            return Object.keys(missing).length === 0;
+        }
+
+        if (target === 4) {
             if (!form.legal_status) nextErrors.legal_status = t('register.errorRequired');
             if (!form.national_id.trim()) nextErrors.national_id = t('register.errorRequired');
 
@@ -290,7 +307,7 @@ export default function RegisterTailor() {
                     ...form,
                     ...consent,
                     email: form.email.trim() || null,
-                    does_remodeling: form.does_remodeling === 'yes',
+                    work_preferences: toPayload(work),
                     role: 'tailor',
                     // Recorded with the three boxes: the language they were read in.
                     locale: i18n.language === 'en' ? 'en' : 'ka',
@@ -326,12 +343,17 @@ export default function RegisterTailor() {
                     // look like nothing happened, so go back to the first page
                     // that owns one.
                     const rejected = Object.keys(mapped);
-                    const target = Object.keys(PAGE_FIELDS)
+                    const pageOf = (p: number) =>
+                        p === WORK_PAGE
+                            ? rejected.some((field) => field.startsWith('work_preferences'))
+                            : (PAGE_FIELDS[p] ?? []).some((field) => rejected.includes(field));
+                    const target = Object.keys(PAGE_TITLES)
                         .map(Number)
                         .sort()
-                        .find((p) =>
-                            PAGE_FIELDS[p].some((field) => rejected.includes(field)),
-                        );
+                        .find(pageOf);
+                    if (target === WORK_PAGE) {
+                        setErrors({ general: t('register.errorFieldInvalid') });
+                    }
 
                     if (target) {
                         setPage(target);
@@ -484,11 +506,11 @@ export default function RegisterTailor() {
                                 noValidate
                                 className="space-y-4"
                             >
-                                {/* Which of the three pages this is. Reads as progress
+                                {/* Which of the pages this is. Reads as progress
                                     rather than navigation: the pages are gated, so a dot
                                     is not a link. */}
                                 <div className="mb-5 flex items-center gap-2" aria-hidden="true">
-                                    {[1, 2, 3].map((n) => (
+                                    {Object.keys(PAGE_TITLES).map(Number).map((n) => (
                                         <span
                                             key={n}
                                             className={`h-1 flex-1 rounded-full transition-colors duration-150 ${
@@ -501,7 +523,7 @@ export default function RegisterTailor() {
                                 <p className="mb-4 text-xs text-black/45">
                                     {t('register.stepCounter', { current: page, total: LAST_PAGE })}
                                     {' — '}
-                                    {t(`register.stepTitle${page}`)}
+                                    {t(PAGE_TITLES[page])}
                                 </p>
 
                                 {page === 1 && (
@@ -771,34 +793,6 @@ export default function RegisterTailor() {
                                         )}
                                     </div>
 
-                                    <fieldset>
-                                        <legend className="mb-1.5 block text-xs font-medium">
-                                            {t('register.doesRemodeling')}
-                                        </legend>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {(['yes', 'no'] as const).map((answer) => (
-                                                <label
-                                                    key={answer}
-                                                    className={`flex h-11 cursor-pointer items-center justify-center rounded-md border bg-[var(--kere-panel)] text-sm transition-colors hover:border-black has-[:checked]:border-[#6F1D24] has-[:checked]:bg-[#6F1D24] has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#6F1D24] has-[:focus-visible]:ring-offset-2 ${errors.does_remodeling ? 'border-destructive' : 'border-black/15'}`}
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name="does_remodeling"
-                                                        value={answer}
-                                                        checked={form.does_remodeling === answer}
-                                                        onChange={() => setChoice('does_remodeling', answer)}
-                                                        className="sr-only"
-                                                    />
-                                                    {t(answer === 'yes' ? 'register.doesRemodelingYes' : 'register.doesRemodelingNo')}
-                                                </label>
-                                            ))}
-                                        </div>
-                                        <p className="mt-1.5 text-xs text-black/45">{t('register.doesRemodelingHint')}</p>
-                                        {errors.does_remodeling && (
-                                            <p className="mt-1.5 text-xs text-destructive">{errors.does_remodeling}</p>
-                                        )}
-                                    </fieldset>
-
                                     <div>
                                         <label htmlFor="tailor-workspace" className="mb-1.5 block text-xs font-medium">
                                             {t('register.workspaceAddress')}
@@ -842,7 +836,19 @@ export default function RegisterTailor() {
                                 </>
                                 )}
 
-                                {page === 3 && (
+                                {page === WORK_PAGE && (
+                                    <WorkPreferencesForm
+                                        value={work}
+                                        onChange={(next) => {
+                                            setWork(next);
+                                            setWorkErrors({});
+                                        }}
+                                        errors={workErrors}
+                                        idPrefix="register-work"
+                                    />
+                                )}
+
+                                {page === 4 && (
                                 <>
                                     <div>
                                         <label htmlFor="tailor-legal-status" className="mb-1.5 block text-xs font-medium">

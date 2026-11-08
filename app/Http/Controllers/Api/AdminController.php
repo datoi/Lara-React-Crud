@@ -474,6 +474,7 @@ class AdminController extends Controller
             // this list, which is a queue to act on, not a place to read them.
             'guardian_consent_pending' => $u->needsGuardianConsent() && $u->guardian_consent_at === null,
             'score' => $u->role === 'tailor' ? $scores->get($u->id) : null,
+            'work_preferences' => $u->role === 'tailor' ? $u->work_preferences : null,
             'created_at' => $u->created_at?->toDateString(),
         ]);
 
@@ -610,6 +611,7 @@ class AdminController extends Controller
                 // ID stays out of this list.
                 'business_type' => $u->business_type,
                 'does_remodeling' => $u->does_remodeling,
+                'work_preferences' => $u->work_preferences,
                 'workspace_address' => $u->workspace_address,
                 'years_experience' => $u->years_experience,
                 'legal_status' => $u->legal_status,

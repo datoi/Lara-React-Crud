@@ -39,7 +39,12 @@ class OrderController extends Controller
      */
     private function openOrderTypesFor(User $tailor): array
     {
-        return $tailor->does_remodeling ? ['custom', 'remodel'] : ['custom'];
+        // Design requests reach a tailor unless they said they take no new-garment
+        // work (null: not asked yet); remodels only when they take remodel work.
+        return array_values(array_filter([
+            $tailor->does_new_garments !== false ? 'custom' : null,
+            $tailor->does_remodeling ? 'remodel' : null,
+        ]));
     }
 
     /**
@@ -417,7 +422,7 @@ class OrderController extends Controller
 
             // Open pool: every approved tailor can see the design and send Kere an estimate
             $this->announceOpenOrder(
-                User::ableToTakeWork(),
+                User::ableToTakeWork()->where(fn ($q) => $q->whereNull('does_new_garments')->orWhere('does_new_garments', true)),
                 $order,
                 'ახალი მოთხოვნა',
                 "მომხმარებელმა შეუკვეთა ინდივიდუალური დიზაინი ({$garmentType}). თუ მისი შეკერვა გსურთ, გამოუგზავნეთ Kere-ს ფასის შეფასება თქვენი პანელიდან.",

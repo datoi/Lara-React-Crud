@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Verification;
 use App\Services\OtpService;
 use App\Support\LegalDocuments;
+use App\Support\TailorWork;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -61,7 +63,6 @@ class AuthController extends Controller
             'approval_status' => $isTailor ? 'pending' : null,
         ], $isTailor ? [
             'business_type' => $reg['business_type'] ?? null,
-            'does_remodeling' => $reg['does_remodeling'] ?? null,
             'workspace_address' => $reg['workspace_address'] ?? null,
             'years_experience' => $reg['years_experience'] ?? null,
             'legal_status' => $reg['legal_status'] ?? null,
@@ -69,7 +70,11 @@ class AuthController extends Controller
             // The three consent boxes were mandatory to submit the form, so
             // reaching here at all is the acceptance this timestamps.
             'terms_accepted_at' => now(),
-        ] : []);
+        ] + (isset($reg['work_preferences'])
+            ? TailorWork::attributes($reg['work_preferences'])
+            // A sign-up begun before the questionnaire existed answered only this.
+            : ['does_remodeling' => $reg['does_remodeling'] ?? null]
+        ) : []);
     }
 
     /**
@@ -160,8 +165,10 @@ class AuthController extends Controller
             // is required_if so a customer signing up is unaffected, and the
             // values are constrained here rather than trusted from the form.
             'business_type' => ['required_if:role,tailor', 'nullable', 'in:independent,atelier,workshop,designer'],
-            // Decides whether remodel requests are offered to them at all.
-            'does_remodeling' => ['exclude_unless:role,tailor', 'required', 'boolean'],
+            // What work they want (TailorWork): decides whether remodel and
+            // design requests are offered to them at all. Tailors only, since
+            // its nested rules would otherwise fail a customer who sends none.
+            ...($request->input('role') === 'tailor' ? TailorWork::rules('work_preferences') : []),
             'workspace_address' => ['required_if:role,tailor', 'nullable', 'string', 'max:255'],
             // The band the form offers, stored as the lower bound of its range
             // in the years_experience column that already exists.
@@ -189,6 +196,13 @@ class AuthController extends Controller
             'phone.unique' => 'phone_taken',
         ]);
 
+        if ($data['role'] === 'tailor') {
+            [$workPreferences, $incomplete] = TailorWork::normalize($data['work_preferences']);
+            if ($incomplete) {
+                throw ValidationException::withMessages(["work_preferences.{$incomplete}" => 'work_answer_required']);
+            }
+        }
+
         $email = $data['email'] ?? null;
         // Tailors always verify by phone (their primary identity), even when they
         // also provide an email; customers verify by whichever they chose.
@@ -214,7 +228,7 @@ class AuthController extends Controller
                 'role' => $data['role'],
             ], $data['role'] === 'tailor' ? [
                 'business_type' => $data['business_type'],
-                'does_remodeling' => (bool) $data['does_remodeling'],
+                'work_preferences' => $workPreferences,
                 'workspace_address' => $data['workspace_address'],
                 'years_experience' => self::EXPERIENCE_YEARS[$data['experience_band']],
                 'legal_status' => $data['legal_status'],

@@ -8,6 +8,7 @@ import { OrdersList, type TailorOrder } from '../components/tailor/OrdersList';
 import { AvailableDesigns } from '../components/tailor/AvailableDesigns';
 import { ProductManager, type TailorProductFull } from '../components/tailor/ProductManager';
 import { TailorProfileEditor } from '../components/tailor/TailorProfileEditor';
+import { WorkPreferencesCard } from '../components/tailor/WorkPreferencesCard';
 import { OnboardingPanel } from '../components/tailor/OnboardingPanel';
 import { ChangePassword } from '../components/ChangePassword';
 import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
@@ -276,6 +277,9 @@ export default function TailorDashboard() {
                         </>
                     )}
                 </motion.div>
+
+                {/* ── What work they want: asked until answered ── */}
+                <WorkPreferencesCard />
 
                 {!loadingProducts && !setupComplete && (
                     <OnboardingPanel profileComplete={profileComplete} productsCount={products.length} onAddProduct={() => document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' })} onEditProfile={scrollToProfile} />

@@ -46,6 +46,22 @@ function something()
     // ..
 }
 
+/** Complete answers to the work questionnaire (App\Support\TailorWork): takes remodels and new garments. */
+function workAnswers(array $override = []): array
+{
+    return array_merge([
+        'remodel_none' => false,
+        'remodel_types' => ['length', 'fit'],
+        'remodel_other' => null,
+        'new_garments' => 'yes',
+        'garment_types' => ['everyday_dresses'],
+        'garment_other' => null,
+        'complexity' => 'medium',
+        'work_notes' => null,
+        'platform_feedback' => null,
+    ], $override);
+}
+
 /** A complete, valid tailor registration — override a field to test it. */
 function tailorPayload(array $override = []): array
 {
@@ -57,7 +73,7 @@ function tailorPayload(array $override = []): array
         'password_confirmation' => 'password123',
         'role' => 'tailor',
         'business_type' => 'atelier',
-        'does_remodeling' => true,
+        'work_preferences' => workAnswers(),
         'workspace_address' => 'Rustaveli 12, Tbilisi',
         'experience_band' => '3_5',
         'legal_status' => 'sole_trader',
