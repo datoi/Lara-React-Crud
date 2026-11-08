@@ -4,6 +4,8 @@ Date: 2026-11-08. Branch: `qa/pre-launch`, which is `main` at `12c0c4f` plus the
 
 > **A correction to the brief.** Kere has no WhatsApp integration. Tailor and customer alerts go by SMS through SMSOffice.ge and by email through Resend, both sent synchronously inside the request (CLAUDE.md §4, §8.9). The WhatsApp checks (verify token, `X-Hub-Signature-256`, queued retry) were applied to what exists: there is no webhook, and failed SMS and email are logged but never retried (QA-17).
 
+> **Fix status (2026-11-08, after approval).** Fixed on this branch, one commit each, with regression tests: **QA-01** (`48f6d8d`), **QA-02** and QA-37 (`83e7483`), **QA-03** (`e2a57ea`), **QA-04** and QA-42 (`9bcfeb6`). The server-side items in the verdict are still open: delete the public log (QA-05), check the Railway variables, and deploy. After deploying, confirm QA-02 by registering once and checking that `legal_acceptances.ip_address` holds your own IP. Everything from QA-05 down is still open unless listed here.
+
 ---
 
 ## 1. Verdict: **No-go today. Go once five items are done, about half a day of work.**
