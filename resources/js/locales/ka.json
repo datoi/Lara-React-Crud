@@ -1258,6 +1258,8 @@
         "measurementsRequired_one": "{{count}} გაზომვა საჭიროა",
         "measurementsRequired_other": "{{count}} გაზომვა საჭიროა",
         "editProfileTitle": "პროფილის რედაქტირება",
+        "profileLoading": "პროფილი იტვირთება…",
+        "profileLoadFailed": "პროფილი ვერ ჩაიტვირთა. შეამოწმე კავშირი და სცადე თავიდან.",
         "editProfileSubtitle": "ბიო, სპეციალიზაცია, გამოცდილება, ფოტო",
         "profilePhoto": "პროფილის ფოტო",
         "uploading": "იტვირთება…",

@@ -83,6 +83,7 @@ Route::middleware(['auth.bearer', 'throttle:60,1,api-reads'])->group(function ()
     Route::get('/tailor/open-orders', [OrderController::class, 'openOrders']);
     Route::get('/tailor/stats', [ProductController::class, 'tailorStats']);
     Route::get('/tailor/products', [ProductController::class, 'tailorProducts']);
+    Route::get('/tailor/profile', [TailorController::class, 'show']);
 
     // Chat reads
     Route::get('/orders/{orderId}/messages', [MessageController::class, 'index']);

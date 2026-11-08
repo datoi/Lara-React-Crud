@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
@@ -29,17 +30,39 @@ class TailorController extends Controller
         ];
     }
 
-    // ─── PATCH /api/tailor/profile ────────────────────────────────────────────
-
-    public function updateProfile(Request $request)
+    /** Only an approved tailor has a profile to read or edit. */
+    private function refusal(User $user): ?JsonResponse
     {
-        $user = $request->user();
         if ($user->role !== 'tailor') {
             return response()->json(['message' => 'Unauthorized.'], 403);
         }
 
         if ($user->approval_status === 'pending' || $user->approval_status === 'rejected') {
             return response()->json(['message' => 'Your account is pending approval.', 'code' => 'pending_approval'], 403);
+        }
+
+        return null;
+    }
+
+    // ─── GET /api/tailor/profile ──────────────────────────────────────────────
+
+    /**
+     * The profile the editor starts from. It must load before the editor
+     * saves, or saving would write an empty form over the tailor's profile.
+     */
+    public function show(Request $request)
+    {
+        return $this->refusal($request->user())
+            ?? response()->json(['tailor' => $this->tailorData($request->user())]);
+    }
+
+    // ─── PATCH /api/tailor/profile ────────────────────────────────────────────
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+        if ($refused = $this->refusal($user)) {
+            return $refused;
         }
 
         // Minor #16: max years_experience is dynamic (current year − 1960)

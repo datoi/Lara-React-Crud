@@ -43,9 +43,19 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
     const [uploadError,   setUploadError]   = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // The form shows only once the saved profile has loaded: saving an empty
+    // form would overwrite the tailor's profile and switch remodel work off.
+    const [loadState, setLoadState] = useState<'loading' | 'loaded' | 'failed'>('loading');
+    const [loadAttempt, setLoadAttempt] = useState(0);
+
     useEffect(() => {
-        fetch(`/api/tailors/${tailorId}`)
-            .then(r => r.json())
+        const controller = new AbortController();
+        setLoadState('loading');
+        fetch('/api/tailor/profile', {
+            signal: controller.signal,
+            headers: { 'Authorization': `Bearer ${getAuthToken() ?? token}`, 'Accept': 'application/json' },
+        })
+            .then(r => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
             .then(data => {
                 const tailor = data.tailor;
                 let draft: Partial<Profile> = {};
@@ -58,9 +68,13 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                     does_remodeling:  Boolean(tailor.does_remodeling),
                     ...draft,
                 });
+                setLoadState('loaded');
             })
-            .catch(() => {});
-    }, [tailorId]);
+            .catch(() => {
+                if (!controller.signal.aborted) setLoadState('failed');
+            });
+        return () => controller.abort();
+    }, [tailorId, token, loadAttempt]);
 
     const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -163,7 +177,20 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                         <Dialog.Title className="text-base">{t('tailorComponents.editProfileTitle')}</Dialog.Title>
                         <Dialog.Close className="shrink-0 p-2" aria-label={t('newsletterPopup.close')}><X size={18} /></Dialog.Close>
                     </div>
-                <form onSubmit={handleSave} className="px-4 sm:px-6 pb-6 space-y-4 pt-5">
+                {loadState === 'loading' && (
+                    <p role="status" className="flex items-center gap-2 px-4 sm:px-6 py-8 text-sm text-slate-500">
+                        <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> {t('tailorComponents.profileLoading')}
+                    </p>
+                )}
+                {loadState === 'failed' && (
+                    <div role="alert" className="px-4 sm:px-6 py-8 space-y-3">
+                        <p className="text-sm text-destructive">{t('tailorComponents.profileLoadFailed')}</p>
+                        <Button variant="default" size="sm" type="button" onClick={() => setLoadAttempt(n => n + 1)}>
+                            {t('tailorComponents.openDesignsRetry')}
+                        </Button>
+                    </div>
+                )}
+                {loadState === 'loaded' && <form onSubmit={handleSave} className="px-4 sm:px-6 pb-6 space-y-4 pt-5">
                     {sessionExpired && <div role="alert" className="border border-[#d8d0c7] bg-[#f0eae2] p-4">
                         <p>{t('studio.sessionExpired')}</p>
                         <Link to="/login/tailor" className="inline-flex min-h-11 items-center underline underline-offset-4" onClick={() => sessionStorage.setItem(draftKey, JSON.stringify(profile))}>{t('signIn.signIn')}</Link>
@@ -304,7 +331,7 @@ export function TailorProfileEditor({ token, tailorId, expanded, onExpandedChang
                             <span className="text-sm text-destructive">{t('tailorComponents.saveProfileError')}</span>
                         )}
                     </div>
-                </form>
+                </form>}
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>

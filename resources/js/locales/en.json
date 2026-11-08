@@ -1258,6 +1258,8 @@
         "measurementsRequired_one": "{{count}} measurement required",
         "measurementsRequired_other": "{{count}} measurements required",
         "editProfileTitle": "Edit Profile",
+        "profileLoading": "Loading your profile…",
+        "profileLoadFailed": "Your profile couldn't be loaded. Check your connection and try again.",
         "editProfileSubtitle": "Bio, specialty, experience, photo",
         "profilePhoto": "Profile Photo",
         "uploading": "Uploading…",
