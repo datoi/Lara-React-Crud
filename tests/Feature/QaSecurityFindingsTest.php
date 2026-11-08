@@ -480,7 +480,7 @@ it('proves SEC-9: a paused product and an arbitrary colour and size are still ac
     $this->withToken($token)->postJson('/api/orders', ['product_id' => $product->id, 'quantity' => 1, 'color' => 'not-a-colour', 'size' => 'XXXXL'])->assertCreated();
 });
 
-it('proves SEC-10: the gateway callback and return URLs are built from a client-supplied forwarded host', function () {
+it('guards SEC-10: the gateway callback and return URLs ignore a client-supplied forwarded host', function () {
     qasfFlitt();
     Http::fake(['flitt.invalid/*' => Http::response(['response' => ['response_status' => 'success', 'token' => 'tok']])]);
     [$customer, $token] = qasfUser();
@@ -488,8 +488,9 @@ it('proves SEC-10: the gateway callback and return URLs are built from a client-
 
     $this->withToken($token)->withHeader('X-Forwarded-Host', 'evil.example')->postJson("/api/orders/{$order->id}/pay")->assertOk();
 
-    Http::assertSent(fn (HttpRequest $r) => str_contains($r['request']['server_callback_url'] ?? '', 'evil.example')
-        && str_contains($r['request']['response_url'] ?? '', 'evil.example'));
+    Http::assertSent(fn (HttpRequest $r) => isset($r['request']['server_callback_url'])
+        && ! str_contains($r['request']['server_callback_url'], 'evil.example')
+        && ! str_contains($r['request']['response_url'] ?? '', 'evil.example'));
 });
 
 it('proves SEC-11: a minor can name their own address as guardian by changing its letter case', function () {
