@@ -69,11 +69,7 @@ export default function Login() {
             const savedRole = (data.user as AuthUser).role;
             const returnTo = savedRole === 'customer' ? getReturnTo() : null;
             clearReturnTo();
-            navigate(
-                savedRole === 'admin'  ? '/admin-dashboard'  :
-                savedRole === 'tailor' ? '/tailor-dashboard' :
-                                        (returnTo ?? '/customer-dashboard')
-            );
+            navigate(savedRole === 'tailor' ? '/tailor-dashboard' : (returnTo ?? '/customer-dashboard'));
         } catch {
             setErrors({ general: t('signIn.errorNetwork') });
         } finally {

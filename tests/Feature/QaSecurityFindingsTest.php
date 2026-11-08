@@ -293,40 +293,83 @@ it('guards: a signed payment is credited even when every notification channel fa
 
 // ─── Findings, proved as the code behaves today ──────────────────────────────
 
-it('proves SEC-1: the login throttle is bypassed by sending any changing "email" field', function () {
-    [$victim] = qasfUser(['email' => 'victim@example.com']);
+it('guards SEC-1: a changing decoy "email" field does not open a fresh sign-in bucket', function () {
+    qasfUser(['email' => 'victim@example.com']);
 
-    foreach (range(1, 25) as $i) {
+    foreach (range(1, 10) as $i) {
         $this->postJson('/api/login', [
             'login' => 'victim@example.com', 'password' => "guess{$i}", 'role' => 'customer', 'email' => "noise{$i}@x.test",
         ])->assertStatus(401);
     }
 
-    // Without the decoy field the same IP is cut off after ten.
-    foreach (range(1, 10) as $i) {
-        $this->postJson('/api/login', ['login' => 'victim@example.com', 'password' => "g{$i}", 'role' => 'customer'])->assertStatus(401);
-    }
-    $this->postJson('/api/login', ['login' => 'victim@example.com', 'password' => 'g', 'role' => 'customer'])->assertStatus(429);
-
-    // ...and the decoy gets straight back in.
-    $this->postJson('/api/login', ['login' => 'victim@example.com', 'password' => 'password', 'role' => 'customer', 'email' => 'fresh@x.test'])->assertOk();
+    $this->postJson('/api/login', ['login' => 'victim@example.com', 'password' => 'password', 'role' => 'customer', 'email' => 'fresh@x.test'])
+        ->assertStatus(429);
 });
 
-it('proves SEC-2: the admin account can be brute-forced through /api/login, outside the 5-per-hour admin limit', function () {
+it('guards SEC-1: every spelling of an account counts against the same sign-in bucket', function () {
+    qasfUser(['email' => 'victim@example.com', 'phone' => '+995599123456']);
+
+    $spellings = ['victim@example.com', 'VICTIM@example.com', ' victim@example.com', '+995599123456', '599 12 34 56', '995599123456'];
+    foreach (range(0, 9) as $i) {
+        $this->postJson('/api/login', ['login' => $spellings[$i % 6], 'password' => "guess{$i}", 'role' => 'customer'])->assertStatus(401);
+    }
+
+    $this->postJson('/api/login', ['login' => '599123456', 'password' => 'password', 'role' => 'customer'])->assertStatus(429);
+});
+
+it('guards SEC-1: guessing one account from many addresses stops at fifty an hour', function () {
+    qasfUser(['email' => 'victim@example.com']);
+
+    foreach (range(1, 50) as $i) {
+        $this->withServerVariables(['REMOTE_ADDR' => "198.51.100.{$i}"])
+            ->postJson('/api/login', ['login' => 'victim@example.com', 'password' => "guess{$i}", 'role' => 'customer'])
+            ->assertStatus(401);
+    }
+
+    $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.200'])
+        ->postJson('/api/login', ['login' => 'victim@example.com', 'password' => 'password', 'role' => 'customer'])
+        ->assertStatus(429);
+});
+
+it('guards SEC-1: one address working through many accounts stops at sixty a minute', function () {
+    foreach (range(1, 60) as $i) {
+        $this->postJson('/api/login', ['login' => "person{$i}@example.com", 'password' => 'guess', 'role' => 'customer'])->assertStatus(401);
+    }
+
+    $this->postJson('/api/login', ['login' => 'person61@example.com', 'password' => 'guess', 'role' => 'customer'])->assertStatus(429);
+});
+
+it('guards SEC-2: an admin cannot sign in through /api/login, and the answer does not reveal the password', function () {
+    User::where('role', 'admin')->delete();
+    qasfUser(['role' => 'admin', 'email' => 'admin@kere.ge']);
+
+    foreach (['customer', 'tailor'] as $role) {
+        $this->postJson('/api/login', ['login' => 'admin@kere.ge', 'password' => 'password', 'role' => $role])
+            ->assertStatus(401)->assertJsonMissingPath('token');
+        $this->postJson('/api/login', ['login' => 'admin@kere.ge', 'password' => 'wrong-password1', 'role' => $role])
+            ->assertStatus(401);
+    }
+    $this->postJson('/api/login', ['login' => 'admin@kere.ge', 'password' => 'password', 'role' => 'admin'])->assertStatus(422);
+
+    $this->postJson('/api/admin/auth', ['email' => 'Admin@Kere.ge', 'password' => 'password'])
+        ->assertOk()->assertJsonPath('user.role', 'admin');
+});
+
+it('guards SEC-2: the admin sign-in allows five tries an hour per address, and twenty across addresses', function () {
     User::where('role', 'admin')->delete();
     qasfUser(['role' => 'admin', 'email' => 'admin@kere.ge']);
 
     foreach (range(1, 5) as $i) {
         $this->postJson('/api/admin/auth', ['email' => 'admin@kere.ge', 'password' => "x{$i}"])->assertStatus(401);
     }
-    $this->postJson('/api/admin/auth', ['email' => 'admin@kere.ge', 'password' => 'x6'])->assertStatus(429);
+    $this->postJson('/api/admin/auth', ['email' => 'ADMIN@kere.ge', 'password' => 'password'])->assertStatus(429);
 
-    foreach (range(1, 20) as $i) {
-        $this->postJson('/api/login', ['login' => 'admin@kere.ge', 'password' => "y{$i}", 'role' => 'customer', 'email' => "n{$i}@x.test"])->assertStatus(401);
+    foreach (range(1, 15) as $i) {
+        $this->withServerVariables(['REMOTE_ADDR' => "198.51.100.{$i}"])
+            ->postJson('/api/admin/auth', ['email' => 'admin@kere.ge', 'password' => "y{$i}"])->assertStatus(401);
     }
-
-    $this->postJson('/api/login', ['login' => 'admin@kere.ge', 'password' => 'password', 'role' => 'customer', 'email' => 'n@x.test'])
-        ->assertOk()->assertJsonPath('user.role', 'admin');
+    $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.99'])
+        ->postJson('/api/admin/auth', ['email' => 'admin@kere.ge', 'password' => 'password'])->assertStatus(429);
 });
 
 it('proves SEC-3: a forgotten-password code can be guessed 15 times every 15 minutes per account, indefinitely', function () {

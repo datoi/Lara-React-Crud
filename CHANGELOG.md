@@ -6,6 +6,15 @@ Kere deploys continuously from `main`, so entries are dated (`YYYY-MM-DD`) rathe
 
 Until 2026-10-04 this history lived in the README as its "Project Evolution & Logic Log". It moved here with its wording intact, except that entries are now strictly newest first, headings share one style, and five "the entry above/below" references now name the entry they mean, since the new order would have made them wrong.
 
+## 2026-11-08 — Fixes from the pre-launch security and readiness review
+
+**What was done:** The owner asked for a full pre-launch review (QA_REPORT.md, issues QA-01 to QA-59) and approved its list. The Blockers and Criticals are fixed here, one commit each, each with a regression test.
+- **Unlimited password guessing (QA-01).** The `login` rate limit was keyed on an `email` field that the controller never reads. Changing that field on each request opened a fresh bucket, so guessing was unlimited. Admins could also sign in through `/api/login`, which skipped the 5-per-hour admin limit. The limit now keys on the account the attempt names (`User::loginThrottleKey()`: the account's id, so its email and phone share one bucket), with three limits: 10 a minute per account and IP, 50 an hour per account, 60 a minute per IP. `/api/login` now answers an admin account with the wrong-password 401 before checking the password, so it never confirms an admin password. `/admin/auth` matches the email in any letter case and allows 20 tries an hour per email across IPs as well as 5 per email and IP. `Login.tsx` lost its unreachable admin redirect.
+
+**Verified:** `tests/Feature/QaSecurityFindingsTest.php` holds a regression test for each fix ("guards SEC-n"). See the end of this entry for the full-suite run.
+
+**Not covered / Noticed:** The 50-an-hour limit per account means someone who knows a customer's email can lock that customer out of signing in for up to an hour. That is the accepted price of stopping distributed guessing.
+
 ## 2026-11-08 — Pre-launch QA of registration and paid remodels, and the fixes it called for
 
 **What was done:** Customers start registering and ordering remodels on 2026-11-09, so the owner asked for the whole path to be tested: registration, payment, and the rules before and after paying. The pass found five problems customers would have hit, fixed here.

@@ -453,7 +453,7 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::where('email', $data['email'])
+        $user = User::whereEmail($data['email'])
             ->where('role', 'admin')
             ->first();
 
@@ -497,12 +497,15 @@ class AuthController extends Controller
         $data = $request->validate([
             'login' => ['required', 'string', 'max:255'],
             'password' => ['required'],
-            'role' => ['required', 'in:customer,tailor,admin'],
+            'role' => ['required', 'in:customer,tailor'],
         ]);
 
         $user = User::findByLogin($data['login']);
 
-        if (! $user || ! Hash::check($data['password'], $user->password)) {
+        // Admins sign in only at /api/admin/auth, under its tighter limit. The
+        // answer is the wrong-password one, given before the password is
+        // checked, so this page never confirms an admin's password.
+        if (! $user || $user->role === 'admin' || ! Hash::check($data['password'], $user->password)) {
             return response()->json(['message' => 'Invalid credentials.'], 401);
         }
 
@@ -511,7 +514,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'This account has been suspended.', 'code' => 'account_suspended'], 403);
         }
 
-        if ($user->role !== 'admin' && $user->role !== $data['role']) {
+        if ($user->role !== $data['role']) {
             $expected = ucfirst($data['role']);
 
             return response()->json([

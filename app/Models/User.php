@@ -267,4 +267,26 @@ class User extends Authenticatable
 
         return self::whereIn('phone', array_unique($candidates))->first();
     }
+
+    /**
+     * The account a sign-in attempt names, so the sign-in rate limit counts
+     * its email, its phone and every spelling of them against one bucket.
+     * A login that matches no account is keyed by its normalised text.
+     */
+    public static function loginThrottleKey(string $login): string
+    {
+        $user = self::findByLogin($login);
+        if ($user) {
+            return 'user:'.$user->id;
+        }
+
+        $login = trim($login);
+        if (str_contains($login, '@')) {
+            return 'email:'.mb_strtolower($login);
+        }
+
+        $digits = preg_replace('/\D+/', '', $login);
+
+        return 'phone:'.(strlen($digits) === 9 ? '995'.$digits : $digits);
+    }
 }
