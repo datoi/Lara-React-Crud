@@ -1,8 +1,9 @@
-import { createBrowserRouter, useLocation } from 'react-router';
+import { createBrowserRouter, Navigate, useLocation } from 'react-router';
 import { useEffect, type ReactElement } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { RouteGuard, TailorScope } from './components/RouteGuard';
 import { LegalUpdateGate } from './components/LegalUpdateGate';
+import { shopOpen } from './lib/shop';
 import Landing from './pages/Landing';
 import DesignerApp from './pages/DesignerApp';
 import Marketplace from './pages/Marketplace';
@@ -60,7 +61,7 @@ export const router = createBrowserRouter([
     { path: '/section',             element: wrap(<SectionSelect />) },
     { path: '/design',               element: wrap(<DesignerApp />) },
     { path: '/design/review',        element: wrap(<OrderReview />) },
-    { path: '/marketplace',         element: wrap(<Marketplace />) },
+    { path: '/marketplace',         element: shopOpen() ? wrap(<Marketplace />) : <Navigate to="/" replace /> },
     { path: '/cart',                element: wrap(<CartPage />) },
     { path: '/wishlist',            element: guard(<WishlistPage />) },
     { path: '/remodel',              element: wrap(<RemodelRequest />) },

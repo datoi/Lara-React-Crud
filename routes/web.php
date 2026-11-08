@@ -31,6 +31,11 @@ Route::get('/sitemap.xml', function () {
         ['loc' => $base . '/signin',      'changefreq' => 'yearly',  'priority' => '0.4'],
     ];
 
+    // The shop is hidden while nothing is on sale.
+    if (! Product::shopIsOpen()) {
+        $staticUrls = array_values(array_filter($staticUrls, fn ($u) => $u['loc'] !== $base . '/marketplace'));
+    }
+
     $products = Product::onSale()->select('id', 'updated_at')->get();
 
     $xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";

@@ -5,6 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         {{-- Whether the design studio takes orders (config app.custom_orders_open). --}}
         <meta name="kere-custom-orders" content="{{ config('app.custom_orders_open') ? 'open' : 'paused' }}">
+        {{-- Whether the ready-made shop has anything on sale (Product::shopIsOpen). --}}
+        <meta name="kere-shop" content="{{ \App\Models\Product::shopIsOpen() ? 'open' : 'closed' }}">
 
         <!-- Default SEO. Georgian, because link previews (Facebook, WhatsApp, Messenger)
              read these tags without running the app. -->

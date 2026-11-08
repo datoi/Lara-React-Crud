@@ -10,6 +10,7 @@ import { cartCount, openCart, useCart } from '../../hooks/useCart';
 import { CartDrawer } from '../CartDrawer';
 import { ProductImage } from '../marketplace/ProductImage';
 import { NotificationBell } from '../NotificationBell';
+import { shopOpen } from '../../lib/shop';
 
 interface SearchProduct {
     id: number;
@@ -23,6 +24,7 @@ export function Navigation() {
     const { pathname } = useLocation();
     const [categories, setCategories] = useState<{ id: number; name: string; slug: string }[]>([]);
     useEffect(() => {
+        if (!shopOpen()) return;
         const controller = new AbortController();
         fetch('/api/categories', { signal: controller.signal })
             .then((response) => response.ok ? response.json() : [])
@@ -81,6 +83,8 @@ export function Navigation() {
     // A tailor is offered only the pages they may open; the storefront — the
     // marketplace menu, search and the bag — is not shown to them at all.
     const shops = !isRestrictedTailor(user);
+    // The shop's menu and search show only while something is on sale; the bag stays.
+    const shopVisible = shops && shopOpen();
     const links = [
         { to: '/design', label: t('nav.startDesigning') },
         { to: '/remodel', label: t('nav.remodel') },
@@ -155,7 +159,7 @@ export function Navigation() {
                                     <X size={22} />
                                 </Dialog.Close>
                                 <nav>
-                                    {shops && (
+                                    {shopVisible && (
                                         <details className="store-mobile-categories">
                                             <summary>{t('marketplace.title')} <ChevronDown size={16} /></summary>
                                             {categoryLinks.map((link) => (
@@ -184,7 +188,7 @@ export function Navigation() {
                         <span className="kere-nav-logo" aria-hidden="true" />
                     </Link>
                     <nav className="store-desktop-nav">
-                        {shops && <Dialog.Root modal={false} open={marketOpen} onOpenChange={setMarketOpen}>
+                        {shopVisible && <Dialog.Root modal={false} open={marketOpen} onOpenChange={setMarketOpen}>
                             <Dialog.Trigger className="store-market-trigger"
                                 onPointerEnter={event => {
                                     if (event.pointerType !== 'mouse') return;
@@ -235,7 +239,7 @@ export function Navigation() {
                         ))}
                     </nav>
                     <div className="store-header-actions">
-                        {shops && <Dialog.Root open={searchOpen} onOpenChange={setSearchOpen}>
+                        {shopVisible && <Dialog.Root open={searchOpen} onOpenChange={setSearchOpen}>
                             <Dialog.Trigger className="store-icon" aria-label={t('store.search')}>
                                 <Search size={19} />
                             </Dialog.Trigger>

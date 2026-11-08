@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import { Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { shopOpen } from '../../lib/shop';
 
 interface HeroImage {
   src: string;
@@ -153,7 +154,7 @@ export function HeroSection() {
           >
             {movingImages.map((image, index) => (
               <Link
-                to={image.productId != null ? `/product/${image.productId}` : '/marketplace'}
+                to={image.productId != null ? `/product/${image.productId}` : shopOpen() ? '/marketplace' : '/remodel'}
                 className="kere-gallery-image"
                 key={`${image.src}-${index}`}
                 tabIndex={index >= heroImages.length ? -1 : undefined}

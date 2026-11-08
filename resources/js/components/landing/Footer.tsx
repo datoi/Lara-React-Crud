@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { Instagram, Phone, Mail, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { shopOpen } from '../../lib/shop';
 import { MeasurementGuideModal } from '../MeasurementGuideModal';
 import { PaymentMarks } from '../PaymentMarks';
 import { EmailSupportModal } from '../EmailSupportModal';
@@ -32,8 +33,12 @@ export function Footer() {
             title: t('footer.product'),
             links: [
                 { label: t('footer.howItWorks'), type: 'hash', href: '/#how-it-works' },
-                { label: t('footer.categories'), type: 'hash', href: '/#categories' },
-                { label: t('footer.designGallery'), type: 'router', to: '/marketplace' },
+                ...(shopOpen()
+                    ? [
+                          { label: t('footer.categories'), type: 'hash', href: '/#categories' } as FooterLink,
+                          { label: t('footer.designGallery'), type: 'router', to: '/marketplace' } as FooterLink,
+                      ]
+                    : []),
                 { label: t('footer.sizeGuide'), type: 'modal', modal: 'size-guide' },
                 { label: t('footer.faq'), type: 'hash', href: '/#faq' },
             ],

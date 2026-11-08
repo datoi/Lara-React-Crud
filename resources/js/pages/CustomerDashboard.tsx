@@ -7,6 +7,7 @@ import {
     ChevronRight, User, Scissors, MessageCircle, Star, Users, Loader2
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { shopOpen } from '../lib/shop';
 import { getAuthToken, getAuthUser, clearAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/button';
 import { OrderTermsNotice } from '../components/LegalConsent';
@@ -776,13 +777,15 @@ export default function CustomerDashboard() {
                             <ShoppingBag className="w-10 h-10 text-slate-200 mx-auto mb-3" />
                             <p className="text-slate-600 font-medium mb-1">{t('customerDashboard.noOrdersYet')}</p>
                             <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2">
-                                <Link
-                                    to="/marketplace"
-                                    className="inline-flex items-center gap-1.5 text-sm bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors"
-                                >
-                                    {t('customerDashboard.browseMarketplace')}
-                                    <ChevronRight className="w-4 h-4" />
-                                </Link>
+                                {shopOpen() && (
+                                    <Link
+                                        to="/marketplace"
+                                        className="inline-flex items-center gap-1.5 text-sm bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors"
+                                    >
+                                        {t('customerDashboard.browseMarketplace')}
+                                        <ChevronRight className="w-4 h-4" />
+                                    </Link>
+                                )}
                                 <Link
                                     to="/design"
                                     className="inline-flex items-center gap-1.5 text-sm border border-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors"
@@ -888,8 +891,8 @@ export default function CustomerDashboard() {
                 </div>
 
                 {/* Quick actions */}
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Link
+                <div className={`mt-6 grid grid-cols-1 gap-3 ${shopOpen() ? 'sm:grid-cols-2' : ''}`}>
+                    {shopOpen() && <Link
                         to="/marketplace"
                         className="flex items-center gap-3 bg-white border border-slate-100 rounded-none p-4 hover:bg-slate-50 hover:border-slate-200 transition-colors group"
                     >
@@ -901,7 +904,7 @@ export default function CustomerDashboard() {
                             <p className="text-xs text-slate-400">{t('customerDashboard.findDesigns')}</p>
                         </div>
                         <ChevronRight className="w-4 h-4 text-slate-300 ml-auto" />
-                    </Link>
+                    </Link>}
                     <Link
                         to="/design"
                         className="flex items-center gap-3 bg-white border border-slate-100 rounded-none p-4 hover:bg-slate-50 hover:border-slate-200 transition-colors group"

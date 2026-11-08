@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { shopOpen } from '../lib/shop';
 import { Navigation } from '../components/landing/Navigation';
 import { Footer } from '../components/landing/Footer';
 import { getAuthUser } from '../hooks/useAuth';
@@ -43,7 +44,7 @@ export default function AboutUs() {
                     and a registration they have already completed. */}
                 {!isRestrictedTailor(getAuthUser()) && (
                     <div className="kere-about-links">
-                        <Link to="/marketplace">{t('aboutUs.browseMarketplace')} <span aria-hidden="true">↗</span></Link>
+                        {shopOpen() && <Link to="/marketplace">{t('aboutUs.browseMarketplace')} <span aria-hidden="true">↗</span></Link>}
                         <Link to="/register/tailor">{t('aboutUs.joinAsTailor')} <span aria-hidden="true">↗</span></Link>
                     </div>
                 )}

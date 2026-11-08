@@ -49,6 +49,16 @@ class Product extends Model
             ->orWhereHas('tailor', fn (Builder $t) => $t->ableToTakeWork()));
     }
 
+    /**
+     * Whether the ready-made shop is shown at all: only while something is on
+     * sale (owner's decision, 2026-11-08). The page shell states it in a meta
+     * tag, so every link to the shop hides and returns with the first product.
+     */
+    public static function shopIsOpen(): bool
+    {
+        return self::onSale()->exists();
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);

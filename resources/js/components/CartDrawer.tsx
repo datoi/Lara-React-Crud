@@ -2,6 +2,7 @@ import { ImageOff, Minus, Plus, ShoppingBag, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { shopOpen } from '../lib/shop';
 import { useNavigate } from 'react-router';
 import {
     cartSubtotal,
@@ -117,7 +118,7 @@ export function CartDrawer() {
                                 <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-[#6c625b]">
                                     <ShoppingBag className="h-10 w-10 stroke-1" />
                                     <p>{t('cart.empty')}</p>
-                                    <button
+                                    {shopOpen() && <button
                                         type="button"
                                         onClick={() => {
                                             closeCart();
@@ -126,7 +127,7 @@ export function CartDrawer() {
                                         className="mt-1 text-xs font-semibold text-[#111111] underline underline-offset-4 hover:opacity-60"
                                     >
                                         {t('cart.continueShopping')}
-                                    </button>
+                                    </button>}
                                 </div>
                             ) : (
                                 <>

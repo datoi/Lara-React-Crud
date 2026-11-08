@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router';
 import { ArrowRight, Scissors, ShoppingBag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { shopOpen } from '../../lib/shop';
 import { Button } from '../ui/button';
 
 export function CTASection() {
@@ -20,16 +21,18 @@ export function CTASection() {
                         {t('cta.title')}<br className="hidden sm:block" /> {t('cta.titleLine2')}
                     </h2>
                     <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                        <Button
-                            asChild
-                            variant="link"
-                            className="min-h-[46px] w-full rounded-none border border-black/30 bg-transparent px-5 font-sans text-[10px] font-semibold tracking-normal text-[#111111] transition-colors duration-200 hover:bg-brand-dark hover:text-white sm:w-auto sm:text-xs"
-                        >
-                            <Link to="/marketplace">
-                                <ShoppingBag className="h-4 w-4" />
-                                {t('cta.browseMarketplace')}
-                            </Link>
-                        </Button>
+                        {shopOpen() && (
+                            <Button
+                                asChild
+                                variant="link"
+                                className="min-h-[46px] w-full rounded-none border border-black/30 bg-transparent px-5 font-sans text-[10px] font-semibold tracking-normal text-[#111111] transition-colors duration-200 hover:bg-brand-dark hover:text-white sm:w-auto sm:text-xs"
+                            >
+                                <Link to="/marketplace">
+                                    <ShoppingBag className="h-4 w-4" />
+                                    {t('cta.browseMarketplace')}
+                                </Link>
+                            </Button>
+                        )}
                         <Button
                             asChild
                             variant="link"

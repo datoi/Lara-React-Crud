@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { motion } from 'motion/react';
 import { Check, Clock, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { shopOpen } from '../lib/shop';
 import { Button } from '../components/ui/button';
 import { getAuthToken } from '../hooks/useAuth';
 
@@ -165,12 +166,12 @@ export default function PaymentComplete() {
                         </Link>
                     )}
 
-                    <Link
+                    {shopOpen() && <Link
                         to="/marketplace"
                         className="text-[14px] text-[var(--kd-body)] underline underline-offset-4 transition-colors duration-150 hover:text-[var(--kd-burgundy)]"
                     >
                         {t('payment.backToMarketplace')}
-                    </Link>
+                    </Link>}
                 </div>
             </motion.div>
         </div>

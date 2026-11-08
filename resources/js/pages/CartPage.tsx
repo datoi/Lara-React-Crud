@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
+import { shopOpen } from '../lib/shop';
 import { Link, useNavigate } from 'react-router';
 import { isHex } from '../components/CartDrawer';
 import { Navigation } from '../components/landing/Navigation';
@@ -229,9 +230,11 @@ export default function CartPage() {
 
                         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
                             <Button onClick={() => navigate('/customer-dashboard')}>{t('cart.viewOrders')}</Button>
-                            <Button variant="outline" onClick={() => navigate('/marketplace')}>
-                                {t('cart.continueShopping')}
-                            </Button>
+                            {shopOpen() && (
+                                <Button variant="outline" onClick={() => navigate('/marketplace')}>
+                                    {t('cart.continueShopping')}
+                                </Button>
+                            )}
                         </div>
                     </motion.div>
                 </main>
@@ -253,7 +256,7 @@ export default function CartPage() {
                     <div className="mt-10 flex flex-col items-center gap-4 border border-[#111111]/12 bg-white py-20 text-center">
                         <ShoppingBag className="h-12 w-12 stroke-1 text-[#6c625b]" />
                         <p className="text-[#6c625b]">{t('cart.empty')}</p>
-                        <Button onClick={() => navigate('/marketplace')}>{t('cart.continueShopping')}</Button>
+                        {shopOpen() && <Button onClick={() => navigate('/marketplace')}>{t('cart.continueShopping')}</Button>}
                     </div>
                 ) : (
                     <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px] lg:items-start">
@@ -390,13 +393,13 @@ export default function CartPage() {
 
                             <OrderTermsNotice action="order" className="mt-3 text-[#6c625b]" />
 
-                            <button
+                            {shopOpen() && <button
                                 type="button"
                                 onClick={() => navigate('/marketplace')}
                                 className="mt-4 w-full text-xs font-semibold text-[#6c625b] underline underline-offset-4 hover:text-[#111111]"
                             >
                                 {t('cart.continueShopping')}
-                            </button>
+                            </button>}
 
                             {/* The card is taken on Flitt's page, not this one, so
                                 the schemes are named here — on the summary the
