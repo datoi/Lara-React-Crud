@@ -446,7 +446,7 @@ test('JRN admin suspends a customer: the live token is refused, login refused, u
     $this->withToken($customerToken)->getJson('/api/me')->assertOk();
 });
 
-test('BUG JRN-2: the suspended-token 403 carries no code, so the SPA cannot translate it', function () {
+test('JRN-2: a suspended account\'s requests are refused with a code the SPA can translate', function () {
     [$customer, $customerToken] = qaj_user();
     $customer->update(['is_suspended' => true]);
 

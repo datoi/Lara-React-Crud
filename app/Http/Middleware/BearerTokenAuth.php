@@ -27,7 +27,8 @@ class BearerTokenAuth implements AuthenticatesRequests
             $user = User::where('api_token', hash('sha256', $raw))->first();
             if ($user) {
                 if ($user->is_suspended) {
-                    return response()->json(['message' => 'Your account has been suspended.'], 403);
+                    // The same code sign-in answers with, so pages can translate it.
+                    return response()->json(['message' => 'Your account has been suspended.', 'code' => 'account_suspended'], 403);
                 }
                 $request->setUserResolver(fn () => $user);
             }
